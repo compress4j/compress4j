@@ -1,6 +1,8 @@
-# Maven files
 target/
 bin/
+out/
+.gradle/
+build/
 
 # Eclipse project files
 .project
