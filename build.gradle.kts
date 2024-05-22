@@ -12,6 +12,7 @@ repositories {
 }
 
 dependencies {
+    api(libs.jakarta.annotation.api)
     api(libs.org.apache.commons.commons.compress)
     api(libs.org.tukaani.xz)
 
@@ -75,7 +76,7 @@ spotless {
     ratchetFrom("origin/main")
     java {
         toggleOffOn()
-        palantirJavaFormat().formatJavadoc(true)
+        palantirJavaFormat("2.45.0").formatJavadoc(true)
         licenseHeaderFile(rootProject.file(".config/spotless/copyright.java.txt"))
         removeUnusedImports()
         trimTrailingWhitespace()

@@ -22,7 +22,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.compressors.CompressorException;
 
@@ -30,9 +29,9 @@ import org.apache.commons.compress.compressors.CompressorException;
  * Decorates an {@link Archiver} with a {@link Compressor}, s.t. it is able to compress the archives it generates and
  * decompress the archives it extracts.
  */
-class ArchiverCompressorDecorator implements Archiver {
+class ArchiverCompressorDecorator<E extends org.apache.commons.compress.archivers.ArchiveEntry> implements Archiver {
 
-    private final CommonsArchiver archiver;
+    private final CommonsArchiver<E> archiver;
     private final CommonsCompressor compressor;
 
     /**
@@ -41,7 +40,7 @@ class ArchiverCompressorDecorator implements Archiver {
      * @param archiver the archiver to decorate
      * @param compressor the compressor used for compression
      */
-    ArchiverCompressorDecorator(CommonsArchiver archiver, CommonsCompressor compressor) {
+    ArchiverCompressorDecorator(CommonsArchiver<E> archiver, CommonsCompressor compressor) {
         this.archiver = archiver;
         this.compressor = compressor;
     }
@@ -100,7 +99,7 @@ class ArchiverCompressorDecorator implements Archiver {
     @Override
     public ArchiveStream stream(File archive) throws IOException {
         try {
-            return new CommonsArchiveStream(CommonsStreamFactory.createArchiveInputStream(
+            return new CommonsArchiveStream<>(CommonsStreamFactory.createArchiveInputStream(
                     archiver, CommonsStreamFactory.createCompressorInputStream(archive)));
         } catch (ArchiveException | CompressorException e) {
             throw new IOException(e);

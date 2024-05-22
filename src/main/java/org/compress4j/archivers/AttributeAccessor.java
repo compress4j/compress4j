@@ -59,6 +59,7 @@ abstract class AttributeAccessor<E extends ArchiveEntry> {
      * @param entry the adaptee
      * @return a new attribute accessor instance
      */
+    @SuppressWarnings("java:S1452")
     public static AttributeAccessor<?> create(ArchiveEntry entry) {
         if (entry instanceof TarArchiveEntry tarArchiveEntry) {
             return new TarAttributeAccessor(tarArchiveEntry);
@@ -125,7 +126,7 @@ abstract class AttributeAccessor<E extends ArchiveEntry> {
         }
 
         @Override
-        public int getMode() throws IOException {
+        public int getMode() {
             return getEntry().getMode();
         }
     }
@@ -136,7 +137,7 @@ abstract class AttributeAccessor<E extends ArchiveEntry> {
         }
 
         @Override
-        public int getMode() throws IOException {
+        public int getMode() {
             return getEntry().getMode();
         }
     }
