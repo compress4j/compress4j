@@ -30,10 +30,10 @@ import java.util.Map;
 /** Holds the file extension as String and the corresponding {@link ArchiveFormat} and/or {@link CompressionType}. */
 public final class FileType {
 
-    private static final Map<String, FileType> MAP = new LinkedHashMap<>();
-
     /** Special case object for an unknown archive/compression file type. */
     public static final FileType UNKNOWN = new FileType("", null, null);
+
+    private static final Map<String, FileType> MAP = new LinkedHashMap<>();
 
     static {
         // compressed archives
@@ -41,6 +41,8 @@ public final class FileType {
         add(".tgz", TAR, CompressionType.GZIP);
         add(".tar.bz2", TAR, CompressionType.BZIP2);
         add(".tbz2", TAR, CompressionType.BZIP2);
+        add(".tar.xz", TAR, CompressionType.XZ);
+        add(".txz", TAR, CompressionType.XZ);
         // archive formats
         add(".7z", SEVEN_Z);
         add(".a", AR);
@@ -75,6 +77,51 @@ public final class FileType {
         this.suffix = suffix;
         this.compression = compression;
         this.archiveFormat = archiveFormat;
+    }
+
+    /**
+     * Checks the suffix of the given string for an entry in the map. If it exists, the corresponding {@link FileType}
+     * entry will be returned.
+     *
+     * @param filename the filename to check
+     * @return a {@link FileType} entry for the file extension of the given name, or the UNKNOWN type if it does not
+     *     exist
+     */
+    public static FileType get(String filename) {
+        for (Map.Entry<String, FileType> entry : MAP.entrySet()) {
+            if (filename.toLowerCase().endsWith(entry.getKey())) {
+                return entry.getValue();
+            }
+        }
+
+        return UNKNOWN;
+    }
+
+    /**
+     * Checks the suffix of the given {@link File} for an entry in the map. If it exists, the corresponding
+     * {@link FileType} entry will be returned.
+     *
+     * @param file the file to check
+     * @return a {@link FileType} entry for the file extension of the given file, or the UNKNOWN type if it does not
+     *     exist
+     */
+    public static FileType get(File file) {
+        return get(file.getName());
+    }
+
+    private static void add(String suffix, ArchiveFormat archiveFormat) {
+        MAP.put(suffix, new FileType(suffix, archiveFormat));
+    }
+
+    private static void add(String suffix, CompressionType compressionType) {
+        MAP.put(suffix, new FileType(suffix, compressionType));
+    }
+
+    private static void add(
+            String suffix,
+            @SuppressWarnings("SameParameterValue") ArchiveFormat archiveFormat,
+            CompressionType compressionType) {
+        MAP.put(suffix, new FileType(suffix, archiveFormat, compressionType));
     }
 
     /**
@@ -125,50 +172,5 @@ public final class FileType {
     @Override
     public String toString() {
         return getSuffix();
-    }
-
-    /**
-     * Checks the suffix of the given string for an entry in the map. If it exists, the corresponding {@link FileType}
-     * entry will be returned.
-     *
-     * @param filename the filename to check
-     * @return a {@link FileType} entry for the file extension of the given name, or the UNKNOWN type if it does not
-     *     exist
-     */
-    public static FileType get(String filename) {
-        for (Map.Entry<String, FileType> entry : MAP.entrySet()) {
-            if (filename.toLowerCase().endsWith(entry.getKey())) {
-                return entry.getValue();
-            }
-        }
-
-        return UNKNOWN;
-    }
-
-    /**
-     * Checks the suffix of the given {@link File} for an entry in the map. If it exists, the corresponding
-     * {@link FileType} entry will be returned.
-     *
-     * @param file the file to check
-     * @return a {@link FileType} entry for the file extension of the given file, or the UNKNOWN type if it does not
-     *     exist
-     */
-    public static FileType get(File file) {
-        return get(file.getName());
-    }
-
-    private static void add(String suffix, ArchiveFormat archiveFormat) {
-        MAP.put(suffix, new FileType(suffix, archiveFormat));
-    }
-
-    private static void add(String suffix, CompressionType compressionType) {
-        MAP.put(suffix, new FileType(suffix, compressionType));
-    }
-
-    private static void add(
-            String suffix,
-            @SuppressWarnings("SameParameterValue") ArchiveFormat archiveFormat,
-            CompressionType compressionType) {
-        MAP.put(suffix, new FileType(suffix, archiveFormat, compressionType));
     }
 }
