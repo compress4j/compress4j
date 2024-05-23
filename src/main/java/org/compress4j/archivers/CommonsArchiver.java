@@ -15,11 +15,14 @@
  */
 package org.compress4j.archivers;
 
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.Objects;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
@@ -92,7 +95,7 @@ class CommonsArchiver<E extends ArchiveEntry> implements Archiver {
             } else {
                 //noinspection ResultOfMethodCallIgnored
                 file.getParentFile().mkdirs();
-                IOUtils.copy(input, file);
+                Files.copy(input, file.toPath(), REPLACE_EXISTING);
             }
 
             FileModeMapper.map(entry, file);
@@ -235,7 +238,7 @@ class CommonsArchiver<E extends ArchiveEntry> implements Archiver {
      */
     protected void writeToArchive(File parent, File[] sources, ArchiveOutputStream<E> archive) throws IOException {
         for (File source : sources) {
-            String relativePath = IOUtils.relativePath(parent, source);
+            String relativePath = getRelativePath(parent, source);
 
             createArchiveEntry(source, relativePath, archive);
 
@@ -243,6 +246,10 @@ class CommonsArchiver<E extends ArchiveEntry> implements Archiver {
                 writeToArchive(parent, Objects.requireNonNull(source.listFiles()), archive);
             }
         }
+    }
+
+    private static String getRelativePath(File parent, File source) {
+        return parent.toPath().toUri().relativize(source.toPath().toUri()).getPath();
     }
 
     /**
@@ -261,7 +268,7 @@ class CommonsArchiver<E extends ArchiveEntry> implements Archiver {
 
         if (!entry.isDirectory()) {
             try (FileInputStream input = new FileInputStream(file)) {
-                IOUtils.copy(input, archive);
+                input.transferTo(archive);
             }
         }
 

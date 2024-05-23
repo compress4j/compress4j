@@ -99,8 +99,7 @@ class ZipFileArchiver extends CommonsArchiver<ZipArchiveEntry> {
         }
 
         private void closeCurrentEntryStream() {
-            InputStream stream = getCurrentEntryStream();
-            IOUtils.closeQuietly(stream);
+            IOUtils.closeQuietly(getCurrentEntryStream());
 
             currentEntryStream = null;
         }

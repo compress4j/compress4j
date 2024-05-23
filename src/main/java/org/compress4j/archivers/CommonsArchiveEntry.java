@@ -15,8 +15,11 @@
  */
 package org.compress4j.archivers;
 
+import static java.nio.file.StandardCopyOption.*;
+
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Date;
 
 /** Implementation of an {@link ArchiveEntry} that wraps the commons compress version of the same type. */
@@ -62,7 +65,7 @@ class CommonsArchiveEntry implements ArchiveEntry {
         assertState();
         IOUtils.requireDirectory(destination);
 
-        File file = new File(destination, entry.getName());
+        File file = new File(destination.toPath().normalize().toFile(), entry.getName());
 
         if (entry.isDirectory()) {
             //noinspection ResultOfMethodCallIgnored
@@ -70,7 +73,7 @@ class CommonsArchiveEntry implements ArchiveEntry {
         } else {
             //noinspection ResultOfMethodCallIgnored
             file.getParentFile().mkdirs();
-            IOUtils.copy(stream, file);
+            Files.copy(stream, file.toPath(), REPLACE_EXISTING);
         }
 
         FileModeMapper.map(entry, file);

@@ -93,15 +93,11 @@ public class ExtractPermissionsTest {
         }
 
         private void extractWithStream() throws IOException {
-            ArchiveStream stream = null;
-            try {
-                stream = archiver.stream(archive);
+            try(ArchiveStream stream = archiver.stream(archive)){
                 ArchiveEntry entry;
                 while ((entry = stream.getNextEntry()) != null) {
                     entry.extract(ARCHIVE_EXTRACT_DIR);
                 }
-            } finally {
-                IOUtils.closeQuietly(stream);
             }
         }
 
