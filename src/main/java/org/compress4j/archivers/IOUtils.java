@@ -22,6 +22,11 @@ import java.io.InputStream;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 
 /** Utility class for I/O operations. */
@@ -42,27 +47,6 @@ public final class IOUtils {
                 // ignore
             }
         }
-    }
-
-    /**
-     * Determines if the given child leaves the root directory.
-     *
-     * @param destinationDir The parent abstract pathname
-     * @param entry The {@link ArchiveEntry} to create a new file for
-     * @throws IOException If path is not within the destination directory
-     * @return {@code File} if the child is within the destination directory
-     */
-    public static <A extends ArchiveEntry> File newFile(File destinationDir, A entry) throws IOException {
-        File destFile = new File(destinationDir, entry.getName());
-
-        String destDirPath = destinationDir.getCanonicalPath();
-        String destFilePath = destFile.getCanonicalPath();
-
-        if (!destFilePath.startsWith(destDirPath + File.separator)) {
-            throw new IOException("Entry is outside of the target dir: " + entry.getName());
-        }
-
-        return destFile;
     }
 
     /**
@@ -92,7 +76,7 @@ public final class IOUtils {
      * @throws UnsupportedOperationException if {@code options} contains a copy option that is not supported
      */
     public static <A extends ArchiveEntry> File copy(InputStream in, File destination, A entry) throws IOException {
-        File file = newFile(destination, entry);
+        File file = createResourceInDestination(destination, entry.getName());
 
         if (entry.isDirectory()) {
             //noinspection ResultOfMethodCallIgnored
@@ -140,5 +124,59 @@ public final class IOUtils {
         if (!destination.canWrite()) {
             throw new IllegalArgumentException("Can not write to destination " + destination);
         }
+    }
+    /**
+     * Returns a resource after guaranteeing that it is created inside the destination directory
+     *
+     * @param destination the destination directory to place the resource in
+     * @param entryName the name of the resource to create in the destination
+     * @return the created resource after it is placed in the destination directory
+     */
+    public static File createResourceInDestination(File destination, String entryName) throws IOException {
+        return createResourceInDestination(destination, entryName, destination.getCanonicalPath());
+    }
+
+    /**
+     * Returns a resource after guaranteeing that it is created inside the destination directory
+     *
+     * @param destination the destination directory to place the resource in
+     * @param entryName the name of the resource to create in the destination
+     * @param destinationCanonicalPath the canonical path of the destination
+     * @return the created resource after it is placed in the destination directory
+     */
+    public static File createResourceInDestination(File destination, String entryName, String destinationCanonicalPath)
+            throws IOException {
+        File file = new File(destination, entryName);
+        if (!file.getCanonicalPath().startsWith(destinationCanonicalPath)) {
+            file = new File(destination, cleanEntryName(entryName));
+        }
+        return file;
+    }
+
+    /**
+     * Cleans up a path by normalizing it and removing any leading.
+     *
+     * @param entry a file path entry to clean
+     * @return the cleaned path
+     */
+    public static String cleanEntryName(String entry) {
+        Path normalizedPath = Paths.get(entry).normalize();
+        Iterator<Path> iterator = normalizedPath.iterator();
+        List<String> list = new ArrayList<>();
+        while (iterator.hasNext()) {
+            String next = iterator.next().toString();
+            if (!"..".equals(next)) {
+                list.add(next);
+            }
+        }
+        String firstElement = "";
+        if (!list.isEmpty()) {
+            firstElement = list.remove(0);
+        }
+        String[] remainingElements = new String[list.size()];
+        if (!list.isEmpty()) {
+            remainingElements = list.toArray(remainingElements);
+        }
+        return Paths.get(firstElement, remainingElements).toString();
     }
 }
