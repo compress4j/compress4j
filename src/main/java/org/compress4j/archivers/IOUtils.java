@@ -15,7 +15,6 @@
  */
 package org.compress4j.archivers;
 
-import com.compress4j.exceptions.UnableToCanonicalizePathException;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
@@ -23,31 +22,12 @@ import java.io.InputStream;
 import java.nio.file.DirectoryNotEmptyException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 
 /** Utility class for I/O operations. */
 public final class IOUtils {
 
     private IOUtils() {}
-
-    /**
-     * Determines if the given child leaves the root directory.
-     *
-     * @param parent The parent abstract pathname
-     * @param child The child pathname string
-     * @throws UnableToCanonicalizePathException If paths cannot be canonicalized
-     * @return {@code true} if the child leaves the root directory, {@code false} otherwise
-     */
-    private static boolean leavesRoot(File parent, String child) {
-        try {
-            Path targetPath = new File(parent, child).getCanonicalFile().toPath();
-            Path rootPath = parent.getCanonicalFile().toPath();
-            return !targetPath.startsWith(rootPath);
-        } catch (IOException e) {
-            throw new UnableToCanonicalizePathException("Unable to canonicalize paths", e);
-        }
-    }
 
     /**
      * Null-safe method that calls {@link java.io.Closeable#close()} and chokes the IOException.
@@ -62,6 +42,27 @@ public final class IOUtils {
                 // ignore
             }
         }
+    }
+
+    /**
+     * Determines if the given child leaves the root directory.
+     *
+     * @param destinationDir The parent abstract pathname
+     * @param entry The {@link ArchiveEntry} to create a new file for
+     * @throws IOException If path is not within the destination directory
+     * @return {@code File} if the child is within the destination directory
+     */
+    public static <A extends ArchiveEntry> File newFile(File destinationDir, A entry) throws IOException {
+        File destFile = new File(destinationDir, entry.getName());
+
+        String destDirPath = destinationDir.getCanonicalPath();
+        String destFilePath = destFile.getCanonicalPath();
+
+        if (!destFilePath.startsWith(destDirPath + File.separator)) {
+            throw new IOException("Entry is outside of the target dir: " + entry.getName());
+        }
+
+        return destFile;
     }
 
     /**
@@ -91,10 +92,7 @@ public final class IOUtils {
      * @throws UnsupportedOperationException if {@code options} contains a copy option that is not supported
      */
     public static <A extends ArchiveEntry> File copy(InputStream in, File destination, A entry) throws IOException {
-        if (leavesRoot(destination, entry.getName())) {
-            throw new IOException("Entry is outside of the destination directory: " + entry.getName());
-        }
-        File file = new File(destination, entry.getName());
+        File file = newFile(destination, entry);
 
         if (entry.isDirectory()) {
             //noinspection ResultOfMethodCallIgnored
