@@ -76,7 +76,7 @@ spotless {
     ratchetFrom("origin/main")
     java {
         toggleOffOn()
-        palantirJavaFormat("2.45.0").formatJavadoc(true)
+        palantirJavaFormat("2.47.0").formatJavadoc(true)
         licenseHeaderFile(rootProject.file(".config/spotless/copyright.java.txt"))
         removeUnusedImports()
         trimTrailingWhitespace()

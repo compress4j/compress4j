@@ -17,79 +17,109 @@ package org.compress4j.archivers;
 
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import org.apache.commons.compress.archivers.ArchiveEntry;
 
 /** Utility class for I/O operations. */
 public final class IOUtils {
 
-    /** Default buffer size used for {@code copy} operations. */
-    private static final int DEFAULT_BUFFER_SIZE = 8024;
-
     private IOUtils() {}
 
     /**
-     * Copies the content of an InputStream into a destination File.
+     * Null-safe method that calls {@link java.io.Closeable#close()} and chokes the IOException.
      *
-     * @param source the InputStream to copy
-     * @param destination the target File
-     * @throws IOException if an error occurs
+     * @param closeable the object to close
      */
-    public static void copy(InputStream source, File destination) throws IOException {
-        try (FileOutputStream fos = new FileOutputStream(destination)) {
-            copy(source, fos);
+    public static void closeQuietly(Closeable closeable) {
+        if (closeable != null) {
+            try {
+                closeable.close();
+            } catch (IOException ignored) {
+                // ignore
+            }
         }
     }
 
     /**
-     * Copies the content of a InputStream into an OutputStream. Uses a default buffer size of 8024 bytes.
+     * Determines if the given child leaves the root directory.
      *
-     * @param input the InputStream to copy
-     * @param output the target Stream
-     * @return the amount of bytes written
-     * @throws IOException if an error occurs
+     * @param destinationDir The parent abstract pathname
+     * @param entry The {@link ArchiveEntry} to create a new file for
+     * @throws IOException If path is not within the destination directory
+     * @return {@code File} if the child is within the destination directory
      */
-    public static long copy(final InputStream input, final OutputStream output) throws IOException {
-        return copy(input, output, DEFAULT_BUFFER_SIZE);
-    }
+    public static <A extends ArchiveEntry> File newFile(File destinationDir, A entry) throws IOException {
+        File destFile = new File(destinationDir, entry.getName());
 
-    /**
-     * Copies the entire content of the given InputStream into the given OutputStream.
-     *
-     * @param input the InputStream to copy
-     * @param output the target Stream
-     * @param bufferSize the buffer size to use
-     * @return the amount of bytes written
-     * @throws IOException if an error occurs
-     */
-    public static long copy(final InputStream input, final OutputStream output, int bufferSize) throws IOException {
-        final byte[] buffer = new byte[bufferSize];
-        int n;
-        long count = 0;
-        while (-1 != (n = input.read(buffer))) {
-            output.write(buffer, 0, n);
-            count += n;
+        String destDirPath = destinationDir.getCanonicalPath();
+        String destFilePath = destFile.getCanonicalPath();
+
+        if (!destFilePath.startsWith(destDirPath + File.separator)) {
+            throw new IOException("Entry is outside of the target dir: " + entry.getName());
         }
-        return count;
+
+        return destFile;
     }
 
     /**
-     * Computes the path name of a file node relative to a given root node. <br>
-     * If the root is {@code /home/user1/custom-ahy} and the given node is
-     * {@code /home/user1/custom-ahy/assembly/pom.xml}, the returned path name will be {@code assembly/pom.xml}.
+     * Copies all bytes from an input stream to a file. On return, the input stream will be at end of stream.
      *
-     * @param root the parent node
-     * @param node the file node to compute the relative path for
-     * @return the path of {@code node} relative to {@code root}
-     * @throws IOException when an I/O error occurs during resolving the canonical path of the files
+     * <p>By default, the copy fails if the target file already exists or is a symbolic link.
+     *
+     * <p>If an I/O error occurs reading from the input stream or writing to the file, then it may do so after the
+     * target file has been created and after some bytes have been read or written. Consequently, the input stream may
+     * not be at end of stream and may be in an inconsistent state. It is strongly recommended that the input stream be
+     * promptly closed if an I/O error occurs.
+     *
+     * <p>This method may block indefinitely reading from the input stream (or writing to the file). The behavior for
+     * the case that the input stream is <i>asynchronously closed</i> or the thread interrupted during the copy is
+     * highly input stream and file system provider specific and therefore not specified.
+     *
+     * @param in the input stream to read from
+     * @param destination the directory to copy the file to
+     * @param entry the path to the file
+     * @return the number of bytes read or written
+     * @param <A> ArchiveEntry to be used
+     * @throws IOException if an I/O error occurs when reading or writing
+     * @throws FileAlreadyExistsException if the target file exists but cannot be replaced because the
+     *     {@code REPLACE_EXISTING} option is not specified <i>(optional specific exception)</i>
+     * @throws DirectoryNotEmptyException the {@code REPLACE_EXISTING} option is specified but the file cannot be
+     *     replaced because it is a non-empty directory <i>(optional specific exception)</i> *
+     * @throws UnsupportedOperationException if {@code options} contains a copy option that is not supported
      */
-    public static String relativePath(File root, File node) throws IOException {
-        String rootPath = root.getCanonicalPath();
-        String nodePath = node.getCanonicalPath();
+    public static <A extends ArchiveEntry> File copy(InputStream in, File destination, A entry) throws IOException {
+        File file = newFile(destination, entry);
 
-        return nodePath.substring(rootPath.length() + 1);
+        if (entry.isDirectory()) {
+            //noinspection ResultOfMethodCallIgnored
+            file.mkdirs();
+        } else {
+            //noinspection ResultOfMethodCallIgnored
+            file.getParentFile().mkdirs();
+            Files.copy(in, file.toPath());
+        }
+
+        FileModeMapper.map(entry, file);
+
+        return file;
+    }
+
+    /**
+     * Given a source File, return its direct descendants if the File is a directory. Otherwise return the File itself.
+     *
+     * @param source File or folder to be examined
+     * @return a File[] array containing the files inside this folder, or a size-1 array containing the file itself.
+     */
+    public static File[] filesContainedIn(File source) {
+        if (source.isDirectory()) {
+            return source.listFiles();
+        } else {
+            return new File[] {source};
+        }
     }
 
     /**
@@ -109,35 +139,6 @@ public final class IOUtils {
         }
         if (!destination.canWrite()) {
             throw new IllegalArgumentException("Can not write to destination " + destination);
-        }
-    }
-
-    /**
-     * Null-safe method that calls {@link java.io.Closeable#close()} and chokes the IOException.
-     *
-     * @param closeable the object to close
-     */
-    public static void closeQuietly(Closeable closeable) {
-        if (closeable != null) {
-            try {
-                closeable.close();
-            } catch (IOException ignored) {
-                // ignore
-            }
-        }
-    }
-
-    /**
-     * Given a source File, return its direct descendants if the File is a directory. Otherwise return the File itself.
-     *
-     * @param source File or folder to be examined
-     * @return a File[] array containing the files inside this folder, or a size-1 array containing the file itself.
-     */
-    public static File[] filesContainedIn(File source) {
-        if (source.isDirectory()) {
-            return source.listFiles();
-        } else {
-            return new File[] {source};
         }
     }
 }

@@ -182,9 +182,7 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
 
     @Test
     void entry_isDirectory_behavesCorrectly() throws Exception {
-        ArchiveStream stream = null;
-        try {
-            stream = archiver.stream(archive);
+        try (ArchiveStream stream = archiver.stream(archive)) {
             ArchiveEntry entry;
 
             while ((entry = stream.getNextEntry()) != null) {
@@ -203,16 +201,12 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
                             .isFalse();
                 }
             }
-        } finally {
-            IOUtils.closeQuietly(stream);
         }
     }
 
     @Test
     void entry_geSize_behavesCorrectly() throws Exception {
-        ArchiveStream stream = null;
-        try {
-            stream = archiver.stream(archive);
+        try (ArchiveStream stream = archiver.stream(archive)) {
             ArchiveEntry entry;
 
             while ((entry = stream.getNextEntry()) != null) {
@@ -227,16 +221,12 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
                     assertThat(entry.getSize()).isNotZero();
                 }
             }
-        } finally {
-            IOUtils.closeQuietly(stream);
         }
     }
 
     @Test
     void entry_getLastModifiedDate_behavesCorrectly() throws Exception {
-        ArchiveStream stream = null;
-        try {
-            stream = archiver.stream(archive);
+        try (ArchiveStream stream = archiver.stream(archive)) {
             ArchiveEntry entry;
 
             while ((entry = stream.getNextEntry()) != null) {
@@ -245,22 +235,16 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
                         .withFailMessage("modification date should be before now")
                         .isBefore(new Date());
             }
-        } finally {
-            IOUtils.closeQuietly(stream);
         }
     }
 
     @Test
     void stream_extractEveryEntryWorks() throws Exception {
-        ArchiveStream stream = null;
-        try {
-            stream = archiver.stream(archive);
+        try (ArchiveStream stream = archiver.stream(archive)) {
             ArchiveEntry entry;
             while ((entry = stream.getNextEntry()) != null) {
                 entry.extract(ARCHIVE_EXTRACT_DIR);
             }
-        } finally {
-            IOUtils.closeQuietly(stream);
         }
 
         assertExtractionWasSuccessful();

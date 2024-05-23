@@ -41,6 +41,10 @@ class CommonsArchiver<E extends ArchiveEntry> implements Archiver {
         this.archiveFormat = archiveFormat;
     }
 
+    private static String getRelativePath(File parent, File source) {
+        return parent.toPath().toUri().relativize(source.toPath().toUri()).getPath();
+    }
+
     public ArchiveFormat getArchiveFormat() {
         return archiveFormat;
     }
@@ -82,20 +86,9 @@ class CommonsArchiver<E extends ArchiveEntry> implements Archiver {
     }
 
     private <T extends ArchiveEntry> void extract(ArchiveInputStream<T> input, File destination) throws IOException {
-        ArchiveEntry entry;
+        T entry;
         while ((entry = input.getNextEntry()) != null) {
-            File file = new File(destination, entry.getName());
-
-            if (entry.isDirectory()) {
-                //noinspection ResultOfMethodCallIgnored
-                file.mkdirs();
-            } else {
-                //noinspection ResultOfMethodCallIgnored
-                file.getParentFile().mkdirs();
-                IOUtils.copy(input, file);
-            }
-
-            FileModeMapper.map(entry, file);
+            IOUtils.copy(input, destination, entry);
         }
     }
 
@@ -228,14 +221,14 @@ class CommonsArchiver<E extends ArchiveEntry> implements Archiver {
      * Recursively writes all given source {@link File}s into the given {@link ArchiveOutputStream}. The paths of the
      * sources in the archive will be relative to the given parent {@code File}.
      *
-     * @param parent the parent file node for computing a relative path (see {@link IOUtils#relativePath(File, File)})
+     * @param parent the parent file node for computing a relative path
      * @param sources the files to write in to the archive
      * @param archive the archive to write into
      * @throws IOException when an I/O error occurs
      */
     protected void writeToArchive(File parent, File[] sources, ArchiveOutputStream<E> archive) throws IOException {
         for (File source : sources) {
-            String relativePath = IOUtils.relativePath(parent, source);
+            String relativePath = getRelativePath(parent, source);
 
             createArchiveEntry(source, relativePath, archive);
 
@@ -261,7 +254,7 @@ class CommonsArchiver<E extends ArchiveEntry> implements Archiver {
 
         if (!entry.isDirectory()) {
             try (FileInputStream input = new FileInputStream(file)) {
-                IOUtils.copy(input, archive);
+                input.transferTo(archive);
             }
         }
 

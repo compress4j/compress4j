@@ -60,22 +60,7 @@ class CommonsArchiveEntry implements ArchiveEntry {
     @Override
     public File extract(File destination) throws IOException, IllegalStateException, IllegalArgumentException {
         assertState();
-        IOUtils.requireDirectory(destination);
-
-        File file = new File(destination, entry.getName());
-
-        if (entry.isDirectory()) {
-            //noinspection ResultOfMethodCallIgnored
-            file.mkdirs();
-        } else {
-            //noinspection ResultOfMethodCallIgnored
-            file.getParentFile().mkdirs();
-            IOUtils.copy(stream, file);
-        }
-
-        FileModeMapper.map(entry, file);
-
-        return file;
+        return IOUtils.copy(stream, destination, entry);
     }
 
     private void assertState() {
