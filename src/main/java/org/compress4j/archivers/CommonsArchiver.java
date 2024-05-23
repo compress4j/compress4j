@@ -20,7 +20,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.util.Objects;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
@@ -87,26 +86,9 @@ class CommonsArchiver<E extends ArchiveEntry> implements Archiver {
     }
 
     private <T extends ArchiveEntry> void extract(ArchiveInputStream<T> input, File destination) throws IOException {
-        ArchiveEntry entry;
+        T entry;
         while ((entry = input.getNextEntry()) != null) {
-            File file = new File(destination, entry.getName());
-
-            String canonicalDestinationPath = file.getCanonicalPath();
-
-            if (canonicalDestinationPath.startsWith(destination.getCanonicalPath())) {
-                if (entry.isDirectory()) {
-                    //noinspection ResultOfMethodCallIgnored
-                    file.mkdirs();
-                } else {
-                    //noinspection ResultOfMethodCallIgnored
-                    file.getParentFile().mkdirs();
-                    Files.copy(input, file.toPath());
-                }
-
-                FileModeMapper.map(entry, file);
-            } else {
-                throw new IOException("Entry is outside of the destination directory: " + entry.getName());
-            }
+            IOUtils.copy(input, destination, entry);
         }
     }
 
