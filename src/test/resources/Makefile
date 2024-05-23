@@ -14,15 +14,39 @@ permissions:
 	chmod 600 permissions/private_folder/private_file.txt;
 
 ## archives
-## TODO: separate
-archives:
+
+archives: c_tgz c_bz2 c_txz c_tar c_zip c_jar c_cpio c_7z
+
+c_tgz:
+	cd $(AR);                \
+	tar czf ../$(AR).tar.gz *;
+
+c_bz2:
+	cd $(AR);                 \
+	tar cjf ../$(AR).tar.bz2 *;
+
+c_txz:
+	cd $(AR);               \
+	tar cJf ../$(AR).tar.xz *;
+
+c_tar:
+	cd $(AR);           \
+	tar cf ../$(AR).tar *;
+
+c_zip:
+	cd $(AR);           \
+	zip -q -r ../$(AR) .;
+
+c_jar:
+	cd $(AR);             \
+	jar cMf ../$(AR).jar .;
+
+c_cpio:
 	cd $(AR);                                                         \
-	tar czf ../$(AR).tar.gz *;                                        \
-	tar cjf ../$(AR).tar.bz2 *;                                       \
-	tar cf ../$(AR).tar *;                                            \
-	zip -q -r ../$(AR) .;                                             \
-	jar cMf ../$(AR).jar .;                                           \
-	find . -depth ! -path . -print | cpio --quiet -o > ../$(AR).cpio; \
+	find . -depth ! -path . -print | cpio --quiet -o > ../$(AR).cpio;
+
+c_7z:
+	cd $(AR);                          \
 	7z a -t7z ../$(AR).7z . > /dev/null;
 
 ## compress

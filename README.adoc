@@ -1,77 +1,83 @@
-jarchivelib
-===========
+= Compress4J
 
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.rauschig/jarchivelib/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.rauschig/jarchivelib/)
-[![Build Status](https://travis-ci.org/thrau/jarchivelib.svg?branch=master)](https://travis-ci.org/thrau/jarchivelib)
-[![Coverage Status](https://coveralls.io/repos/thrau/jarchivelib/badge.svg)](https://coveralls.io/r/thrau/jarchivelib)
+image:https://maven-badges.herokuapp.com/maven-central/org.rauschig/jarchivelib/badge.svg[Maven Central,link=https://maven-badges.herokuapp.com/maven-central/org.rauschig/jarchivelib/]
+image:https://github.com/austek/compress4j/actions/workflows/ci.yml/badge.svg[Build Status]
+image:https://sonarcloud.io/api/project_badges/measure?project=austek_compress4j&metric=alert_status[Quality Gate Status,link=https://sonarcloud.io/summary/new_code?id=austek_compress4j]
+image:https://sonarcloud.io/api/project_badges/measure?project=austek_compress4j&metric=coverage[Coverage Status,link=https://sonarcloud.io/summary/new_code?id=austek_compress4j]
 
 A simple archiving and compression library for Java that provides a thin and easy-to-use API layer on top of the
-powerful and feature-rich [org.apache.commons.compress].
+powerful and feature-rich http://commons.apache.org/proper/commons-compress/[org.apache.commons.compress].
 
-  [org.apache.commons.compress]: http://commons.apache.org/proper/commons-compress/
+== Usage
 
-Usage
------
-### Using the ArchiverFactory
+=== Using the ArchiverFactory
+
 Create a new Archiver to handle zip archives
 
-```java
+[source,java]
+----
 Archiver archiver = ArchiverFactory.createArchiver(ArchiveFormat.ZIP);
-```
-
+----
 
 Create a new Archiver to handle tar archives with gzip compression
 
-```java
+[source,java]
+----
 Archiver archiver = ArchiverFactory.createArchiver(ArchiveFormat.TAR, CompressionType.GZIP);
-```
-
+----
 
 Alternatively you can use string representations of the archive and compression types.
 
-```java
+[source,java]
+----
 Archiver archiver = ArchiverFactory.createArchiver("zip");
-```
+----
 
 The ArchiveFactory can also detect archive types based on file extensions and hand you the correct Archiver. This
 example returns an Archiver instance that handles tar.gz files. (It would also recognize the `.tgz` extension)
 
-```java
+[source,java]
+----
 Archiver archiver = ArchiverFactory.createArchiver(new File("archive.tar.gz"));
-```
+----
 
-### Using Archivers
-#### Extract
+=== Using Archivers
+
+==== Extract
+
 To extract the zip archive `/home/jack/archive.zip` to `/home/jack/archive`:
 
-```java
+[source,java]
+----
 File archive = new File("/home/jack/archive.zip");
 File destination = new File("/home/jack/archive");
 
 Archiver archiver = ArchiverFactory.createArchiver(ArchiveFormat.ZIP);
 archiver.extract(archive, destination);
-```
+----
 
-#### Create
+==== Create
+
 To create a new tar archive with gzip compression `archive.tar.gz` in `/home/jack/` containing the entire directory `/home/jack/archive`
 
-```java
+[source,java]
+----
 String archiveName = "archive";
 File destination = new File("/home/jack");
 File source = new File("/home/jack/archive");
 
 Archiver archiver = ArchiverFactory.createArchiver(ArchiveFormat.TAR, CompressionType.GZIP);
 File archive = archiver.create(archiveName, destination, source);
-```
+----
 
 notice that you can omit the filename extension in the archive name, as it will be appended by the archiver automatically if it is missing.
 
-
-#### Stream
+==== Stream
 
 To access the contents of an archive as a Stream, rather than extracting them directly onto the filesystem
 
-```java
+[source,java]
+----
 ArchiveStream stream = archiver.stream(archive);
 ArchiveEntry entry;
 
@@ -81,31 +87,14 @@ while((entry = stream.getNextEntry()) != null) {
     // or fetch meta-data using entry.getName(), entry.isDirectory(), ...
 }
 stream.close();
-```
+----
 
-Dependencies
-------------
+== Compatibility
 
-* commons-compress(tm) 1.21
-
-
-Compatibility
--------------
-
-* Java 7, 8, 9, 10, 14
+* Java 17, 21
 * Currently only tested for *nix file systems.
 
-### OSGi
-
-jarchivelib compiles to a bundle and is OSGi compatible
-
-### jarchivelib 0.8.x and below
-
-* Java 6 and 7
-
-
-Known limitations
------------------
+== Known limitations
 
 * Permissions are not stored when creating archives
 * There is no support for Windows permissions
