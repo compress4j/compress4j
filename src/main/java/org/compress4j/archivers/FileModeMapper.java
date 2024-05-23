@@ -30,21 +30,21 @@ import org.apache.commons.compress.archivers.ArchiveEntry;
  * Reads *nix file mode flags of commons-compress' ArchiveEntry (where possible) and maps them onto Files on the file
  * system.
  */
-abstract class FileModeMapper {
+abstract class FileModeMapper<E extends ArchiveEntry> {
 
     private static final Logger LOG = Logger.getLogger(FileModeMapper.class.getCanonicalName());
     private static final boolean IS_POSIX =
             FileSystems.getDefault().supportedFileAttributeViews().contains("posix");
 
-    private final ArchiveEntry archiveEntry;
+    private final E archiveEntry;
 
-    protected FileModeMapper(ArchiveEntry archiveEntry) {
+    protected FileModeMapper(E archiveEntry) {
         this.archiveEntry = archiveEntry;
     }
 
     public abstract void map(File file) throws IOException;
 
-    public ArchiveEntry getArchiveEntry() {
+    public E getArchiveEntry() {
         return archiveEntry;
     }
 
@@ -55,7 +55,7 @@ abstract class FileModeMapper {
      * @param entry the archive entry that holds the mode
      * @param file the file to apply the mode onto
      */
-    public static void map(ArchiveEntry entry, File file) throws IOException {
+    public static <T extends ArchiveEntry> void map(T entry, File file) throws IOException {
         create(entry).map(file);
     }
 
@@ -66,24 +66,24 @@ abstract class FileModeMapper {
      * @param entry the archive entry for which to create a FileModeMapper for
      * @return a new FileModeMapper instance
      */
-    public static FileModeMapper create(ArchiveEntry entry) {
+    public static <T extends ArchiveEntry> FileModeMapper<T> create(T entry) {
         if (IS_POSIX) {
-            return new PosixPermissionMapper(entry);
+            return new PosixPermissionMapper<>(entry);
         }
 
         // TODO: implement basic windows permission mapping (e.g. with File.setX or attrib)
-        return new FallbackFileModeMapper(entry);
+        return new FallbackFileModeMapper<>(entry);
     }
 
     /** Does nothing! */
-    public static class FallbackFileModeMapper extends FileModeMapper {
+    public static class FallbackFileModeMapper<F extends ArchiveEntry> extends FileModeMapper<F> {
 
-        public FallbackFileModeMapper(ArchiveEntry archiveEntry) {
+        public FallbackFileModeMapper(F archiveEntry) {
             super(archiveEntry);
         }
 
         @Override
-        public void map(File file) throws IOException {
+        public void map(File file) {
             // do nothing
         }
     }
@@ -93,10 +93,10 @@ abstract class FileModeMapper {
      * file.
      */
     @SuppressWarnings("OctalInteger")
-    public static class PosixPermissionMapper extends FileModeMapper {
+    public static class PosixPermissionMapper<P extends ArchiveEntry> extends FileModeMapper<P> {
         public static final int UNIX_PERMISSION_MASK = 0777;
 
-        public PosixPermissionMapper(ArchiveEntry archiveEntry) {
+        public PosixPermissionMapper(P archiveEntry) {
             super(archiveEntry);
         }
 

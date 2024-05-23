@@ -15,6 +15,7 @@
  */
 package org.compress4j.archivers;
 
+import jakarta.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,19 +29,19 @@ import org.apache.commons.compress.archivers.zip.ZipFile;
  * Archiver that overwrites the extraction of Zip archives. It provides a wrapper for ZipFile as an ArchiveInputStream
  * to retrieve file attributes properly.
  */
-class ZipFileArchiver extends CommonsArchiver {
+class ZipFileArchiver extends CommonsArchiver<ZipArchiveEntry> {
 
     ZipFileArchiver() {
         super(ArchiveFormat.ZIP);
     }
 
     @Override
-    protected ArchiveInputStream createArchiveInputStream(File archive) throws IOException {
+    protected ArchiveInputStream<ZipArchiveEntry> createArchiveInputStream(File archive) throws IOException {
         return new ZipFileArchiveInputStream(ZipFile.builder().setFile(archive).get());
     }
 
     /** Wraps a ZipFile to make it usable as an ArchiveInputStream. */
-    static class ZipFileArchiveInputStream extends ArchiveInputStream {
+    static class ZipFileArchiveInputStream extends ArchiveInputStream<ZipArchiveEntry> {
 
         private final ZipFile file;
 
@@ -65,7 +66,7 @@ class ZipFileArchiver extends CommonsArchiver {
         }
 
         @Override
-        public int read(byte[] b, int off, int len) throws IOException {
+        public int read(@Nonnull byte[] b, int off, int len) throws IOException {
             int read = getCurrentEntryStream().read(b, off, len);
 
             if (read == -1) {

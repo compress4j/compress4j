@@ -20,6 +20,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
@@ -32,7 +33,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
  * archiver name passed when creating the {@code GenericArchiver}. Thus, it can be used for all archive formats the
  * {@code org.apache.commons.compress} library supports.
  */
-class CommonsArchiver implements Archiver {
+class CommonsArchiver<E extends ArchiveEntry> implements Archiver {
 
     private final ArchiveFormat archiveFormat;
 
@@ -56,7 +57,7 @@ class CommonsArchiver implements Archiver {
 
         File archiveFile = createNewArchiveFile(archive, getFilenameExtension(), destination);
 
-        try (ArchiveOutputStream<?> outputStream = createArchiveOutputStream(archiveFile)) {
+        try (ArchiveOutputStream<E> outputStream = createArchiveOutputStream(archiveFile)) {
             writeToArchive(sources, outputStream);
             outputStream.flush();
         }
@@ -100,7 +101,7 @@ class CommonsArchiver implements Archiver {
 
     @Override
     public ArchiveStream stream(File archive) throws IOException {
-        return new CommonsArchiveStream(createArchiveInputStream(archive));
+        return new CommonsArchiveStream<>(createArchiveInputStream(archive));
     }
 
     @Override
@@ -116,7 +117,7 @@ class CommonsArchiver implements Archiver {
      * @return a new ArchiveInputStream for the given archive file
      * @throws IOException propagated IO exceptions
      */
-    protected ArchiveInputStream<ArchiveEntry> createArchiveInputStream(File archive) throws IOException {
+    protected ArchiveInputStream<E> createArchiveInputStream(File archive) throws IOException {
         try {
             return CommonsStreamFactory.createArchiveInputStream(archive);
         } catch (ArchiveException e) {
@@ -132,7 +133,7 @@ class CommonsArchiver implements Archiver {
      * @return a new ArchiveInputStream for the given archive file
      * @throws IOException propagated IO exceptions
      */
-    protected ArchiveInputStream<ArchiveEntry> createArchiveInputStream(InputStream archive) throws IOException {
+    protected ArchiveInputStream<E> createArchiveInputStream(InputStream archive) throws IOException {
         try {
             return CommonsStreamFactory.createArchiveInputStream(archive);
         } catch (ArchiveException e) {
@@ -148,9 +149,10 @@ class CommonsArchiver implements Archiver {
      * @return a new ArchiveOutputStream for the given archive file.
      * @throws IOException propagated IO exceptions
      */
-    protected ArchiveOutputStream createArchiveOutputStream(File archiveFile) throws IOException {
+    protected ArchiveOutputStream<E> createArchiveOutputStream(File archiveFile) throws IOException {
         try {
-            ArchiveOutputStream archiveOutputStream = CommonsStreamFactory.createArchiveOutputStream(this, archiveFile);
+            ArchiveOutputStream<E> archiveOutputStream =
+                    CommonsStreamFactory.createArchiveOutputStream(this, archiveFile);
 
             if (archiveOutputStream instanceof TarArchiveOutputStream tarArchiveOutputStream) {
                 (tarArchiveOutputStream).setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
@@ -210,7 +212,7 @@ class CommonsArchiver implements Archiver {
      * @param archive the archive to write into
      * @throws IOException when an I/O error occurs
      */
-    protected void writeToArchive(File[] sources, ArchiveOutputStream archive) throws IOException {
+    protected void writeToArchive(File[] sources, ArchiveOutputStream<E> archive) throws IOException {
         for (File source : sources) {
             if (!source.exists()) {
                 throw new FileNotFoundException(source.getPath());
@@ -231,14 +233,14 @@ class CommonsArchiver implements Archiver {
      * @param archive the archive to write into
      * @throws IOException when an I/O error occurs
      */
-    protected void writeToArchive(File parent, File[] sources, ArchiveOutputStream archive) throws IOException {
+    protected void writeToArchive(File parent, File[] sources, ArchiveOutputStream<E> archive) throws IOException {
         for (File source : sources) {
             String relativePath = IOUtils.relativePath(parent, source);
 
             createArchiveEntry(source, relativePath, archive);
 
             if (source.isDirectory()) {
-                writeToArchive(parent, source.listFiles(), archive);
+                writeToArchive(parent, Objects.requireNonNull(source.listFiles()), archive);
             }
         }
     }
@@ -252,8 +254,8 @@ class CommonsArchiver implements Archiver {
      * @param archive the archive to write to
      * @throws IOException when an I/O error occurs during FileInputStream creation or during copying
      */
-    protected void createArchiveEntry(File file, String entryName, ArchiveOutputStream archive) throws IOException {
-        ArchiveEntry entry = archive.createArchiveEntry(file, entryName);
+    protected void createArchiveEntry(File file, String entryName, ArchiveOutputStream<E> archive) throws IOException {
+        E entry = archive.createArchiveEntry(file, entryName);
         // TODO #23: read permission from file, write it to the ArchiveEntry
         archive.putArchiveEntry(entry);
 

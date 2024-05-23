@@ -15,15 +15,16 @@
  */
 package org.compress4j.archivers;
 
+import jakarta.annotation.Nonnull;
 import java.io.IOException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 
 /** {@link ArchiveStream} implementation that wraps a commons compress {@link ArchiveInputStream}. */
-class CommonsArchiveStream extends ArchiveStream {
+class CommonsArchiveStream<E extends org.apache.commons.compress.archivers.ArchiveEntry> extends ArchiveStream {
 
-    private final ArchiveInputStream stream;
+    private final ArchiveInputStream<E> stream;
 
-    CommonsArchiveStream(ArchiveInputStream stream) {
+    CommonsArchiveStream(ArchiveInputStream<E> stream) {
         this.stream = stream;
     }
 
@@ -40,12 +41,12 @@ class CommonsArchiveStream extends ArchiveStream {
     }
 
     @Override
-    public int read(byte[] b) throws IOException {
+    public int read(@Nonnull byte[] b) throws IOException {
         return stream.read(b);
     }
 
     @Override
-    public int read(byte[] b, int off, int len) throws IOException {
+    public int read(@Nonnull byte[] b, int off, int len) throws IOException {
         return stream.read(b, off, len);
     }
 

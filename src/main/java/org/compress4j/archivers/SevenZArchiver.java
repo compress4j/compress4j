@@ -15,10 +15,12 @@
  */
 package org.compress4j.archivers;
 
+import jakarta.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
+import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 import org.apache.commons.compress.archivers.sevenz.SevenZOutputFile;
 
@@ -28,24 +30,24 @@ import org.apache.commons.compress.archivers.sevenz.SevenZOutputFile;
  * Basically this could disperse by adapting the CommonsStreamFactory, but this seemed more convenient as we also have
  * both Input and Output stream wrappers capsuled here.
  */
-class SevenZArchiver extends CommonsArchiver {
+class SevenZArchiver extends CommonsArchiver<SevenZArchiveEntry> {
 
     public SevenZArchiver() {
         super(ArchiveFormat.SEVEN_Z);
     }
 
     @Override
-    protected ArchiveOutputStream createArchiveOutputStream(File archive) throws IOException {
+    protected ArchiveOutputStream<SevenZArchiveEntry> createArchiveOutputStream(File archive) throws IOException {
         return new SevenZOutputStream(new SevenZOutputFile(archive));
     }
 
     @Override
-    protected ArchiveInputStream createArchiveInputStream(File archive) throws IOException {
+    protected ArchiveInputStream<SevenZArchiveEntry> createArchiveInputStream(File archive) throws IOException {
         return new SevenZInputStream(SevenZFile.builder().setFile(archive).get());
     }
 
     /** Wraps a SevenZFile to make it usable as an ArchiveInputStream. */
-    static class SevenZInputStream extends ArchiveInputStream {
+    static class SevenZInputStream extends ArchiveInputStream<SevenZArchiveEntry> {
 
         private final SevenZFile file;
 
@@ -54,12 +56,12 @@ class SevenZArchiver extends CommonsArchiver {
         }
 
         @Override
-        public int read(byte[] b, int off, int len) throws IOException {
+        public int read(@Nonnull byte[] b, int off, int len) throws IOException {
             return file.read(b, off, len);
         }
 
         @Override
-        public org.apache.commons.compress.archivers.ArchiveEntry getNextEntry() throws IOException {
+        public SevenZArchiveEntry getNextEntry() throws IOException {
             return file.getNextEntry();
         }
 
@@ -70,7 +72,7 @@ class SevenZArchiver extends CommonsArchiver {
     }
 
     /** Wraps a SevenZOutputFile to make it usable as an ArchiveOutputStream. */
-    static class SevenZOutputStream extends ArchiveOutputStream {
+    static class SevenZOutputStream extends ArchiveOutputStream<SevenZArchiveEntry> {
 
         private final SevenZOutputFile file;
 
@@ -79,7 +81,7 @@ class SevenZArchiver extends CommonsArchiver {
         }
 
         @Override
-        public void putArchiveEntry(org.apache.commons.compress.archivers.ArchiveEntry entry) throws IOException {
+        public void putArchiveEntry(SevenZArchiveEntry entry) {
             file.putArchiveEntry(entry);
         }
 
@@ -94,8 +96,7 @@ class SevenZArchiver extends CommonsArchiver {
         }
 
         @Override
-        public org.apache.commons.compress.archivers.ArchiveEntry createArchiveEntry(File inputFile, String entryName)
-                throws IOException {
+        public SevenZArchiveEntry createArchiveEntry(File inputFile, String entryName) {
             return file.createArchiveEntry(inputFile, entryName);
         }
 
@@ -105,10 +106,11 @@ class SevenZArchiver extends CommonsArchiver {
         }
 
         @Override
-        public void write(byte[] b) throws IOException {
+        public void write(@SuppressWarnings("NullableProblems") byte[] b) throws IOException {
             file.write(b);
         }
 
+        @SuppressWarnings("NullableProblems")
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
             file.write(b, off, len);
@@ -119,6 +121,7 @@ class SevenZArchiver extends CommonsArchiver {
             file.close();
         }
 
+        @SuppressWarnings("unused")
         public SevenZOutputFile getSevenZOutputFile() {
             return file;
         }

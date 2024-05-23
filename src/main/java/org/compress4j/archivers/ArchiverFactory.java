@@ -16,6 +16,7 @@
 package org.compress4j.archivers;
 
 import java.io.File;
+import org.apache.commons.compress.archivers.ArchiveEntry;
 
 /**
  * Factory for creating {@link Archiver} instances by a given archiver type name. Use the constants in this class to
@@ -90,12 +91,14 @@ public final class ArchiverFactory {
      * @param archiveFormat the archive format
      * @param compression the compression algorithm
      * @return a new Archiver instance that also handles compression
+     * @param <E> ArchiveEntry to be used
      */
-    public static Archiver createArchiver(ArchiveFormat archiveFormat, CompressionType compression) {
-        CommonsArchiver archiver = new CommonsArchiver(archiveFormat);
+    public static <E extends ArchiveEntry> Archiver createArchiver(
+            ArchiveFormat archiveFormat, CompressionType compression) {
+        CommonsArchiver<E> archiver = new CommonsArchiver<>(archiveFormat);
         CommonsCompressor compressor = new CommonsCompressor(compression);
 
-        return new ArchiverCompressorDecorator(archiver, compressor);
+        return new ArchiverCompressorDecorator<>(archiver, compressor);
     }
 
     /**
@@ -118,13 +121,14 @@ public final class ArchiverFactory {
      *
      * @param archiveFormat the archive format
      * @return a new Archiver instance
+     * @param <E> ArchiveEntry to be used
      */
-    public static Archiver createArchiver(ArchiveFormat archiveFormat) {
+    public static <E extends ArchiveEntry> Archiver createArchiver(ArchiveFormat archiveFormat) {
         if (archiveFormat == ArchiveFormat.SEVEN_Z) {
             return new SevenZArchiver();
         } else if (archiveFormat == ArchiveFormat.ZIP) {
             return new ZipFileArchiver();
         }
-        return new CommonsArchiver(archiveFormat);
+        return new CommonsArchiver<E>(archiveFormat);
     }
 }

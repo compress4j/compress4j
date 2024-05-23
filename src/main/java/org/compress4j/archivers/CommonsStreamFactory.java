@@ -49,25 +49,26 @@ final class CommonsStreamFactory {
     }
 
     /** @see ArchiveStreamFactory#createArchiveInputStream(String, InputStream) */
-    static ArchiveInputStream<ArchiveEntry> createArchiveInputStream(String archiverName, InputStream in)
+    static <E extends ArchiveEntry> ArchiveInputStream<E> createArchiveInputStream(String archiverName, InputStream in)
             throws ArchiveException {
         return archiveStreamFactory.createArchiveInputStream(archiverName, in);
     }
 
     /** @see ArchiveStreamFactory#createArchiveInputStream(String, InputStream) */
-    static ArchiveInputStream<ArchiveEntry> createArchiveInputStream(ArchiveFormat archiveFormat, InputStream in)
-            throws ArchiveException {
+    static <E extends ArchiveEntry> ArchiveInputStream<E> createArchiveInputStream(
+            ArchiveFormat archiveFormat, InputStream in) throws ArchiveException {
         return createArchiveInputStream(archiveFormat.getName(), in);
     }
 
     /** @see ArchiveStreamFactory#createArchiveInputStream(String, InputStream) */
-    static ArchiveInputStream<ArchiveEntry> createArchiveInputStream(CommonsArchiver archiver, InputStream in)
-            throws ArchiveException {
+    static <E extends ArchiveEntry> ArchiveInputStream<E> createArchiveInputStream(
+            CommonsArchiver<E> archiver, InputStream in) throws ArchiveException {
         return createArchiveInputStream(archiver.getArchiveFormat(), in);
     }
 
     /** @see ArchiveStreamFactory#createArchiveInputStream(InputStream) */
-    static ArchiveInputStream<ArchiveEntry> createArchiveInputStream(InputStream in) throws ArchiveException {
+    static <E extends ArchiveEntry> ArchiveInputStream<E> createArchiveInputStream(InputStream in)
+            throws ArchiveException {
         return archiveStreamFactory.createArchiveInputStream(new BufferedInputStream(in));
     }
 
@@ -79,18 +80,18 @@ final class CommonsStreamFactory {
      * @throws IOException propagated IOException when creating the FileInputStream.
      * @throws ArchiveException if the archiver name is not known
      */
-    static ArchiveInputStream<ArchiveEntry> createArchiveInputStream(File archive)
+    static <E extends ArchiveEntry> ArchiveInputStream<E> createArchiveInputStream(File archive)
             throws IOException, ArchiveException {
         return createArchiveInputStream(new BufferedInputStream(new FileInputStream(archive)));
     }
 
     /** @see ArchiveStreamFactory#createArchiveOutputStream(String, OutputStream) */
-    static ArchiveOutputStream<ArchiveEntry> createArchiveOutputStream(String archiverName, OutputStream out)
-            throws ArchiveException {
+    static <E extends ArchiveEntry> ArchiveOutputStream<E> createArchiveOutputStream(
+            String archiverName, OutputStream out) throws ArchiveException {
         return archiveStreamFactory.createArchiveOutputStream(archiverName, out);
     }
 
-    static ArchiveOutputStream<ArchiveEntry> createArchiveOutputStream(ArchiveFormat format, File archive)
+    static <E extends ArchiveEntry> ArchiveOutputStream<E> createArchiveOutputStream(ArchiveFormat format, File archive)
             throws IOException, ArchiveException {
         return createArchiveOutputStream(format.getName(), new FileOutputStream(archive));
     }
@@ -105,8 +106,8 @@ final class CommonsStreamFactory {
      * @throws IOException propagated IOExceptions when creating the FileOutputStream.
      * @throws ArchiveException if the archiver name is not known
      */
-    static ArchiveOutputStream<ArchiveEntry> createArchiveOutputStream(CommonsArchiver archiver, File archive)
-            throws IOException, ArchiveException {
+    static <E extends ArchiveEntry> ArchiveOutputStream<E> createArchiveOutputStream(
+            CommonsArchiver<E> archiver, File archive) throws IOException, ArchiveException {
         return createArchiveOutputStream(archiver.getArchiveFormat(), archive);
     }
 
