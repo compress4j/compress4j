@@ -182,7 +182,7 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
 
     @Test
     void entry_isDirectory_behavesCorrectly() throws Exception {
-        try(ArchiveStream stream = archiver.stream(archive)) {
+        try (ArchiveStream stream = archiver.stream(archive)) {
             ArchiveEntry entry;
 
             while ((entry = stream.getNextEntry()) != null) {
@@ -206,7 +206,7 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
 
     @Test
     void entry_geSize_behavesCorrectly() throws Exception {
-        try(ArchiveStream stream = archiver.stream(archive)) {
+        try (ArchiveStream stream = archiver.stream(archive)) {
             ArchiveEntry entry;
 
             while ((entry = stream.getNextEntry()) != null) {
@@ -226,7 +226,7 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
 
     @Test
     void entry_getLastModifiedDate_behavesCorrectly() throws Exception {
-        try(ArchiveStream stream = archiver.stream(archive)) {
+        try (ArchiveStream stream = archiver.stream(archive)) {
             ArchiveEntry entry;
 
             while ((entry = stream.getNextEntry()) != null) {
@@ -240,7 +240,7 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
 
     @Test
     void stream_extractEveryEntryWorks() throws Exception {
-        try(ArchiveStream stream = archiver.stream(archive)) {
+        try (ArchiveStream stream = archiver.stream(archive)) {
             ArchiveEntry entry;
             while ((entry = stream.getNextEntry()) != null) {
                 entry.extract(ARCHIVE_EXTRACT_DIR);
