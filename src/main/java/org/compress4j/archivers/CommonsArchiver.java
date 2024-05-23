@@ -15,8 +15,6 @@
  */
 package org.compress4j.archivers;
 
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -42,6 +40,10 @@ class CommonsArchiver<E extends ArchiveEntry> implements Archiver {
 
     CommonsArchiver(ArchiveFormat archiveFormat) {
         this.archiveFormat = archiveFormat;
+    }
+
+    private static String getRelativePath(File parent, File source) {
+        return parent.toPath().toUri().relativize(source.toPath().toUri()).getPath();
     }
 
     public ArchiveFormat getArchiveFormat() {
@@ -89,16 +91,22 @@ class CommonsArchiver<E extends ArchiveEntry> implements Archiver {
         while ((entry = input.getNextEntry()) != null) {
             File file = new File(destination, entry.getName());
 
-            if (entry.isDirectory()) {
-                //noinspection ResultOfMethodCallIgnored
-                file.mkdirs();
-            } else {
-                //noinspection ResultOfMethodCallIgnored
-                file.getParentFile().mkdirs();
-                Files.copy(input, file.toPath(), REPLACE_EXISTING);
-            }
+            String canonicalDestinationPath = file.getCanonicalPath();
 
-            FileModeMapper.map(entry, file);
+            if (canonicalDestinationPath.startsWith(destination.getCanonicalPath())) {
+                if (entry.isDirectory()) {
+                    //noinspection ResultOfMethodCallIgnored
+                    file.mkdirs();
+                } else {
+                    //noinspection ResultOfMethodCallIgnored
+                    file.getParentFile().mkdirs();
+                    Files.copy(input, file.toPath());
+                }
+
+                FileModeMapper.map(entry, file);
+            } else {
+                throw new IOException("Entry is outside of the destination directory: " + entry.getName());
+            }
         }
     }
 
@@ -231,7 +239,7 @@ class CommonsArchiver<E extends ArchiveEntry> implements Archiver {
      * Recursively writes all given source {@link File}s into the given {@link ArchiveOutputStream}. The paths of the
      * sources in the archive will be relative to the given parent {@code File}.
      *
-     * @param parent the parent file node for computing a relative path (see {@link IOUtils#relativePath(File, File)})
+     * @param parent the parent file node for computing a relative path
      * @param sources the files to write in to the archive
      * @param archive the archive to write into
      * @throws IOException when an I/O error occurs
@@ -246,10 +254,6 @@ class CommonsArchiver<E extends ArchiveEntry> implements Archiver {
                 writeToArchive(parent, Objects.requireNonNull(source.listFiles()), archive);
             }
         }
-    }
-
-    private static String getRelativePath(File parent, File source) {
-        return parent.toPath().toUri().relativize(source.toPath().toUri()).getPath();
     }
 
     /**
