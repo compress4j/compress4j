@@ -59,21 +59,21 @@ abstract class AttributeAccessor<E extends ArchiveEntry> {
      * @param entry the adaptee
      * @return a new attribute accessor instance
      */
-    @SuppressWarnings("java:S1452")
-    public static AttributeAccessor<?> create(ArchiveEntry entry) {
+    @SuppressWarnings("unchecked")
+    public static <A extends ArchiveEntry, T extends AttributeAccessor<A>> T create(A entry) {
         if (entry instanceof TarArchiveEntry tarArchiveEntry) {
-            return new TarAttributeAccessor(tarArchiveEntry);
+            return (T) new TarAttributeAccessor(tarArchiveEntry);
         } else if (entry instanceof ZipArchiveEntry zipArchiveEntry) {
-            return new ZipAttributeAccessor(zipArchiveEntry);
+            return (T) new ZipAttributeAccessor(zipArchiveEntry);
         } else if (entry instanceof CpioArchiveEntry cpioArchiveEntry) {
-            return new CpioAttributeAccessor(cpioArchiveEntry);
+            return (T) new CpioAttributeAccessor(cpioArchiveEntry);
         } else if (entry instanceof ArjArchiveEntry arjArchiveEntry) {
-            return new ArjAttributeAccessor(arjArchiveEntry);
+            return (T) new ArjAttributeAccessor(arjArchiveEntry);
         } else if (entry instanceof ArArchiveEntry arArchiveEntry) {
-            return new ArAttributeAccessor(arArchiveEntry);
+            return (T) new ArAttributeAccessor(arArchiveEntry);
         }
 
-        return new FallbackAttributeAccessor(entry);
+        return (T) new FallbackAttributeAccessor(entry);
     }
 
     public static class FallbackAttributeAccessor extends AttributeAccessor<ArchiveEntry> {

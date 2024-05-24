@@ -131,6 +131,7 @@ public final class IOUtils {
      * @param destination the destination directory to place the resource in
      * @param entryName the name of the resource to create in the destination
      * @return the created resource after it is placed in the destination directory
+     * @throws IOException if an I/O error occurs when creating the resource
      */
     public static File createResourceInDestination(File destination, String entryName) throws IOException {
         return createResourceInDestination(destination, entryName, destination.getCanonicalPath());
@@ -143,6 +144,7 @@ public final class IOUtils {
      * @param entryName the name of the resource to create in the destination
      * @param destinationCanonicalPath the canonical path of the destination
      * @return the created resource after it is placed in the destination directory
+     * @throws IOException if an I/O error occurs when creating the resource
      */
     public static File createResourceInDestination(File destination, String entryName, String destinationCanonicalPath)
             throws IOException {
