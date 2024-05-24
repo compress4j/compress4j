@@ -20,14 +20,14 @@ import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.attribute.PosixFilePermission;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 
 /**
- * Reads *nix file mode flags of commons-compress' ArchiveEntry (where possible) and maps them onto Files on the file
+ * Reads *nix file mode flags of commons-compress ArchiveEntry (where possible) and maps them onto Files on the file
  * system.
  */
 abstract class FileModeMapper<E extends ArchiveEntry> {
@@ -138,13 +138,10 @@ abstract class FileModeMapper<E extends ArchiveEntry> {
                 0001, PosixFilePermission.OTHERS_EXECUTE);
 
         public Set<PosixFilePermission> map(int mode) {
-            Set<PosixFilePermission> permissionSet = new HashSet<>();
-            for (Map.Entry<Integer, PosixFilePermission> entry : intToPosixFilePermission.entrySet()) {
-                if ((mode & entry.getKey()) > 0) {
-                    permissionSet.add(entry.getValue());
-                }
-            }
-            return permissionSet;
+            return intToPosixFilePermission.entrySet().stream()
+                    .filter(entry -> (mode & entry.getKey()) > 0)
+                    .map(Map.Entry::getValue)
+                    .collect(Collectors.toSet());
         }
     }
 }
