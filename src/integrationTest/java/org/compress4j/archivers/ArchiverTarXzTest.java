@@ -16,30 +16,24 @@
 package org.compress4j.archivers;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.File;
-import java.io.IOException;
-import org.apache.commons.compress.archivers.StreamingNotSupportedException;
 import org.junit.jupiter.api.Test;
 
-public class Archiver7zTest extends AbstractArchiverTest {
+class ArchiverTarXzTest extends AbstractArchiverTest {
 
     @Override
     protected Archiver getArchiver() {
-        return ArchiverFactory.createArchiver(ArchiveFormat.SEVEN_Z);
+        return ArchiverFactory.createArchiver(ArchiveFormat.TAR, CompressionType.XZ);
     }
 
     @Override
     protected File getArchive() {
-        return new File(RESOURCES_DIR, "archive.7z");
+        return new File(AbstractResourceTest.RESOURCES_DIR, "archive.tar.xz");
     }
 
     @Test
-    public void extract_properlyExtractsArchiveStream() {
-        // 7z does not allow streaming
-        IOException exception = assertThrows(IOException.class, super::extract_properlyExtractsArchiveStream);
-        assertThat(exception).hasCauseInstanceOf(StreamingNotSupportedException.class);
-        assertThat(exception.getCause()).hasMessage("The 7z doesn't support streaming.");
+    void getFilenameExtension_tar_xz_returnsCorrectFilenameExtension() {
+        assertThat(getArchiver().getFilenameExtension()).isEqualTo(".tar.xz");
     }
 }

@@ -21,46 +21,22 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-@SuppressWarnings("ResultOfMethodCallIgnored")
+@SuppressWarnings("java:S5778")
 public abstract class AbstractCompressorTest extends AbstractResourceTest {
 
-    private final File original = new File(RESOURCES_DIR, "compress.txt");
+    public static final File COMPRESS_TXT = new File(RESOURCES_DIR, "compress.txt");
 
-    private final File decompressDestinationDir = ARCHIVE_EXTRACT_DIR;
-    private final File compressDestinationDir = ARCHIVE_CREATE_DIR;
     private File decompressDestinationFile;
     private File compressDestinationFile;
 
-    private Compressor compressor;
-    private File compressedFile;
-
     @BeforeEach
     public void setUp() {
-        compressor = getCompressor();
-        compressedFile = getCompressedFile();
-
-        decompressDestinationFile = new File(decompressDestinationDir, "compress.txt");
-        compressDestinationFile = new File(compressDestinationDir, "compress.txt" + compressor.getFilenameExtension());
-    }
-
-    @AfterEach
-    public void tearDown() {
-        compressor = null;
-        compressedFile = null;
-
-        if (decompressDestinationFile.exists()) {
-            decompressDestinationFile.delete();
-        }
-        if (compressDestinationFile.exists()) {
-            compressDestinationFile.delete();
-        }
-
-        decompressDestinationFile = null;
-        compressDestinationFile = null;
+        decompressDestinationFile = new File(archiveExtractTmpDir, "compress.txt");
+        compressDestinationFile =
+                new File(archiveCreateTmpDir, "compress.txt" + getCompressor().getFilenameExtension());
     }
 
     protected abstract File getCompressedFile();
@@ -69,14 +45,14 @@ public abstract class AbstractCompressorTest extends AbstractResourceTest {
 
     @Test
     public void compress_withFileDestination_compressesFileCorrectly() throws Exception {
-        compressor.compress(original, compressDestinationFile);
+        getCompressor().compress(COMPRESS_TXT, compressDestinationFile);
 
         assertCompressionWasSuccessful();
     }
 
     @Test
     public void compress_withDirectoryDestination_compressesFileCorrectly() throws Exception {
-        compressor.compress(original, compressDestinationDir);
+        getCompressor().compress(COMPRESS_TXT, archiveCreateTmpDir);
 
         assertCompressionWasSuccessful();
     }
@@ -84,9 +60,8 @@ public abstract class AbstractCompressorTest extends AbstractResourceTest {
     @Test
     public void compress_nonReadableFile_throwsException() {
         try {
-            assertThrows(
-                    IllegalArgumentException.class,
-                    () -> compressor.compress(NON_READABLE_FILE, compressDestinationFile));
+            assertThrows(IllegalArgumentException.class, () -> getCompressor()
+                    .compress(nonReadableFile, compressDestinationFile));
         } finally {
             assertFalse(compressDestinationFile.exists());
         }
@@ -95,8 +70,8 @@ public abstract class AbstractCompressorTest extends AbstractResourceTest {
     @Test
     public void compress_nonExistingFile_throwsException() {
         try {
-            assertThrows(
-                    FileNotFoundException.class, () -> compressor.compress(NON_EXISTING_FILE, compressDestinationFile));
+            assertThrows(FileNotFoundException.class, () -> getCompressor()
+                    .compress(NON_EXISTING_FILE, compressDestinationFile));
         } finally {
             assertFalse(compressDestinationFile.exists());
         }
@@ -104,62 +79,63 @@ public abstract class AbstractCompressorTest extends AbstractResourceTest {
 
     @Test
     public void compress_withNonExistingDestination_throwsException() {
-        assertThrows(FileNotFoundException.class, () -> compressor.compress(original, NON_EXISTING_FILE));
+        assertThrows(FileNotFoundException.class, () -> getCompressor().compress(COMPRESS_TXT, NON_EXISTING_FILE));
     }
 
     @Test
     public void compress_withNonWritableDestinationFile_throwsException() {
-        assertThrows(IllegalArgumentException.class, () -> compressor.compress(original, NON_WRITABLE_FILE));
+        assertThrows(IllegalArgumentException.class, () -> getCompressor().compress(COMPRESS_TXT, nonWritableFile));
     }
 
     @Test
     public void compress_withNonWritableDestinationDirectory_throwsException() {
-        assertThrows(IllegalArgumentException.class, () -> compressor.compress(original, NON_WRITABLE_DIR));
+        assertThrows(IllegalArgumentException.class, () -> getCompressor().compress(COMPRESS_TXT, nonWritableDir));
     }
 
     @Test
     public void decompress_withFileDestination_decompressesFileCorrectly() throws Exception {
-        compressor.decompress(compressedFile, decompressDestinationFile);
+        getCompressor().decompress(getCompressedFile(), decompressDestinationFile);
 
         assertDecompressionWasSuccessful();
     }
 
     @Test
     public void decompress_withDirectoryDestination_decompressesFileCorrectly() throws Exception {
-        compressor.decompress(compressedFile, decompressDestinationDir);
+        getCompressor().decompress(getCompressedFile(), archiveExtractTmpDir);
 
         assertDecompressionWasSuccessful();
     }
 
     @Test
     public void decompress_withNonExistingDestination_throwsException() {
-        assertThrows(FileNotFoundException.class, () -> compressor.decompress(compressedFile, NON_EXISTING_FILE));
+        assertThrows(
+                FileNotFoundException.class, () -> getCompressor().decompress(getCompressedFile(), NON_EXISTING_FILE));
     }
 
     @Test
     public void decompress_withNonWritableDestinationFile_throwsException() {
-        assertThrows(IllegalArgumentException.class, () -> compressor.decompress(compressedFile, NON_WRITABLE_FILE));
+        assertThrows(
+                IllegalArgumentException.class, () -> getCompressor().decompress(getCompressedFile(), nonWritableFile));
     }
 
     @Test
     public void decompress_withNonWritableDestinationDirectory_throwsException() {
-        assertThrows(IllegalArgumentException.class, () -> compressor.decompress(compressedFile, NON_WRITABLE_DIR));
+        assertThrows(
+                IllegalArgumentException.class, () -> getCompressor().decompress(getCompressedFile(), nonWritableDir));
     }
 
     @Test
     public void decompress_nonExistingFile_throwsException() {
-        assertThrows(
-                FileNotFoundException.class, () -> compressor.decompress(NON_EXISTING_FILE, decompressDestinationFile));
+        assertThrows(FileNotFoundException.class, () -> getCompressor()
+                .decompress(NON_EXISTING_FILE, decompressDestinationFile));
     }
 
     private void assertCompressionWasSuccessful() throws Exception {
-        assertThat(compressDestinationFile).exists();
-        compressor.decompress(compressDestinationFile, decompressDestinationFile);
+        getCompressor().decompress(compressDestinationFile, decompressDestinationFile);
         assertDecompressionWasSuccessful();
     }
 
-    private void assertDecompressionWasSuccessful() throws Exception {
-        assertThat(decompressDestinationFile).exists();
-        assertFileContentEquals(original, decompressDestinationFile);
+    private void assertDecompressionWasSuccessful() {
+        assertThat(decompressDestinationFile).exists().hasSameTextualContentAs(COMPRESS_TXT);
     }
 }

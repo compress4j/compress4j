@@ -16,6 +16,7 @@
 package org.compress4j.archivers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.compress4j.test.util.FileTestUtils.assertDirectoryContentMatches;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -27,6 +28,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import org.compress4j.test.util.FileTestUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,9 +39,8 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
 
     private File archive;
 
-    protected static void assertExtractionWasSuccessful() throws Exception {
-        assertDirectoryStructureEquals(ARCHIVE_DIR, ARCHIVE_EXTRACT_DIR);
-        assertFilesEquals(ARCHIVE_DIR, ARCHIVE_EXTRACT_DIR);
+    protected void assertExtractionWasSuccessful() {
+        assertDirectoryContentMatches(ARCHIVE_DIR.toPath(), archiveExtractTmpDir.toPath());
     }
 
     @BeforeEach
@@ -60,7 +61,7 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
 
     @Test
     void extract_properlyExtractsArchive() throws Exception {
-        archiver.extract(archive, ARCHIVE_EXTRACT_DIR);
+        archiver.extract(archive, archiveExtractTmpDir);
 
         assertExtractionWasSuccessful();
     }
@@ -68,7 +69,7 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
     @Test
     void extract_properlyExtractsArchiveStream() throws Exception {
         try (InputStream archiveAsStream = new FileInputStream(archive)) {
-            archiver.extract(archiveAsStream, ARCHIVE_EXTRACT_DIR);
+            archiver.extract(archiveAsStream, archiveExtractTmpDir);
             assertExtractionWasSuccessful();
         }
     }
@@ -77,11 +78,11 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
     void create_recursiveDirectory_withFileExtension_properlyCreatesArchive() throws Exception {
         String archiveName = archive.getName();
 
-        File createdArchive = archiver.create(archiveName, ARCHIVE_CREATE_DIR, ARCHIVE_DIR);
+        File createdArchive = archiver.create(archiveName, archiveCreateTmpDir, ARCHIVE_DIR);
 
         assertThat(createdArchive).exists().hasName(archiveName);
 
-        archiver.extract(createdArchive, ARCHIVE_EXTRACT_DIR);
+        archiver.extract(createdArchive, archiveExtractTmpDir);
         assertExtractionWasSuccessful();
     }
 
@@ -89,66 +90,66 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
     void create_multipleSourceFiles_properlyCreatesArchive() throws Exception {
         String archiveName = archive.getName();
 
-        File createdArchive = archiver.create(archiveName, ARCHIVE_CREATE_DIR, ARCHIVE_DIR.listFiles());
+        File createdArchive = archiver.create(archiveName, archiveCreateTmpDir, ARCHIVE_DIR.listFiles());
 
         assertThat(createdArchive).exists().hasName(archiveName);
 
-        archiver.extract(createdArchive, ARCHIVE_EXTRACT_DIR);
-        assertDirectoryStructureEquals(ARCHIVE_DIR, ARCHIVE_EXTRACT_DIR);
+        archiver.extract(createdArchive, archiveExtractTmpDir);
+        FileTestUtils.assertDirectoryContentMatches(ARCHIVE_DIR.toPath(), archiveExtractTmpDir.toPath());
     }
 
     @Test
     void create_recursiveDirectory_withoutFileExtension_properlyCreatesArchive() throws Exception {
         String archiveName = archive.getName();
 
-        File actualArchive = archiver.create("archive", ARCHIVE_CREATE_DIR, ARCHIVE_DIR);
+        File actualArchive = archiver.create("archive", archiveCreateTmpDir, ARCHIVE_DIR);
 
         assertThat(actualArchive).exists().hasName(archiveName);
 
-        archiver.extract(actualArchive, ARCHIVE_EXTRACT_DIR);
+        archiver.extract(actualArchive, archiveExtractTmpDir);
         assertExtractionWasSuccessful();
     }
 
     @Test
     void create_withNonExistingSource_fails() {
         assertThrows(
-                FileNotFoundException.class, () -> archiver.create("archive", ARCHIVE_CREATE_DIR, NON_EXISTING_FILE));
+                FileNotFoundException.class, () -> archiver.create("archive", archiveCreateTmpDir, NON_EXISTING_FILE));
     }
 
     @Test
     void create_withNonReadableSource_fails() {
         assertThrows(
-                FileNotFoundException.class, () -> archiver.create("archive", ARCHIVE_CREATE_DIR, NON_READABLE_FILE));
+                FileNotFoundException.class, () -> archiver.create("archive", archiveCreateTmpDir, nonReadableFile));
     }
 
     @Test
     void create_withFileAsDestination_fails() {
-        assertThrows(IllegalArgumentException.class, () -> archiver.create("archive", NON_READABLE_FILE, ARCHIVE_DIR));
+        assertThrows(IllegalArgumentException.class, () -> archiver.create("archive", nonReadableFile, ARCHIVE_DIR));
     }
 
     @Test
     void create_withNonWritableDestination_fails() {
-        assertThrows(IllegalArgumentException.class, () -> archiver.create("archive", NON_WRITABLE_DIR, ARCHIVE_DIR));
+        assertThrows(IllegalArgumentException.class, () -> archiver.create("archive", nonWritableDir, ARCHIVE_DIR));
     }
 
     @Test
     void extract_withNonExistingSource_fails() {
-        assertThrows(FileNotFoundException.class, () -> archiver.extract(NON_EXISTING_FILE, ARCHIVE_EXTRACT_DIR));
+        assertThrows(FileNotFoundException.class, () -> archiver.extract(NON_EXISTING_FILE, archiveExtractTmpDir));
     }
 
     @Test
     void extract_withNonReadableSource_fails() {
-        assertThrows(IllegalArgumentException.class, () -> archiver.extract(NON_READABLE_FILE, ARCHIVE_EXTRACT_DIR));
+        assertThrows(IllegalArgumentException.class, () -> archiver.extract(nonReadableFile, archiveExtractTmpDir));
     }
 
     @Test
     void extract_withFileAsDestination_fails() {
-        assertThrows(IllegalArgumentException.class, () -> archiver.extract(archive, NON_READABLE_FILE));
+        assertThrows(IllegalArgumentException.class, () -> archiver.extract(archive, nonReadableFile));
     }
 
     @Test
     void extract_withNonWritableDestination_fails() {
-        assertThrows(IllegalArgumentException.class, () -> archiver.extract(archive, NON_WRITABLE_DIR));
+        assertThrows(IllegalArgumentException.class, () -> archiver.extract(archive, nonWritableDir));
     }
 
     @Test
@@ -243,7 +244,7 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
         try (ArchiveStream stream = archiver.stream(archive)) {
             ArchiveEntry entry;
             while ((entry = stream.getNextEntry()) != null) {
-                entry.extract(ARCHIVE_EXTRACT_DIR);
+                entry.extract(archiveExtractTmpDir);
             }
         }
 
@@ -262,7 +263,7 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
             }
 
             ArchiveEntry finalEntry = entry;
-            assertThrows(IllegalStateException.class, () -> finalEntry.extract(ARCHIVE_EXTRACT_DIR));
+            assertThrows(IllegalStateException.class, () -> finalEntry.extract(archiveExtractTmpDir));
         }
     }
 
@@ -276,6 +277,6 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
         }
 
         ArchiveEntry finalEntry = entry;
-        assertThrows(IllegalStateException.class, () -> finalEntry.extract(ARCHIVE_EXTRACT_DIR));
+        assertThrows(IllegalStateException.class, () -> finalEntry.extract(archiveExtractTmpDir));
     }
 }

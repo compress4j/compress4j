@@ -31,14 +31,13 @@ import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorInputStream;
 import org.apache.commons.compress.compressors.CompressorOutputStream;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
+import org.compress4j.utils.ArchiverDependencyChecker;
 
 /**
  * Wraps the two commons-compress factory types {@link CompressorFactory} and {@link ArchiveStreamFactory} into a
  * singleton factory.
  */
 final class CommonsStreamFactory {
-
-    private CommonsStreamFactory() {}
 
     private static final CompressorStreamFactory compressorStreamFactory;
     private static final ArchiveStreamFactory archiveStreamFactory;
@@ -47,6 +46,8 @@ final class CommonsStreamFactory {
         archiveStreamFactory = new ArchiveStreamFactory();
         compressorStreamFactory = new CompressorStreamFactory();
     }
+
+    private CommonsStreamFactory() {}
 
     /** @see ArchiveStreamFactory#createArchiveInputStream(String, InputStream) */
     static <E extends ArchiveEntry> ArchiveInputStream<E> createArchiveInputStream(String archiverName, InputStream in)
@@ -172,6 +173,8 @@ final class CommonsStreamFactory {
     /** @see CompressorStreamFactory#createCompressorOutputStream(String, OutputStream) */
     static CompressorOutputStream createCompressorOutputStream(String compressorName, OutputStream out)
             throws CompressorException {
+        ArchiverDependencyChecker.check(compressorName);
+
         return compressorStreamFactory.createCompressorOutputStream(compressorName, out);
     }
 }

@@ -15,7 +15,6 @@
  */
 package org.compress4j.archivers;
 
-import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,30 +23,14 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 
 /** Utility class for I/O operations. */
 public final class IOUtils {
 
     private IOUtils() {}
-
-    /**
-     * Null-safe method that calls {@link java.io.Closeable#close()} and chokes the IOException.
-     *
-     * @param closeable the object to close
-     */
-    public static void closeQuietly(Closeable closeable) {
-        if (closeable != null) {
-            try {
-                closeable.close();
-            } catch (IOException ignored) {
-                // ignore
-            }
-        }
-    }
 
     /**
      * Copies all bytes from an input stream to a file. On return, the input stream will be at end of stream.
@@ -93,7 +76,7 @@ public final class IOUtils {
     }
 
     /**
-     * Given a source File, return its direct descendants if the File is a directory. Otherwise return the File itself.
+     * Given a source File, return its direct descendants if the File is a directory. Otherwise, return the File itself.
      *
      * @param source File or folder to be examined
      * @return a File[] array containing the files inside this folder, or a size-1 array containing the file itself.
@@ -162,23 +145,11 @@ public final class IOUtils {
      * @return the cleaned path
      */
     public static String cleanEntryName(String entry) {
-        Path normalizedPath = Paths.get(entry).normalize();
-        Iterator<Path> iterator = normalizedPath.iterator();
-        List<String> list = new ArrayList<>();
-        while (iterator.hasNext()) {
-            String next = iterator.next().toString();
-            if (!"..".equals(next)) {
-                list.add(next);
-            }
-        }
-        String firstElement = "";
-        if (!list.isEmpty()) {
-            firstElement = list.remove(0);
-        }
-        String[] remainingElements = new String[list.size()];
-        if (!list.isEmpty()) {
-            remainingElements = list.toArray(remainingElements);
-        }
-        return Paths.get(firstElement, remainingElements).toString();
+        Iterable<Path> iterable = Paths.get(entry).normalize();
+        String list = StreamSupport.stream(iterable.spliterator(), false)
+                .map(Path::toString)
+                .filter(string -> !"..".equals(string))
+                .collect(Collectors.joining("/"));
+        return Paths.get(list).toString();
     }
 }
