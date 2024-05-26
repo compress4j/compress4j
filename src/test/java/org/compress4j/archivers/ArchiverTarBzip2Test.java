@@ -18,7 +18,7 @@ package org.compress4j.archivers;
 import java.io.File;
 
 @SuppressWarnings("java:S2187")
-public class ArchiveTarBzip2Test extends AbstractArchiverTest {
+public class ArchiverTarBzip2Test extends AbstractArchiverTest {
 
     @Override
     protected Archiver getArchiver() {

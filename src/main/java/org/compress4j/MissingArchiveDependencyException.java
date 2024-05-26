@@ -13,20 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.compress4j.archivers;
+package org.compress4j;
 
-import java.io.File;
+/** Archive dependency Missing Exception */
+public class MissingArchiveDependencyException extends RuntimeException {
 
-@SuppressWarnings("java:S2187")
-public class CompressorXzTest extends AbstractCompressorTest {
-
-    @Override
-    protected File getCompressedFile() {
-        return new File(RESOURCES_DIR, "compress.txt.xz");
-    }
-
-    @Override
-    protected Compressor getCompressor() {
-        return new CommonsCompressor(CompressionType.XZ);
+    /**
+     * Constructs a new exception with the specified detail message. The cause is not initialized.
+     *
+     * @param message the detail message
+     */
+    public MissingArchiveDependencyException(String message) {
+        super(message);
     }
 }

@@ -19,7 +19,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
 import org.junit.jupiter.api.Test;
 
 class ArchiverZipTest extends AbstractArchiverTest {
@@ -71,7 +70,7 @@ class ArchiverZipTest extends AbstractArchiverTest {
     @Test
     void zip_traversal_test_archiver_extraction() throws Exception {
         File archive = new File(RESOURCES_DIR, ZIP_TRAVERSAL_FILE_1);
-        getArchiver().extract(archive, ARCHIVE_EXTRACT_DIR);
+        getArchiver().extract(archive, archiveExtractTmpDir);
         assertZipTraversal();
     }
 
@@ -84,7 +83,7 @@ class ArchiverZipTest extends AbstractArchiverTest {
     @Test
     void zip_traversal_test_archiver_extraction_target_directory_as_root() throws Exception {
         File archive = new File(RESOURCES_DIR, ZIP_TRAVERSAL_FILE_2);
-        getArchiver().extract(archive, ARCHIVE_EXTRACT_DIR);
+        getArchiver().extract(archive, archiveExtractTmpDir);
         assertTargetDirectoryAsRoot();
     }
 
@@ -97,39 +96,30 @@ class ArchiverZipTest extends AbstractArchiverTest {
     @Test
     void zip_traversal_test_archiver_extraction_for_non_normalized_path() throws Exception {
         File archive = new File(RESOURCES_DIR, ZIP_TRAVERSAL_FILE_3);
-        getArchiver().extract(archive, ARCHIVE_EXTRACT_DIR);
+        getArchiver().extract(archive, archiveExtractTmpDir);
         assertZipTraversal();
     }
 
     private void archiveExtractorHelper(final String fileName) throws IOException {
         File archive = new File(RESOURCES_DIR, fileName);
-        ArchiveStream stream = null;
-        try {
-            stream = getArchiver().stream(archive);
+        try (ArchiveStream stream = getArchiver().stream(archive)) {
             ArchiveEntry entry;
             while ((entry = stream.getNextEntry()) != null) {
-                entry.extract(ARCHIVE_EXTRACT_DIR);
+                entry.extract(archiveExtractTmpDir);
             }
-        } finally {
-            IOUtils.closeQuietly(stream);
         }
     }
 
-    private void assertZipTraversal() throws Exception {
-        ;
-        HashSet<String> extractedItems = new HashSet<>(flatRelativeList(ARCHIVE_EXTRACT_DIR));
-        assertThat(extractedItems)
-                .hasSize(3)
-                .contains("safe.txt")
-                .contains("tmp")
-                .contains("tmp/unsafe.txt");
-        assertThat(new File("tmp/unsafe.txt"))
-                .describedAs("This unsafe file should not exist as it is outside the target directory.")
-                .doesNotExist();
+    private void assertZipTraversal() {
+        assertThat(archiveExtractTmpDir)
+                .isDirectoryContaining(file -> file.getName().equals("safe.txt"))
+                .isDirectoryContaining(file -> file.getName().equals("tmp"))
+                .isDirectoryNotContaining(file -> file.getName().equals("unsafe.txt"));
     }
 
-    private void assertTargetDirectoryAsRoot() throws Exception {
-        HashSet<String> extractedItems = new HashSet<>(flatRelativeList(ARCHIVE_EXTRACT_DIR));
-        assertThat(extractedItems).hasSize(2).contains("safe.txt").contains("unsafe.txt");
+    private void assertTargetDirectoryAsRoot() {
+        assertThat(archiveExtractTmpDir)
+                .isDirectoryContaining(file -> file.getName().equals("safe.txt"))
+                .isDirectoryContaining(file -> file.getName().equals("unsafe.txt"));
     }
 }

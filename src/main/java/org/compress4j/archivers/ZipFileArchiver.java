@@ -15,6 +15,8 @@
  */
 package org.compress4j.archivers;
 
+import static org.apache.commons.io.IOUtils.closeQuietly;
+
 import jakarta.annotation.Nonnull;
 import java.io.File;
 import java.io.IOException;
@@ -70,7 +72,7 @@ class ZipFileArchiver extends CommonsArchiver<ZipArchiveEntry> {
             int read = getCurrentEntryStream().read(b, off, len);
 
             if (read == -1) {
-                IOUtils.closeQuietly(getCurrentEntryStream());
+                closeQuietly(getCurrentEntryStream());
             }
 
             count(read);
@@ -99,7 +101,7 @@ class ZipFileArchiver extends CommonsArchiver<ZipArchiveEntry> {
         }
 
         private void closeCurrentEntryStream() {
-            IOUtils.closeQuietly(getCurrentEntryStream());
+            closeQuietly(getCurrentEntryStream());
 
             currentEntryStream = null;
         }

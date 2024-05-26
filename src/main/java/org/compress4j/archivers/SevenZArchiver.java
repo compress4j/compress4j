@@ -23,6 +23,7 @@ import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 import org.apache.commons.compress.archivers.sevenz.SevenZOutputFile;
+import org.compress4j.utils.ArchiverDependencyChecker;
 
 /**
  * Archiver to handle 7z archives. commons-compress does not handle 7z over ArchiveStreams, so we need this custom
@@ -38,11 +39,13 @@ class SevenZArchiver extends CommonsArchiver<SevenZArchiveEntry> {
 
     @Override
     protected ArchiveOutputStream<SevenZArchiveEntry> createArchiveOutputStream(File archive) throws IOException {
+        ArchiverDependencyChecker.checkLZMA();
         return new SevenZOutputStream(new SevenZOutputFile(archive));
     }
 
     @Override
     protected ArchiveInputStream<SevenZArchiveEntry> createArchiveInputStream(File archive) throws IOException {
+        ArchiverDependencyChecker.checkLZMA();
         return new SevenZInputStream(SevenZFile.builder().setFile(archive).get());
     }
 

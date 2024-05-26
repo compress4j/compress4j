@@ -70,13 +70,13 @@ public class ExtractPermissionsTest {
 
         @Test
         public void extract_restoresJavaFilePermissions() throws Exception {
-            archiver.extract(archive, ARCHIVE_EXTRACT_DIR);
+            archiver.extract(archive, archiveExtractTmpDir);
             assertJavaPermissions();
         }
 
         @Test
         public void extract_restoresUnixPermissions() throws Exception {
-            archiver.extract(archive, ARCHIVE_EXTRACT_DIR);
+            archiver.extract(archive, archiveExtractTmpDir);
             assertPosixPermissions();
         }
 
@@ -96,7 +96,7 @@ public class ExtractPermissionsTest {
             try (ArchiveStream stream = archiver.stream(archive)) {
                 ArchiveEntry entry;
                 while ((entry = stream.getNextEntry()) != null) {
-                    entry.extract(ARCHIVE_EXTRACT_DIR);
+                    entry.extract(archiveExtractTmpDir);
                 }
             }
         }
@@ -137,7 +137,7 @@ public class ExtractPermissionsTest {
         }
 
         private File getExtractedFile(String name) {
-            return new File(ARCHIVE_EXTRACT_DIR, name);
+            return new File(archiveExtractTmpDir, name);
         }
     }
 }

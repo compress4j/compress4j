@@ -68,7 +68,7 @@ class FactoryTest extends AbstractResourceTest {
 
     @Test
     void createArchiver_fromUnknownFileExtension_fails() {
-        assertThrows(IllegalArgumentException.class, () -> ArchiverFactory.createArchiver(NON_READABLE_FILE));
+        assertThrows(IllegalArgumentException.class, () -> ArchiverFactory.createArchiver(nonReadableFile));
     }
 
     @Test
@@ -98,7 +98,7 @@ class FactoryTest extends AbstractResourceTest {
 
     @Test
     void createCompressor_fromUnknownFileExtension_fails() {
-        assertThrows(IllegalArgumentException.class, () -> CompressorFactory.createCompressor(NON_READABLE_FILE));
+        assertThrows(IllegalArgumentException.class, () -> CompressorFactory.createCompressor(nonReadableFile));
     }
 
     @Test
