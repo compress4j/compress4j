@@ -6,7 +6,3 @@ plugins {
 repositories {
     gradlePluginPortal()
 }
-
-dependencies {
-    implementation(libs.sonarqube.gradle.plugin)
-}
