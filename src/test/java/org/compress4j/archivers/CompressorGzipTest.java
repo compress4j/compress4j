@@ -26,7 +26,12 @@ public class CompressorGzipTest extends AbstractCompressorTest {
     }
 
     @Override
+    protected CompressionType getCompressionType() {
+        return CompressionType.GZIP;
+    }
+
+    @Override
     protected Compressor getCompressor() {
-        return new CommonsCompressor(CompressionType.GZIP);
+        return new CommonsCompressor(getCompressionType());
     }
 }

@@ -24,7 +24,7 @@ import org.apache.commons.compress.compressors.brotli.BrotliUtils;
 import org.apache.commons.compress.compressors.lzma.LZMAUtils;
 import org.apache.commons.compress.compressors.xz.XZUtils;
 import org.apache.commons.compress.compressors.zstandard.ZstdUtils;
-import org.compress4j.MissingArchiveDependencyException;
+import org.compress4j.exceptions.MissingArchiveDependencyException;
 
 /** Checks for the availability of dependencies required by the archivers. */
 public class ArchiverDependencyChecker {
@@ -38,17 +38,24 @@ public class ArchiverDependencyChecker {
         return " In addition to Apache Commons Compress you need the " + name + " library - see " + url;
     }
 
-    /** Checks if XZ compression is available. */
-    public static void checkXZ() {
-        if (!XZUtils.isXZCompressionAvailable()) {
-            throw new MissingArchiveDependencyException("XZ compression is not available." + YOU_NEED_XZ_JAVA);
-        }
-    }
-
     /** Checks if Brotli compression is available. */
     public static void checkBrotli() {
         if (!BrotliUtils.isBrotliCompressionAvailable()) {
             throw new MissingArchiveDependencyException("Brotli compression is not available." + YOU_NEED_BROTLI_DEC);
+        }
+    }
+
+    /** Checks if LZMA compression is available. */
+    public static void checkLZMA() {
+        if (!LZMAUtils.isLZMACompressionAvailable()) {
+            throw new MissingArchiveDependencyException("LZMA compression is not available." + YOU_NEED_XZ_JAVA);
+        }
+    }
+
+    /** Checks if XZ compression is available. */
+    public static void checkXZ() {
+        if (!XZUtils.isXZCompressionAvailable()) {
+            throw new MissingArchiveDependencyException("XZ compression is not available." + YOU_NEED_XZ_JAVA);
         }
     }
 
@@ -59,30 +66,20 @@ public class ArchiverDependencyChecker {
         }
     }
 
-    /** Checks if LZMA compression is available. */
-    public static void checkLZMA() {
-        if (!LZMAUtils.isLZMACompressionAvailable()) {
-            throw new MissingArchiveDependencyException("LZMA compression is not available" + YOU_NEED_XZ_JAVA);
-        }
-    }
-
     /**
      * Checks if the dependency for the given archiver is available.
      *
      * @param name the name of the archiver
      */
     public static void check(String name) {
-        if (XZ.equalsIgnoreCase(name)) {
-            checkXZ();
-        }
-        if (BROTLI.equalsIgnoreCase(name)) {
-            checkBrotli();
-        }
-        if (ZSTANDARD.equalsIgnoreCase(name)) {
-            checkZstd();
-        }
-        if (LZMA.equalsIgnoreCase(name)) {
-            checkLZMA();
+        switch (name.toLowerCase()) {
+            case BROTLI -> checkBrotli();
+            case LZMA -> checkLZMA();
+            case XZ -> checkXZ();
+            case ZSTANDARD -> checkZstd();
+            default -> {
+                // Do nothing for unmatched
+            }
         }
     }
 }

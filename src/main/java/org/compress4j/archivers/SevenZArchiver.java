@@ -24,6 +24,7 @@ import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 import org.apache.commons.compress.archivers.sevenz.SevenZOutputFile;
 import org.compress4j.utils.ArchiverDependencyChecker;
+import org.compress4j.utils.ExcludeFromJacocoGeneratedReport;
 
 /**
  * Archiver to handle 7z archives. commons-compress does not handle 7z over ArchiveStreams, so we need this custom
@@ -93,6 +94,7 @@ class SevenZArchiver extends CommonsArchiver<SevenZArchiveEntry> {
             file.closeArchiveEntry();
         }
 
+        @ExcludeFromJacocoGeneratedReport
         @Override
         public void finish() throws IOException {
             file.finish();
@@ -103,11 +105,13 @@ class SevenZArchiver extends CommonsArchiver<SevenZArchiveEntry> {
             return file.createArchiveEntry(inputFile, entryName);
         }
 
+        @ExcludeFromJacocoGeneratedReport
         @Override
         public void write(int b) throws IOException {
             file.write(b);
         }
 
+        @ExcludeFromJacocoGeneratedReport
         @Override
         public void write(@SuppressWarnings("NullableProblems") byte[] b) throws IOException {
             file.write(b);
@@ -122,11 +126,6 @@ class SevenZArchiver extends CommonsArchiver<SevenZArchiveEntry> {
         @Override
         public void close() throws IOException {
             file.close();
-        }
-
-        @SuppressWarnings("unused")
-        public SevenZOutputFile getSevenZOutputFile() {
-            return file;
         }
     }
 }

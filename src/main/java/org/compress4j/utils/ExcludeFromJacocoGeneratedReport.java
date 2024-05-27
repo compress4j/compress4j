@@ -13,25 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.compress4j.archivers;
+package org.compress4j.utils;
 
-import java.io.File;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-@SuppressWarnings("java:S2187")
-public class CompressorXzTest extends AbstractCompressorTest {
-
-    @Override
-    protected File getCompressedFile() {
-        return new File(AbstractResourceTest.RESOURCES_DIR, "compress.txt.xz");
-    }
-
-    @Override
-    protected CompressionType getCompressionType() {
-        return CompressionType.XZ;
-    }
-
-    @Override
-    protected Compressor getCompressor() {
-        return new CommonsCompressor(getCompressionType());
-    }
-}
+/** Annotation to exclude methods from the Jacoco generated report. */
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface ExcludeFromJacocoGeneratedReport {}

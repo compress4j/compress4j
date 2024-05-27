@@ -17,45 +17,42 @@ package org.compress4j.archivers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static org.compress4j.utils.DependencyCheckerTestConstants.EXPECTED_MESSAGE_LZMA;
 
 import java.io.File;
 import java.io.IOException;
-import org.compress4j.MissingArchiveDependencyException;
+import org.compress4j.exceptions.MissingArchiveDependencyException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 @SuppressWarnings("java:S5778")
 class Archiver7zDependencyCheckerTest {
 
-    public static final String EXPECTED_MESSAGE =
-            "LZMA compression is not available In addition to Apache Commons Compress"
-                    + " you need the XZ for Java library - see https://tukaani.org/xz/java.html";
-
     @TempDir
     protected File archiveTmpDir;
 
     @SuppressWarnings("resource")
     @Test
-    void shouldCheckLZMADependencyStream() throws IOException {
+    void shouldCheckLZMADependencyWhenArchiverStream() throws IOException {
         Archiver archiver = ArchiverFactory.createArchiver(ArchiveFormat.SEVEN_Z);
 
         try {
             archiver.stream(new File(archiveTmpDir, "file.7z"));
             fail("Expected MissingArchiveDependencyException");
         } catch (MissingArchiveDependencyException e) {
-            assertThat(e).hasMessage(EXPECTED_MESSAGE);
+            assertThat(e).hasMessage(EXPECTED_MESSAGE_LZMA);
         }
     }
 
     @Test
-    void shouldCheckLZMADependencyCreate() throws IOException {
+    void shouldCheckLZMADependencyWhenArchiverCreate() throws IOException {
         Archiver archiver = ArchiverFactory.createArchiver(ArchiveFormat.SEVEN_Z);
 
         try {
             archiver.create("", new File(archiveTmpDir, "file.7z"));
             fail("Expected MissingArchiveDependencyException");
         } catch (MissingArchiveDependencyException e) {
-            assertThat(e).hasMessage(EXPECTED_MESSAGE);
+            assertThat(e).hasMessage(EXPECTED_MESSAGE_LZMA);
         }
     }
 }

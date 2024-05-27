@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.compress4j;
+package org.compress4j.exceptions;
 
 /** Archive dependency Missing Exception */
 public class MissingArchiveDependencyException extends RuntimeException {
