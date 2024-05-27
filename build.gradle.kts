@@ -45,6 +45,8 @@ dependencies {
     testImplementation(libs.assertj.core)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.junit.jupiter.params)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.jupiter)
 
     testRuntimeOnly(libs.junit.platform.launcher)
 
@@ -109,6 +111,13 @@ sonar {
         property("sonar.projectKey", "austek_compress4j")
         property("sonar.organization", "austek")
         property("sonar.host.url", "https://sonarcloud.io")
+        property(
+            "sonar.coverage.exclusions",
+            listOf(
+                "docs/**/*",
+                "**/*Exception.java"
+            )
+        )
     }
 }
 

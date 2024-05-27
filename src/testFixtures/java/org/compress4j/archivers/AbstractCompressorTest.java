@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 public abstract class AbstractCompressorTest extends AbstractResourceTest {
 
     public static final File COMPRESS_TXT = new File(RESOURCES_DIR, "compress.txt");
+    public static final File COMPRESS_UNKNOWN = new File(RESOURCES_DIR, "compress.txt.unknown");
 
     private File decompressDestinationFile;
     private File compressDestinationFile;
@@ -40,6 +41,8 @@ public abstract class AbstractCompressorTest extends AbstractResourceTest {
     }
 
     protected abstract File getCompressedFile();
+
+    protected abstract CompressionType getCompressionType();
 
     protected abstract Compressor getCompressor();
 
@@ -55,6 +58,20 @@ public abstract class AbstractCompressorTest extends AbstractResourceTest {
         getCompressor().compress(COMPRESS_TXT, archiveCreateTmpDir);
 
         assertCompressionWasSuccessful();
+    }
+
+    @Test
+    public void compress_Directory_throwsException() {
+        var exception = assertThrows(
+                IllegalArgumentException.class, () -> getCompressor().compress(RESOURCES_DIR, compressDestinationFile));
+        assertThat(exception).hasMessage("Source src/test/resources is a directory.");
+    }
+
+    @Test
+    public void compress_nullFile_throwsException() {
+        var exception = assertThrows(
+                IllegalArgumentException.class, () -> getCompressor().compress(null, compressDestinationFile));
+        assertThat(exception).hasMessage("Source is null");
     }
 
     @Test
@@ -75,6 +92,13 @@ public abstract class AbstractCompressorTest extends AbstractResourceTest {
         } finally {
             assertFalse(compressDestinationFile.exists());
         }
+    }
+
+    @Test
+    public void compress_withNullDestination_throwsException() {
+        var exception = assertThrows(
+                IllegalArgumentException.class, () -> getCompressor().compress(COMPRESS_TXT, null));
+        assertThat(exception).hasMessage("Destination is null");
     }
 
     @Test
@@ -107,6 +131,28 @@ public abstract class AbstractCompressorTest extends AbstractResourceTest {
     }
 
     @Test
+    public void decompress_Directory_throwsException() {
+        var exception = assertThrows(
+                IllegalArgumentException.class, () -> getCompressor().decompress(RESOURCES_DIR, archiveExtractTmpDir));
+        assertThat(exception).hasMessage("Source src/test/resources is a directory.");
+    }
+
+    @Test
+    public void decompress_nullFile_throwsException() {
+        var exception = assertThrows(
+                IllegalArgumentException.class, () -> getCompressor().decompress(null, archiveExtractTmpDir));
+        assertThat(exception).hasMessage("Source is null");
+    }
+
+    @Test
+    public void decompress_unknownFileType_throwsException() {
+        var exception = assertThrows(IllegalArgumentException.class, () -> getCompressor()
+                .decompress(COMPRESS_UNKNOWN, archiveExtractTmpDir));
+        assertThat(exception)
+                .hasMessage("src/test/resources/compress.txt.unknown is not of type " + getCompressionType());
+    }
+
+    @Test
     public void decompress_withNonExistingDestination_throwsException() {
         assertThrows(
                 FileNotFoundException.class, () -> getCompressor().decompress(getCompressedFile(), NON_EXISTING_FILE));
@@ -122,6 +168,13 @@ public abstract class AbstractCompressorTest extends AbstractResourceTest {
     public void decompress_withNonWritableDestinationDirectory_throwsException() {
         assertThrows(
                 IllegalArgumentException.class, () -> getCompressor().decompress(getCompressedFile(), nonWritableDir));
+    }
+
+    @Test
+    public void decompress_withNullDestinationDirectory_throwsException() {
+        var exception = assertThrows(
+                IllegalArgumentException.class, () -> getCompressor().decompress(getCompressedFile(), null));
+        assertThat(exception).hasMessage("Destination is null");
     }
 
     @Test

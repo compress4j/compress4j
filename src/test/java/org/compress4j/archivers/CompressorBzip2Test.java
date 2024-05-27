@@ -26,7 +26,12 @@ public class CompressorBzip2Test extends AbstractCompressorTest {
     }
 
     @Override
+    protected CompressionType getCompressionType() {
+        return CompressionType.BZIP2;
+    }
+
+    @Override
     protected Compressor getCompressor() {
-        return new CommonsCompressor(CompressionType.BZIP2);
+        return new CommonsCompressor(getCompressionType());
     }
 }

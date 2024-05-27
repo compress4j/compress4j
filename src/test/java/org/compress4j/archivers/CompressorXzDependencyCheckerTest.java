@@ -18,19 +18,16 @@ package org.compress4j.archivers;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.compress4j.archivers.AbstractCompressorTest.COMPRESS_TXT;
+import static org.compress4j.utils.DependencyCheckerTestConstants.EXPECTED_MESSAGE_XZ;
 
 import java.io.File;
 import java.io.IOException;
-import org.compress4j.MissingArchiveDependencyException;
+import org.compress4j.exceptions.MissingArchiveDependencyException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 @SuppressWarnings("java:S5778")
 class CompressorXzDependencyCheckerTest {
-
-    public static final String EXPECTED_MESSAGE =
-            "XZ compression is not available. In addition to Apache Commons Compress"
-                    + " you need the XZ for Java library - see https://tukaani.org/xz/java.html";
 
     @TempDir
     protected File archiveTmpDir;
@@ -42,7 +39,7 @@ class CompressorXzDependencyCheckerTest {
                     .compress(COMPRESS_TXT, new File(archiveTmpDir, "compress.txt.xz"));
             fail("Expected MissingArchiveDependencyException");
         } catch (MissingArchiveDependencyException e) {
-            assertThat(e).hasMessage(EXPECTED_MESSAGE);
+            assertThat(e).hasMessage(EXPECTED_MESSAGE_XZ);
         }
     }
 }
