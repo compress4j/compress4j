@@ -40,11 +40,14 @@ dependencies {
     api(libs.jakarta.annotation.api)
     api(libs.org.apache.commons.commons.compress)
 
+    implementation(libs.slf4j.api)
+
     testImplementation(platform(libs.junit.bom))
 
     testImplementation(libs.assertj.core)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.junit.jupiter.params)
+    testImplementation(libs.logback.classic)
     testImplementation(libs.mockito.core)
     testImplementation(libs.mockito.jupiter)
 
@@ -52,8 +55,9 @@ dependencies {
 
     testFixturesImplementation(platform(libs.junit.bom))
 
-    testFixturesImplementation(libs.junit.jupiter)
     testFixturesImplementation(libs.assertj.core)
+    testFixturesImplementation(libs.junit.jupiter)
+    testFixturesApi(libs.logback.classic)
 }
 
 tasks.test {
