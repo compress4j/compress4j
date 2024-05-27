@@ -16,14 +16,14 @@
 package org.compress4j.archivers;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.BDDMockito.given;
 
-import java.lang.reflect.Field;
+import java.nio.file.FileSystem;
+import java.util.Set;
 import org.apache.commons.compress.archivers.ArchiveEntry;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.platform.commons.util.ReflectionUtils;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -31,34 +31,25 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class FileModeMapperTest {
 
     @Mock
-    ArchiveEntry archiveEntry;
+    private ArchiveEntry archiveEntry;
 
-    private static void setIsPosix(@SuppressWarnings("SameParameterValue") boolean isPosix) {
-        try {
-            Field field = ReflectionUtils.findFields(
-                            FileModeMapper.class,
-                            f -> f.getName().equals("IS_POSIX"),
-                            ReflectionUtils.HierarchyTraversalMode.TOP_DOWN)
-                    .get(0);
-            field.setAccessible(true);
-            field.setBoolean(null, isPosix);
-        } catch (Exception e) {
-            fail("Failed to set IS_POSIX field: " + e.getMessage());
-        }
-    }
+    @Mock
+    private FileSystem fileSystem;
 
     @Test
-    @Disabled
     void shouldCreateForNonPosix() {
-        setIsPosix(false);
-        var fileModeMapper = FileModeMapper.create(archiveEntry);
+        given(fileSystem.supportedFileAttributeViews()).willReturn(Set.of());
+        var fileModeMapper = FileModeMapper.create(fileSystem, archiveEntry);
 
         assertThat(fileModeMapper).isNotNull().isOfAnyClassIn(FileModeMapper.FallbackFileModeMapper.class);
+        assertDoesNotThrow(() -> fileModeMapper.map(null));
     }
 
     @Test
     void shouldCreateForPosix() {
-        var fileModeMapper = FileModeMapper.create(archiveEntry);
+        given(fileSystem.supportedFileAttributeViews()).willReturn(Set.of("posix"));
+
+        var fileModeMapper = FileModeMapper.create(fileSystem, archiveEntry);
 
         assertThat(fileModeMapper).isNotNull().isOfAnyClassIn(FileModeMapper.PosixPermissionMapper.class);
     }

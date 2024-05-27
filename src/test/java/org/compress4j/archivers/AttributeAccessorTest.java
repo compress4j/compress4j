@@ -18,7 +18,6 @@ package org.compress4j.archivers;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-import java.util.Date;
 import java.util.stream.Stream;
 import org.apache.commons.compress.archivers.ar.ArArchiveEntry;
 import org.apache.commons.compress.archivers.arj.ArjArchiveEntry;
@@ -48,28 +47,5 @@ class AttributeAccessorTest {
         AttributeAccessor<A> accessor = AttributeAccessor.create(entry);
 
         assertThat(accessor).isNotNull().isOfAnyClassIn(clazz);
-    }
-
-    private static class TestArchiveEntry implements org.apache.commons.compress.archivers.ArchiveEntry {
-
-        @Override
-        public Date getLastModifiedDate() {
-            return null;
-        }
-
-        @Override
-        public String getName() {
-            return "";
-        }
-
-        @Override
-        public long getSize() {
-            return 0;
-        }
-
-        @Override
-        public boolean isDirectory() {
-            return false;
-        }
     }
 }

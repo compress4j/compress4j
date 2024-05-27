@@ -17,14 +17,16 @@ package org.compress4j.archivers;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Reads *nix file mode flags of commons-compress ArchiveEntry (where possible) and maps them onto Files on the file
@@ -32,9 +34,7 @@ import org.apache.commons.compress.archivers.ArchiveEntry;
  */
 abstract class FileModeMapper<E extends ArchiveEntry> {
 
-    private static final Logger LOG = Logger.getLogger(FileModeMapper.class.getCanonicalName());
-    private static final boolean IS_POSIX =
-            FileSystems.getDefault().supportedFileAttributeViews().contains("posix");
+    private static final Logger LOGGER = LoggerFactory.getLogger(FileModeMapper.class.getCanonicalName());
 
     private final E archiveEntry;
 
@@ -56,7 +56,7 @@ abstract class FileModeMapper<E extends ArchiveEntry> {
      * @param file the file to apply the mode onto
      */
     public static <T extends ArchiveEntry> void map(T entry, File file) throws IOException {
-        create(entry).map(file);
+        create(FileSystems.getDefault(), entry).map(file);
     }
 
     /**
@@ -66,8 +66,8 @@ abstract class FileModeMapper<E extends ArchiveEntry> {
      * @param entry the archive entry for which to create a FileModeMapper for
      * @return a new FileModeMapper instance
      */
-    public static <T extends ArchiveEntry> FileModeMapper<T> create(T entry) {
-        if (IS_POSIX) {
+    public static <T extends ArchiveEntry> FileModeMapper<T> create(FileSystem fileSystem, T entry) {
+        if (fileSystem.supportedFileAttributeViews().contains("posix")) {
             return new PosixPermissionMapper<>(entry);
         }
 
@@ -115,16 +115,18 @@ abstract class FileModeMapper<E extends ArchiveEntry> {
 
         private void setPermissions(int mode, File file) {
             try {
-                Set<PosixFilePermission> posixFilePermissions = new PosixFilePermissionsMapper().map(mode);
+                Set<PosixFilePermission> posixFilePermissions = PosixFilePermissionsMapper.map(mode);
                 Files.setPosixFilePermissions(file.toPath(), posixFilePermissions);
             } catch (Exception e) {
-                LOG.warning("Could not set file permissions of " + file + ". Exception was: " + e.getMessage());
+                LOGGER.warn("Could not set file permissions of {}", file.getName(), e);
             }
         }
     }
 
     @SuppressWarnings("OctalInteger")
     public static class PosixFilePermissionsMapper {
+
+        private PosixFilePermissionsMapper() {}
 
         public static final Map<Integer, PosixFilePermission> intToPosixFilePermission = Map.of(
                 0400, PosixFilePermission.OWNER_READ,
@@ -137,7 +139,7 @@ abstract class FileModeMapper<E extends ArchiveEntry> {
                 0002, PosixFilePermission.OTHERS_WRITE,
                 0001, PosixFilePermission.OTHERS_EXECUTE);
 
-        public Set<PosixFilePermission> map(int mode) {
+        public static Set<PosixFilePermission> map(int mode) {
             return intToPosixFilePermission.entrySet().stream()
                     .filter(entry -> (mode & entry.getKey()) > 0)
                     .map(Map.Entry::getValue)
