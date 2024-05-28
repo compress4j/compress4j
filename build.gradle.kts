@@ -6,15 +6,33 @@ plugins {
     `java-test-fixtures`
     jacoco
 
+    alias(libs.plugins.git.version)
     alias(libs.plugins.sonarqube)
     alias(libs.plugins.spotless)
 
     id("compress4j.publishing")
 }
 
-group = "org.compress4j"
-version = "1.3.0-SNAPSHOT"
+group = "io.github.compress4j"
 description = "A simple archiving and compression library for Java."
+
+version = "0.0.0-SNAPSHOT"
+
+gitVersioning.apply {
+    refs {
+        branch(".+") {
+            version = "\${describe.tag.version.major}.\${describe.tag.version.minor}.\${describe.tag.version.patch.next}-\${commit.short}-SNAPSHOT"
+        }
+        tag("v(?<version>.*)") {
+            version = "\${ref.version}"
+        }
+    }
+
+    // optional fallback configuration in case of no matching ref configuration
+    rev {
+        version = "\${commit}"
+    }
+}
 
 repositories {
     mavenCentral()

@@ -1,4 +1,3 @@
-
 plugins {
     `maven-publish`
     signing
@@ -23,29 +22,31 @@ publishing {
             }
         }
     }
-    publications.withType<MavenPublication> {
-        artifactId = project.name
-        from(components["java"])
-        pom {
-            name = project.name
-            description = project.description
-            url = "https://github.com/austek/compress4j"
-            scm {
-                connection = "scm:git:https://github.com/austek/compress4j.git"
-                developerConnection = "scm:git:git@github.com:austek/compress4j.git"
-                url = "https://github.com/austek/compress4j.git"
-            }
-            licenses {
-                license {
-                    name = "Apache-2.0"
-                    url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
-                    distribution = "repo"
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+            val javaComponent = components["java"] as AdhocComponentWithVariants
+            javaComponent.withVariantsFromConfiguration(configurations["testFixturesApiElements"]) { skip() }
+            javaComponent.withVariantsFromConfiguration(configurations["testFixturesRuntimeElements"]) { skip() }
+            pom {
+                url = "https://github.com/austek/compress4j"
+                scm {
+                    connection = "scm:git:https://github.com/austek/compress4j.git"
+                    developerConnection = "scm:git:git@github.com:austek/compress4j.git"
+                    url = "https://github.com/austek/compress4j.git"
                 }
-            }
-            developers {
-                developer {
-                    id = "austek"
-                    name = "Ali Ustek"
+                licenses {
+                    license {
+                        name = "Apache-2.0"
+                        url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
+                        distribution = "repo"
+                    }
+                }
+                developers {
+                    developer {
+                        id = "austek"
+                        name = "Ali Ustek"
+                    }
                 }
             }
         }
