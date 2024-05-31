@@ -1,17 +1,21 @@
 @file:Suppress("UnstableApiUsage")
 
+import org.jreleaser.model.Active
+
 plugins {
     `jacoco-report-aggregation`
     `java-library`
     `java-test-fixtures`
+    `maven-publish`
     jacoco
 
     alias(libs.plugins.git.version)
+    alias(libs.plugins.jreleaser)
     alias(libs.plugins.sonarqube)
     alias(libs.plugins.spotless)
 
-    id("compress4j.publishing")
 }
+val stagingDir: Provider<Directory> = layout.buildDirectory.dir("staging-deploy")
 
 group = "io.github.compress4j"
 description = "A simple archiving and compression library for Java."
@@ -156,5 +160,71 @@ spotless {
         removeUnusedImports()
         trimTrailingWhitespace()
         endWithNewline()
+    }
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+            val javaComponent = components["java"] as AdhocComponentWithVariants
+            javaComponent.withVariantsFromConfiguration(configurations["testFixturesApiElements"]) { skip() }
+            javaComponent.withVariantsFromConfiguration(configurations["testFixturesRuntimeElements"]) { skip() }
+            pom {
+                url = "https://github.com/austek/compress4j"
+                scm {
+                    connection = "scm:git:https://github.com/austek/compress4j.git"
+                    developerConnection = "scm:git:git@github.com:austek/compress4j.git"
+                    url = "https://github.com/austek/compress4j.git"
+                }
+                licenses {
+                    license {
+                        name = "Apache-2.0"
+                        url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
+                        distribution = "repo"
+                    }
+                }
+                developers {
+                    developer {
+                        id = "austek"
+                        name = "Ali Ustek"
+                    }
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            url = uri(stagingDir.get().toString())
+        }
+    }
+}
+
+jreleaser {
+    project {
+        website = "https://github.com/compress4j/compress4j"
+        authors = listOf("Ali Ustek")
+        license = "Apache-2.0"
+        tags = listOf("compress", "jarchivelib")
+        links {
+            bugTracker = "https://github.com/compress4j/compress4j/issues"
+            vcsBrowser = "https://github.com/compress4j/compress4j"
+        }
+    }
+    signing {
+        active = Active.ALWAYS
+        armored = true
+    }
+    deploy {
+        maven {
+            mavenCentral {
+                register("sonatype") {
+                    active = Active.ALWAYS
+                    url = "https://central.sonatype.com/api/v1/publisher"
+                    stagingRepository(stagingDir.get().toString())
+                }
+            }
+        }
     }
 }
