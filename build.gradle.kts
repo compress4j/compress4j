@@ -13,30 +13,16 @@ plugins {
     alias(libs.plugins.jreleaser)
     alias(libs.plugins.sonarqube)
     alias(libs.plugins.spotless)
-
 }
 val stagingDir: Provider<Directory> = layout.buildDirectory.dir("staging-deploy")
+val snapshotVersion: String = "\${describe.tag.version.major}." +
+        "\${describe.tag.version.minor}." +
+        "\${describe.tag.version.patch.next}-SNAPSHOT"
 
 group = "io.github.compress4j"
 description = "A simple archiving and compression library for Java."
-
 version = "0.0.0-SNAPSHOT"
 
-gitVersioning.apply {
-    refs {
-        branch(".+") {
-            version = "\${describe.tag.version.major}.\${describe.tag.version.minor}.\${describe.tag.version.patch.next}-\${commit.short}-SNAPSHOT"
-        }
-        tag("v(?<version>.*)") {
-            version = "\${ref.version}"
-        }
-    }
-
-    // optional fallback configuration in case of no matching ref configuration
-    rev {
-        version = "\${commit}"
-    }
-}
 
 repositories {
     mavenCentral()
@@ -134,8 +120,8 @@ tasks.check {
 
 sonar {
     properties {
-        property("sonar.projectKey", "austek_compress4j")
-        property("sonar.organization", "austek")
+        property("sonar.projectKey", "compress4j_compress4j")
+        property("sonar.organization", "compress4j")
         property("sonar.host.url", "https://sonarcloud.io")
         property(
             "sonar.coverage.exclusions",
@@ -163,6 +149,22 @@ spotless {
     }
 }
 
+gitVersioning.apply {
+    refs {
+        branch("main") {
+            version = snapshotVersion
+        }
+        tag("v(?<version>.*)") {
+            version = "\${ref.version}"
+        }
+    }
+
+    // optional fallback configuration in case of no matching ref configuration
+    rev {
+        version = snapshotVersion
+    }
+}
+
 publishing {
     publications {
         create<MavenPublication>("maven") {
@@ -171,6 +173,8 @@ publishing {
             javaComponent.withVariantsFromConfiguration(configurations["testFixturesApiElements"]) { skip() }
             javaComponent.withVariantsFromConfiguration(configurations["testFixturesRuntimeElements"]) { skip() }
             pom {
+                name = project.name
+                description = project.description
                 url = "https://github.com/austek/compress4j"
                 scm {
                     connection = "scm:git:https://github.com/austek/compress4j.git"
@@ -202,16 +206,6 @@ publishing {
 }
 
 jreleaser {
-    project {
-        website = "https://github.com/compress4j/compress4j"
-        authors = listOf("Ali Ustek")
-        license = "Apache-2.0"
-        tags = listOf("compress", "jarchivelib")
-        links {
-            bugTracker = "https://github.com/compress4j/compress4j/issues"
-            vcsBrowser = "https://github.com/compress4j/compress4j"
-        }
-    }
     signing {
         active = Active.ALWAYS
         armored = true
