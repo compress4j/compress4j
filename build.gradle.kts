@@ -16,27 +16,14 @@ plugins {
 
 }
 val stagingDir: Provider<Directory> = layout.buildDirectory.dir("staging-deploy")
+val snapshotVersion: String = "\${describe.tag.version.major}." +
+        "\${describe.tag.version.minor}." +
+        "\${describe.tag.version.patch.next}-SNAPSHOT"
 
 group = "io.github.compress4j"
 description = "A simple archiving and compression library for Java."
-
 version = "0.0.0-SNAPSHOT"
 
-gitVersioning.apply {
-    refs {
-        branch(".+") {
-            version = "\${describe.tag.version.major}.\${describe.tag.version.minor}.\${describe.tag.version.patch.next}-\${commit.short}-SNAPSHOT"
-        }
-        tag("v(?<version>.*)") {
-            version = "\${ref.version}"
-        }
-    }
-
-    // optional fallback configuration in case of no matching ref configuration
-    rev {
-        version = "\${commit}"
-    }
-}
 
 repositories {
     mavenCentral()
@@ -134,8 +121,8 @@ tasks.check {
 
 sonar {
     properties {
-        property("sonar.projectKey", "austek_compress4j")
-        property("sonar.organization", "austek")
+        property("sonar.projectKey", "compress4j_compress4j")
+        property("sonar.organization", "compress4j")
         property("sonar.host.url", "https://sonarcloud.io")
         property(
             "sonar.coverage.exclusions",
@@ -163,9 +150,26 @@ spotless {
     }
 }
 
+gitVersioning.apply {
+    refs {
+        branch("main") {
+            version = snapshotVersion
+        }
+        tag("v(?<version>.*)") {
+            version = "\${ref.version}"
+        }
+    }
+
+    // optional fallback configuration in case of no matching ref configuration
+    rev {
+        version = snapshotVersion
+    }
+}
+
 publishing {
     publications {
         create<MavenPublication>("maven") {
+            description = project.description
             from(components["java"])
             val javaComponent = components["java"] as AdhocComponentWithVariants
             javaComponent.withVariantsFromConfiguration(configurations["testFixturesApiElements"]) { skip() }
@@ -211,6 +215,7 @@ jreleaser {
             bugTracker = "https://github.com/compress4j/compress4j/issues"
             vcsBrowser = "https://github.com/compress4j/compress4j"
         }
+        copyright  = "2024, Compress4j"
     }
     signing {
         active = Active.ALWAYS

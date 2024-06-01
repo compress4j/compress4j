@@ -1,9 +1,9 @@
 = Compress4J
 
 image:https://maven-badges.herokuapp.com/maven-central/org.rauschig/jarchivelib/badge.svg[Maven Central,link=https://maven-badges.herokuapp.com/maven-central/org.rauschig/jarchivelib/]
-image:https://github.com/austek/compress4j/actions/workflows/build.yml/badge.svg[Build Status]
-image:https://sonarcloud.io/api/project_badges/measure?project=austek_compress4j&metric=alert_status[Quality Gate Status,link=https://sonarcloud.io/summary/new_code?id=austek_compress4j]
-image:https://sonarcloud.io/api/project_badges/measure?project=austek_compress4j&metric=coverage[Coverage Status,link=https://sonarcloud.io/summary/new_code?id=austek_compress4j]
+image:https://github.com/compress4j/compress4j/actions/workflows/build.yml/badge.svg[Build Status]
+image:https://sonarcloud.io/api/project_badges/measure?project=compress4j_compress4j&metric=alert_status[Quality Gate Status,link=https://sonarcloud.io/summary/new_code?id=compress4j_compress4j]
+image:https://sonarcloud.io/api/project_badges/measure?project=compress4j_compress4j&metric=coverage[Coverage Status,link=https://sonarcloud.io/summary/new_code?id=compress4j_compress4j]
 
 A simple archiving and compression library for Java that provides a thin and easy-to-use API layer on top of the
 powerful and feature-rich http://commons.apache.org/proper/commons-compress/[org.apache.commons.compress].
