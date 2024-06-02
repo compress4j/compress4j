@@ -64,7 +64,7 @@ jobs:
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
 
-      - name: "Set up JDK $DEFAULT_JDK_VERSION"
+      - name: "Set up JDK ${{ env.DEFAULT_JDK_VERSION }}"
         uses: actions/setup-java@v4
         with:
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
@@ -88,7 +88,7 @@ jobs:
           JRELEASER_GPG_SECRET_KEY: ${{ secrets.GPG_SECRET_KEY }}
           JRELEASER_GPG_PUBLIC_KEY: ${{ secrets.GPG_PUBLIC_KEY }}
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./gradlew jreleaserFullRelease
+        run: ./gradlew jreleaserFullRelease --stacktrace
 
       # Create a release
       - name: Run JReleaser
@@ -103,5 +103,5 @@ jobs:
         with:
           name: jreleaser-release
           path: |
-            out/jreleaser/trace.log
-            out/jreleaser/output.properties
+            build/jreleaser/trace.log
+            build/jreleaser/output.properties
