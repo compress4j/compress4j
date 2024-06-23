@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Compress4J Project
+ * Copyright 2024-2025 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ import java.nio.file.attribute.PosixFilePermissions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 public class ExtractPermissionsTest {
 
@@ -68,24 +70,28 @@ public class ExtractPermissionsTest {
 
         protected abstract ArchiveFormat getArchiveFormat();
 
+        @DisabledOnOs(OS.WINDOWS)
         @Test
         public void extract_restoresJavaFilePermissions() throws Exception {
             archiver.extract(archive, archiveExtractTmpDir);
             assertJavaPermissions();
         }
 
+        @DisabledOnOs(OS.WINDOWS)
         @Test
         public void extract_restoresUnixPermissions() throws Exception {
             archiver.extract(archive, archiveExtractTmpDir);
             assertPosixPermissions();
         }
 
+        @DisabledOnOs(OS.WINDOWS)
         @Test
         public void extract_stream_restoresUnixPermissions() throws Exception {
             extractWithStream();
             assertPosixPermissions();
         }
 
+        @DisabledOnOs(OS.WINDOWS)
         @Test
         public void extract_stream_restoresJavaPermissions() throws Exception {
             extractWithStream();

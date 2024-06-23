@@ -16,13 +16,15 @@
 package io.github.compress4j.archivers;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 @SuppressWarnings("java:S5778")
 public abstract class AbstractCompressorTest extends AbstractResourceTest {
@@ -60,63 +62,60 @@ public abstract class AbstractCompressorTest extends AbstractResourceTest {
         assertCompressionWasSuccessful();
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     public void compress_Directory_throwsException() {
-        var exception = assertThrows(
-                IllegalArgumentException.class, () -> getCompressor().compress(RESOURCES_DIR, compressDestinationFile));
-        assertThat(exception).hasMessage("Source src/test/resources is a directory.");
+        assertThatThrownBy(() -> getCompressor().compress(RESOURCES_DIR, compressDestinationFile))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Source src/test/resources is a directory.");
     }
 
     @Test
     public void compress_nullFile_throwsException() {
-        var exception = assertThrows(
-                IllegalArgumentException.class, () -> getCompressor().compress(null, compressDestinationFile));
-        assertThat(exception).hasMessage("Source is null");
+        assertThatThrownBy(() -> getCompressor().compress(null, compressDestinationFile))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Source is null");
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     public void compress_nonReadableFile_throwsException() {
-        try {
-            assertThatExceptionOfType(IllegalArgumentException.class)
-                    .isThrownBy(() -> getCompressor().compress(nonReadableFile, compressDestinationFile));
-        } finally {
-            assertThat(compressDestinationFile).doesNotExist();
-        }
+        assertThatThrownBy(() -> getCompressor().compress(nonReadableFile, compressDestinationFile))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertFalse(compressDestinationFile.exists());
     }
 
     @Test
     public void compress_nonExistingFile_throwsException() {
-        try {
-            assertThatExceptionOfType(FileNotFoundException.class)
-                    .isThrownBy(() -> getCompressor().compress(NON_EXISTING_FILE, compressDestinationFile));
-        } finally {
-            assertThat(compressDestinationFile).doesNotExist();
-        }
+        assertThatThrownBy(() -> getCompressor().compress(NON_EXISTING_FILE, compressDestinationFile))
+                .isInstanceOf(FileNotFoundException.class);
+        assertFalse(compressDestinationFile.exists());
     }
 
     @Test
     public void compress_withNullDestination_throwsException() {
-        var exception = assertThrows(
-                IllegalArgumentException.class, () -> getCompressor().compress(COMPRESS_TXT, null));
-        assertThat(exception).hasMessage("Destination is null");
+        assertThatThrownBy(() -> getCompressor().compress(COMPRESS_TXT, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Destination is null");
     }
 
     @Test
     public void compress_withNonExistingDestination_throwsException() {
-        assertThatExceptionOfType(FileNotFoundException.class)
-                .isThrownBy(() -> getCompressor().compress(COMPRESS_TXT, NON_EXISTING_FILE));
+        assertThatThrownBy(() -> getCompressor().compress(COMPRESS_TXT, NON_EXISTING_FILE))
+                .isInstanceOf(FileNotFoundException.class);
     }
 
     @Test
     public void compress_withNonWritableDestinationFile_throwsException() {
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> getCompressor().compress(COMPRESS_TXT, nonWritableFile));
+        assertThatThrownBy(() -> getCompressor().compress(COMPRESS_TXT, nonWritableFile))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     public void compress_withNonWritableDestinationDirectory_throwsException() {
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> getCompressor().compress(COMPRESS_TXT, nonWritableDir));
+        assertThatThrownBy(() -> getCompressor().compress(COMPRESS_TXT, nonWritableDir))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -133,57 +132,59 @@ public abstract class AbstractCompressorTest extends AbstractResourceTest {
         assertDecompressionWasSuccessful();
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     public void decompress_Directory_throwsException() {
-        var exception = assertThrows(
-                IllegalArgumentException.class, () -> getCompressor().decompress(RESOURCES_DIR, archiveExtractTmpDir));
-        assertThat(exception).hasMessage("Source src/test/resources is a directory.");
+        assertThatThrownBy(() -> getCompressor().decompress(RESOURCES_DIR, archiveExtractTmpDir))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Source src/test/resources is a directory.");
     }
 
     @Test
     public void decompress_nullFile_throwsException() {
-        var exception = assertThrows(
-                IllegalArgumentException.class, () -> getCompressor().decompress(null, archiveExtractTmpDir));
-        assertThat(exception).hasMessage("Source is null");
+        assertThatThrownBy(() -> getCompressor().decompress(null, archiveExtractTmpDir))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Source is null");
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     public void decompress_unknownFileType_throwsException() {
-        var exception = assertThrows(IllegalArgumentException.class, () -> getCompressor()
-                .decompress(COMPRESS_UNKNOWN, archiveExtractTmpDir));
-        assertThat(exception)
+        assertThatThrownBy(() -> getCompressor().decompress(COMPRESS_UNKNOWN, archiveExtractTmpDir))
+                .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("src/test/resources/compress.txt.unknown is not of type " + getCompressionType());
     }
 
     @Test
     public void decompress_withNonExistingDestination_throwsException() {
-        assertThatExceptionOfType(FileNotFoundException.class)
-                .isThrownBy(() -> getCompressor().decompress(getCompressedFile(), NON_EXISTING_FILE));
+        assertThatThrownBy(() -> getCompressor().decompress(getCompressedFile(), NON_EXISTING_FILE))
+                .isInstanceOf(FileNotFoundException.class);
     }
 
     @Test
     public void decompress_withNonWritableDestinationFile_throwsException() {
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> getCompressor().decompress(getCompressedFile(), nonWritableFile));
+        assertThatThrownBy(() -> getCompressor().decompress(getCompressedFile(), nonWritableFile))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     public void decompress_withNonWritableDestinationDirectory_throwsException() {
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> getCompressor().decompress(getCompressedFile(), nonWritableDir));
+        assertThatThrownBy(() -> getCompressor().decompress(getCompressedFile(), nonWritableDir))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     public void decompress_withNullDestinationDirectory_throwsException() {
-        var exception = assertThrows(
-                IllegalArgumentException.class, () -> getCompressor().decompress(getCompressedFile(), null));
-        assertThat(exception).hasMessage("Destination is null");
+        assertThatThrownBy(() -> getCompressor().decompress(getCompressedFile(), null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Destination is null");
     }
 
     @Test
     public void decompress_nonExistingFile_throwsException() {
-        assertThatExceptionOfType(FileNotFoundException.class)
-                .isThrownBy(() -> getCompressor().decompress(NON_EXISTING_FILE, decompressDestinationFile));
+        assertThatThrownBy(() -> getCompressor().decompress(NON_EXISTING_FILE, decompressDestinationFile))
+                .isInstanceOf(FileNotFoundException.class);
     }
 
     private void assertCompressionWasSuccessful() throws Exception {
