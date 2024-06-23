@@ -17,6 +17,9 @@ package io.github.compress4j.compressors.gzip;
 
 import io.github.compress4j.compressors.Decompressor;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 
 /**
@@ -29,8 +32,9 @@ public class GZipDecompressor extends Decompressor<GzipCompressorInputStream> {
      * Constructor that takes a GZipDecompressorBuilder.
      *
      * @param builder the GZipDecompressorBuilder to build from.
+     * @throws IOException thrown by the underlying output stream for I/O errors
      */
-    public GZipDecompressor(GZipDecompressorBuilder builder) {
+    public GZipDecompressor(GZipDecompressorBuilder builder) throws IOException {
         super(builder);
     }
 
@@ -43,21 +47,60 @@ public class GZipDecompressor extends Decompressor<GzipCompressorInputStream> {
         super(compressorInputStream);
     }
 
+    public static GZipDecompressorBuilder builder(Path path) throws IOException {
+        return new GZipDecompressorBuilder(new GzipCompressorInputStream(Files.newInputStream(path)));
+    }
+
     public static GZipDecompressorBuilder builder(GzipCompressorInputStream inputStream) {
         return new GZipDecompressorBuilder(inputStream);
+    }
+
+    public static class GZipDecompressorInputStreamBuilder {
+        private final GZipDecompressorBuilder parent;
+        private final InputStream inputStream;
+        private boolean decompressConcatenated = false;
+
+        public GZipDecompressorInputStreamBuilder(GZipDecompressorBuilder parent, InputStream inputStream) {
+            this.parent = parent;
+            this.inputStream = inputStream;
+        }
+
+        public GZipDecompressorInputStreamBuilder setDecompressConcatenated(boolean decompressConcatenated) {
+            this.decompressConcatenated = decompressConcatenated;
+            return this;
+        }
+
+        public GzipCompressorInputStream buildInputStream() throws IOException {
+            return new GzipCompressorInputStream(inputStream, decompressConcatenated);
+        }
+
+        public GZipDecompressorBuilder parentBuilder() {
+            return parent;
+        }
     }
 
     public static class GZipDecompressorBuilder
             extends Decompressor.DecompressorBuilder<
                     GzipCompressorInputStream, GZipDecompressor, GZipDecompressorBuilder> {
 
+        private final GZipDecompressorInputStreamBuilder inputStreamBuilder;
         /**
          * Constructor that takes a GzipCompressorInputStream.
          *
          * @param inputStream the GzipCompressorInputStream to read from.
          */
-        public GZipDecompressorBuilder(GzipCompressorInputStream inputStream) {
+        public GZipDecompressorBuilder(InputStream inputStream) {
             super(inputStream);
+            this.inputStreamBuilder = new GZipDecompressorInputStreamBuilder(this, inputStream);
+        }
+
+        public GZipDecompressorInputStreamBuilder inputStreamBuilder() {
+            return inputStreamBuilder;
+        }
+
+        @Override
+        public GzipCompressorInputStream buildCompressorInputStream() throws IOException {
+            return inputStreamBuilder.buildInputStream();
         }
 
         @Override
@@ -67,6 +110,7 @@ public class GZipDecompressor extends Decompressor<GzipCompressorInputStream> {
 
         @Override
         public GZipDecompressor build() throws IOException {
+
             return new GZipDecompressor(this);
         }
     }

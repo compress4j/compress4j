@@ -55,7 +55,7 @@ class BZip2DecompressorTest {
 
     @Test
     @DisplayName("Should construct BZip2Decompressor with a BZip2DecompressorBuilder")
-    void constructor_WithBuilder_SetsField() {
+    void constructor_WithBuilder_SetsField() throws IOException {
         // given
         BZip2DecompressorBuilder mockBuilder = new BZip2DecompressorBuilder(mockBZip2CompressorInputStream);
 

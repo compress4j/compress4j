@@ -46,7 +46,7 @@ class DecompressorBuilderTest {
     @DisplayName("Should construct DecompressorBuilder with CompressorInputStream")
     void constructor_WithCompressorInputStream_SetsField() {
         assertThat(builder).isNotNull();
-        assertThat(builder.compressorInputStream).isEqualTo(mockCompressorInputStream);
+        assertThat(builder.buildCompressorInputStream()).isEqualTo(mockCompressorInputStream);
     }
 
     @Test
@@ -75,7 +75,7 @@ class DecompressorBuilderTest {
                 new InMemoryDecompressor.InMemoryDecompressorBuilder(throwingStream) {
                     @Override
                     public InMemoryDecompressor build() throws IOException {
-                        if (compressorInputStream == throwingStream) {
+                        if (inputStream == throwingStream) {
                             throw new IOException("Simulated build error");
                         }
                         return super.build();

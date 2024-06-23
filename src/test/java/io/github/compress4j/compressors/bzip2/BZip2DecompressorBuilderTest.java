@@ -15,26 +15,48 @@
  */
 package io.github.compress4j.compressors.bzip2;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
+import static org.assertj.core.api.Assertions.assertThat;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class BZip2DecompressorBuilderTest {
+class BZip2DecompressorBuilderTest {
+
+    private InputStream mockRawInputStream;
+
+    @BeforeEach
+    void setUp() {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+        byte[] emptyValidBZip2Data = bos.toByteArray();
+        mockRawInputStream = new ByteArrayInputStream(emptyValidBZip2Data);
+    }
 
     @Test
-    void builderShouldConstructDecompressorClass() throws IOException {
+    void shouldBuildInputStream() throws IOException {
+        var builder = BZip2Decompressor.builder(mockRawInputStream);
 
-        var inputStream = mock(BZip2CompressorInputStream.class);
+        // when
+        try (BZip2CompressorInputStream in = builder.buildCompressorInputStream()) {
+            // then
+            assertThat(in).isNotNull();
+        }
+    }
 
-        BZip2Decompressor expected = new BZip2Decompressor(inputStream);
+    @Test
+    void shouldBuildInputStreamWithDecomporessConcatTrue() throws IOException {
+        var builder = BZip2Decompressor.builder(mockRawInputStream);
 
-        BZip2Decompressor.BZip2DecompressorBuilder builder =
-                new BZip2Decompressor.BZip2DecompressorBuilder(inputStream);
-        BZip2Decompressor actual = builder.build();
-
-        assertTrue(expected.getClass() == actual.getClass());
+        // when
+        try (BZip2CompressorInputStream in =
+                builder.inputStreamBuilder().setDecompressConcatenated(true).buildInputStream()) {
+            // then
+            assertThat(in).isNotNull();
+        }
     }
 }
