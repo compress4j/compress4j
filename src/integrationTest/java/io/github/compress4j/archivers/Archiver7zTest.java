@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Compress4J Project
+ * Copyright 2024-2025 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,7 @@
  */
 package io.github.compress4j.archivers;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,8 +37,9 @@ public class Archiver7zTest extends AbstractArchiverTest {
     @Test
     public void extract_properlyExtractsArchiveStream() {
         // 7z does not allow streaming
-        IOException exception = assertThrows(IOException.class, super::extract_properlyExtractsArchiveStream);
-        assertThat(exception).hasCauseInstanceOf(StreamingNotSupportedException.class);
-        assertThat(exception.getCause()).hasMessage("The 7z doesn't support streaming.");
+        assertThatThrownBy(super::extract_properlyExtractsArchiveStream)
+                .isInstanceOf(IOException.class)
+                .hasCauseInstanceOf(StreamingNotSupportedException.class)
+                .hasRootCauseMessage("The 7z doesn't support streaming.");
     }
 }

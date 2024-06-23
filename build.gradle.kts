@@ -29,9 +29,6 @@ repositories {
 }
 
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
-    }
     withJavadocJar()
     withSourcesJar()
 }
@@ -43,6 +40,8 @@ tasks.withType<JavaCompile> {
 tasks.withType<Javadoc> {
     options.encoding = "UTF-8"
 }
+
+val mockitoAgent = configurations.create("mockitoAgent")
 
 dependencies {
     api(libs.jakarta.annotation.api)
@@ -66,10 +65,13 @@ dependencies {
     testFixturesImplementation(libs.assertj.core)
     testFixturesImplementation(libs.junit.jupiter)
     testFixturesApi(libs.logback.classic)
+
+    mockitoAgent(libs.mockito.core) { isTransitive = false }
 }
 
 tasks.test {
     useJUnitPlatform()
+    jvmArgs("-javaagent:${mockitoAgent.asPath}")
 }
 
 testing {
