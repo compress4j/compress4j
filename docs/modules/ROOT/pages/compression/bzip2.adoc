@@ -1,0 +1,17 @@
+= bzip2
+
+Here is a simple example of how to use bzip2 compression.
+
+== Example Usage
+
+.Bzip2 Compression
+[,java]
+----
+include::example$java/com/example/compression/Bzip2Examples.java[tag=bzip2-compressor,indent=0]
+----
+
+.Bzip2 Decompression
+[,java]
+----
+include::example$java/com/example/compression/Bzip2Examples.java[tag=bzip2-decompressor,indent=0]
+----

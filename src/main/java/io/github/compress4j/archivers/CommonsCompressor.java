@@ -74,7 +74,7 @@ class CommonsCompressor implements Compressor {
 
         try (CompressorInputStream compressed =
                         CommonsStreamFactory.createCompressorInputStream(getCompressionType(), source);
-                FileOutputStream output = new FileOutputStream(destination); ) {
+                FileOutputStream output = new FileOutputStream(destination)) {
             compressed.transferTo(output);
         } catch (CompressorException e) {
             throw new IOException(e);

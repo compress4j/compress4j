@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Compress4J Project
+ * Copyright 2024-2025 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ public enum ArchiveFormat {
     /** default file extension the archive format is mapped to */
     private final String defaultFileExtension;
 
-    private ArchiveFormat(String name, String defaultFileExtension) {
+    ArchiveFormat(String name, String defaultFileExtension) {
         this.name = name;
         this.defaultFileExtension = defaultFileExtension;
     }
