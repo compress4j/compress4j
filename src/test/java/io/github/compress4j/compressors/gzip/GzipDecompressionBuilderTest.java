@@ -15,23 +15,136 @@
  */
 package io.github.compress4j.compressors.gzip;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 
+import io.github.compress4j.compressors.gzip.GzipDecompressor.GzipDecompressorBuilder;
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mock;
 
-public class GzipDecompressionBuilderTest {
+class GzipDecompressionBuilderTest {
+
+    @Mock
+    private GzipCompressorInputStream mockGzipCompressorInputStream;
+
+    @Mock
+    private InputStream mockRawInputStream;
 
     @Test
-    void builderShouldConstructDecompressorClass() throws IOException {
+    void whenBuilderGivenPathConstructsDecompressor(@TempDir Path tempDir) throws IOException {
+        // given
+        File targetPath = tempDir.resolve("target").toFile();
+        Files.createFile(targetPath.toPath());
+        GzipDecompressorBuilder builder = spy(new GzipDecompressorBuilder(targetPath));
+        //noinspection resource
+        doReturn(mockGzipCompressorInputStream).when(builder).buildCompressorInputStream();
 
-        var inputStream = mock(GzipCompressorInputStream.class);
-
-        GzipDecompressor.GZipDecompressorBuilder builder = new GzipDecompressor.GZipDecompressorBuilder(inputStream);
+        // when
         GzipDecompressor actual = builder.build();
 
-        assertTrue(GzipDecompressor.class.equals(actual.getClass()));
+        // then
+        assertThat(actual).isNotNull();
+    }
+
+    @Test
+    void whenBuilderGivenFileConstructsDecompressor(@TempDir Path tempDir) throws IOException {
+        // given
+        Path tartgetPath = tempDir.resolve("target");
+        Files.createFile(tartgetPath);
+        GzipDecompressorBuilder builder = spy(new GzipDecompressorBuilder(tartgetPath));
+        //noinspection resource
+        doReturn(mockGzipCompressorInputStream).when(builder).buildCompressorInputStream();
+
+        // when
+        GzipDecompressor actual = builder.build();
+
+        // then
+        assertThat(actual).isNotNull();
+    }
+
+    @Test
+    void whenBuilderGivenInputStreamConstructsDecompressor() throws IOException {
+        // given
+        GzipDecompressorBuilder builder = spy(new GzipDecompressorBuilder(mockRawInputStream));
+        //noinspection resource
+        doReturn(mockGzipCompressorInputStream).when(builder).buildCompressorInputStream();
+
+        // when
+        GzipDecompressor actual = builder.build();
+
+        // then
+        assertThat(actual).isNotNull();
+    }
+
+    @Test
+    void whenWritingInputStreamFailsThrowIOException() throws IOException {
+        // given
+        GzipDecompressorBuilder builder = spy(new GzipDecompressorBuilder(mockRawInputStream));
+        //noinspection resource
+        doThrow(new IOException()).when(builder).buildCompressorInputStream();
+
+        // when & then
+        assertThrows(IOException.class, builder::buildCompressorInputStream);
+    }
+
+    @Test
+    void shouldBuildInputStream() throws IOException {
+        // given
+        GzipDecompressorBuilder parentBuilder = new GzipDecompressorBuilder(mockRawInputStream);
+
+        GzipDecompressor.GzipDecompressorInputStreamBuilder compressorInputStreamBuilder =
+                spy(new GzipDecompressor.GzipDecompressorInputStreamBuilder(parentBuilder, mockRawInputStream));
+        //noinspection resource
+        doReturn(mock(GzipCompressorInputStream.class))
+                .when(compressorInputStreamBuilder)
+                .buildInputStream();
+
+        // when
+        try (GzipCompressorInputStream buildCompressorInputStream = compressorInputStreamBuilder.buildInputStream()) {
+            // then
+            assertThat(buildCompressorInputStream).isInstanceOf(GzipCompressorInputStream.class);
+        }
+    }
+
+    @Test
+    void shouldBuildInputStreamWithDecompressConcatTrue()
+            throws IOException, NoSuchFieldException, IllegalAccessException {
+        // given
+        GzipDecompressorBuilder parentBuilder = new GzipDecompressorBuilder(mockRawInputStream);
+
+        GzipDecompressor.GzipDecompressorInputStreamBuilder compressorInputStreamBuilder =
+                spy(parentBuilder.inputStreamBuilder());
+
+        //noinspection resource
+        doReturn(mock(GzipCompressorInputStream.class))
+                .when(compressorInputStreamBuilder)
+                .buildInputStream();
+        compressorInputStreamBuilder.setDecompressConcatenated(true);
+
+        Field decompressConcatenatedField =
+                GzipDecompressor.GzipDecompressorInputStreamBuilder.class.getDeclaredField("decompressConcatenated");
+        decompressConcatenatedField.setAccessible(true);
+
+        boolean decompressConcatenatedValue = (boolean) decompressConcatenatedField.get(compressorInputStreamBuilder);
+
+        assertThat(decompressConcatenatedValue).isTrue();
+
+        // when
+        try (GzipCompressorInputStream buildCompressorInputStream = compressorInputStreamBuilder.buildInputStream()) {
+            // then
+            assertThat(buildCompressorInputStream).isInstanceOf(GzipCompressorInputStream.class);
+        }
     }
 }

@@ -22,6 +22,7 @@ import static org.mockito.Mockito.mock;
 import io.github.compress4j.compressors.memory.InMemoryDecompressor;
 import io.github.compress4j.compressors.memory.InMemoryDecompressorInputStream;
 import java.io.IOException;
+import org.apache.commons.compress.compressors.CompressorInputStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -46,7 +47,7 @@ class DecompressorBuilderTest {
     @DisplayName("Should construct DecompressorBuilder with CompressorInputStream")
     void constructor_WithCompressorInputStream_SetsField() {
         assertThat(builder).isNotNull();
-        assertThat(builder.compressorInputStream).isEqualTo(mockCompressorInputStream);
+        assertThat(builder.buildCompressorInputStream()).isInstanceOf(CompressorInputStream.class);
     }
 
     @Test
@@ -63,7 +64,7 @@ class DecompressorBuilderTest {
 
         // then
         assertThat(decompressor).isNotNull();
-        assertThat(decompressor.compressorInputStream).isEqualTo(mockCompressorInputStream);
+        assertThat(decompressor.compressorInputStream).isInstanceOf(CompressorInputStream.class);
     }
 
     @Test
@@ -75,7 +76,7 @@ class DecompressorBuilderTest {
                 new InMemoryDecompressor.InMemoryDecompressorBuilder(throwingStream) {
                     @Override
                     public InMemoryDecompressor build() throws IOException {
-                        if (compressorInputStream == throwingStream) {
+                        if (inputStream == throwingStream) {
                             throw new IOException("Simulated build error");
                         }
                         return super.build();

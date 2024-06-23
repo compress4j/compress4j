@@ -28,6 +28,7 @@ import static io.github.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice
 import static io.github.compress4j.archivers.ArchiveExtractor.EscapingSymlinkPolicy.ALLOW;
 import static io.github.compress4j.archivers.ArchiveExtractor.EscapingSymlinkPolicy.DISALLOW;
 import static io.github.compress4j.archivers.ArchiveExtractor.EscapingSymlinkPolicy.RELATIVIZE_ABSOLUTE;
+import static io.github.compress4j.archivers.ArchiveExtractor.normalizePathAndSplit;
 import static io.github.compress4j.archivers.memory.InMemoryArchiveInputStream.toInputStream;
 import static io.github.compress4j.test.util.io.TestFileUtils.createFile;
 import static java.nio.file.attribute.PosixFilePermission.GROUP_READ;
@@ -878,7 +879,7 @@ class ArchiveExtractorTest {
         var path = "some/path";
 
         // when
-        var result = ArchiveExtractor.normalizePathAndSplit(path);
+        var result = normalizePathAndSplit(path);
 
         // then
         assertThat(result).isNotEmpty();
@@ -1513,30 +1514,18 @@ class ArchiveExtractorTest {
 
     @Test
     void normalizePathAndSplitShouldHandleVariousSlashPatterns() throws IOException {
-        assertThat(ArchiveExtractor.normalizePathAndSplit("/a/b/")).containsExactlyElementsOf(List.of("a", "b"));
-        assertThat(ArchiveExtractor.normalizePathAndSplit("a//b"))
-                .containsExactlyElementsOf(asListNormalized("a", "b"));
-        assertThat(ArchiveExtractor.normalizePathAndSplit("a/b///c/"))
-                .containsExactlyElementsOf(asListNormalized("a", "b", "c"));
-        assertThat(ArchiveExtractor.normalizePathAndSplit("a/./b"))
-                .containsExactlyElementsOf(asListNormalized("a", "b"));
-    }
-
-    private List<String> asListNormalized(String... parts) throws IOException {
-        String path = String.join(File.separator, parts);
-        var workingDir = Paths.get(System.getProperty("user.dir"));
-        String canonicalPath = Paths.get(workingDir.toString(), path).toFile().getCanonicalPath();
-        return Arrays.stream(canonicalPath.replace(File.separatorChar, '/').split("/"))
-                .filter(s -> !s.isEmpty())
-                .collect(Collectors.toList());
+        assertThat(normalizePathAndSplit("/a/b/")).containsExactlyElementsOf(List.of("a", "b"));
+        assertThat(normalizePathAndSplit("a//b")).containsExactlyElementsOf(asListNormalized("a", "b"));
+        assertThat(normalizePathAndSplit("a/b///c/")).containsExactlyElementsOf(asListNormalized("a", "b", "c"));
+        assertThat(normalizePathAndSplit("a/./b")).containsExactlyElementsOf(asListNormalized("a", "b"));
     }
 
     @Test
     void normalizePathAndSplitShouldThrowForParentTraversalOnlyPath() {
-        assertThatThrownBy(() -> ArchiveExtractor.normalizePathAndSplit(".."))
+        assertThatThrownBy(() -> normalizePathAndSplit(".."))
                 .isInstanceOf(IOException.class)
                 .hasMessageContaining("Invalid entry name");
-        assertThatThrownBy(() -> ArchiveExtractor.normalizePathAndSplit("../../a"))
+        assertThatThrownBy(() -> normalizePathAndSplit("../../a"))
                 .isInstanceOf(IOException.class)
                 .hasMessageContaining("Invalid entry name");
     }
@@ -1544,7 +1533,7 @@ class ArchiveExtractorTest {
     @Test
     void normalizePathAndSplitShouldHandleEmptyStringAfterEnsureValidPath() {
         try {
-            List<String> parts = ArchiveExtractor.normalizePathAndSplit("");
+            List<String> parts = normalizePathAndSplit("");
             assertThat(parts).isNotEmpty();
         } catch (IOException e) {
             // This might happen if canonical path fails for some reason, less likely for "".
@@ -1649,5 +1638,14 @@ class ArchiveExtractorTest {
             assertThat(tempDir.resolve("file.txt")).hasContent("content"); // Previous entry
             assertThat(tempDir.resolve("absLink")).doesNotExist();
         }
+    }
+
+    private List<String> asListNormalized(String... parts) throws IOException {
+        String path = String.join(File.separator, parts);
+        var workingDir = Paths.get(System.getProperty("user.dir"));
+        String canonicalPath = Paths.get(workingDir.toString(), path).toFile().getCanonicalPath();
+        return Arrays.stream(canonicalPath.replace(File.separatorChar, '/').split("/"))
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
     }
 }

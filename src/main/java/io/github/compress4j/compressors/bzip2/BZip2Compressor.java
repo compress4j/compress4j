@@ -116,7 +116,7 @@ public class BZip2Compressor extends Compressor<BZip2CompressorOutputStream> {
          * @param path the path to write the compressor to
          * @throws IOException if an I/O error occurred
          */
-        protected BZip2CompressorBuilder(Path path) throws IOException {
+        public BZip2CompressorBuilder(Path path) throws IOException {
             this(Files.newOutputStream(path));
         }
 
@@ -125,7 +125,7 @@ public class BZip2Compressor extends Compressor<BZip2CompressorOutputStream> {
          *
          * @param outputStream the output stream
          */
-        protected BZip2CompressorBuilder(OutputStream outputStream) {
+        public BZip2CompressorBuilder(OutputStream outputStream) {
             super(outputStream);
             this.compressorOutputStreamBuilder = new BZip2CompressorOutputStreamBuilder<>(this, outputStream);
         }
@@ -135,7 +135,7 @@ public class BZip2Compressor extends Compressor<BZip2CompressorOutputStream> {
         }
 
         @Override
-        protected BZip2CompressorBuilder getThis() {
+        public BZip2CompressorBuilder getThis() {
             return this;
         }
 
