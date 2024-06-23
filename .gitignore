@@ -3,6 +3,7 @@ bin/
 out/
 .gradle/
 build/
+.local/
 
 # Eclipse project files
 .project
@@ -16,7 +17,6 @@ build/
 *.iml
 *.ipr
 *.iws
-.idea
 
 #backup-files
 *~

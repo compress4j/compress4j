@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Compress4J Project
+ * Copyright 2024-2025 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,8 @@ import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 public abstract class AbstractArchiverTest extends AbstractResourceTest {
 
@@ -116,6 +118,7 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
                 FileNotFoundException.class, () -> archiver.create("archive", archiveCreateTmpDir, NON_EXISTING_FILE));
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     void create_withNonReadableSource_fails() {
         assertThrows(
@@ -127,6 +130,7 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
         assertThrows(IllegalArgumentException.class, () -> archiver.create("archive", nonReadableFile, ARCHIVE_DIR));
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     void create_withNonWritableDestination_fails() {
         assertThrows(IllegalArgumentException.class, () -> archiver.create("archive", nonWritableDir, ARCHIVE_DIR));
@@ -137,6 +141,7 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
         assertThrows(FileNotFoundException.class, () -> archiver.extract(NON_EXISTING_FILE, archiveExtractTmpDir));
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     void extract_withNonReadableSource_fails() {
         assertThrows(IllegalArgumentException.class, () -> archiver.extract(nonReadableFile, archiveExtractTmpDir));
@@ -147,6 +152,7 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
         assertThrows(IllegalArgumentException.class, () -> archiver.extract(archive, nonReadableFile));
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     void extract_withNonWritableDestination_fails() {
         assertThrows(IllegalArgumentException.class, () -> archiver.extract(archive, nonWritableDir));

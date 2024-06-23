@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Compress4J Project
+ * Copyright 2024-2025 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 @SuppressWarnings("java:S5778")
 public abstract class AbstractCompressorTest extends AbstractResourceTest {
@@ -60,6 +62,7 @@ public abstract class AbstractCompressorTest extends AbstractResourceTest {
         assertCompressionWasSuccessful();
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     public void compress_Directory_throwsException() {
         var exception = assertThrows(
@@ -74,6 +77,7 @@ public abstract class AbstractCompressorTest extends AbstractResourceTest {
         assertThat(exception).hasMessage("Source is null");
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     public void compress_nonReadableFile_throwsException() {
         try {
@@ -111,6 +115,7 @@ public abstract class AbstractCompressorTest extends AbstractResourceTest {
         assertThrows(IllegalArgumentException.class, () -> getCompressor().compress(COMPRESS_TXT, nonWritableFile));
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     public void compress_withNonWritableDestinationDirectory_throwsException() {
         assertThrows(IllegalArgumentException.class, () -> getCompressor().compress(COMPRESS_TXT, nonWritableDir));
@@ -130,6 +135,7 @@ public abstract class AbstractCompressorTest extends AbstractResourceTest {
         assertDecompressionWasSuccessful();
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     public void decompress_Directory_throwsException() {
         var exception = assertThrows(
@@ -144,6 +150,7 @@ public abstract class AbstractCompressorTest extends AbstractResourceTest {
         assertThat(exception).hasMessage("Source is null");
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     public void decompress_unknownFileType_throwsException() {
         var exception = assertThrows(IllegalArgumentException.class, () -> getCompressor()
@@ -164,6 +171,7 @@ public abstract class AbstractCompressorTest extends AbstractResourceTest {
                 IllegalArgumentException.class, () -> getCompressor().decompress(getCompressedFile(), nonWritableFile));
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     public void decompress_withNonWritableDestinationDirectory_throwsException() {
         assertThrows(
