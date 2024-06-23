@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Compress4J Project
+ * Copyright 2024-2025 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,11 @@ import io.github.compress4j.exceptions.MissingArchiveDependencyException;
 import java.io.File;
 import java.io.IOException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
+@DisabledOnOs(OS.WINDOWS)
 @SuppressWarnings("java:S5778")
 class CompressorXzDependencyCheckerTest {
 
