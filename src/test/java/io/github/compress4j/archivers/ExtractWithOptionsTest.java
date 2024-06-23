@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Compress4J Project
+ * Copyright 2024-2025 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,9 +64,8 @@ class ExtractWithOptionsTest extends AbstractResourceTest {
 
         // Try to extract the updated file, but it must fail as no CopyOptions
         // were passed to overwrite files
-        assertThatExceptionOfType(FileAlreadyExistsException.class).isThrownBy(() -> {
-            getArchiver().extract(getArchiveUpdated(), archiveExtractTmpDir);
-        });
+        assertThatExceptionOfType(FileAlreadyExistsException.class)
+                .isThrownBy(() -> getArchiver().extract(getArchiveUpdated(), archiveExtractTmpDir));
     }
 
     @Test

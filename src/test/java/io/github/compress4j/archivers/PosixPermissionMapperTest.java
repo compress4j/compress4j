@@ -23,7 +23,8 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import io.github.compress4j.archivers.FileModeMapper.PosixPermissionMapper;
-import io.github.compress4j.test.util.MemoryAppender;
+import io.github.compress4j.assertion.Compress4JAssertions;
+import io.github.compress4j.test.util.log.InMemoryLogAppender;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -34,6 +35,8 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
@@ -45,7 +48,7 @@ import org.slf4j.LoggerFactory;
 class PosixPermissionMapperTest {
 
     private static final String LOGGER_NAME = FileModeMapper.class.getPackageName();
-    private static MemoryAppender memoryAppender;
+    private static InMemoryLogAppender inMemoryLogAppender;
 
     @Mock
     private TarArchiveEntry archiveEntry;
@@ -56,19 +59,20 @@ class PosixPermissionMapperTest {
     @BeforeEach
     void setup() {
         Logger logger = (Logger) LoggerFactory.getLogger(LOGGER_NAME);
-        memoryAppender = new MemoryAppender();
-        memoryAppender.setContext((LoggerContext) LoggerFactory.getILoggerFactory());
+        inMemoryLogAppender = new InMemoryLogAppender();
+        inMemoryLogAppender.setContext((LoggerContext) LoggerFactory.getILoggerFactory());
         logger.setLevel(Level.DEBUG);
-        logger.addAppender(memoryAppender);
-        memoryAppender.start();
+        logger.addAppender(inMemoryLogAppender);
+        inMemoryLogAppender.start();
     }
 
     @AfterEach
     void cleanUp() {
-        memoryAppender.reset();
-        memoryAppender.stop();
+        inMemoryLogAppender.reset();
+        inMemoryLogAppender.stop();
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     void shouldChangeFilePermissions() throws IOException {
         // given
@@ -100,7 +104,7 @@ class PosixPermissionMapperTest {
         new PosixPermissionMapper<>(archiveEntry).map(tmpFile);
 
         // then
-        assertThat(memoryAppender.contains("Could not set file permissions of failingFile", Level.WARN))
-                .isTrue();
+        Compress4JAssertions.assertThat(inMemoryLogAppender)
+                .contains("Could not set file permissions of failingFile", Level.WARN);
     }
 }

@@ -20,10 +20,14 @@ jobs:
     runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
-        operating-system: [ ubuntu-latest, macos-latest]
+        operating-system: [ ubuntu-latest, macos-latest, windows-latest ]
         java: [ 11, 17, 21 ]
 
     steps:
+      - name: Set git config for long paths
+        if: matrix.operating-system == 'windows-latest'
+        run: |
+          git config --system core.longpaths true
       - name: Checkout sources
         uses: actions/checkout@v4
         with:
@@ -35,6 +39,9 @@ jobs:
           java-version: ${{ matrix.java }}
           distribution: 'temurin'
           cache: 'gradle'
+
+      - name: Java version
+        run: java -version
       - name: Build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
