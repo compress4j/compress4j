@@ -33,7 +33,7 @@ import org.apache.commons.compress.archivers.tar.TarConstants;
 /** The Tar compressor. */
 @SuppressWarnings({"unused", "OptionalUsedAsFieldOrParameterType"})
 public class TarCompressor extends Compressor<TarArchiveOutputStream> {
-    private final TarArchiveOutputStream myStream;
+    private final TarArchiveOutputStream outputStream;
 
     public TarCompressor(Path path) throws IOException {
         this(path, Collections.emptyMap());
@@ -48,7 +48,7 @@ public class TarCompressor extends Compressor<TarArchiveOutputStream> {
     }
 
     public TarCompressor(OutputStream stream, Map<String, Object> options) throws IOException {
-        myStream = createArchiveOutputStream(stream, options);
+        outputStream = createArchiveOutputStream(stream, options);
     }
 
     private static TarArchiveEntry getArchiveEntry(String name, Optional<Path> symlinkTarget) {
@@ -67,8 +67,8 @@ public class TarCompressor extends Compressor<TarArchiveOutputStream> {
     protected void writeDirectoryEntry(String name, FileTime modTime) throws IOException {
         TarArchiveEntry e = new TarArchiveEntry(name + '/');
         e.setModTime(modTime);
-        myStream.putArchiveEntry(e);
-        myStream.closeArchiveEntry();
+        outputStream.putArchiveEntry(e);
+        outputStream.closeArchiveEntry();
     }
 
     /** {@inheritDoc} */
@@ -111,11 +111,11 @@ public class TarCompressor extends Compressor<TarArchiveOutputStream> {
         if (mode != 0) {
             e.setMode(mode);
         }
-        myStream.putArchiveEntry(e);
+        outputStream.putArchiveEntry(e);
         if (length > 0) {
-            source.transferTo(myStream);
+            source.transferTo(outputStream);
         }
-        myStream.closeArchiveEntry();
+        outputStream.closeArchiveEntry();
     }
 
     /** {@inheritDoc} */
@@ -137,6 +137,6 @@ public class TarCompressor extends Compressor<TarArchiveOutputStream> {
     /** {@inheritDoc} */
     @Override
     public void close() throws IOException {
-        myStream.close();
+        outputStream.close();
     }
 }
