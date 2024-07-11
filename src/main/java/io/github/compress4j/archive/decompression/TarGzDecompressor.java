@@ -19,15 +19,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 
-public class TarDecompressor extends TarBaseDecompressor<TarDecompressor, TarDecompressor.Builder> {
+public class TarGzDecompressor extends TarBaseDecompressor<TarGzDecompressor, TarGzDecompressor.Builder> {
 
-    protected TarDecompressor(Builder builder) {
+    protected TarGzDecompressor(Builder builder) {
         super(builder);
     }
 
+    /** {@inheritDoc} */
+    @Override
     protected TarArchiveInputStream buildArchiveInputStream(InputStream input) throws IOException {
-        return new TarArchiveInputStream(input);
+        return new TarArchiveInputStream(new GzipCompressorInputStream(input));
     }
 
     /**
@@ -48,7 +51,8 @@ public class TarDecompressor extends TarBaseDecompressor<TarDecompressor, TarDec
         return new Builder(stream);
     }
 
-    public static final class Builder extends TarBaseDecompressor.Builder<TarDecompressor, Builder> {
+    public static final class Builder
+            extends TarBaseDecompressor.Builder<TarGzDecompressor, TarGzDecompressor.Builder> {
 
         public Builder(Path path) throws IOException {
             super(path);
@@ -64,8 +68,8 @@ public class TarDecompressor extends TarBaseDecompressor<TarDecompressor, TarDec
          * @return A TarDecompressor, populated with all fields from this builder.
          */
         @Override
-        public TarDecompressor build() {
-            return new TarDecompressor(this);
+        public TarGzDecompressor build() {
+            return new TarGzDecompressor(this);
         }
     }
 }

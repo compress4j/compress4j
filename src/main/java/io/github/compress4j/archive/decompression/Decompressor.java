@@ -45,7 +45,6 @@ import org.slf4j.LoggerFactory;
  * This abstract class is the superclass of all classes providing de-compression. This class provides functionality to
  * add files and directories to an archive.
  */
-@SuppressWarnings("unused")
 public abstract class Decompressor<D extends Decompressor<D, B>, B extends Decompressor.Builder<D, B>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(Decompressor.class);
 
@@ -355,7 +354,7 @@ public abstract class Decompressor<D extends Decompressor<D, B>, B extends Decom
         }
     }
 
-    protected abstract static class Builder<D, B> {
+    protected abstract static class Builder<T extends Decompressor<T, O>, O extends Decompressor.Builder<T, O>> {
         protected BiFunction<? super Entry, ? super IOException, ErrorHandlerChoice> errorHandler =
                 (x, y) -> ErrorHandlerChoice.BAIL_OUT;
 
@@ -369,46 +368,46 @@ public abstract class Decompressor<D extends Decompressor<D, B>, B extends Decom
 
         protected Builder() {}
 
-        public B filter(Predicate<? super Decompressor.Entry> myFilter) {
+        public O filter(Predicate<? super Decompressor.Entry> myFilter) {
             this.filter = Optional.ofNullable(myFilter);
             //noinspection unchecked
-            return (B) this;
+            return (O) this;
         }
 
-        public B errorHandler(BiFunction<? super Entry, ? super IOException, ErrorHandlerChoice> errorHandler) {
+        public O errorHandler(BiFunction<? super Entry, ? super IOException, ErrorHandlerChoice> errorHandler) {
             this.errorHandler = errorHandler;
             //noinspection unchecked
-            return (B) this;
+            return (O) this;
         }
 
-        public B overwrite(boolean overwrite) {
+        public O overwrite(boolean overwrite) {
             this.overwrite = overwrite;
             //noinspection unchecked
-            return (B) this;
+            return (O) this;
         }
 
-        public B pathPrefix(List<String> myPathPrefix) {
+        public O pathPrefix(List<String> myPathPrefix) {
             this.pathPrefix = myPathPrefix;
             //noinspection unchecked
-            return (B) this;
+            return (O) this;
         }
 
-        public B escapingSymlinkPolicy(Decompressor.EscapingSymlinkPolicy myEscapingSymlinkPolicy) {
+        public O escapingSymlinkPolicy(Decompressor.EscapingSymlinkPolicy myEscapingSymlinkPolicy) {
             this.escapingSymlinkPolicy = myEscapingSymlinkPolicy;
             //noinspection unchecked
-            return (B) this;
+            return (O) this;
         }
 
-        public B postProcessor(BiConsumer<? super Decompressor.Entry, ? super Path> postProcessor) {
+        public O postProcessor(BiConsumer<? super Decompressor.Entry, ? super Path> postProcessor) {
             this.postProcessor = postProcessor;
             //noinspection unchecked
-            return (B) this;
+            return (O) this;
         }
 
-        public B postProcessor(@Nullable Consumer<? super Path> consumer) {
+        public O postProcessor(@Nullable Consumer<? super Path> consumer) {
             this.postProcessor = consumer != null ? (entry, path) -> consumer.accept(path) : null;
             //noinspection unchecked
-            return (B) this;
+            return (O) this;
         }
 
         /**
@@ -421,16 +420,16 @@ public abstract class Decompressor<D extends Decompressor<D, B>, B extends Decom
          * @return self
          * @throws IOException if the prefix is invalid
          */
-        public B removePrefixPath(@Nullable String prefix) throws IOException {
+        public O removePrefixPath(@Nullable String prefix) throws IOException {
             pathPrefix = prefix != null ? normalizePathAndSplit(prefix) : List.of();
             //noinspection unchecked
-            return (B) this;
+            return (O) this;
         }
         /**
          * Builds the MessageRequest.
          *
          * @return A MessageRequest, populated with all fields from this builder.
          */
-        public abstract D build();
+        public abstract T build();
     }
 }
