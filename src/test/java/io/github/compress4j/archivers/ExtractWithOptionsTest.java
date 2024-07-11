@@ -15,16 +15,15 @@
  */
 package io.github.compress4j.archivers;
 
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import org.junit.jupiter.api.Test;
 
 class ExtractWithOptionsTest extends AbstractResourceTest {
 
@@ -52,7 +51,7 @@ class ExtractWithOptionsTest extends AbstractResourceTest {
         return new File(RESOURCES_DIR, ORIGINAL_ZIP_FILE);
     }
 
-    protected  File getArchiveUpdated() {
+    protected File getArchiveUpdated() {
         return new File(RESOURCES_DIR, UPDATED_ZIP_FILE);
     }
 
@@ -65,10 +64,9 @@ class ExtractWithOptionsTest extends AbstractResourceTest {
 
         // Try to extract the updated file, but it must fail as no CopyOptions
         // were passed to overwrite files
-        assertThatExceptionOfType(FileAlreadyExistsException.class)
-                .isThrownBy(() -> {
-                   getArchiver().extract(getArchiveUpdated(), archiveExtractTmpDir);
-                });
+        assertThatExceptionOfType(FileAlreadyExistsException.class).isThrownBy(() -> {
+            getArchiver().extract(getArchiveUpdated(), archiveExtractTmpDir);
+        });
     }
 
     @Test
@@ -84,12 +82,10 @@ class ExtractWithOptionsTest extends AbstractResourceTest {
         assertFileContains("new content");
     }
 
-
     private void assertFileContains(String expectedFileContent) throws IOException {
         assertThat(archiveExtractTmpDir)
                 .isDirectoryContaining(file -> file.getName().equals(ZIP_FILE_NAME));
         String fileContent = Files.readString(new File(archiveExtractTmpDir, ZIP_FILE_NAME).toPath());
         assertThat(fileContent).contains(expectedFileContent);
     }
-
 }
