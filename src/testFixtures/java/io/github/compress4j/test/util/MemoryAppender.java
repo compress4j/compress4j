@@ -19,6 +19,7 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class MemoryAppender extends ListAppender<ILoggingEvent> {
     public void reset() {
@@ -34,14 +35,14 @@ public class MemoryAppender extends ListAppender<ILoggingEvent> {
     public List<ILoggingEvent> find(String string) {
         return this.list.stream()
                 .filter(event -> event.toString().contains(string))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     public List<ILoggingEvent> find(String string, Level level) {
         return this.list.stream()
                 .filter(event ->
                         event.toString().contains(string) && event.getLevel().equals(level))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     public int getSize() {
