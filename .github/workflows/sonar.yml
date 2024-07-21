@@ -1,0 +1,67 @@
+name: Sonar
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+
+env:
+  DEFAULT_JDK_VERSION: 17
+
+jobs:
+  build:
+    name: Sonar
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      matrix:
+        operating-system: [ ubuntu-latest, macos-12 ]
+        java: [ 17, 21 ]
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+          ref: ${{github.event.workflow_run.head_sha}}
+      - name: 'Set up JDK ${{ matrix.java }}'
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: 'temurin'
+          cache: 'gradle'
+      - name: Download Test report
+        uses: actions/download-artifact@v4
+        with:
+          path: reports
+          pattern: ${{ matrix.os }}-jdk_${{ matrix.java }}-test-reports
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{github.event.workflow_run.id}}
+      - name: Download PrInfo
+        uses: actions/download-artifact@v4
+        with:
+          pattern: prInfo
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{github.event.workflow_run.id}}
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-jdk_${{ matrix.java }}-sonar
+          restore-keys: ${{ runner.os }}-jdk_${{ matrix.java }}-sonar
+      - name: Create coverage report and run Sonar analysis
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          mkdir build
+          cp -r reports/*-reports/* build/
+          if [ '${{github.event.workflow_run.event}}' == 'pull_request' ]; then
+            PR_NUMBER=$(<prInfo/PR)
+            BASE_REF=$(<prInfo/base_ref)
+            HEAD_REF=$(<prInfo/head_ref)
+            ./gradlew jacocoTestReport sonar -Dsonar.pullrequest.base=$BASE_REF -Dsonar.pullrequest.branch=$HEAD_REF -Dsonar.pullrequest.key=$PR_NUMBER -Dsonar.pullrequest.provider=GitHub -Dsonar.pullrequest.github.repository=${{github.repository}}
+          else
+            ./gradlew jacocoTestReport sonar --info
+          fi
+        shell: bash
