@@ -6,9 +6,6 @@ on:
     types:
       - completed
 
-env:
-  DEFAULT_JDK_VERSION: 17
-
 jobs:
   build:
     name: Sonar
@@ -17,6 +14,8 @@ jobs:
       matrix:
         operating-system: [ ubuntu-latest, macos-12 ]
         java: [ 17, 21 ]
+    if: >
+      github.event.workflow_run.conclusion == 'success'
 
     steps:
       - name: Checkout sources
@@ -34,7 +33,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: reports
-          pattern: ${{ matrix.os }}-jdk_${{ matrix.java }}-test-reports
+          name: ${{ matrix.operating-system }}-jdk_${{ matrix.java }}-test-reports
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{github.event.workflow_run.id}}
       - name: Download PrInfo
@@ -47,8 +46,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.sonar/cache
-          key: ${{ runner.os }}-jdk_${{ matrix.java }}-sonar
-          restore-keys: ${{ runner.os }}-jdk_${{ matrix.java }}-sonar
+          key: ${{ matrix.operating-system }}-jdk_${{ matrix.java }}-sonar
+          restore-keys: ${{ matrix.operating-system }}-jdk_${{ matrix.java }}-sonar
       - name: Create coverage report and run Sonar analysis
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
