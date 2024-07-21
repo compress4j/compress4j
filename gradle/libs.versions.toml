@@ -1,6 +1,6 @@
 [versions]
 apache-commons-compress = "1.26.1"
-assertJ = "3.25.3"
+assertJ = "3.26.3"
 git-version = "6.4.3"
 jakarta-annotation = "3.0.0"
 jreleaser = "1.12.0"
