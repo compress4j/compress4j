@@ -33,9 +33,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: reports
-          name: ${{ matrix.operating-system }}-jdk_${{ matrix.java }}-test-reports
+          pattern: ${{ matrix.operating-system }}-jdk_${{ matrix.java }}-test-reports
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{github.event.workflow_run.id}}
+      - run: ls -R reports
       - name: Download PrInfo
         uses: actions/download-artifact@v4
         with:
