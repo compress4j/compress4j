@@ -60,6 +60,19 @@ public abstract class TarBaseDecompressor<
         archiveInputStream = this.buildArchiveInputStream(input);
     }
 
+    /**
+     * Build a {@code TarArchiveInputStream} from the given {@code InputStream}. If you want to combine an archive
+     * format with a compression format - like when reading a `tar.gz` file - you wrap the {@code ArchiveInputStream}
+     * around {@code CompressorInputStream} for example:
+     *
+     * <pre>{@code
+     * return new TarArchiveInputStream(new GzipCompressorInputStream(input));
+     * }</pre>
+     *
+     * @param input - the {@code InputStream} to the tar file
+     * @return a {@code TarArchiveInputStream} from the given {@code InputStream}
+     * @throws IOException - if the {@code TarArchiveInputStream} could not be created
+     */
     abstract TarArchiveInputStream buildArchiveInputStream(InputStream input) throws IOException;
 
     /** {@inheritDoc} */
@@ -113,6 +126,12 @@ public abstract class TarBaseDecompressor<
         }
     }
 
+    /**
+     * A builder for {@code TarBaseDecompressor}.
+     *
+     * @param <T> the type of the {@code TarBaseDecompressor}
+     * @param <O> the type of the {@code TarBaseDecompressor.Builder}
+     */
     public abstract static class Builder<T extends Decompressor<T, O>, O extends Decompressor.Builder<T, O>>
             extends Decompressor.Builder<T, O> {
         private final InputStream sourceStream;
