@@ -104,7 +104,7 @@ class TarCompressorTest {
     }
 
     @Test
-    void tarWithEmptyPrefix() throws IOException {
+    void shouldAddDirectoryWithEmptyPrefix() throws IOException {
         Path file = tempDir.resolve("base/file");
         createDirectories(file.getParent());
         createFile(file);
@@ -114,7 +114,7 @@ class TarCompressorTest {
     }
 
     @Test
-    void tarWithExecutableFiles() throws IOException {
+    void shouldAddRetainExecutableFilePermission() throws IOException {
         assumeTrue(FileSystems.getDefault().supportedFileAttributeViews().contains("posix"));
         var base = tempDir.resolve("base");
         createDirectories(base);
@@ -133,18 +133,18 @@ class TarCompressorTest {
     }
 
     @Test
-    void shouldCompressWithSymbolicLinks() throws IOException {
+    void shouldAddSymbolicLinks() throws IOException {
         assumeSymLinkCreationIsSupported();
 
-        var base = tempDir.resolve("base");
-        createDirectories(base);
-        var origin = base.resolve("origin");
+        var baseDir = tempDir.resolve("base");
+        createDirectories(baseDir);
+        var origin = baseDir.resolve("origin");
         createFile(origin);
-        var link = base.resolve("link");
+        var link = baseDir.resolve("link");
         Files.createSymbolicLink(link, origin.getFileName());
 
-        compressor.addDirectory(base);
-        deleteRecursively(base);
+        compressor.addDirectory(baseDir);
+        deleteRecursively(baseDir);
 
         var out = tempDir.resolve("out");
         extract(compressFile, out);

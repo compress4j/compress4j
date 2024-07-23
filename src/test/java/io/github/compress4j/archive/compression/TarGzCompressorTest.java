@@ -22,6 +22,7 @@ import io.github.compress4j.assertion.CompressorAssertion;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -47,6 +48,11 @@ class TarGzCompressorTest extends TarCompressorTest {
         CompressorAssertion.assertThat(compressFile)
                 .containsAllEntriesOf(
                         Map.of("empty.txt", "", "file1.txt", "123", "file2.txt", "456", "file3.txt", "789"));
+
+        var out = tempDir.resolve("out");
+        extract(compressFile, out);
+        Assertions.assertThat(out.toFile()).isDirectory().isDirectoryContaining(f -> f.getName()
+                .equals("empty.txt"));
     }
 
     @Override
