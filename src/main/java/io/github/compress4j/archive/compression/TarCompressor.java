@@ -29,6 +29,7 @@ import java.util.Optional;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarConstants;
+import org.apache.commons.io.IOUtils;
 
 /** The Tar compressor. */
 @SuppressWarnings({"unused", "OptionalUsedAsFieldOrParameterType"})
@@ -113,7 +114,7 @@ public class TarCompressor extends Compressor<TarArchiveOutputStream> {
         }
         outputStream.putArchiveEntry(e);
         if (length > 0) {
-            source.transferTo(outputStream);
+            IOUtils.copy(source, outputStream);
         }
         outputStream.closeArchiveEntry();
     }
