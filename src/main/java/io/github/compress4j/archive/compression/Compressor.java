@@ -470,15 +470,15 @@ public abstract class Compressor<T extends ArchiveOutputStream<? extends Archive
      * @throws IllegalArgumentException if the {@link #COMPRESSION_LEVEL} option does not parse to an Integer.
      */
     protected int getCompressionLevel(Map<String, Object> o) {
-        if (!o.containsKey(COMPRESSION_LEVEL)) {
-            return -1;
-        }
-        Object option = o.get(COMPRESSION_LEVEL);
-        try {
-            return (Integer) option;
-        } catch (ClassCastException e) {
-            throw new IllegalArgumentException("Cannot set compression level " + option, e);
-        }
+        return Optional.ofNullable(o.remove(COMPRESSION_LEVEL))
+                .map(value -> {
+                    try {
+                        return (Integer) value;
+                    } catch (ClassCastException e) {
+                        throw new IllegalArgumentException("Cannot set compression level " + value, e);
+                    }
+                })
+                .orElse(-1);
     }
 
     /**
