@@ -85,6 +85,11 @@ class SevenZArchiver extends CommonsArchiver<SevenZArchiveEntry> {
         }
 
         @Override
+        public void flush() throws IOException {
+            file.close();
+        }
+
+        @Override
         public void putArchiveEntry(SevenZArchiveEntry entry) {
             file.putArchiveEntry(entry);
         }
