@@ -9,8 +9,11 @@ on:
     branches:
       - main
 
-jobs:
+permissions:
+  contents: read
+  actions: write
 
+jobs:
   ci:
     name: Build
     runs-on: ${{ matrix.operating-system }}
@@ -37,7 +40,7 @@ jobs:
         run: ./gradlew build --continue --no-daemon
       - name: Upload Test reports
         uses: actions/upload-artifact@v4
-        if: always()
+        if: ${{ matrix.operating-system == 'ubuntu-latest' }}
         with:
           name: ${{ matrix.operating-system }}-jdk_${{ matrix.java }}-test-reports
           path: |
@@ -50,13 +53,18 @@ jobs:
       - ci
 
     steps:
-      - name: Save Sonar config on PR
-        run: |
-          mkdir -p ./prInfo
-          echo ${{ github.event.number }} > ./prInfo/PR
-          echo ${{ github.base_ref }} > ./prInfo/base_ref
-          echo ${{ github.head_ref }} > ./prInfo/head_ref
-      - uses: actions/upload-artifact@v4
+      - name: Checkout sources
+        uses: actions/checkout@v4
         with:
-          name: prInfo
-          path: prInfo/
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Trigger Sonar
+        run: |
+          echo Triggerring Sonar
+          gh workflow run --ref ${{ github.ref_name }} sonar.yml \
+            -f runId=${{ github.run_id }} \
+            -f event=${{github.event.workflow_run.event}} \
+            -f prNumber=${{ github.event.number }} \
+            -f baseRef=${{github.base_ref}} \
+            -f headRef=${{github.head_ref}}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

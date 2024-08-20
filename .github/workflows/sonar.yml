@@ -1,21 +1,72 @@
 name: Sonar
 on:
-  workflow_run:
-    workflows:
-      - CI
-    types:
-      - completed
+  workflow_dispatch:
+    inputs:
+      runId:
+        description: 'Run ID'
+        required: true
+      event:
+        description: 'Event type'
+        required: true
+        default: 'workflow_dispatch'
+      prNumber:
+        description: 'Pull Request number'
+        required: false
+      baseRef:
+        description: 'Base git reference'
+        required: false
+      headRef:
+        description: 'Head git reference'
+        required: false
+
+permissions:
+  contents: read
+  actions: write
 
 jobs:
-  build:
+  logging:
+    name: Logging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+      - name: Dump job context
+        env:
+          JOB_CONTEXT: ${{ toJson(job) }}
+        run: echo "$JOB_CONTEXT"
+      - name: Dump steps context
+        env:
+          STEPS_CONTEXT: ${{ toJson(steps) }}
+        run: echo "$STEPS_CONTEXT"
+      - name: Dump runner context
+        env:
+          RUNNER_CONTEXT: ${{ toJson(runner) }}
+        run: echo "$RUNNER_CONTEXT"
+      - name: Dump strategy context
+        env:
+          STRATEGY_CONTEXT: ${{ toJson(strategy) }}
+        run: echo "$STRATEGY_CONTEXT"
+      - name: Dump event
+        env:
+          MATRIX_CONTEXT: ${{ toJson(github.event) }}
+        run: echo "$MATRIX_CONTEXT"
+      - name: Dump conclusion
+        env:
+          RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+        run: echo "$RUN_CONCLUSION"
+      - name: Dump Github ref
+        env:
+          GITHUB_REF: ${{ github.event.ref }}
+        run: echo "$GITHUB_REF"
+
+  sonar:
     name: Sonar
-    runs-on: ${{ matrix.operating-system }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        operating-system: [ ubuntu-latest, macos-12 ]
         java: [ 17, 21 ]
-    if: >
-      github.event.workflow_run.conclusion == 'success'
 
     steps:
       - name: Checkout sources
@@ -33,21 +84,15 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: reports
-          pattern: ${{ matrix.operating-system }}-jdk_${{ matrix.java }}-test-reports
+          pattern: ubuntu-latest-jdk_${{ matrix.java }}-test-reports
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{github.event.workflow_run.id}}
-      - name: Download PrInfo
-        uses: actions/download-artifact@v4
-        with:
-          pattern: prInfo
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{github.event.workflow_run.id}}
+          run-id: ${{ github.event.inputs.runId }}
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
         with:
           path: ~/.sonar/cache
-          key: ${{ matrix.operating-system }}-jdk_${{ matrix.java }}-sonar
-          restore-keys: ${{ matrix.operating-system }}-jdk_${{ matrix.java }}-sonar
+          key: ubuntu-latest-jdk_${{ matrix.java }}-sonar
+          restore-keys: ubuntu-latest-jdk_${{ matrix.java }}-sonar
       - name: Create coverage report and run Sonar analysis
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -55,12 +100,21 @@ jobs:
         run: |
           mkdir build
           cp -r reports/*-reports/* build/
-          if [ '${{github.event.workflow_run.event}}' == 'pull_request' ]; then
-            PR_NUMBER=$(<prInfo/PR)
-            BASE_REF=$(<prInfo/base_ref)
-            HEAD_REF=$(<prInfo/head_ref)
-            ./gradlew jacocoTestReport sonar -Dsonar.pullrequest.base=$BASE_REF -Dsonar.pullrequest.branch=$HEAD_REF -Dsonar.pullrequest.key=$PR_NUMBER -Dsonar.pullrequest.provider=GitHub -Dsonar.pullrequest.github.repository=${{github.repository}}
+          if [ '${{github.event.imputs.event}}' == 'pull_request' ]; then
+            ./gradlew jacocoTestReport sonar \ 
+              -Dsonar.pullrequest.base=${{github.event.inputs.baseRef}} \
+              -Dsonar.pullrequest.branch=${{github.event.inputs.headRef}} \
+              -Dsonar.pullrequest.key=${{github.event.inputs.prNumber}} \ 
+              -Dsonar.pullrequest.provider=GitHub \
+              -Dsonar.pullrequest.github.repository=${{github.repository}}
           else
             ./gradlew jacocoTestReport sonar --info
           fi
         shell: bash
+      - name: Trigger release when a tag is pushed
+        if: startsWith( github.ref, 'refs/tags' )
+        run: |
+          echo Trigger release on a tag
+          gh workflow run --ref ${{ github.ref_name }} Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
