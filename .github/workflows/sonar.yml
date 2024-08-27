@@ -75,9 +75,9 @@ jobs:
           fi
         shell: bash
       - name: Trigger release when a tag is pushed
-        if: startsWith( github.ref, 'refs/tags' )
+        if: startsWith( github.ref, 'refs/tags' ) && matrix.java == 17
         run: |
           echo Trigger release on a tag
-          gh workflow run --ref ${{ github.ref_name }} Release
+          gh workflow run --ref ${{ github.ref_name }} Release -f jdk_version=${{ matrix.java }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
