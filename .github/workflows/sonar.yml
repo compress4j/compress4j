@@ -5,7 +5,7 @@ on:
       runId:
         description: 'Run ID'
         required: true
-      event:
+      eventName:
         description: 'Event type'
         required: true
         default: 'workflow_dispatch'
@@ -24,43 +24,6 @@ permissions:
   actions: write
 
 jobs:
-  logging:
-    name: Logging
-    runs-on: ubuntu-latest
-    steps:
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
-      - name: Dump job context
-        env:
-          JOB_CONTEXT: ${{ toJson(job) }}
-        run: echo "$JOB_CONTEXT"
-      - name: Dump steps context
-        env:
-          STEPS_CONTEXT: ${{ toJson(steps) }}
-        run: echo "$STEPS_CONTEXT"
-      - name: Dump runner context
-        env:
-          RUNNER_CONTEXT: ${{ toJson(runner) }}
-        run: echo "$RUNNER_CONTEXT"
-      - name: Dump strategy context
-        env:
-          STRATEGY_CONTEXT: ${{ toJson(strategy) }}
-        run: echo "$STRATEGY_CONTEXT"
-      - name: Dump event
-        env:
-          MATRIX_CONTEXT: ${{ toJson(github.event) }}
-        run: echo "$MATRIX_CONTEXT"
-      - name: Dump conclusion
-        env:
-          RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
-        run: echo "$RUN_CONCLUSION"
-      - name: Dump Github ref
-        env:
-          GITHUB_REF: ${{ github.event.ref }}
-        run: echo "$GITHUB_REF"
-
   sonar:
     name: Sonar
     runs-on: ubuntu-latest
@@ -100,11 +63,11 @@ jobs:
         run: |
           mkdir build
           cp -r reports/*-reports/* build/
-          if [ '${{github.event.imputs.event}}' == 'pull_request' ]; then
-            ./gradlew jacocoTestReport sonar \ 
+          if [ '${{github.event.inputs.eventName}}' == 'pull_request' ]; then
+            ./gradlew jacocoTestReport sonar \
               -Dsonar.pullrequest.base=${{github.event.inputs.baseRef}} \
               -Dsonar.pullrequest.branch=${{github.event.inputs.headRef}} \
-              -Dsonar.pullrequest.key=${{github.event.inputs.prNumber}} \ 
+              -Dsonar.pullrequest.key=${{github.event.inputs.prNumber}} \
               -Dsonar.pullrequest.provider=GitHub \
               -Dsonar.pullrequest.github.repository=${{github.repository}}
           else
