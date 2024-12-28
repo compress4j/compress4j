@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ 17, 21 ]
+        java: [ 11, 17, 21 ]
 
     steps:
       - name: Checkout sources
@@ -75,7 +75,7 @@ jobs:
           fi
         shell: bash
       - name: Trigger release when a tag is pushed
-        if: startsWith( github.ref, 'refs/tags' ) && matrix.java == 17
+        if: startsWith( github.ref, 'refs/tags' ) && matrix.java == 11
         run: |
           echo Trigger release on a tag
           gh workflow run --ref ${{ github.ref_name }} Release -f jdk_version=${{ matrix.java }}
