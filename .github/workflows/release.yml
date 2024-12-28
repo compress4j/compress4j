@@ -21,7 +21,7 @@ jobs:
       - name: "Set up JDK ${{ github.event.inputs.jdk_version }}"
         uses: actions/setup-java@v4
         with:
-          java-version: ${{ github.event.inputs.jdk_version }}"
+          java-version: ${{ github.event.inputs.jdk_version }}
           distribution: 'temurin'
           cache: 'gradle'
       - name: Create a release
