@@ -149,7 +149,8 @@ class CommonsArchiver<E extends ArchiveEntry> implements Archiver {
             ArchiveOutputStream<E> archiveOutputStream =
                     CommonsStreamFactory.createArchiveOutputStream(this, archiveFile);
 
-            if (archiveOutputStream instanceof TarArchiveOutputStream tarArchiveOutputStream) {
+            if (archiveOutputStream instanceof TarArchiveOutputStream) {
+                TarArchiveOutputStream tarArchiveOutputStream = (TarArchiveOutputStream) archiveOutputStream;
                 (tarArchiveOutputStream).setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
             }
 
