@@ -1,7 +1,7 @@
 = Compress4J
 
 image:https://maven-badges.herokuapp.com/maven-central/org.rauschig/jarchivelib/badge.svg[Maven Central,link=https://maven-badges.herokuapp.com/maven-central/org.rauschig/jarchivelib/]
-image:https://github.com/compress4j/compress4j/actions/workflows/build.yml/badge.svg[Build Status]
+image:https://github.com/compress4j/compress4j/actions/workflows/ci.yml/badge.svg[Build Status]
 image:https://sonarcloud.io/api/project_badges/measure?project=compress4j_compress4j&metric=alert_status[Quality Gate Status,link=https://sonarcloud.io/summary/new_code?id=compress4j_compress4j]
 image:https://sonarcloud.io/api/project_badges/measure?project=compress4j_compress4j&metric=coverage[Coverage Status,link=https://sonarcloud.io/summary/new_code?id=compress4j_compress4j]
 
