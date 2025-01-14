@@ -202,6 +202,41 @@ class DecompressorTest {
     }
 
     @Test
+    void shouldFailExtractFilesWithInvalidPathsBails() throws IOException {
+        // given
+        try (DecompressorUnderTest decompressorUnderTest =
+                new DecompressorUnderTest(new String[][] {{"../test1", "content1"}, {"subdir/test2", "content2"}})) {
+            decompressorUnderTest.setErrorHandler((entry, exception) -> BAIL_OUT);
+
+            // when
+            assertThatThrownBy(() -> decompressorUnderTest.extract(tempDir))
+                    .isInstanceOf(IOException.class)
+                    .hasMessage("Invalid entry name: ../test1");
+
+            // then
+            assertThat(tempDir).isEmptyDirectory();
+        }
+    }
+
+    @Test
+    void shouldFailExtractFilesWithInvalidPathsBailsfterSomeFilesExtractedAlready() throws IOException {
+        // given
+        try (DecompressorUnderTest decompressorUnderTest =
+                new DecompressorUnderTest(new String[][] {{"subdir/test1", "content1"}, {"../test2", "content2"}})) {
+            decompressorUnderTest.setErrorHandler((entry, exception) -> BAIL_OUT);
+
+            // when
+            assertThatThrownBy(() -> decompressorUnderTest.extract(tempDir))
+                    .isInstanceOf(IOException.class)
+                    .hasMessage("Invalid entry name: ../test2");
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+        }
+    }
+
+    @Test
     void shouldFailExtractFilesWithInvalidPathsSkipsEntry() throws IOException {
         // given
         try (DecompressorUnderTest decompressorUnderTest = new DecompressorUnderTest(new String[][] {
