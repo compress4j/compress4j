@@ -24,7 +24,7 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import io.github.compress4j.archivers.FileModeMapper.PosixPermissionMapper;
 import io.github.compress4j.assertion.Compress4JAssertions;
-import io.github.compress4j.test.util.InMemoryLogAppender;
+import io.github.compress4j.test.util.log.InMemoryLogAppender;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

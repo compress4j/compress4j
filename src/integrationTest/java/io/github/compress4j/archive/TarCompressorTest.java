@@ -13,16 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.compress4j.archive.compression;
+package io.github.compress4j.archive;
 
-import static io.github.compress4j.utils.TestFileUtils.deleteRecursively;
-import static io.github.compress4j.utils.TestFileUtils.write;
+import static io.github.compress4j.test.util.io.TestFileUtils.deleteRecursively;
+import static io.github.compress4j.test.util.io.TestFileUtils.write;
 import static java.nio.file.Files.*;
 import static java.util.Map.entry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import io.github.compress4j.archive.compression.TarCompressor;
 import io.github.compress4j.archive.decompression.TarDecompressor;
 import io.github.compress4j.assertion.Compress4JAssertions;
 import java.io.IOException;
@@ -134,6 +135,7 @@ class TarCompressorTest {
 
     @Test
     void shouldAddDirectoriesRecursively() throws IOException {
+        // given
         var base = tempDir.resolve("base");
         write(tempDir.resolve("base/file1"), "1");
         write(tempDir.resolve("base/file2"), "2");
@@ -144,7 +146,10 @@ class TarCompressorTest {
         write(tempDir.resolve("base/subDir2/file21"), "21");
         write(tempDir.resolve("base/subDir2/file22"), "22");
 
+        // when
         compressor.addDirectoryRecursively("tar/", base);
+
+        // then
         Compress4JAssertions.assertThat(compressFile)
                 .containsAllEntriesOf(Map.ofEntries(
                         entry("tar/", ""),
