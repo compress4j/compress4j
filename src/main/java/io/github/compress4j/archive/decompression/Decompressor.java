@@ -85,6 +85,7 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
      * @param outputDir the directory to extract the archive to
      * @throws IOException if an I/O error occurs
      */
+    @SuppressWarnings("java:S2259")
     public final void extract(Path outputDir) throws IOException {
         var decision = SKIP;
 
