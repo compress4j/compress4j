@@ -16,6 +16,8 @@
 package io.github.compress4j.archive.decompression;
 
 import static io.github.compress4j.archive.decompression.Decompressor.ErrorHandlerChoice.*;
+import static io.github.compress4j.utils.FileUtils.DOS_HIDDEN;
+import static io.github.compress4j.utils.FileUtils.DOS_READ_ONLY;
 import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 
 import io.github.compress4j.utils.PosixFilePermissionsMapper;
@@ -34,6 +36,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,10 +70,10 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
     private int stripComponents = 0;
 
     /** Whether to overwrite existing files. */
-    private boolean overwrite = true;
+    private boolean overwrite = false;
 
     /**
-     * Creates a new {@code Decompressor} with the given {@code Builder}.
+     * Creates a new {@code Decompressor}.
      *
      * @param inputStream - the {@code InputStream} to the compressed file
      * @throws IOException - if the {@code A} could not be created
@@ -85,6 +88,7 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
      * @param outputDir the directory to extract the archive to
      * @throws IOException if an I/O error occurs
      */
+    @SuppressWarnings("java:S2259")
     public final void extract(Path outputDir) throws IOException {
         var decision = SKIP;
 
@@ -133,9 +137,6 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
                     decision = SKIP_ALL;
                     LOGGER.debug("SKIP_ALL is selected", ioException);
                     break;
-                default:
-                    decision = SKIP;
-                    break;
             }
         }
         return decision;
@@ -183,7 +184,7 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
      *
      * @param filter Predicate to be used when entries are being extracted
      */
-    public void setFilter(@Nullable Predicate<? super Decompressor.Entry> filter) {
+    public void setEntryFilter(@Nullable Predicate<? super Decompressor.Entry> filter) {
         this.entryFilter = Optional.ofNullable(filter);
     }
 
@@ -341,6 +342,8 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
             } finally {
                 closeEntryStream(inputStream);
             }
+        } else {
+            LOGGER.debug("Skipping file entry: {} (already exists)", entry.name);
         }
     }
 
@@ -353,7 +356,7 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
      * @throws IOException if an I/O error occurs
      */
     private void extractSymlink(Path outputDir, Entry entry, Path outputFile) throws IOException {
-        if (entry.linkTarget == null || entry.linkTarget.isEmpty()) {
+        if (entry.linkTarget == null || StringUtils.isBlank(entry.linkTarget)) {
             throw new IOException("Invalid symlink entry: " + entry.name + " (empty target)");
         }
 
@@ -384,6 +387,8 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
             } catch (InvalidPathException e) {
                 throw new IOException("Invalid symlink entry: " + entry.name + " -> " + target, e);
             }
+        } else {
+            LOGGER.debug("Skipping symlink entry: {} -> {} (already exists)", entry.name, target);
         }
     }
 
@@ -429,8 +434,8 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
         if (IS_OS_WINDOWS) {
             DosFileAttributeView attrs = Files.getFileAttributeView(outputFile, DosFileAttributeView.class);
             if (attrs != null) {
-                if ((mode & Entry.DOS_READ_ONLY) != 0) attrs.setReadOnly(true);
-                if ((mode & Entry.DOS_HIDDEN) != 0) attrs.setHidden(true);
+                if ((mode & DOS_READ_ONLY) != 0) attrs.setReadOnly(true);
+                if ((mode & DOS_HIDDEN) != 0) attrs.setHidden(true);
             }
         } else {
             PosixFileAttributeView attrs = Files.getFileAttributeView(outputFile, PosixFileAttributeView.class);
@@ -516,12 +521,6 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
      * <p>It is recommended to use {@link #name} as a key for the entry, as it is normalized and trimmed.
      */
     public static final class Entry {
-        /** DOS read-only attribute */
-        public static final int DOS_READ_ONLY = 0b01;
-
-        /** DOS hidden attribute */
-        public static final int DOS_HIDDEN = 0b010;
-
         /** An entry name with separators converted to '/' and trimmed; handle with care */
         public final String name;
 
@@ -544,7 +543,7 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
          * @param isDirectory whether the entry is a directory
          * @param size the size of the entry
          */
-        Entry(String name, boolean isDirectory, long size) {
+        public Entry(String name, boolean isDirectory, long size) {
             this(name, isDirectory ? Type.DIR : Type.FILE, 0, null, size);
         }
 
@@ -557,7 +556,7 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
          * @param linkTarget the target of the symbolic link
          * @param size the size of the entry
          */
-        Entry(String name, Type type, int mode, @Nullable String linkTarget, long size) {
+        public Entry(String name, Type type, int mode, @Nullable String linkTarget, long size) {
             name = name.trim().replace('\\', '/');
             int s = 0;
             int e = name.length() - 1;

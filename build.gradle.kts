@@ -52,6 +52,7 @@ dependencies {
     testImplementation(platform(libs.junit.bom))
 
     testImplementation(libs.assertj.core)
+    testImplementation(libs.jackson.databind)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.junit.jupiter.params)
     testImplementation(libs.logback.classic)

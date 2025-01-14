@@ -15,12 +15,11 @@
  */
 package io.github.compress4j.archivers;
 
-import static io.github.compress4j.test.util.FileTestUtils.assertDirectoryContentMatches;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import io.github.compress4j.test.util.FileTestUtils;
+import io.github.compress4j.assertion.Compress4JAssertions;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Date;
@@ -33,13 +32,9 @@ import org.junit.jupiter.api.condition.OS;
 
 public abstract class AbstractArchiverTest extends AbstractResourceTest {
 
-    private Archiver archiver;
+    protected Archiver archiver;
 
-    private File archive;
-
-    protected void assertExtractionWasSuccessful() {
-        assertDirectoryContentMatches(ARCHIVE_DIR.toPath(), archiveExtractTmpDir.toPath());
-    }
+    protected File archive;
 
     @BeforeEach
     public void setUp() {
@@ -61,14 +56,14 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
     void extract_properlyExtractsArchive() throws Exception {
         archiver.extract(archive, archiveExtractTmpDir);
 
-        assertExtractionWasSuccessful();
+        Compress4JAssertions.assertThat(ARCHIVE_DIR.toPath()).containsSameContentAs(archiveExtractTmpDir.toPath());
     }
 
     @Test
     void extract_properlyExtractsArchiveStream() throws Exception {
         try (InputStream archiveAsStream = new FileInputStream(archive)) {
             archiver.extract(archiveAsStream, archiveExtractTmpDir);
-            assertExtractionWasSuccessful();
+            Compress4JAssertions.assertThat(ARCHIVE_DIR.toPath()).containsSameContentAs(archiveExtractTmpDir.toPath());
         }
     }
 
@@ -81,7 +76,7 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
         assertThat(createdArchive).exists().hasName(archiveName);
 
         archiver.extract(createdArchive, archiveExtractTmpDir);
-        assertExtractionWasSuccessful();
+        Compress4JAssertions.assertThat(ARCHIVE_DIR.toPath()).containsSameContentAs(archiveExtractTmpDir.toPath());
     }
 
     @Test
@@ -93,7 +88,7 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
         assertThat(createdArchive).exists().hasName(archiveName);
 
         archiver.extract(createdArchive, archiveExtractTmpDir);
-        FileTestUtils.assertDirectoryContentMatches(ARCHIVE_DIR.toPath(), archiveExtractTmpDir.toPath());
+        Compress4JAssertions.assertThat(ARCHIVE_DIR.toPath()).containsSameContentAs(archiveExtractTmpDir.toPath());
     }
 
     @Test
@@ -105,7 +100,7 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
         assertThat(actualArchive).exists().hasName(archiveName);
 
         archiver.extract(actualArchive, archiveExtractTmpDir);
-        assertExtractionWasSuccessful();
+        Compress4JAssertions.assertThat(ARCHIVE_DIR.toPath()).containsSameContentAs(archiveExtractTmpDir.toPath());
     }
 
     @Test
@@ -256,7 +251,7 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
             }
         }
 
-        assertExtractionWasSuccessful();
+        Compress4JAssertions.assertThat(ARCHIVE_DIR.toPath()).containsSameContentAs(archiveExtractTmpDir.toPath());
     }
 
     @Test
