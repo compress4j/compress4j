@@ -184,7 +184,7 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
      *
      * @param filter Predicate to be used when entries are being extracted
      */
-    public void setFilter(@Nullable Predicate<? super Decompressor.Entry> filter) {
+    public void setEntryFilter(@Nullable Predicate<? super Decompressor.Entry> filter) {
         this.entryFilter = Optional.ofNullable(filter);
     }
 

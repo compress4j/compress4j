@@ -242,6 +242,25 @@ class DecompressorTest {
     }
 
     @Test
+    void shouldApplyEntryFilters() throws IOException {
+        // given
+        try (DecompressorUnderTest decompressorUnderTest = new DecompressorUnderTest(new String[][] {
+            {"subdir/test1", "content1"}, {"subdir/some/test1a", "content1a"}, {"subdir/test2", "content2"}
+        })) {
+            decompressorUnderTest.setEntryFilter(entry -> !entry.name.contains("some"));
+
+            // when
+            decompressorUnderTest.extract(tempDir);
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+            assertThat(tempDir.resolve("subdir/test2")).hasContent("content2");
+        }
+    }
+
+    @Test
     void shouldNormalizePathAndSplit() throws IOException {
         // given
         var path = "some/path";
