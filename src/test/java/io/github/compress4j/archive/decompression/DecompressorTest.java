@@ -16,27 +16,31 @@
 package io.github.compress4j.archive.decompression;
 
 import static ch.qos.logback.classic.Level.DEBUG;
+import static io.github.compress4j.archive.decompression.Decompressor.Entry.Type.DIR;
+import static io.github.compress4j.archive.decompression.Decompressor.Entry.Type.SYMLINK;
 import static io.github.compress4j.archive.decompression.Decompressor.ErrorHandlerChoice.*;
+import static io.github.compress4j.archive.decompression.Decompressor.EscapingSymlinkPolicy.DISALLOW;
+import static io.github.compress4j.archive.decompression.Decompressor.EscapingSymlinkPolicy.RELATIVIZE_ABSOLUTE;
+import static io.github.compress4j.test.util.io.TestFileUtils.createFile;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import io.github.compress4j.assertion.Compress4JAssertions;
-import io.github.compress4j.memory.MemoryArchiveEntry;
-import io.github.compress4j.memory.MemoryArchiveInputStream;
-import io.github.compress4j.test.util.InMemoryLogAppender;
-import jakarta.annotation.Nullable;
-import java.io.ByteArrayInputStream;
+import io.github.compress4j.memory.InMemoryArchiveEntry;
+import io.github.compress4j.memory.InMemoryDecompressor;
+import io.github.compress4j.test.util.log.InMemoryLogAppender;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -70,10 +74,13 @@ class DecompressorTest {
     @Test
     void shouldExtractFiles() throws IOException {
         // given
-        try (DecompressorUnderTest decompressorUnderTest =
-                new DecompressorUnderTest(new String[][] {{"test1", "content1"}, {"test2", "content2"}})) {
+        var entry1 =
+                InMemoryArchiveEntry.builder().name("test1").content("content1").build();
+        var entry2 =
+                InMemoryArchiveEntry.builder().name("test2").content("content2").build();
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
             // when
-            decompressorUnderTest.extract(tempDir);
+            inMemoryDecompressor.extract(tempDir);
 
             // then
             assertThat(tempDir).isDirectory();
@@ -85,11 +92,65 @@ class DecompressorTest {
     @Test
     void shouldExtractFilesWithSubdirectories() throws IOException {
         // given
-        try (DecompressorUnderTest decompressorUnderTest =
-                new DecompressorUnderTest(new String[][] {{"test1", "content1"}, {"subdir/test2", "content2"}})) {
+        var entry1 =
+                InMemoryArchiveEntry.builder().name("test1").content("content1").build();
+        var entry2 = InMemoryArchiveEntry.builder()
+                .name("subdir/test2")
+                .content("content2")
+                .build();
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
 
             // when
-            decompressorUnderTest.extract(tempDir);
+            inMemoryDecompressor.extract(tempDir);
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("test1")).hasContent("content1");
+            assertThat(tempDir.resolve("subdir/test2")).hasContent("content2");
+        }
+    }
+
+    @Test
+    void shouldNotExtractFilesThatAlreadyExists() throws IOException {
+        // given
+        createFile(tempDir, "test1", "789");
+
+        var entry1 =
+                InMemoryArchiveEntry.builder().name("test1").content("content1").build();
+        var entry2 = InMemoryArchiveEntry.builder()
+                .name("subdir/test2")
+                .content("content2")
+                .build();
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+
+            // when
+            inMemoryDecompressor.extract(tempDir);
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("test1")).hasContent("789");
+            assertThat(tempDir.resolve("subdir/test2")).hasContent("content2");
+            Compress4JAssertions.assertThat(inMemoryLogAppender)
+                    .contains("Skipping file entry: test1 (already exists)", DEBUG);
+        }
+    }
+
+    @Test
+    void shouldExtractFilesThatAlreadyExistsWhenOverwriteTrue() throws IOException {
+        // given
+        createFile(tempDir, "test1", "789");
+
+        var entry1 =
+                InMemoryArchiveEntry.builder().name("test1").content("content1").build();
+        var entry2 = InMemoryArchiveEntry.builder()
+                .name("subdir/test2")
+                .content("content2")
+                .build();
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+            inMemoryDecompressor.setOverwrite(true);
+
+            // when
+            inMemoryDecompressor.extract(tempDir);
 
             // then
             assertThat(tempDir).isDirectory();
@@ -101,12 +162,17 @@ class DecompressorTest {
     @Test
     void shouldExtractFilesWithSubdirectoriesAndStripZeroComponents() throws IOException {
         // given
-        try (DecompressorUnderTest decompressorUnderTest =
-                new DecompressorUnderTest(new String[][] {{"test1", "content1"}, {"subdir/test2", "content2"}})) {
-            decompressorUnderTest.setStripComponents(0);
+        var entry1 =
+                InMemoryArchiveEntry.builder().name("test1").content("content1").build();
+        var entry2 = InMemoryArchiveEntry.builder()
+                .name("subdir/test2")
+                .content("content2")
+                .build();
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+            inMemoryDecompressor.setStripComponents(0);
 
             // when
-            decompressorUnderTest.extract(tempDir);
+            inMemoryDecompressor.extract(tempDir);
 
             // then
             assertThat(tempDir).isDirectory();
@@ -118,12 +184,17 @@ class DecompressorTest {
     @Test
     void shouldExtractFilesWithSubdirectoriesAndStripComponents() throws IOException {
         // given
-        try (DecompressorUnderTest decompressorUnderTest =
-                new DecompressorUnderTest(new String[][] {{"test1", "content1"}, {"subdir/test2", "content2"}})) {
-            decompressorUnderTest.setStripComponents(1);
+        var entry1 =
+                InMemoryArchiveEntry.builder().name("test1").content("content1").build();
+        var entry2 = InMemoryArchiveEntry.builder()
+                .name("subdir/test2")
+                .content("content2")
+                .build();
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+            inMemoryDecompressor.setStripComponents(1);
 
             // when
-            decompressorUnderTest.extract(tempDir);
+            inMemoryDecompressor.extract(tempDir);
 
             // then
             assertThat(tempDir).isDirectory();
@@ -134,11 +205,18 @@ class DecompressorTest {
     @Test
     void shouldFailExtractFilesWithInvalidPaths() throws IOException {
         // given
-        try (DecompressorUnderTest decompressorUnderTest =
-                new DecompressorUnderTest(new String[][] {{"../test1", "content1"}, {"subdir/test2", "content2"}})) {
+        var entry1 = InMemoryArchiveEntry.builder()
+                .name("../test1")
+                .content("content1")
+                .build();
+        var entry2 = InMemoryArchiveEntry.builder()
+                .name("subdir/test2")
+                .content("content2")
+                .build();
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
 
             // when && then
-            assertThatThrownBy(() -> decompressorUnderTest.extract(tempDir))
+            assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir))
                     .isInstanceOf(IOException.class)
                     .hasMessage("Invalid entry name: ../test1");
         }
@@ -147,6 +225,14 @@ class DecompressorTest {
     @Test
     void shouldFailExtractFilesWithInvalidPathsRetries() throws IOException {
         // given
+        var entry1 = InMemoryArchiveEntry.builder()
+                .name("../test1")
+                .content("content1")
+                .build();
+        var entry2 = InMemoryArchiveEntry.builder()
+                .name("subdir/test2")
+                .content("content2")
+                .build();
         AtomicInteger retries = new AtomicInteger(3);
         BiFunction<Decompressor.Entry, IOException, Decompressor.ErrorHandlerChoice> errorHandler =
                 (entry, exception) -> {
@@ -157,12 +243,11 @@ class DecompressorTest {
                     return RETRY;
                 };
 
-        try (DecompressorUnderTest decompressorUnderTest =
-                new DecompressorUnderTest(new String[][] {{"../test1", "content1"}, {"subdir/test2", "content2"}})) {
-            decompressorUnderTest.setErrorHandler(errorHandler);
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+            inMemoryDecompressor.setErrorHandler(errorHandler);
 
             // when
-            decompressorUnderTest.extract(tempDir);
+            inMemoryDecompressor.extract(tempDir);
 
             // then
             Compress4JAssertions.assertThat(inMemoryLogAppender).contains("Retying because of exception", DEBUG);
@@ -173,12 +258,19 @@ class DecompressorTest {
     @Test
     void shouldFailExtractFilesWithInvalidPathsAborts() throws IOException {
         // given
-        try (DecompressorUnderTest decompressorUnderTest =
-                new DecompressorUnderTest(new String[][] {{"../test1", "content1"}, {"subdir/test2", "content2"}})) {
-            decompressorUnderTest.setErrorHandler((entry, exception) -> ABORT);
+        var entry1 = InMemoryArchiveEntry.builder()
+                .name("../test1")
+                .content("content1")
+                .build();
+        var entry2 = InMemoryArchiveEntry.builder()
+                .name("subdir/test2")
+                .content("content2")
+                .build();
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+            inMemoryDecompressor.setErrorHandler((entry, exception) -> ABORT);
 
             // when
-            decompressorUnderTest.extract(tempDir);
+            inMemoryDecompressor.extract(tempDir);
 
             // then
             assertThat(tempDir).isEmptyDirectory();
@@ -188,12 +280,68 @@ class DecompressorTest {
     @Test
     void shouldFailExtractFilesWithInvalidPathsAbortsAfterSomeFilesExtractedAlready() throws IOException {
         // given
-        try (DecompressorUnderTest decompressorUnderTest =
-                new DecompressorUnderTest(new String[][] {{"subdir/test1", "content1"}, {"../test2", "content2"}})) {
-            decompressorUnderTest.setErrorHandler((entry, exception) -> ABORT);
+        var entry1 = InMemoryArchiveEntry.builder()
+                .name("subdir/test1")
+                .content("content1")
+                .build();
+        var entry2 = InMemoryArchiveEntry.builder()
+                .name("../test2")
+                .content("content2")
+                .build();
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+            inMemoryDecompressor.setErrorHandler((entry, exception) -> ABORT);
 
             // when
-            decompressorUnderTest.extract(tempDir);
+            inMemoryDecompressor.extract(tempDir);
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+        }
+    }
+
+    @Test
+    void shouldFailExtractFilesWithInvalidPathsBails() throws IOException {
+        // given
+        var entry1 = InMemoryArchiveEntry.builder()
+                .name("../test1")
+                .content("content1")
+                .build();
+        var entry2 = InMemoryArchiveEntry.builder()
+                .name("subdir/test2")
+                .content("content2")
+                .build();
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+            inMemoryDecompressor.setErrorHandler((entry, exception) -> BAIL_OUT);
+
+            // when
+            assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir))
+                    .isInstanceOf(IOException.class)
+                    .hasMessage("Invalid entry name: ../test1");
+
+            // then
+            assertThat(tempDir).isEmptyDirectory();
+        }
+    }
+
+    @Test
+    void shouldFailExtractFilesWithInvalidPathsBailsAfterSomeFilesExtractedAlready() throws IOException {
+        // given
+        var entry1 = InMemoryArchiveEntry.builder()
+                .name("subdir/test1")
+                .content("content1")
+                .build();
+        var entry2 = InMemoryArchiveEntry.builder()
+                .name("../test2")
+                .content("content2")
+                .build();
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+            inMemoryDecompressor.setErrorHandler((entry, exception) -> BAIL_OUT);
+
+            // when
+            assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir))
+                    .isInstanceOf(IOException.class)
+                    .hasMessage("Invalid entry name: ../test2");
 
             // then
             assertThat(tempDir).isDirectory();
@@ -204,13 +352,23 @@ class DecompressorTest {
     @Test
     void shouldFailExtractFilesWithInvalidPathsSkipsEntry() throws IOException {
         // given
-        try (DecompressorUnderTest decompressorUnderTest = new DecompressorUnderTest(new String[][] {
-            {"subdir/../test1", "content1"}, {"subdir/some/../test1a", "content1a"}, {"subdir/test2", "content2"}
-        })) {
-            decompressorUnderTest.setErrorHandler((entry, exception) -> SKIP);
+        var entry1 = InMemoryArchiveEntry.builder()
+                .name("subdir/../test1")
+                .content("content1")
+                .build();
+        var entry1a = InMemoryArchiveEntry.builder()
+                .name("subdir/some/../test1a")
+                .content("content1a")
+                .build();
+        var entry2 = InMemoryArchiveEntry.builder()
+                .name("subdir/test2")
+                .content("content2")
+                .build();
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry1a, entry2))) {
+            inMemoryDecompressor.setErrorHandler((entry, exception) -> SKIP);
 
             // when
-            decompressorUnderTest.extract(tempDir);
+            inMemoryDecompressor.extract(tempDir);
 
             // then
             Compress4JAssertions.assertThat(inMemoryLogAppender).contains("Skipped exception", DEBUG);
@@ -224,13 +382,23 @@ class DecompressorTest {
     @Test
     void shouldFailExtractFilesWithInvalidPathsSkipAllEntries() throws IOException {
         // given
-        try (DecompressorUnderTest decompressorUnderTest = new DecompressorUnderTest(new String[][] {
-            {"subdir/../test1", "content1"}, {"subdir/some/../test1a", "content1a"}, {"subdir/test2", "content2"}
-        })) {
-            decompressorUnderTest.setErrorHandler((entry, exception) -> SKIP_ALL);
+        var entry1 = InMemoryArchiveEntry.builder()
+                .name("subdir/../test1")
+                .content("content1")
+                .build();
+        var entry1a = InMemoryArchiveEntry.builder()
+                .name("subdir/some/../test1a")
+                .content("content1a")
+                .build();
+        var entry2 = InMemoryArchiveEntry.builder()
+                .name("subdir/test2")
+                .content("content2")
+                .build();
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry1a, entry2))) {
+            inMemoryDecompressor.setErrorHandler((entry, exception) -> SKIP_ALL);
 
             // when
-            decompressorUnderTest.extract(tempDir);
+            inMemoryDecompressor.extract(tempDir);
 
             // then
             Compress4JAssertions.assertThat(inMemoryLogAppender).contains("SKIP_ALL is selected", DEBUG);
@@ -238,6 +406,301 @@ class DecompressorTest {
             assertThat(tempDir.resolve("test1")).doesNotExist();
             assertThat(tempDir.resolve("subdir/test1a")).doesNotExist();
             assertThat(tempDir.resolve("subdir/test2")).hasContent("content2");
+        }
+    }
+
+    @Test
+    void shouldApplyEntryFilters() throws IOException {
+        // given
+        var subdir = InMemoryArchiveEntry.builder().name("subdir").type(DIR).build();
+        var entry1 = InMemoryArchiveEntry.builder()
+                .name("subdir/test1")
+                .content("content1")
+                .build();
+        var entry1a = InMemoryArchiveEntry.builder()
+                .name("subdir/some/test1a")
+                .content("content1a")
+                .build();
+        var entry2 = InMemoryArchiveEntry.builder()
+                .name("subdir/test2")
+                .content("content2")
+                .build();
+
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(List.of(subdir, entry1, entry1a, entry2))) {
+            inMemoryDecompressor.setEntryFilter(entry -> !entry.name.contains("some"));
+
+            // when
+            inMemoryDecompressor.extract(tempDir);
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+            assertThat(tempDir.resolve("subdir/test2")).hasContent("content2");
+        }
+    }
+
+    @Test
+    void shouldExtractSymlinksInAllowMode() throws IOException {
+        // given
+        var subdir = InMemoryArchiveEntry.builder().name("subdir").type(DIR).build();
+        var entry1 = InMemoryArchiveEntry.builder()
+                .name("subdir/test1")
+                .content("content1")
+                .build();
+        var entry1a = InMemoryArchiveEntry.builder()
+                .name("test1a")
+                .type(SYMLINK)
+                .linkName("subdir/test1")
+                .build();
+
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+
+            // when
+            inMemoryDecompressor.extract(tempDir);
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+            assertThat(tempDir.resolve("test1a")).isSymbolicLink().hasContent("content1");
+        }
+    }
+
+    @DisabledOnOs(OS.WINDOWS)
+    @Test
+    void shouldExtractSymlinksInRelativizeAbsoluteMode() throws IOException {
+        // given
+        var subdir = InMemoryArchiveEntry.builder().name("subdir").type(DIR).build();
+        var entry1 = InMemoryArchiveEntry.builder()
+                .name("/subdir/test1")
+                .content("content1")
+                .build();
+        var entry1a = InMemoryArchiveEntry.builder()
+                .name("test1a")
+                .type(SYMLINK)
+                .linkName("/subdir/test1")
+                .build();
+
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+            inMemoryDecompressor.setEscapingSymlinkPolicy(RELATIVIZE_ABSOLUTE);
+
+            // when
+            inMemoryDecompressor.extract(tempDir);
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+            assertThat(tempDir.resolve("test1a")).isSymbolicLink().hasContent("content1");
+        }
+    }
+
+    @DisabledOnOs(OS.WINDOWS)
+    @Test
+    void shouldNotExtractSymlinksInDisallowMode() throws IOException {
+        // given
+        var subdir = InMemoryArchiveEntry.builder().name("subdir").type(DIR).build();
+        var entry1 = InMemoryArchiveEntry.builder()
+                .name("/subdir/test1")
+                .content("content1")
+                .build();
+        var entry1a = InMemoryArchiveEntry.builder()
+                .name("test1a")
+                .type(SYMLINK)
+                .linkName("/subdir/test1")
+                .build();
+
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+            inMemoryDecompressor.setEscapingSymlinkPolicy(DISALLOW);
+
+            // when
+            assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir))
+                    .isInstanceOf(IOException.class)
+                    .hasMessage("Invalid symlink (absolute path): test1a -> /subdir/test1");
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+            assertThat(tempDir.resolve("test1a")).doesNotExist();
+        }
+    }
+
+    @Test
+    void shouldNotExtractSymlinksWhenTargetNull() throws IOException {
+        // given
+        var subdir = InMemoryArchiveEntry.builder().name("subdir").type(DIR).build();
+        var entry1 = InMemoryArchiveEntry.builder()
+                .name("/subdir/test1")
+                .content("content1")
+                .build();
+        var entry1a =
+                InMemoryArchiveEntry.builder().name("test1a").type(SYMLINK).build();
+
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+
+            // when
+            assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir))
+                    .isInstanceOf(IOException.class)
+                    .hasMessage("Invalid symlink entry: test1a (empty target)");
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+            assertThat(tempDir.resolve("test1a")).doesNotExist();
+        }
+    }
+
+    @Test
+    void shouldNotExtractSymlinksWhenTargetBlank() throws IOException {
+        // given
+        var subdir = InMemoryArchiveEntry.builder().name("subdir").type(DIR).build();
+        var entry1 = InMemoryArchiveEntry.builder()
+                .name("/subdir/test1")
+                .content("content1")
+                .build();
+        var entry1a = InMemoryArchiveEntry.builder()
+                .name("test1a")
+                .type(SYMLINK)
+                .linkName("")
+                .build();
+
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+
+            // when
+            assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir))
+                    .isInstanceOf(IOException.class)
+                    .hasMessage("Invalid symlink entry: test1a (empty target)");
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+            assertThat(tempDir.resolve("test1a")).doesNotExist();
+        }
+    }
+
+    @Test
+    void shouldNotExtractSymlinksWhenTargetFileDoesExistsAndOverwriteFalse() throws IOException {
+        // given
+        createFile(tempDir, "test1a", "789");
+
+        var subdir = InMemoryArchiveEntry.builder().name("subdir").type(DIR).build();
+        var entry1 = InMemoryArchiveEntry.builder()
+                .name("/subdir/test1")
+                .content("content1")
+                .build();
+        var entry1a = InMemoryArchiveEntry.builder()
+                .name("test1a")
+                .type(SYMLINK)
+                .linkName("some")
+                .build();
+
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+
+            // when
+            inMemoryDecompressor.extract(tempDir);
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+            assertThat(tempDir.resolve("test1a")).isRegularFile().hasContent("789");
+            Compress4JAssertions.assertThat(inMemoryLogAppender)
+                    .contains("Skipping symlink entry: test1a -> some (already exists)", DEBUG);
+        }
+    }
+
+    @Test
+    void shouldExtractSymlinksWhenTargetFileDoesExistsAndOverwriteTrue() throws IOException {
+        // given
+        createFile(tempDir, "test1a", "789");
+
+        var subdir = InMemoryArchiveEntry.builder().name("subdir").type(DIR).build();
+        var entry1 = InMemoryArchiveEntry.builder()
+                .name("subdir/test1")
+                .content("content1")
+                .build();
+        var entry1a = InMemoryArchiveEntry.builder()
+                .name("test1a")
+                .type(SYMLINK)
+                .linkName("subdir/test1")
+                .build();
+
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+            inMemoryDecompressor.setOverwrite(true);
+
+            // when
+            inMemoryDecompressor.extract(tempDir);
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+            assertThat(tempDir.resolve("test1a")).isSymbolicLink().hasContent("content1");
+        }
+    }
+
+    @Test
+    void shouldRunBiConsumerPostProcessor() throws IOException {
+        // given
+        var subdir = InMemoryArchiveEntry.builder().name("subdir").type(DIR).build();
+        var entry1 = InMemoryArchiveEntry.builder()
+                .name("subdir/test1")
+                .content("content1")
+                .build();
+        var entry1a = InMemoryArchiveEntry.builder()
+                .name("test1a")
+                .type(SYMLINK)
+                .linkName("subdir/test1")
+                .build();
+
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+            AtomicInteger counter = new AtomicInteger();
+            inMemoryDecompressor.setPostProcessor((entry, path) -> counter.incrementAndGet());
+
+            // when
+            inMemoryDecompressor.extract(tempDir);
+
+            // then
+            assertThat(counter).hasValue(3);
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+            assertThat(tempDir.resolve("test1a")).isSymbolicLink().hasContent("content1");
+        }
+    }
+
+    @Test
+    void shouldRunConsumerPostProcessor() throws IOException {
+        // given
+        var subdir = InMemoryArchiveEntry.builder().name("subdir").type(DIR).build();
+        var entry1 = InMemoryArchiveEntry.builder()
+                .name("subdir/test1")
+                .content("content1")
+                .build();
+        var entry1a = InMemoryArchiveEntry.builder()
+                .name("test1a")
+                .type(SYMLINK)
+                .linkName("subdir/test1")
+                .build();
+
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+            AtomicInteger counter = new AtomicInteger();
+            inMemoryDecompressor.setPostProcessor(path -> counter.incrementAndGet());
+
+            // when
+            inMemoryDecompressor.extract(tempDir);
+
+            // then
+            assertThat(counter).hasValue(3);
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+            assertThat(tempDir.resolve("test1a")).isSymbolicLink().hasContent("content1");
         }
     }
 
@@ -251,39 +714,5 @@ class DecompressorTest {
 
         // then
         assertThat(result).isNotEmpty();
-    }
-
-    // ######################################################
-    // #  Utility classes                                   #
-    // ######################################################
-    public static class DecompressorUnderTest extends Decompressor<MemoryArchiveInputStream> {
-        public DecompressorUnderTest(final String[][] pFiles) throws IOException {
-            super(MemoryArchiveInputStream.toInputStream(pFiles));
-        }
-
-        @Override
-        protected MemoryArchiveInputStream buildArchiveInputStream(InputStream inputStream) throws IOException {
-            return new MemoryArchiveInputStream(inputStream);
-        }
-
-        @Override
-        protected void closeEntryStream(InputStream stream) {
-            // do nothing
-        }
-
-        @Nullable
-        @Override
-        protected Entry nextEntry() {
-            MemoryArchiveEntry nextEntry = archiveInputStream.getNextEntry();
-            if (nextEntry == null) {
-                return null;
-            }
-            return new Entry(nextEntry.getName(), nextEntry.isDirectory(), nextEntry.getSize());
-        }
-
-        @Override
-        protected InputStream openEntryStream(Entry entry) {
-            return new ByteArrayInputStream(archiveInputStream.readString().getBytes(StandardCharsets.UTF_8));
-        }
     }
 }

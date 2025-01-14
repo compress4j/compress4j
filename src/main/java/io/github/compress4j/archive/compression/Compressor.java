@@ -516,7 +516,7 @@ public abstract class Compressor<A extends ArchiveOutputStream<? extends Archive
      * @param entryName name of the entry
      * @param path {@code Path} to add
      */
-    boolean accept(String entryName, @Nullable Path path) {
+    protected boolean accept(String entryName, @Nullable Path path) {
         return entryFilter.map(f -> f.test(entryName, path)).orElse(true);
     }
 

@@ -2,6 +2,7 @@
 apache-commons-compress = "1.27.1"
 assertJ = "3.27.3"
 git-version = "6.4.4"
+jackson = "2.18.2"
 jakarta-annotation = "3.0.0"
 jreleaser = "1.16.0"
 junit-bom = "5.11.4"
@@ -20,6 +21,7 @@ slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 
 # TEST dependencies
 assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertJ" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit-bom" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter" }
 junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params" }

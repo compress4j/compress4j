@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.compress4j.archive.compression;
+package io.github.compress4j.archive;
 
+import io.github.compress4j.archive.compression.TarGzCompressor;
 import io.github.compress4j.archive.decompression.TarGzDecompressor;
 import java.io.IOException;
 import java.nio.file.Path;

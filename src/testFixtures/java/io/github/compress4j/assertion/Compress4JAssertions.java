@@ -22,11 +22,11 @@ import java.nio.file.Path;
 public class Compress4JAssertions {
     private Compress4JAssertions() {}
 
-    public static CompressorAssertion assertThat(Path path) {
-        return new CompressorAssertion(path);
-    }
-
     public static ListAppenderAssertion assertThat(ListAppender<ILoggingEvent> listAppender) {
         return new ListAppenderAssertion(listAppender);
+    }
+
+    public static DirectoryAssert assertThat(Path actual) {
+        return new DirectoryAssert(actual);
     }
 }
