@@ -147,7 +147,6 @@ class TarCompressorTest {
 
         // when
         compressor.addDirectoryRecursively("tar/", base);
-        compressor.close();
 
         // then
         Compress4JAssertions.assertThat(compressFile)
