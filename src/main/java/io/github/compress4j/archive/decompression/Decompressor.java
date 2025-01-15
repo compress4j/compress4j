@@ -70,7 +70,7 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
     private int stripComponents = 0;
 
     /** Whether to overwrite existing files. */
-    private boolean overwrite = true;
+    private boolean overwrite = false;
 
     /**
      * Creates a new {@code Decompressor} with the given {@code Builder}.
@@ -342,6 +342,8 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
             } finally {
                 closeEntryStream(inputStream);
             }
+        } else {
+            LOGGER.debug("Skipping file entry: {} (already exists)", entry.name);
         }
     }
 
@@ -385,6 +387,8 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
             } catch (InvalidPathException e) {
                 throw new IOException("Invalid symlink entry: " + entry.name + " -> " + target, e);
             }
+        } else {
+            LOGGER.debug("Skipping symlink entry: {} -> {} (already exists)", entry.name, target);
         }
     }
 

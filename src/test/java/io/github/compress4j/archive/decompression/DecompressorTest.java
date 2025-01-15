@@ -21,6 +21,7 @@ import static io.github.compress4j.archive.decompression.Decompressor.ErrorHandl
 import static io.github.compress4j.archive.decompression.Decompressor.EscapingSymlinkPolicy.DISALLOW;
 import static io.github.compress4j.archive.decompression.Decompressor.EscapingSymlinkPolicy.RELATIVIZE_ABSOLUTE;
 import static io.github.compress4j.utils.FileUtils.NO_MODE;
+import static io.github.compress4j.utils.TestFileUtils.createFile;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -92,8 +93,49 @@ class DecompressorTest {
     void shouldExtractFilesWithSubdirectories() throws IOException {
         // given
         var entry1 = new MemoryArchiveEntry("test1", "content1");
-        var enty2 = new MemoryArchiveEntry("subdir/test2", "content2");
-        try (DecompressorUnderTest decompressorUnderTest = new DecompressorUnderTest(List.of(entry1, enty2))) {
+        var entry2 = new MemoryArchiveEntry("subdir/test2", "content2");
+        try (DecompressorUnderTest decompressorUnderTest = new DecompressorUnderTest(List.of(entry1, entry2))) {
+
+            // when
+            decompressorUnderTest.extract(tempDir);
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("test1")).hasContent("content1");
+            assertThat(tempDir.resolve("subdir/test2")).hasContent("content2");
+        }
+    }
+
+    @Test
+    void shouldNotExtractFilesThatAlreadyExists() throws IOException {
+        // given
+        createFile(tempDir, "test1", "789");
+
+        var entry1 = new MemoryArchiveEntry("test1", "content1");
+        var entry2 = new MemoryArchiveEntry("subdir/test2", "content2");
+        try (DecompressorUnderTest decompressorUnderTest = new DecompressorUnderTest(List.of(entry1, entry2))) {
+
+            // when
+            decompressorUnderTest.extract(tempDir);
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("test1")).hasContent("789");
+            assertThat(tempDir.resolve("subdir/test2")).hasContent("content2");
+            Compress4JAssertions.assertThat(inMemoryLogAppender)
+                    .contains("Skipping file entry: test1 (already exists)", DEBUG);
+        }
+    }
+
+    @Test
+    void shouldExtractFilesThatAlreadyExistsWhenOverwriteTrue() throws IOException {
+        // given
+        createFile(tempDir, "test1", "789");
+
+        var entry1 = new MemoryArchiveEntry("test1", "content1");
+        var entry2 = new MemoryArchiveEntry("subdir/test2", "content2");
+        try (DecompressorUnderTest decompressorUnderTest = new DecompressorUnderTest(List.of(entry1, entry2))) {
+            decompressorUnderTest.setOverwrite(true);
 
             // when
             decompressorUnderTest.extract(tempDir);
@@ -382,6 +424,101 @@ class DecompressorTest {
             assertThat(tempDir.resolve("subdir/some")).doesNotExist();
             assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
             assertThat(tempDir.resolve("test1a")).doesNotExist();
+        }
+    }
+
+    @Test
+    void shouldNotExtractSymlinksWhenTargetNull() throws IOException {
+        // given
+        var subdir = new MemoryArchiveEntry("subdir", null, true, 0);
+        var entry1 = new MemoryArchiveEntry("/subdir/test1", "content1");
+        var entry1a = new MemoryArchiveEntry("test1a", null, SYMLINK, NO_MODE, null, 0);
+
+        try (DecompressorUnderTest decompressorUnderTest =
+                new DecompressorUnderTest(List.of(subdir, entry1, entry1a))) {
+
+            // when
+            assertThatThrownBy(() -> decompressorUnderTest.extract(tempDir))
+                    .isInstanceOf(IOException.class)
+                    .hasMessage("Invalid symlink entry: test1a (empty target)");
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+            assertThat(tempDir.resolve("test1a")).doesNotExist();
+        }
+    }
+
+    @Test
+    void shouldNotExtractSymlinksWhenTargetBlank() throws IOException {
+        // given
+        var subdir = new MemoryArchiveEntry("subdir", null, true, 0);
+        var entry1 = new MemoryArchiveEntry("/subdir/test1", "content1");
+        var entry1a = new MemoryArchiveEntry("test1a", null, SYMLINK, NO_MODE, "", 0);
+
+        try (DecompressorUnderTest decompressorUnderTest =
+                new DecompressorUnderTest(List.of(subdir, entry1, entry1a))) {
+
+            // when
+            assertThatThrownBy(() -> decompressorUnderTest.extract(tempDir))
+                    .isInstanceOf(IOException.class)
+                    .hasMessage("Invalid symlink entry: test1a (empty target)");
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+            assertThat(tempDir.resolve("test1a")).doesNotExist();
+        }
+    }
+
+    @Test
+    void shouldNotExtractSymlinksWhenTargetFileDoesExistsAndOverwriteFalse() throws IOException {
+        // given
+        createFile(tempDir, "test1a", "789");
+
+        var subdir = new MemoryArchiveEntry("subdir", null, true, 0);
+        var entry1 = new MemoryArchiveEntry("/subdir/test1", "content1");
+        var entry1a = new MemoryArchiveEntry("test1a", null, SYMLINK, NO_MODE, "some", 0);
+
+        try (DecompressorUnderTest decompressorUnderTest =
+                new DecompressorUnderTest(List.of(subdir, entry1, entry1a))) {
+
+            // when
+            decompressorUnderTest.extract(tempDir);
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+            assertThat(tempDir.resolve("test1a")).isRegularFile().hasContent("789");
+            Compress4JAssertions.assertThat(inMemoryLogAppender)
+                    .contains("Skipping symlink entry: test1a -> some (already exists)", DEBUG);
+        }
+    }
+
+    @Test
+    void shouldExtractSymlinksWhenTargetFileDoesExistsAndOverwriteTrue() throws IOException {
+        // given
+        createFile(tempDir, "test1a", "789");
+
+        var subdir = new MemoryArchiveEntry("subdir", null, true, 0);
+        var entry1 = new MemoryArchiveEntry("subdir/test1", "content1");
+        var entry1a = new MemoryArchiveEntry("test1a", null, SYMLINK, NO_MODE, "subdir/test1", 0);
+
+        try (DecompressorUnderTest decompressorUnderTest =
+                new DecompressorUnderTest(List.of(subdir, entry1, entry1a))) {
+            decompressorUnderTest.setOverwrite(true);
+
+            // when
+            decompressorUnderTest.extract(tempDir);
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+            assertThat(tempDir.resolve("test1a")).isSymbolicLink().hasContent("content1");
         }
     }
 
