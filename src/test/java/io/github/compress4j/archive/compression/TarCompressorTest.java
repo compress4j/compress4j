@@ -134,6 +134,7 @@ class TarCompressorTest {
 
     @Test
     void shouldAddDirectoriesRecursively() throws IOException {
+        // given
         var base = tempDir.resolve("base");
         write(tempDir.resolve("base/file1"), "1");
         write(tempDir.resolve("base/file2"), "2");
@@ -144,7 +145,11 @@ class TarCompressorTest {
         write(tempDir.resolve("base/subDir2/file21"), "21");
         write(tempDir.resolve("base/subDir2/file22"), "22");
 
+        // when
         compressor.addDirectoryRecursively("tar/", base);
+        compressor.close();
+
+        // then
         Compress4JAssertions.assertThat(compressFile)
                 .containsAllEntriesOf(Map.ofEntries(
                         entry("tar/", ""),

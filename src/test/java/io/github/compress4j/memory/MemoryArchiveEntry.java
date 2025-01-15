@@ -15,7 +15,12 @@
  */
 package io.github.compress4j.memory;
 
+import static io.github.compress4j.archive.decompression.Decompressor.Entry.Type.DIR;
+import static io.github.compress4j.archive.decompression.Decompressor.Entry.Type.FILE;
+
 import com.fasterxml.jackson.annotation.JsonCreator;
+import io.github.compress4j.archive.decompression.Decompressor.Entry.Type;
+import jakarta.annotation.Nullable;
 import java.util.Date;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 
@@ -31,13 +36,16 @@ public final class MemoryArchiveEntry implements ArchiveEntry {
     private final String content;
 
     /** The entry's link name. */
-    private String linkName = "";
+    private final String linkName;
 
     /** The entry's size. */
-    private long size;
+    private final long size;
 
     /** The entry's directory flag. */
-    private boolean isDirectory;
+    private final boolean directory;
+
+    /** Type of the entry */
+    public final Type type;
 
     /** Created for Jackson deserialization. */
     @JsonCreator
@@ -49,10 +57,40 @@ public final class MemoryArchiveEntry implements ArchiveEntry {
      * Creates a new {@code MemoryArchiveEntry}.
      *
      * @param name the entry's name
+     * @param content the entry's content
      */
-    public MemoryArchiveEntry(final String name, final String content) {
+    public MemoryArchiveEntry(String name, String content) {
+        this(name, content, false, 0);
+    }
+
+    /**
+     * Creates a new {@code MemoryArchiveEntry}.
+     *
+     * @param name the entry's name
+     * @param content the entry's content
+     * @param isDirectory whether the entry is a directory
+     * @param size the entry's size
+     */
+    public MemoryArchiveEntry(String name, String content, boolean isDirectory, long size) {
+        this(name, content, isDirectory ? DIR : FILE, null, size);
+    }
+
+    /**
+     * Creates a new {@code MemoryArchiveEntry}.
+     *
+     * @param name the entry's name
+     * @param content the entry's content
+     * @param type the entry's type
+     * @param linkName the entry's link name
+     * @param size the entry's size
+     */
+    public MemoryArchiveEntry(String name, String content, Type type, @Nullable String linkName, long size) {
         this.name = name;
         this.content = content;
+        this.type = type;
+        this.directory = type == DIR;
+        this.linkName = linkName;
+        this.size = size;
     }
 
     /**
@@ -85,46 +123,15 @@ public final class MemoryArchiveEntry implements ArchiveEntry {
         return linkName;
     }
 
-    /**
-     * Sets this entry's link name.
-     *
-     * @param link the link name to use.
-     */
-    public void setLinkName(final String link) {
-        this.linkName = link;
-    }
-
     /** @inheritDoc */
     @Override
     public long getSize() {
         return size;
     }
 
-    /**
-     * Sets this entry's file size.
-     *
-     * @param size This entry's new file size.
-     * @throws IllegalArgumentException if the size is &lt; 0.
-     */
-    public void setSize(final long size) {
-        if (size < 0) {
-            throw new IllegalArgumentException("Size is out of range: " + size);
-        }
-        this.size = size;
-    }
-
     /** @inheritDoc */
     @Override
     public boolean isDirectory() {
-        return isDirectory;
-    }
-
-    /**
-     * Sets this entry's directory flag.
-     *
-     * @param isDirectory This entry's new directory flag.
-     */
-    public void setDirectory(final boolean isDirectory) {
-        this.isDirectory = isDirectory;
+        return directory;
     }
 }

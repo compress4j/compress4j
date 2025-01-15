@@ -16,6 +16,8 @@
 package io.github.compress4j.archive.decompression;
 
 import static io.github.compress4j.archive.decompression.Decompressor.ErrorHandlerChoice.*;
+import static io.github.compress4j.utils.FileUtils.DOS_HIDDEN;
+import static io.github.compress4j.utils.FileUtils.DOS_READ_ONLY;
 import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 
 import io.github.compress4j.utils.PosixFilePermissionsMapper;
@@ -428,8 +430,8 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
         if (IS_OS_WINDOWS) {
             DosFileAttributeView attrs = Files.getFileAttributeView(outputFile, DosFileAttributeView.class);
             if (attrs != null) {
-                if ((mode & Entry.DOS_READ_ONLY) != 0) attrs.setReadOnly(true);
-                if ((mode & Entry.DOS_HIDDEN) != 0) attrs.setHidden(true);
+                if ((mode & DOS_READ_ONLY) != 0) attrs.setReadOnly(true);
+                if ((mode & DOS_HIDDEN) != 0) attrs.setHidden(true);
             }
         } else {
             PosixFileAttributeView attrs = Files.getFileAttributeView(outputFile, PosixFileAttributeView.class);
@@ -515,12 +517,6 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
      * <p>It is recommended to use {@link #name} as a key for the entry, as it is normalized and trimmed.
      */
     public static final class Entry {
-        /** DOS read-only attribute */
-        public static final int DOS_READ_ONLY = 0b01;
-
-        /** DOS hidden attribute */
-        public static final int DOS_HIDDEN = 0b010;
-
         /** An entry name with separators converted to '/' and trimmed; handle with care */
         public final String name;
 

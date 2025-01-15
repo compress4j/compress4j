@@ -294,12 +294,13 @@ class DecompressorTest {
     @Test
     void shouldApplyEntryFilters() throws IOException {
         // given
+        var subdir = new MemoryArchiveEntry("subdir", null, true, 0);
         var entry1 = new MemoryArchiveEntry("subdir/test1", "content1");
         var entry1a = new MemoryArchiveEntry("subdir/some/test1a", "content1a");
         var entry2 = new MemoryArchiveEntry("subdir/test2", "content2");
 
         try (DecompressorUnderTest decompressorUnderTest =
-                new DecompressorUnderTest(List.of(entry1, entry1a, entry2))) {
+                new DecompressorUnderTest(List.of(subdir, entry1, entry1a, entry2))) {
             decompressorUnderTest.setEntryFilter(entry -> !entry.name.contains("some"));
 
             // when
