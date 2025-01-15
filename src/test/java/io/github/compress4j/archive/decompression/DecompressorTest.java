@@ -16,7 +16,11 @@
 package io.github.compress4j.archive.decompression;
 
 import static ch.qos.logback.classic.Level.DEBUG;
+import static io.github.compress4j.archive.decompression.Decompressor.Entry.Type.SYMLINK;
 import static io.github.compress4j.archive.decompression.Decompressor.ErrorHandlerChoice.*;
+import static io.github.compress4j.archive.decompression.Decompressor.EscapingSymlinkPolicy.DISALLOW;
+import static io.github.compress4j.archive.decompression.Decompressor.EscapingSymlinkPolicy.RELATIVIZE_ABSOLUTE;
+import static io.github.compress4j.utils.FileUtils.NO_MODE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -315,6 +319,73 @@ class DecompressorTest {
     }
 
     @Test
+    void shouldExtractSymlinksInAllowMode() throws IOException {
+        // given
+        var subdir = new MemoryArchiveEntry("subdir", null, true, 0);
+        var entry1 = new MemoryArchiveEntry("subdir/test1", "content1");
+        var entry1a = new MemoryArchiveEntry("test1a", null, SYMLINK, NO_MODE, "subdir/test1", 0);
+
+        try (DecompressorUnderTest decompressorUnderTest =
+                new DecompressorUnderTest(List.of(subdir, entry1, entry1a))) {
+
+            // when
+            decompressorUnderTest.extract(tempDir);
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+            assertThat(tempDir.resolve("test1a")).isSymbolicLink().hasContent("content1");
+        }
+    }
+
+    @Test
+    void shouldExtractSymlinksInRelativizeAbsoluteMode() throws IOException {
+        // given
+        var subdir = new MemoryArchiveEntry("subdir", null, true, 0);
+        var entry1 = new MemoryArchiveEntry("/subdir/test1", "content1");
+        var entry1a = new MemoryArchiveEntry("test1a", null, SYMLINK, NO_MODE, "/subdir/test1", 0);
+
+        try (DecompressorUnderTest decompressorUnderTest =
+                new DecompressorUnderTest(List.of(subdir, entry1, entry1a))) {
+            decompressorUnderTest.setEscapingSymlinkPolicy(RELATIVIZE_ABSOLUTE);
+
+            // when
+            decompressorUnderTest.extract(tempDir);
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+            assertThat(tempDir.resolve("test1a")).isSymbolicLink().hasContent("content1");
+        }
+    }
+
+    @Test
+    void shouldNotExtractSymlinksInDisallowMode() throws IOException {
+        // given
+        var subdir = new MemoryArchiveEntry("subdir", null, true, 0);
+        var entry1 = new MemoryArchiveEntry("/subdir/test1", "content1");
+        var entry1a = new MemoryArchiveEntry("test1a", null, SYMLINK, NO_MODE, "/subdir/test1", 0);
+
+        try (DecompressorUnderTest decompressorUnderTest =
+                new DecompressorUnderTest(List.of(subdir, entry1, entry1a))) {
+            decompressorUnderTest.setEscapingSymlinkPolicy(DISALLOW);
+
+            // when
+            assertThatThrownBy(() -> decompressorUnderTest.extract(tempDir))
+                    .isInstanceOf(IOException.class)
+                    .hasMessage("Invalid symlink (absolute path): test1a -> /subdir/test1");
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+            assertThat(tempDir.resolve("test1a")).doesNotExist();
+        }
+    }
+
+    @Test
     void shouldNormalizePathAndSplit() throws IOException {
         // given
         var path = "some/path";
@@ -351,7 +422,12 @@ class DecompressorTest {
             if (nextEntry == null) {
                 return null;
             }
-            return new Entry(nextEntry.getName(), nextEntry.isDirectory(), nextEntry.getSize());
+            return new Entry(
+                    nextEntry.getName(),
+                    nextEntry.getType(),
+                    nextEntry.getMode(),
+                    nextEntry.getLinkName(),
+                    nextEntry.getSize());
         }
 
         @Override

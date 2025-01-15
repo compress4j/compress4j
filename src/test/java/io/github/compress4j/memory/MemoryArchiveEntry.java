@@ -38,6 +38,9 @@ public final class MemoryArchiveEntry implements ArchiveEntry {
     /** The entry's link name. */
     private final String linkName;
 
+    /** Depending on the source, could be POSIX permissions, DOS attributes, or just {@code 0} */
+    private final int mode;
+
     /** The entry's size. */
     private final long size;
 
@@ -45,7 +48,7 @@ public final class MemoryArchiveEntry implements ArchiveEntry {
     private final boolean directory;
 
     /** Type of the entry */
-    public final Type type;
+    private final Type type;
 
     /** Created for Jackson deserialization. */
     @JsonCreator
@@ -72,7 +75,7 @@ public final class MemoryArchiveEntry implements ArchiveEntry {
      * @param size the entry's size
      */
     public MemoryArchiveEntry(String name, String content, boolean isDirectory, long size) {
-        this(name, content, isDirectory ? DIR : FILE, null, size);
+        this(name, content, isDirectory ? DIR : FILE, 0, null, size);
     }
 
     /**
@@ -84,12 +87,13 @@ public final class MemoryArchiveEntry implements ArchiveEntry {
      * @param linkName the entry's link name
      * @param size the entry's size
      */
-    public MemoryArchiveEntry(String name, String content, Type type, @Nullable String linkName, long size) {
+    public MemoryArchiveEntry(String name, String content, Type type, int mode, @Nullable String linkName, long size) {
         this.name = name;
         this.content = content;
         this.type = type;
         this.directory = type == DIR;
         this.linkName = linkName;
+        this.mode = mode;
         this.size = size;
     }
 
@@ -123,6 +127,15 @@ public final class MemoryArchiveEntry implements ArchiveEntry {
         return linkName;
     }
 
+    /**
+     * Gets this entry's link mode.
+     *
+     * @return This entry's link mode.
+     */
+    public int getMode() {
+        return mode;
+    }
+
     /** @inheritDoc */
     @Override
     public long getSize() {
@@ -133,5 +146,14 @@ public final class MemoryArchiveEntry implements ArchiveEntry {
     @Override
     public boolean isDirectory() {
         return directory;
+    }
+
+    /**
+     * Gets the type of the entry.
+     *
+     * @return The type of the entry.
+     */
+    public Type getType() {
+        return type;
     }
 }
