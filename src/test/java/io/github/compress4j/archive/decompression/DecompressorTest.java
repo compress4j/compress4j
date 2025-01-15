@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import org.junit.jupiter.api.AfterEach;
@@ -70,8 +71,9 @@ class DecompressorTest {
     @Test
     void shouldExtractFiles() throws IOException {
         // given
-        try (DecompressorUnderTest decompressorUnderTest =
-                new DecompressorUnderTest(new String[][] {{"test1", "content1"}, {"test2", "content2"}})) {
+        var entry1 = new MemoryArchiveEntry("test1", "content1");
+        var entry2 = new MemoryArchiveEntry("test2", "content2");
+        try (DecompressorUnderTest decompressorUnderTest = new DecompressorUnderTest(List.of(entry1, entry2))) {
             // when
             decompressorUnderTest.extract(tempDir);
 
@@ -85,8 +87,9 @@ class DecompressorTest {
     @Test
     void shouldExtractFilesWithSubdirectories() throws IOException {
         // given
-        try (DecompressorUnderTest decompressorUnderTest =
-                new DecompressorUnderTest(new String[][] {{"test1", "content1"}, {"subdir/test2", "content2"}})) {
+        var entry1 = new MemoryArchiveEntry("test1", "content1");
+        var enty2 = new MemoryArchiveEntry("subdir/test2", "content2");
+        try (DecompressorUnderTest decompressorUnderTest = new DecompressorUnderTest(List.of(entry1, enty2))) {
 
             // when
             decompressorUnderTest.extract(tempDir);
@@ -101,8 +104,9 @@ class DecompressorTest {
     @Test
     void shouldExtractFilesWithSubdirectoriesAndStripZeroComponents() throws IOException {
         // given
-        try (DecompressorUnderTest decompressorUnderTest =
-                new DecompressorUnderTest(new String[][] {{"test1", "content1"}, {"subdir/test2", "content2"}})) {
+        var entry1 = new MemoryArchiveEntry("test1", "content1");
+        var entry2 = new MemoryArchiveEntry("subdir/test2", "content2");
+        try (DecompressorUnderTest decompressorUnderTest = new DecompressorUnderTest(List.of(entry1, entry2))) {
             decompressorUnderTest.setStripComponents(0);
 
             // when
@@ -118,8 +122,9 @@ class DecompressorTest {
     @Test
     void shouldExtractFilesWithSubdirectoriesAndStripComponents() throws IOException {
         // given
-        try (DecompressorUnderTest decompressorUnderTest =
-                new DecompressorUnderTest(new String[][] {{"test1", "content1"}, {"subdir/test2", "content2"}})) {
+        var entry1 = new MemoryArchiveEntry("test1", "content1");
+        var entry2 = new MemoryArchiveEntry("subdir/test2", "content2");
+        try (DecompressorUnderTest decompressorUnderTest = new DecompressorUnderTest(List.of(entry1, entry2))) {
             decompressorUnderTest.setStripComponents(1);
 
             // when
@@ -134,8 +139,9 @@ class DecompressorTest {
     @Test
     void shouldFailExtractFilesWithInvalidPaths() throws IOException {
         // given
-        try (DecompressorUnderTest decompressorUnderTest =
-                new DecompressorUnderTest(new String[][] {{"../test1", "content1"}, {"subdir/test2", "content2"}})) {
+        var entry1 = new MemoryArchiveEntry("../test1", "content1");
+        var entry2 = new MemoryArchiveEntry("subdir/test2", "content2");
+        try (DecompressorUnderTest decompressorUnderTest = new DecompressorUnderTest(List.of(entry1, entry2))) {
 
             // when && then
             assertThatThrownBy(() -> decompressorUnderTest.extract(tempDir))
@@ -147,6 +153,8 @@ class DecompressorTest {
     @Test
     void shouldFailExtractFilesWithInvalidPathsRetries() throws IOException {
         // given
+        var entry1 = new MemoryArchiveEntry("../test1", "content1");
+        var entry2 = new MemoryArchiveEntry("subdir/test2", "content2");
         AtomicInteger retries = new AtomicInteger(3);
         BiFunction<Decompressor.Entry, IOException, Decompressor.ErrorHandlerChoice> errorHandler =
                 (entry, exception) -> {
@@ -157,8 +165,7 @@ class DecompressorTest {
                     return RETRY;
                 };
 
-        try (DecompressorUnderTest decompressorUnderTest =
-                new DecompressorUnderTest(new String[][] {{"../test1", "content1"}, {"subdir/test2", "content2"}})) {
+        try (DecompressorUnderTest decompressorUnderTest = new DecompressorUnderTest(List.of(entry1, entry2))) {
             decompressorUnderTest.setErrorHandler(errorHandler);
 
             // when
@@ -173,8 +180,9 @@ class DecompressorTest {
     @Test
     void shouldFailExtractFilesWithInvalidPathsAborts() throws IOException {
         // given
-        try (DecompressorUnderTest decompressorUnderTest =
-                new DecompressorUnderTest(new String[][] {{"../test1", "content1"}, {"subdir/test2", "content2"}})) {
+        var entry1 = new MemoryArchiveEntry("../test1", "content1");
+        var entry2 = new MemoryArchiveEntry("subdir/test2", "content2");
+        try (DecompressorUnderTest decompressorUnderTest = new DecompressorUnderTest(List.of(entry1, entry2))) {
             decompressorUnderTest.setErrorHandler((entry, exception) -> ABORT);
 
             // when
@@ -188,8 +196,9 @@ class DecompressorTest {
     @Test
     void shouldFailExtractFilesWithInvalidPathsAbortsAfterSomeFilesExtractedAlready() throws IOException {
         // given
-        try (DecompressorUnderTest decompressorUnderTest =
-                new DecompressorUnderTest(new String[][] {{"subdir/test1", "content1"}, {"../test2", "content2"}})) {
+        var entry1 = new MemoryArchiveEntry("subdir/test1", "content1");
+        var entry2 = new MemoryArchiveEntry("../test2", "content2");
+        try (DecompressorUnderTest decompressorUnderTest = new DecompressorUnderTest(List.of(entry1, entry2))) {
             decompressorUnderTest.setErrorHandler((entry, exception) -> ABORT);
 
             // when
@@ -204,8 +213,9 @@ class DecompressorTest {
     @Test
     void shouldFailExtractFilesWithInvalidPathsBails() throws IOException {
         // given
-        try (DecompressorUnderTest decompressorUnderTest =
-                new DecompressorUnderTest(new String[][] {{"../test1", "content1"}, {"subdir/test2", "content2"}})) {
+        var entry1 = new MemoryArchiveEntry("../test1", "content1");
+        var entry2 = new MemoryArchiveEntry("subdir/test2", "content2");
+        try (DecompressorUnderTest decompressorUnderTest = new DecompressorUnderTest(List.of(entry1, entry2))) {
             decompressorUnderTest.setErrorHandler((entry, exception) -> BAIL_OUT);
 
             // when
@@ -219,10 +229,11 @@ class DecompressorTest {
     }
 
     @Test
-    void shouldFailExtractFilesWithInvalidPathsBailsfterSomeFilesExtractedAlready() throws IOException {
+    void shouldFailExtractFilesWithInvalidPathsBailsAfterSomeFilesExtractedAlready() throws IOException {
         // given
-        try (DecompressorUnderTest decompressorUnderTest =
-                new DecompressorUnderTest(new String[][] {{"subdir/test1", "content1"}, {"../test2", "content2"}})) {
+        var entry1 = new MemoryArchiveEntry("subdir/test1", "content1");
+        var entry2 = new MemoryArchiveEntry("../test2", "content2");
+        try (DecompressorUnderTest decompressorUnderTest = new DecompressorUnderTest(List.of(entry1, entry2))) {
             decompressorUnderTest.setErrorHandler((entry, exception) -> BAIL_OUT);
 
             // when
@@ -239,9 +250,11 @@ class DecompressorTest {
     @Test
     void shouldFailExtractFilesWithInvalidPathsSkipsEntry() throws IOException {
         // given
-        try (DecompressorUnderTest decompressorUnderTest = new DecompressorUnderTest(new String[][] {
-            {"subdir/../test1", "content1"}, {"subdir/some/../test1a", "content1a"}, {"subdir/test2", "content2"}
-        })) {
+        var entry1 = new MemoryArchiveEntry("subdir/../test1", "content1");
+        var entry1a = new MemoryArchiveEntry("subdir/some/../test1a", "content1a");
+        var entry2 = new MemoryArchiveEntry("subdir/test2", "content2");
+        try (DecompressorUnderTest decompressorUnderTest =
+                new DecompressorUnderTest(List.of(entry1, entry1a, entry2))) {
             decompressorUnderTest.setErrorHandler((entry, exception) -> SKIP);
 
             // when
@@ -259,9 +272,11 @@ class DecompressorTest {
     @Test
     void shouldFailExtractFilesWithInvalidPathsSkipAllEntries() throws IOException {
         // given
-        try (DecompressorUnderTest decompressorUnderTest = new DecompressorUnderTest(new String[][] {
-            {"subdir/../test1", "content1"}, {"subdir/some/../test1a", "content1a"}, {"subdir/test2", "content2"}
-        })) {
+        var entry1 = new MemoryArchiveEntry("subdir/../test1", "content1");
+        var entry1a = new MemoryArchiveEntry("subdir/some/../test1a", "content1a");
+        var entry2 = new MemoryArchiveEntry("subdir/test2", "content2");
+        try (DecompressorUnderTest decompressorUnderTest =
+                new DecompressorUnderTest(List.of(entry1, entry1a, entry2))) {
             decompressorUnderTest.setErrorHandler((entry, exception) -> SKIP_ALL);
 
             // when
@@ -279,9 +294,12 @@ class DecompressorTest {
     @Test
     void shouldApplyEntryFilters() throws IOException {
         // given
-        try (DecompressorUnderTest decompressorUnderTest = new DecompressorUnderTest(new String[][] {
-            {"subdir/test1", "content1"}, {"subdir/some/test1a", "content1a"}, {"subdir/test2", "content2"}
-        })) {
+        var entry1 = new MemoryArchiveEntry("subdir/test1", "content1");
+        var entry1a = new MemoryArchiveEntry("subdir/some/test1a", "content1a");
+        var entry2 = new MemoryArchiveEntry("subdir/test2", "content2");
+
+        try (DecompressorUnderTest decompressorUnderTest =
+                new DecompressorUnderTest(List.of(entry1, entry1a, entry2))) {
             decompressorUnderTest.setEntryFilter(entry -> !entry.name.contains("some"));
 
             // when
@@ -311,8 +329,8 @@ class DecompressorTest {
     // #  Utility classes                                   #
     // ######################################################
     public static class DecompressorUnderTest extends Decompressor<MemoryArchiveInputStream> {
-        public DecompressorUnderTest(final String[][] pFiles) throws IOException {
-            super(MemoryArchiveInputStream.toInputStream(pFiles));
+        public DecompressorUnderTest(final List<MemoryArchiveEntry> entries) throws IOException {
+            super(MemoryArchiveInputStream.toInputStream(entries));
         }
 
         @Override

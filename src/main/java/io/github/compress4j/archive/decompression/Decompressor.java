@@ -34,6 +34,7 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -133,9 +134,6 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
                 case SKIP_ALL:
                     decision = SKIP_ALL;
                     LOGGER.debug("SKIP_ALL is selected", ioException);
-                    break;
-                default:
-                    decision = SKIP;
                     break;
             }
         }
@@ -354,7 +352,7 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
      * @throws IOException if an I/O error occurs
      */
     private void extractSymlink(Path outputDir, Entry entry, Path outputFile) throws IOException {
-        if (entry.linkTarget == null || entry.linkTarget.isEmpty()) {
+        if (entry.linkTarget == null || StringUtils.isBlank(entry.linkTarget)) {
             throw new IOException("Invalid symlink entry: " + entry.name + " (empty target)");
         }
 

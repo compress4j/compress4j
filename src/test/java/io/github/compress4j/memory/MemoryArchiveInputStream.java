@@ -15,68 +15,51 @@
  */
 package io.github.compress4j.memory;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.CollectionType;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.stream.Collectors;
+import java.util.List;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
-import org.apache.commons.io.IOUtils;
 
 /** A test input stream. */
 public final class MemoryArchiveInputStream extends ArchiveInputStream<MemoryArchiveEntry> {
 
-    public static final String INNER_DELIMITER = ";";
-    public static final String OUTER_DELIMITER = ":";
-    private final String[] fileNames;
-    private final String[] content;
+    private static final ObjectMapper mapper = new ObjectMapper();
+    private static final CollectionType collectionType =
+            mapper.getTypeFactory().constructCollectionType(List.class, MemoryArchiveEntry.class);
+    private final List<MemoryArchiveEntry> entries;
+
+    private MemoryArchiveEntry currentEntry;
     private int pointer;
 
     public MemoryArchiveInputStream(final InputStream inputStream) throws IOException {
-        this(toArray(IOUtils.toString(inputStream, StandardCharsets.UTF_8)));
+        this(from(inputStream));
     }
 
-    public MemoryArchiveInputStream(final String[][] pFiles) {
-        final int pFilesLength = pFiles.length;
-        fileNames = new String[pFilesLength];
-        content = new String[pFilesLength];
-
-        for (int i = 0; i < pFilesLength; i++) {
-            final String[] nameAndContent = pFiles[i];
-            fileNames[i] = nameAndContent[0];
-            content[i] = nameAndContent[1];
-        }
-        pointer = 0;
+    public MemoryArchiveInputStream(final List<MemoryArchiveEntry> entries) {
+        this.entries = entries;
     }
 
-    public static InputStream toInputStream(final String[][] pFiles) {
-        return new ByteArrayInputStream(join(pFiles).getBytes(StandardCharsets.UTF_8));
+    public static InputStream toInputStream(final List<MemoryArchiveEntry> entries) throws JsonProcessingException {
+        return new ByteArrayInputStream(mapper.writeValueAsBytes(entries));
     }
 
-    private static String[][] toArray(final String str) {
-        String[] strings = str.split(OUTER_DELIMITER);
-        String[][] result = new String[strings.length][];
-        for (int i = 0; i < strings.length; i++) {
-            result[i] = strings[i].split(INNER_DELIMITER);
-        }
-        return result;
-    }
-
-    private static String join(final String[][] pFiles) {
-        return Arrays.stream(pFiles)
-                .map(col -> String.join(INNER_DELIMITER, col))
-                .collect(Collectors.joining(OUTER_DELIMITER));
+    public static List<MemoryArchiveEntry> from(final InputStream inputStream) throws IOException {
+        return mapper.readValue(inputStream, collectionType);
     }
 
     @Override
     public MemoryArchiveEntry getNextEntry() {
-        if (pointer >= fileNames.length) {
-            return null;
+        if (pointer >= entries.size()) {
+            currentEntry = null;
+        } else {
+            currentEntry = entries.get(pointer);
         }
-        String fileName = fileNames[pointer];
         pointer++;
-        return new MemoryArchiveEntry(fileName);
+        return currentEntry;
     }
 
     @Override
@@ -85,7 +68,6 @@ public final class MemoryArchiveInputStream extends ArchiveInputStream<MemoryArc
     }
 
     public String readString() {
-        int currentEntry = pointer - 1; // pointer has already been incremented to the next entry
-        return content[currentEntry];
+        return currentEntry.getContent();
     }
 }
