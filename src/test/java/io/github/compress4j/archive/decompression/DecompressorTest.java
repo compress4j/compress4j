@@ -43,6 +43,8 @@ import java.util.function.BiFunction;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -381,6 +383,7 @@ class DecompressorTest {
         }
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     void shouldExtractSymlinksInRelativizeAbsoluteMode() throws IOException {
         // given
@@ -403,6 +406,7 @@ class DecompressorTest {
         }
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     void shouldNotExtractSymlinksInDisallowMode() throws IOException {
         // given
@@ -515,6 +519,54 @@ class DecompressorTest {
             decompressorUnderTest.extract(tempDir);
 
             // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+            assertThat(tempDir.resolve("test1a")).isSymbolicLink().hasContent("content1");
+        }
+    }
+
+    @Test
+    void shouldRunBiConsumerPostProcessor() throws IOException {
+        // given
+        var subdir = new MemoryArchiveEntry("subdir", null, true, 0);
+        var entry1 = new MemoryArchiveEntry("subdir/test1", "content1");
+        var entry1a = new MemoryArchiveEntry("test1a", null, SYMLINK, NO_MODE, "subdir/test1", 0);
+
+        try (DecompressorUnderTest decompressorUnderTest =
+                new DecompressorUnderTest(List.of(subdir, entry1, entry1a))) {
+            AtomicInteger counter = new AtomicInteger();
+            decompressorUnderTest.setPostProcessor((entry, path) -> counter.incrementAndGet());
+
+            // when
+            decompressorUnderTest.extract(tempDir);
+
+            // then
+            assertThat(counter).hasValue(3);
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+            assertThat(tempDir.resolve("test1a")).isSymbolicLink().hasContent("content1");
+        }
+    }
+
+    @Test
+    void shouldRunConsumerPostProcessor() throws IOException {
+        // given
+        var subdir = new MemoryArchiveEntry("subdir", null, true, 0);
+        var entry1 = new MemoryArchiveEntry("subdir/test1", "content1");
+        var entry1a = new MemoryArchiveEntry("test1a", null, SYMLINK, NO_MODE, "subdir/test1", 0);
+
+        try (DecompressorUnderTest decompressorUnderTest =
+                new DecompressorUnderTest(List.of(subdir, entry1, entry1a))) {
+            AtomicInteger counter = new AtomicInteger();
+            decompressorUnderTest.setPostProcessor(path -> counter.incrementAndGet());
+
+            // when
+            decompressorUnderTest.extract(tempDir);
+
+            // then
+            assertThat(counter).hasValue(3);
             assertThat(tempDir).isDirectory();
             assertThat(tempDir.resolve("subdir/some")).doesNotExist();
             assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
