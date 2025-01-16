@@ -73,7 +73,7 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
     private boolean overwrite = false;
 
     /**
-     * Creates a new {@code Decompressor} with the given {@code Builder}.
+     * Creates a new {@code Decompressor}.
      *
      * @param inputStream - the {@code InputStream} to the compressed file
      * @throws IOException - if the {@code A} could not be created
@@ -543,7 +543,7 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
          * @param isDirectory whether the entry is a directory
          * @param size the size of the entry
          */
-        Entry(String name, boolean isDirectory, long size) {
+        public Entry(String name, boolean isDirectory, long size) {
             this(name, isDirectory ? Type.DIR : Type.FILE, 0, null, size);
         }
 
@@ -556,7 +556,7 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
          * @param linkTarget the target of the symbolic link
          * @param size the size of the entry
          */
-        Entry(String name, Type type, int mode, @Nullable String linkTarget, long size) {
+        public Entry(String name, Type type, int mode, @Nullable String linkTarget, long size) {
             name = name.trim().replace('\\', '/');
             int s = 0;
             int e = name.length() - 1;

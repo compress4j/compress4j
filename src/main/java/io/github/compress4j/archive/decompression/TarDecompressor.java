@@ -24,7 +24,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 public class TarDecompressor extends TarBaseDecompressor {
 
     /**
-     * Creates a new {@code TarDecompressor} with the given {@code Builder}
+     * Creates a new {@code TarDecompressor}.
      *
      * @param path the {@code Path} to the tar file
      * @throws IOException if an I/O error occurs
@@ -34,7 +34,7 @@ public class TarDecompressor extends TarBaseDecompressor {
     }
 
     /**
-     * Creates a new {@code TarDecompressor}
+     * Creates a new {@code TarDecompressor}.
      *
      * @param inputStream - the {@code InputStream} to the tar file
      * @throws IOException - if the {@code A} could not be created

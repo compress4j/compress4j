@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.compress4j.utils;
+package io.github.compress4j.test.util.io;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 

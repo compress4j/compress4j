@@ -25,34 +25,34 @@ import java.util.List;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 
 /** A test input stream. */
-public final class MemoryArchiveInputStream extends ArchiveInputStream<MemoryArchiveEntry> {
+public final class InMemoryArchiveInputStream extends ArchiveInputStream<InMemoryArchiveEntry> {
 
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final CollectionType collectionType =
-            mapper.getTypeFactory().constructCollectionType(List.class, MemoryArchiveEntry.class);
-    private final List<MemoryArchiveEntry> entries;
+            mapper.getTypeFactory().constructCollectionType(List.class, InMemoryArchiveEntry.class);
+    private final List<InMemoryArchiveEntry> entries;
 
-    private MemoryArchiveEntry currentEntry;
+    private InMemoryArchiveEntry currentEntry;
     private int pointer;
 
-    public MemoryArchiveInputStream(final InputStream inputStream) throws IOException {
+    public InMemoryArchiveInputStream(final InputStream inputStream) throws IOException {
         this(from(inputStream));
     }
 
-    public MemoryArchiveInputStream(final List<MemoryArchiveEntry> entries) {
+    public InMemoryArchiveInputStream(final List<InMemoryArchiveEntry> entries) {
         this.entries = entries;
     }
 
-    public static InputStream toInputStream(final List<MemoryArchiveEntry> entries) throws JsonProcessingException {
+    public static InputStream toInputStream(final List<InMemoryArchiveEntry> entries) throws JsonProcessingException {
         return new ByteArrayInputStream(mapper.writeValueAsBytes(entries));
     }
 
-    public static List<MemoryArchiveEntry> from(final InputStream inputStream) throws IOException {
+    public static List<InMemoryArchiveEntry> from(final InputStream inputStream) throws IOException {
         return mapper.readValue(inputStream, collectionType);
     }
 
     @Override
-    public MemoryArchiveEntry getNextEntry() {
+    public InMemoryArchiveEntry getNextEntry() {
         if (pointer >= entries.size()) {
             currentEntry = null;
         } else {

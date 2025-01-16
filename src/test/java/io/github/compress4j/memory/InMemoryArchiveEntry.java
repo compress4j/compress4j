@@ -21,73 +21,43 @@ import static io.github.compress4j.archive.decompression.Decompressor.Entry.Type
 import com.fasterxml.jackson.annotation.JsonCreator;
 import io.github.compress4j.archive.decompression.Decompressor.Entry.Type;
 import jakarta.annotation.Nullable;
+import java.nio.file.attribute.FileTime;
 import java.util.Date;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 
-public final class MemoryArchiveEntry implements ArchiveEntry {
-
-    /** The entry's name. */
+public final class InMemoryArchiveEntry implements ArchiveEntry {
     private final String name;
-
-    /** The entry's last modified date. */
-    private final Date lastModifiedDate = new Date();
-
-    /** The entry's content. */
+    private final Date lastModifiedDate;
     private final String content;
-
-    /** The entry's link name. */
     private final String linkName;
-
-    /** Depending on the source, could be POSIX permissions, DOS attributes, or just {@code 0} */
     private final int mode;
-
-    /** The entry's size. */
     private final long size;
-
-    /** The entry's directory flag. */
     private final boolean directory;
-
-    /** Type of the entry */
     private final Type type;
 
-    /** Created for Jackson deserialization. */
     @JsonCreator
-    private MemoryArchiveEntry() {
-        this("", "");
+    private InMemoryArchiveEntry() {
+        this("", "", FILE, 0, null, 0, new Date());
     }
 
     /**
-     * Creates a new {@code MemoryArchiveEntry}.
-     *
-     * @param name the entry's name
-     * @param content the entry's content
-     */
-    public MemoryArchiveEntry(String name, String content) {
-        this(name, content, false, 0);
-    }
-
-    /**
-     * Creates a new {@code MemoryArchiveEntry}.
-     *
-     * @param name the entry's name
-     * @param content the entry's content
-     * @param isDirectory whether the entry is a directory
-     * @param size the entry's size
-     */
-    public MemoryArchiveEntry(String name, String content, boolean isDirectory, long size) {
-        this(name, content, isDirectory ? DIR : FILE, 0, null, size);
-    }
-
-    /**
-     * Creates a new {@code MemoryArchiveEntry}.
+     * Creates a new {@code InMemoryArchiveEntry}.
      *
      * @param name the entry's name
      * @param content the entry's content
      * @param type the entry's type
      * @param linkName the entry's link name
      * @param size the entry's size
+     * @param lastModifiedDate the entry's last modified date
      */
-    public MemoryArchiveEntry(String name, String content, Type type, int mode, @Nullable String linkName, long size) {
+    private InMemoryArchiveEntry(
+            String name,
+            String content,
+            Type type,
+            int mode,
+            @Nullable String linkName,
+            long size,
+            Date lastModifiedDate) {
         this.name = name;
         this.content = content;
         this.type = type;
@@ -95,6 +65,11 @@ public final class MemoryArchiveEntry implements ArchiveEntry {
         this.linkName = linkName;
         this.mode = mode;
         this.size = size;
+        this.lastModifiedDate = lastModifiedDate;
+    }
+
+    public static Builder builder() {
+        return new Builder();
     }
 
     /**
@@ -155,5 +130,54 @@ public final class MemoryArchiveEntry implements ArchiveEntry {
      */
     public Type getType() {
         return type;
+    }
+
+    public static class Builder {
+        private String name;
+        private Date lastModifiedDate = new Date();
+        private String content;
+        private String linkName;
+        private int mode = 0;
+        private long size = 0;
+        private Type type = FILE;
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder lastModifiedDate(FileTime modTime) {
+            this.lastModifiedDate = Date.from(modTime.toInstant());
+            return this;
+        }
+
+        public Builder content(String content) {
+            this.content = content;
+            return this;
+        }
+
+        public Builder linkName(String linkName) {
+            this.linkName = linkName;
+            return this;
+        }
+
+        public Builder mode(int mode) {
+            this.mode = mode;
+            return this;
+        }
+
+        public Builder size(long size) {
+            this.size = size;
+            return this;
+        }
+
+        public Builder type(Type type) {
+            this.type = type;
+            return this;
+        }
+
+        public InMemoryArchiveEntry build() {
+            return new InMemoryArchiveEntry(name, content, type, mode, linkName, size, lastModifiedDate);
+        }
     }
 }
