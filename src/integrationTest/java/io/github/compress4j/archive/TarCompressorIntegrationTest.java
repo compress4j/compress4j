@@ -24,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import io.github.compress4j.archive.compression.TarCompressor;
+import io.github.compress4j.archive.compression.builder.TarArchiveOutputStreamBuilder;
 import io.github.compress4j.archive.decompression.TarDecompressor;
 import io.github.compress4j.assertion.Compress4JAssertions;
 import java.io.IOException;
@@ -40,7 +41,7 @@ import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
-class TarCompressorTest {
+class TarCompressorIntegrationTest {
     @TempDir
     Path tempDir;
 
@@ -50,7 +51,7 @@ class TarCompressorTest {
     @BeforeEach
     void setup() throws IOException {
         compressFile = tempDir.resolve("test.tar");
-        compressor = new TarCompressor(compressFile);
+        compressor = new TarCompressor(new TarArchiveOutputStreamBuilder(compressFile));
     }
 
     @AfterEach

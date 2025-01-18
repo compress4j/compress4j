@@ -19,29 +19,21 @@ import static io.github.compress4j.archive.decompression.Decompressor.Entry.Type
 import static io.github.compress4j.archive.decompression.Decompressor.Entry.Type.SYMLINK;
 
 import io.github.compress4j.archive.compression.Compressor;
+import io.github.compress4j.memory.builder.InMemoryArchiveOutputStreamBuilder;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
-import java.util.Map;
 import java.util.Optional;
 
 public class InMemoryCompressor extends Compressor<InMemoryArchiveOutputStream> {
 
-    public InMemoryCompressor(OutputStream outputStream) throws IOException {
+    public InMemoryCompressor(InMemoryArchiveOutputStream outputStream) throws IOException {
         super(outputStream);
     }
 
-    public InMemoryCompressor(OutputStream outputStream, Map<String, Object> options) throws IOException {
-        super(outputStream, options);
-    }
-
-    @Override
-    public InMemoryArchiveOutputStream buildArchiveOutputStream(OutputStream outputStream, Map<String, Object> options)
-            throws IOException {
-        InMemoryArchiveOutputStream inMemoryArchiveOutputStream = new InMemoryArchiveOutputStream(outputStream);
-        return applyFormatOptions(inMemoryArchiveOutputStream, options);
+    public InMemoryCompressor(InMemoryArchiveOutputStreamBuilder outputStreamBuilder) throws IOException {
+        super(outputStreamBuilder);
     }
 
     @Override

@@ -15,16 +15,11 @@
  */
 package io.github.compress4j.archive.compression;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
+import io.github.compress4j.archive.compression.builder.TarArchiveOutputStreamBuilder;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
-import java.util.Collections;
-import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
@@ -32,61 +27,26 @@ import org.apache.commons.compress.archivers.tar.TarConstants;
 import org.apache.commons.io.IOUtils;
 
 /** The Tar compressor. */
-@SuppressWarnings({"OptionalUsedAsFieldOrParameterType"})
 public class TarCompressor extends Compressor<TarArchiveOutputStream> {
-
-    /**
-     * Create a new TarCompressor with the given file.
-     *
-     * @param path the file to write the archive to
-     * @throws IOException if an I/O error occurred
-     */
-    public TarCompressor(Path path) throws IOException {
-        this(path, Collections.emptyMap());
-    }
-
-    /**
-     * Create a new TarCompressor with the given file and options.
-     *
-     * @param file the file to write the archive to
-     * @param options the options for the compressor
-     * @throws IOException if an I/O error occurred
-     */
-    public TarCompressor(Path file, Map<String, Object> options) throws IOException {
-        this(Files.newOutputStream(file), options);
-    }
 
     /**
      * Create a new TarCompressor with the given output stream.
      *
-     * @param outputStream the output outputStream
+     * @param tarArchiveOutputStream the output Tar Archive Output Stream
      * @throws IOException if an I/O error occurred
      */
-    public TarCompressor(OutputStream outputStream) throws IOException {
-        super(outputStream);
+    public TarCompressor(TarArchiveOutputStream tarArchiveOutputStream) throws IOException {
+        super(tarArchiveOutputStream);
     }
 
     /**
      * Create a new TarCompressor with the given output stream and options.
      *
-     * @param outputStream the output outputStream
-     * @param options the options for the compressor
+     * @param archiveOutputStreamBuilder the archive output stream builder
      * @throws IOException if an I/O error occurred
      */
-    public TarCompressor(OutputStream outputStream, Map<String, Object> options) throws IOException {
-        super(outputStream, options);
-    }
-
-    /** {@inheritDoc} */
-    private static TarArchiveEntry getArchiveEntry(String name, Optional<Path> symlinkTarget) {
-        return symlinkTarget
-                .map(link -> {
-                    var entry = new TarArchiveEntry(name, TarConstants.LF_SYMLINK);
-                    entry.setSize(0);
-                    entry.setLinkName(link.toString());
-                    return entry;
-                })
-                .orElseGet(() -> new TarArchiveEntry(name));
+    public TarCompressor(TarArchiveOutputStreamBuilder archiveOutputStreamBuilder) throws IOException {
+        super(archiveOutputStreamBuilder);
     }
 
     /** {@inheritDoc} */
@@ -130,13 +90,15 @@ public class TarCompressor extends Compressor<TarArchiveOutputStream> {
         archiveOutputStream.closeArchiveEntry();
     }
 
-    /** {@inheritDoc} */
-    @Override
-    protected TarArchiveOutputStream buildArchiveOutputStream(OutputStream outputStream, Map<String, Object> options)
-            throws IOException {
-        TarArchiveOutputStream out = new TarArchiveOutputStream(outputStream, UTF_8.name());
-        out.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
-        out.setBigNumberMode(TarArchiveOutputStream.BIGNUMBER_POSIX);
-        return applyFormatOptions(out, options);
+    private static TarArchiveEntry getArchiveEntry(
+            String name, @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<Path> symlinkTarget) {
+        return symlinkTarget
+                .map(link -> {
+                    var entry = new TarArchiveEntry(name, TarConstants.LF_SYMLINK);
+                    entry.setSize(0);
+                    entry.setLinkName(link.toString());
+                    return entry;
+                })
+                .orElseGet(() -> new TarArchiveEntry(name));
     }
 }
