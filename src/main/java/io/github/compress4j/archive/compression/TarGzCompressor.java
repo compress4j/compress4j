@@ -15,78 +15,30 @@
  */
 package io.github.compress4j.archive.compression;
 
+import io.github.compress4j.archive.compression.builder.TarArchiveOutputStreamBuilder;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Map;
-import java.util.stream.Collectors;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
-import org.apache.commons.compress.compressors.gzip.GzipParameters;
 
 /** The Tar Gz compressor. */
 public class TarGzCompressor extends TarCompressor {
-    /**
-     * Create a new TarGzCompressor with the given file.
-     *
-     * @param path the file to write the archive to
-     * @throws IOException if an I/O error occurred
-     */
-    public TarGzCompressor(Path path) throws IOException {
-        super(path);
-    }
-
-    /**
-     * Create a new TarGzCompressor with the given file and options
-     *
-     * @param file the file to write the archive to
-     * @param options the options for the compressor
-     * @throws IOException if an I/O error occurred
-     */
-    public TarGzCompressor(Path file, Map<String, Object> options) throws IOException {
-        super(Files.newOutputStream(file), options);
-    }
 
     /**
      * Create a new TarGzCompressor with the given output stream.
      *
-     * @param stream the output stream to write the archive to
+     * @param tarArchiveOutputStream the output Tar Archive Output Stream
      * @throws IOException if an I/O error occurred
      */
-    public TarGzCompressor(OutputStream stream) throws IOException {
-        super(stream);
+    public TarGzCompressor(TarArchiveOutputStream tarArchiveOutputStream) throws IOException {
+        super(tarArchiveOutputStream);
     }
 
     /**
      * Create a new TarGzCompressor with the given output stream and options.
      *
-     * @param stream the output stream to write the archive to
-     * @param options the options for the compressor
+     * @param archiveOutputStreamBuilder the archive output stream builder
      * @throws IOException if an I/O error occurred
      */
-    public TarGzCompressor(OutputStream stream, Map<String, Object> options) throws IOException {
-        super(stream, options);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @param outputStream {@inheritDoc}
-     * @param options {@inheritDoc}
-     * @return {@inheritDoc}
-     */
-    @Override
-    protected TarArchiveOutputStream buildArchiveOutputStream(OutputStream outputStream, Map<String, Object> options)
-            throws IOException {
-        GzipParameters parameters = new GzipParameters();
-        parameters.setCompressionLevel(getCompressionLevel(options));
-
-        Map<String, Object> optionsWithoutCompression = options.entrySet().stream()
-                .filter(e -> !e.getKey().equals(COMPRESSION_LEVEL))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        return super.buildArchiveOutputStream(
-                new GzipCompressorOutputStream(outputStream, parameters), optionsWithoutCompression);
+    public TarGzCompressor(TarArchiveOutputStreamBuilder archiveOutputStreamBuilder) throws IOException {
+        super(archiveOutputStreamBuilder);
     }
 }
