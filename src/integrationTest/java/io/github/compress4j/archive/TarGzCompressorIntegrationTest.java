@@ -16,18 +16,19 @@
 package io.github.compress4j.archive;
 
 import io.github.compress4j.archive.compression.TarGzCompressor;
+import io.github.compress4j.archive.compression.builder.TarGzArchiveOutputStreamBuilder;
 import io.github.compress4j.archive.decompression.TarGzDecompressor;
 import java.io.IOException;
 import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeEach;
 
-class TarGzCompressorTest extends TarCompressorTest {
+class TarGzCompressorIntegrationTest extends TarCompressorIntegrationTest {
 
     @Override
     @BeforeEach
     void setup() throws IOException {
         compressFile = tempDir.resolve("test.tar.gz");
-        compressor = new TarGzCompressor(compressFile);
+        compressor = new TarGzCompressor(new TarGzArchiveOutputStreamBuilder(compressFile));
     }
 
     @Override
