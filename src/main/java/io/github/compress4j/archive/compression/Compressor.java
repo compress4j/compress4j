@@ -21,18 +21,19 @@ import static io.github.compress4j.utils.StringUtil.trimTrailing;
 import static java.util.zip.Deflater.DEFAULT_COMPRESSION;
 import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 
+import io.github.compress4j.archive.compression.builder.ArchiveOutputStreamBuilder;
 import io.github.compress4j.utils.PosixFilePermissionsMapper;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import java.beans.Statement;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.*;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiPredicate;
@@ -49,51 +50,37 @@ import org.slf4j.LoggerFactory;
  *
  * @param <A> The type of {@link ArchiveOutputStream} to write entries to.
  */
-@SuppressWarnings({"OptionalUsedAsFieldOrParameterType"})
 public abstract class Compressor<A extends ArchiveOutputStream<? extends ArchiveEntry>> implements AutoCloseable {
     /** Compression-level for the archive file. Only values in [0-9] are allowed. */
     public static final String COMPRESSION_LEVEL = "compression-level";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Compressor.class);
+
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private Optional<BiPredicate<? super String, ? super Path>> entryFilter = Optional.empty();
 
     /** Archive output stream to be used for compression. */
-    protected A archiveOutputStream;
+    protected final A archiveOutputStream;
 
     /**
      * Create a new Compressor.
      *
-     * @param outputStream the output stream
+     * @param archiveOutputStream the archive output stream
      * @throws IOException if an I/O error occurred
      */
-    protected Compressor(OutputStream outputStream) throws IOException {
-        archiveOutputStream = buildArchiveOutputStream(outputStream);
+    protected Compressor(A archiveOutputStream) throws IOException {
+        this.archiveOutputStream = archiveOutputStream;
     }
 
     /**
      * Create a new Compressor with the given output stream and options.
      *
-     * @param outputStream the output outputStream
-     * @param options the options for the compressor
+     * @param archiveOutputStreamBuilder the archive output stream builder
      * @throws IOException if an I/O error occurred
      */
-    protected Compressor(OutputStream outputStream, Map<String, Object> options) throws IOException {
-        archiveOutputStream = buildArchiveOutputStream(outputStream, options);
+    protected Compressor(ArchiveOutputStreamBuilder<A> archiveOutputStreamBuilder) throws IOException {
+        this.archiveOutputStream = archiveOutputStreamBuilder.build();
     }
-
-    /**
-     * Start a new archive. Entries can be included in the archive using the putEntry method, and then the archive
-     * should be closed using its close method. In addition, options can be applied to the underlying stream. E.g.
-     * compression level.
-     *
-     * @param outputStream underlying output stream to which to write the archive.
-     * @param options options to apply to the underlying output stream. Keys are option names and values are option
-     *     values.
-     * @return new archive object for use in putEntry
-     * @throws IOException thrown by the underlying output stream for I/O errors
-     */
-    protected abstract A buildArchiveOutputStream(OutputStream outputStream, Map<String, Object> options)
-            throws IOException;
 
     /**
      * Write a directory entry to the archive.
@@ -116,7 +103,12 @@ public abstract class Compressor<A extends ArchiveOutputStream<? extends Archive
      * @throws IOException if an I/O error occurred
      */
     protected abstract void writeFileEntry(
-            String name, InputStream source, long length, FileTime modTime, int mode, Optional<Path> symlinkTarget)
+            String name,
+            InputStream source,
+            long length,
+            FileTime modTime,
+            int mode,
+            @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<Path> symlinkTarget)
             throws IOException;
 
     /**
@@ -160,7 +152,9 @@ public abstract class Compressor<A extends ArchiveOutputStream<? extends Archive
      * @param modTime last modification time to be used for the entry
      * @throws IOException if an I/O error occurred
      */
-    private void addDirectory(String entryName, Optional<FileTime> modTime) throws IOException {
+    private void addDirectory(
+            String entryName, @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<FileTime> modTime)
+            throws IOException {
         entryName = sanitiseName(entryName);
         if (accept(entryName, null)) {
             writeDirectoryEntry(entryName, modTime.orElse(FileTime.from(Instant.now())));
@@ -229,7 +223,10 @@ public abstract class Compressor<A extends ArchiveOutputStream<? extends Archive
      * @param modTime last modification time of the directory
      * @throws IOException if an I/O error occurred
      */
-    private void addDirectoryRecursively(String topLevelDir, Path directory, Optional<FileTime> modTime)
+    private void addDirectoryRecursively(
+            String topLevelDir,
+            Path directory,
+            @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<FileTime> modTime)
             throws IOException {
         topLevelDir = topLevelDir.isEmpty() ? "" : sanitiseName(topLevelDir);
         LOGGER.atTrace().log("dir={} topLevelDir={}", directory, topLevelDir);
@@ -290,7 +287,11 @@ public abstract class Compressor<A extends ArchiveOutputStream<? extends Archive
      * @param modTime last modification time to be used for the entry
      * @throws IOException if an I/O error occurred
      */
-    private void addFile(String entryName, Path path, Optional<FileTime> modTime) throws IOException {
+    private void addFile(
+            String entryName,
+            Path path,
+            @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<FileTime> modTime)
+            throws IOException {
         addFile(entryName, path, Files.readAttributes(path, BasicFileAttributes.class), modTime);
     }
 
@@ -332,7 +333,11 @@ public abstract class Compressor<A extends ArchiveOutputStream<? extends Archive
      * @param modTime last modification time to be used for the entry
      * @throws IOException if an I/O error occurred
      */
-    private void addFile(String entryName, byte[] content, Optional<FileTime> modTime) throws IOException {
+    private void addFile(
+            String entryName,
+            byte[] content,
+            @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<FileTime> modTime)
+            throws IOException {
         entryName = sanitiseName(entryName);
         if (accept(entryName, null)) {
             writeFileEntry(
@@ -382,7 +387,11 @@ public abstract class Compressor<A extends ArchiveOutputStream<? extends Archive
      * @param modTime last modification time to be used for the entry
      * @throws IOException if an I/O error occurred
      */
-    private void addFile(String entryName, InputStream content, Optional<FileTime> modTime) throws IOException {
+    private void addFile(
+            String entryName,
+            InputStream content,
+            @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<FileTime> modTime)
+            throws IOException {
         entryName = sanitiseName(entryName);
         if (accept(entryName, null)) {
             writeFileEntry(entryName, content, -1, modTime.orElse(FileTime.from(Instant.now())), NO_MODE);
@@ -398,7 +407,11 @@ public abstract class Compressor<A extends ArchiveOutputStream<? extends Archive
      * @param modTime last modification time of the {@code Path}
      * @throws IOException if an I/O error occurred
      */
-    public final void addFile(String entryName, Path path, BasicFileAttributes attrs, Optional<FileTime> modTime)
+    public final void addFile(
+            String entryName,
+            Path path,
+            BasicFileAttributes attrs,
+            @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<FileTime> modTime)
             throws IOException {
         entryName = sanitiseName(entryName);
         if (accept(entryName, path)) {
@@ -442,38 +455,6 @@ public abstract class Compressor<A extends ArchiveOutputStream<? extends Archive
      */
     public void withFilter(@Nullable BiPredicate<? super String, ? super Path> filter) {
         entryFilter = Optional.ofNullable(filter);
-    }
-
-    /**
-     * Apply options to archive output stream
-     *
-     * @param stream stream to apply options to
-     * @param options options map
-     * @return stream with option applied
-     * @throws IOException if an IO error occurred
-     */
-    protected A applyFormatOptions(A stream, Map<String, Object> options) throws IOException {
-        for (Map.Entry<String, Object> option : options.entrySet()) {
-            try {
-                new Statement(stream, "set" + StringUtils.capitalize(option.getKey()), new Object[] {option.getValue()})
-                        .execute();
-            } catch (Exception e) {
-                throw new IOException("Cannot set option: " + option.getKey(), e);
-            }
-        }
-        return stream;
-    }
-
-    /**
-     * Start a new archive. Entries can be included in the archive using the putEntry method, and then the archive
-     * should be closed using its close method.
-     *
-     * @param s underlying output stream to which to write the archive.
-     * @return new archive object for use in putEntry
-     * @throws IOException thrown by the underlying output stream for I/O errors
-     */
-    protected A buildArchiveOutputStream(OutputStream s) throws IOException {
-        return buildArchiveOutputStream(s, Collections.emptyMap());
     }
 
     /**
@@ -581,7 +562,11 @@ public abstract class Compressor<A extends ArchiveOutputStream<? extends Archive
 
         private final Compressor<E> compressor;
 
-        public PathSimpleFileVisitor(Compressor<E> compressor, Path root, String prefix, Optional<FileTime> modTime) {
+        public PathSimpleFileVisitor(
+                Compressor<E> compressor,
+                Path root,
+                String prefix,
+                @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<FileTime> modTime) {
             this.root = root;
             this.prefix = prefix;
             this.modTime = modTime;
