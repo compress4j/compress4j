@@ -15,36 +15,101 @@
  */
 package io.github.compress4j.archive.compression;
 
+import static io.github.compress4j.assertion.AssertJMatcher.assertArgs;
+import static java.nio.file.attribute.PosixFilePermission.*;
 import static java.time.Instant.now;
 import static org.mockito.Mockito.*;
 
 import io.github.compress4j.archive.compression.builder.TarArchiveOutputStreamBuilder;
+import io.github.compress4j.assertion.Compress4JAssertions;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
+import java.time.Instant;
 import java.util.Optional;
+import java.util.Set;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.file.attribute.FileTimes;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
+@SuppressWarnings("OctalInteger")
 class TarCompressorTest {
 
     @Test
-    void shouldWriteSymlink() throws IOException {
+    void shouldWriteEntry() throws IOException {
+        // given
+        var outputStream = mock(OutputStream.class);
+        var inputStream = new ByteArrayInputStream("test".getBytes());
+
+        // when
+        TarArchiveOutputStream aOut = spy(new TarArchiveOutputStreamBuilder(outputStream).build());
+        try (MockedStatic<IOUtils> mockIOUtils = mockStatic(IOUtils.class, CALLS_REAL_METHODS);
+                TarCompressor tarCompressor = new TarCompressor(aOut)) {
+
+            FileTime modTime = FileTime.from(now());
+            tarCompressor.writeFileEntry("test", inputStream, -1, modTime, 0400, Optional.empty());
+
+            // then
+            mockIOUtils.verify(() -> IOUtils.copy(any(InputStream.class), any(OutputStream.class)));
+            verify(aOut, times(2))
+                    .putArchiveEntry(assertArgs(
+                            e -> Compress4JAssertions.assertThat(e)
+                                    .hasName("test")
+                                    .hasLinkName("")
+                                    .hasSize(4L)
+                                    .hasMode(0400)
+                                    .isNotSymbolicLink()
+                                    .hasModTimeCloseToInSeconds(modTime),
+                            e -> Compress4JAssertions.assertThat(e)
+                                    .hasName("./PaxHeaders.X/test")
+                                    .hasLinkName("")
+                                    .hasSize(28L)
+                                    .hasModTimeCloseToInSeconds(modTime)
+                                    .hasMode(Set.of(OWNER_READ, OWNER_WRITE, GROUP_READ, OTHERS_READ))
+                                    .isNotSymbolicLink()));
+            verify(aOut, times(2)).closeArchiveEntry();
+        }
+    }
+
+    @Test
+    void shouldWriteEntryWithSymlink() throws IOException {
         // given
         var outputStream = mock(OutputStream.class);
         var inputStream = mock(InputStream.class);
 
         // when
         TarArchiveOutputStream aOut = spy(new TarArchiveOutputStreamBuilder(outputStream).build());
-        try (TarCompressor tarCompressor = new TarCompressor(aOut)) {
+        try (MockedStatic<IOUtils> mockIOUtils = mockStatic(IOUtils.class);
+                TarCompressor tarCompressor = new TarCompressor(aOut)) {
 
-            tarCompressor.writeFileEntry(
-                    "test", inputStream, 0, FileTime.from(now()), 0, Optional.of(Path.of("target")));
+            Instant now = now();
+            FileTime modTime = FileTime.from(now);
+            tarCompressor.writeFileEntry("test", inputStream, 0, modTime, 0, Optional.of(Path.of("target")));
 
             // then
-            verify(aOut, times(2)).putArchiveEntry(any());
+            mockIOUtils.verifyNoInteractions();
+            verify(aOut, times(2))
+                    .putArchiveEntry(assertArgs(
+                            e -> Compress4JAssertions.assertThat(e)
+                                    .hasName("test")
+                                    .hasLinkName("target")
+                                    .hasSize(0L)
+                                    .hasModTimeCloseToInSeconds(FileTimes.toDate(modTime))
+                                    .isSymbolicLink()
+                                    .hasMode(Set.of(OWNER_READ, OWNER_WRITE, GROUP_READ, OTHERS_READ)),
+                            e -> Compress4JAssertions.assertThat(e)
+                                    .hasName("./PaxHeaders.X/test")
+                                    .hasLinkName("")
+                                    .hasSize(28L)
+                                    .hasModTimeCloseToInSeconds(now)
+                                    .hasMode(Set.of(OWNER_READ, OWNER_WRITE, GROUP_READ, OTHERS_READ))
+                                    .isNotSymbolicLink()));
+            verify(aOut, times(2)).closeArchiveEntry();
         }
     }
 }
