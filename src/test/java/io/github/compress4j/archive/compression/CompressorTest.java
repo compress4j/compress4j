@@ -15,18 +15,25 @@
  */
 package io.github.compress4j.archive.compression;
 
+import static ch.qos.logback.classic.Level.TRACE;
 import static io.github.compress4j.archive.compression.Compressor.sanitiseName;
 import static io.github.compress4j.test.util.io.TestFileUtils.createFile;
 import static io.github.compress4j.utils.FileUtils.NO_MODE;
 import static java.nio.file.attribute.PosixFilePermission.*;
 import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.LoggerContext;
+import io.github.compress4j.assertion.Compress4JAssertions;
 import io.github.compress4j.memory.InMemoryCompressor;
-import io.github.compress4j.memory.builder.InMemoryArchiveOutputStreamBuilder;
+import io.github.compress4j.memory.InMemoryCompressor.InMemoryCompressorBuilder;
+import io.github.compress4j.test.util.log.InMemoryLogAppender;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,6 +47,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -50,9 +59,14 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.LoggerFactory;
 
 @ExtendWith(MockitoExtension.class)
 class CompressorTest {
+
+    private static final String LOGGER_NAME = Compressor.class.getPackageName();
+    private InMemoryLogAppender inMemoryLogAppender;
+
     @TempDir
     private Path tempDir;
 
@@ -79,6 +93,22 @@ class CompressorTest {
                 Arguments.of(""));
     }
 
+    @BeforeEach
+    public void setup() {
+        Logger logger = (Logger) LoggerFactory.getLogger(LOGGER_NAME);
+        inMemoryLogAppender = new InMemoryLogAppender();
+        inMemoryLogAppender.setContext((LoggerContext) LoggerFactory.getILoggerFactory());
+        logger.setLevel(TRACE);
+        logger.addAppender(inMemoryLogAppender);
+        inMemoryLogAppender.start();
+    }
+
+    @AfterEach
+    public void cleanUp() {
+        inMemoryLogAppender.reset();
+        inMemoryLogAppender.stop();
+    }
+
     // ######################################################
     // #     Files tests                                    #
     // ######################################################
@@ -92,8 +122,7 @@ class CompressorTest {
 
         //noinspection rawtypes
         try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor =
-                        spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
+                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
             // when
             compressor.addFile(path);
 
@@ -128,10 +157,33 @@ class CompressorTest {
 
         //noinspection rawtypes
         try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor =
-                        spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
+                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
             compressor.withFilter((name, p) -> false);
 
+            // when
+            compressor.addFile(path);
+
+            // then
+            InOrder inOrder = inOrder(compressor);
+            inOrder.verify(compressor).addFile(path);
+            inOrder.verify(compressor)
+                    .addFile(eq(fileName), eq(path), any(BasicFileAttributes.class), eq(Optional.empty()));
+            mockCompressor.verify(() -> sanitiseName(fileName));
+            inOrder.verify(compressor).accept(fileName, path);
+            inOrder.verifyNoMoreInteractions();
+        }
+    }
+
+    @Test
+    void shouldAddFileWithPathAppliesFilterViaBuilder() throws IOException {
+        // given
+        String fileName = "file_name.txt";
+        var path = createFile(tempDir, fileName, "789");
+
+        //noinspection rawtypes
+        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
+                InMemoryCompressor compressor = spy(
+                        new InMemoryCompressor(new InMemoryCompressorBuilder(out).withFilter((name, p) -> false)))) {
             // when
             compressor.addFile(path);
 
@@ -157,8 +209,7 @@ class CompressorTest {
 
         //noinspection rawtypes
         try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor =
-                        spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
+                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
             // when
             compressor.addFile(entryName, path);
 
@@ -197,8 +248,7 @@ class CompressorTest {
 
         //noinspection rawtypes
         try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor =
-                        spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
+                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
             // when
             compressor.addFile(entryName, path, modTime);
 
@@ -227,8 +277,7 @@ class CompressorTest {
         //noinspection rawtypes
         try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 MockedStatic<Instant> mockedStaticInstant = mockStatic(Instant.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor =
-                        spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
+                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
 
             var mockedInstant = Instant.now();
             mockedStaticInstant.when(Instant::now).thenReturn(mockedInstant);
@@ -256,8 +305,7 @@ class CompressorTest {
         //noinspection rawtypes
         try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 MockedStatic<Instant> mockedStaticInstant = mockStatic(Instant.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor =
-                        spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
+                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
             compressor.withFilter((name, p) -> false);
             var mockedInstant = Instant.now();
             mockedStaticInstant.when(Instant::now).thenReturn(mockedInstant);
@@ -282,8 +330,7 @@ class CompressorTest {
 
         //noinspection rawtypes
         try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor =
-                        spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
+                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
 
             byte[] content = "789".getBytes();
 
@@ -308,8 +355,7 @@ class CompressorTest {
         //noinspection rawtypes
         try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 MockedStatic<Instant> mockedStaticInstant = mockStatic(Instant.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor =
-                        spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
+                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
 
             var mockedInstant = Instant.now();
             mockedStaticInstant.when(Instant::now).thenReturn(mockedInstant);
@@ -337,8 +383,7 @@ class CompressorTest {
         //noinspection rawtypes
         try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 MockedStatic<Instant> mockedStaticInstant = mockStatic(Instant.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor =
-                        spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
+                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
             compressor.withFilter((name, p) -> false);
 
             var mockedInstant = Instant.now();
@@ -364,8 +409,7 @@ class CompressorTest {
 
         //noinspection rawtypes
         try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor =
-                        spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
+                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
 
             var content = new ByteArrayInputStream("789".getBytes());
 
@@ -393,8 +437,7 @@ class CompressorTest {
         //noinspection rawtypes
         try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 MockedStatic<Instant> mockedStaticInstant = mockStatic(Instant.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor =
-                        spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
+                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
             var mockedInstant = Instant.now();
             mockedStaticInstant.when(Instant::now).thenReturn(mockedInstant);
             FileTime modTime = FileTime.from(mockedInstant);
@@ -416,8 +459,7 @@ class CompressorTest {
 
         //noinspection rawtypes
         try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor =
-                        spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
+                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
             compressor.withFilter((name, p) -> false);
 
             // when
@@ -439,8 +481,7 @@ class CompressorTest {
 
         //noinspection rawtypes
         try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor =
-                        spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
+                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
             // when
             compressor.addDirectory(entryName, modTime);
 
@@ -467,8 +508,7 @@ class CompressorTest {
 
         //noinspection rawtypes
         try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor =
-                        spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
+                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
 
             // when
             compressor.addDirectoryRecursively(base);
@@ -528,8 +568,7 @@ class CompressorTest {
 
         //noinspection rawtypes
         try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor =
-                        spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
+                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
             compressor.withFilter((name, p) -> false);
 
             // when
@@ -558,8 +597,7 @@ class CompressorTest {
 
         //noinspection rawtypes
         try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor =
-                        spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
+                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
 
             // when
             compressor.addDirectoryRecursively(top, base);
@@ -632,8 +670,7 @@ class CompressorTest {
 
         //noinspection rawtypes
         try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor =
-                        spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
+                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
 
             // when
             compressor.addDirectoryRecursively(base, modTime);
@@ -691,8 +728,7 @@ class CompressorTest {
 
         //noinspection rawtypes
         try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor =
-                        spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
+                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
 
             // when
             compressor.addDirectoryRecursively(top, base, modTime);
@@ -781,9 +817,9 @@ class CompressorTest {
     }
 
     @Test
-    void shouldGetUnixModeOnNixFileSystem() throws IOException {
+    void shouldGetFileModeOnNixFileSystem() throws IOException {
         // given
-        var path = createFile(tempDir, "file.txt", "789");
+        var mockPath = mock(Path.class);
         @SuppressWarnings("OctalInteger")
         int expectedMode = 0644;
 
@@ -794,13 +830,13 @@ class CompressorTest {
             var mockAttributeView = mock(PosixFileAttributeView.class);
             var mockedAttributes = mock(PosixFileAttributes.class);
             mockedFiles
-                    .when(() -> Files.getFileAttributeView(path, PosixFileAttributeView.class))
+                    .when(() -> Files.getFileAttributeView(mockPath, PosixFileAttributeView.class))
                     .thenReturn(mockAttributeView);
             when(mockAttributeView.readAttributes()).thenReturn(mockedAttributes);
             when(mockedAttributes.permissions()).thenReturn(Set.of(OWNER_READ, OWNER_WRITE, GROUP_READ, OTHERS_READ));
 
             // when
-            int actualMode = Compressor.mode(path);
+            int actualMode = Compressor.mode(mockPath);
 
             // then
             assertThat(actualMode).isEqualTo(expectedMode);
@@ -808,28 +844,33 @@ class CompressorTest {
     }
 
     @Test
-    void shouldGetNodeModeOnNixFileSystemWithoutFileAttributes() throws IOException {
+    void shouldGetNoModeOnNixFileSystemWithoutFileAttributes() throws IOException {
         // given
+        var mockPath = mock(Path.class);
+        given(mockPath.toString()).willReturn("some/path");
+
         try (@SuppressWarnings("rawtypes")
                         MockedStatic<Compressor> mockedCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
             mockedCompressor.when(Compressor::isIsOsWindows).thenReturn(false);
-            var path = tempDir.resolve("file.txt");
-            mockedFiles.when(() -> Files.getPosixFilePermissions(path)).thenReturn(null);
+            mockedFiles.when(() -> Files.getPosixFilePermissions(mockPath)).thenReturn(null);
 
             // when
-            int actualMode = Compressor.mode(path);
+            int actualMode = Compressor.mode(mockPath);
 
             // then
             assertThat(actualMode).isEqualTo(NO_MODE);
+            Compress4JAssertions.assertThat(inMemoryLogAppender)
+                    .contains("Cannot get POSIX file attributes for: some/path", TRACE);
         }
     }
 
     @Test
-    void shouldGetUnixModeOnWindowsFileSystem() throws IOException {
+    void shouldGetFileModeOnWindowsFileSystem() throws IOException {
         // given
-        var path = createFile(tempDir, "file.txt", "789");
-        int expectedMode = 0b11;
+        var mockPath = mock(Path.class);
+        @SuppressWarnings("OctalInteger")
+        int expectedMode = 0003;
 
         try (@SuppressWarnings("rawtypes")
                         MockedStatic<Compressor> mockedCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
@@ -838,14 +879,14 @@ class CompressorTest {
             var mockAttributeView = mock(DosFileAttributeView.class);
             var mockedAttributes = mock(DosFileAttributes.class);
             mockedFiles
-                    .when(() -> Files.getFileAttributeView(path, DosFileAttributeView.class))
+                    .when(() -> Files.getFileAttributeView(mockPath, DosFileAttributeView.class))
                     .thenReturn(mockAttributeView);
             when(mockAttributeView.readAttributes()).thenReturn(mockedAttributes);
             when(mockedAttributes.isReadOnly()).thenReturn(true);
             when(mockedAttributes.isHidden()).thenReturn(true);
 
             // when
-            int actualMode = Compressor.mode(path);
+            int actualMode = Compressor.mode(mockPath);
 
             // then
             assertThat(actualMode).isEqualTo(expectedMode);
@@ -853,9 +894,11 @@ class CompressorTest {
     }
 
     @Test
-    void shouldGetUnixModeOnWindowsFileSystemWithAttributesAsFalse() throws IOException {
+    void shouldGetFileModeOnWindowsFileSystemWithAttributesHiddenAsFalse() throws IOException {
         // given
-        var path = createFile(tempDir, "file.txt", "789");
+        var mockPath = mock(Path.class);
+        @SuppressWarnings("OctalInteger")
+        int expectedMode = 0001;
 
         try (@SuppressWarnings("rawtypes")
                         MockedStatic<Compressor> mockedCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
@@ -864,14 +907,68 @@ class CompressorTest {
             var mockAttributeView = mock(DosFileAttributeView.class);
             var mockedAttributes = mock(DosFileAttributes.class);
             mockedFiles
-                    .when(() -> Files.getFileAttributeView(path, DosFileAttributeView.class))
+                    .when(() -> Files.getFileAttributeView(mockPath, DosFileAttributeView.class))
+                    .thenReturn(mockAttributeView);
+            when(mockAttributeView.readAttributes()).thenReturn(mockedAttributes);
+            when(mockedAttributes.isReadOnly()).thenReturn(true);
+            when(mockedAttributes.isHidden()).thenReturn(false);
+
+            // when
+            int actualMode = Compressor.mode(mockPath);
+
+            // then
+            assertThat(actualMode).isEqualTo(expectedMode);
+        }
+    }
+
+    @Test
+    void shouldGetFileModeOnWindowsFileSystemWithAttributesReadOnlyAsFalse() throws IOException {
+        // given
+        var mockPath = mock(Path.class);
+        @SuppressWarnings("OctalInteger")
+        int expectedMode = 0002;
+
+        try (@SuppressWarnings("rawtypes")
+                        MockedStatic<Compressor> mockedCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
+                MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
+            mockedCompressor.when(Compressor::isIsOsWindows).thenReturn(true);
+            var mockAttributeView = mock(DosFileAttributeView.class);
+            var mockedAttributes = mock(DosFileAttributes.class);
+            mockedFiles
+                    .when(() -> Files.getFileAttributeView(mockPath, DosFileAttributeView.class))
+                    .thenReturn(mockAttributeView);
+            when(mockAttributeView.readAttributes()).thenReturn(mockedAttributes);
+            when(mockedAttributes.isReadOnly()).thenReturn(false);
+            when(mockedAttributes.isHidden()).thenReturn(true);
+
+            // when
+            int actualMode = Compressor.mode(mockPath);
+
+            // then
+            assertThat(actualMode).isEqualTo(expectedMode);
+        }
+    }
+
+    @Test
+    void shouldGetFileModeOnWindowsFileSystemWithAttributesAsFalse() throws IOException {
+        // given
+        var mockPath = mock(Path.class);
+
+        try (@SuppressWarnings("rawtypes")
+                        MockedStatic<Compressor> mockedCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
+                MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
+            mockedCompressor.when(Compressor::isIsOsWindows).thenReturn(true);
+            var mockAttributeView = mock(DosFileAttributeView.class);
+            var mockedAttributes = mock(DosFileAttributes.class);
+            mockedFiles
+                    .when(() -> Files.getFileAttributeView(mockPath, DosFileAttributeView.class))
                     .thenReturn(mockAttributeView);
             when(mockAttributeView.readAttributes()).thenReturn(mockedAttributes);
             when(mockedAttributes.isReadOnly()).thenReturn(false);
             when(mockedAttributes.isHidden()).thenReturn(false);
 
             // when
-            int actualMode = Compressor.mode(path);
+            int actualMode = Compressor.mode(mockPath);
 
             // then
             assertThat(actualMode).isEqualTo(NO_MODE);
@@ -879,20 +976,24 @@ class CompressorTest {
     }
 
     @Test
-    void shouldGetNodeModeOnWindowsFileSystemWithoutFileAttributes() throws IOException {
+    void shouldGetNoModeOnWindowsFileSystemWithoutFileAttributes() throws IOException {
         // given
+        var mockPath = mock(Path.class);
+        given(mockPath.toString()).willReturn("some/path");
+
         try (@SuppressWarnings("rawtypes")
                         MockedStatic<Compressor> mockedCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
             mockedCompressor.when(Compressor::isIsOsWindows).thenReturn(true);
-            var path = tempDir.resolve("file.txt");
-            mockedFiles.when(() -> Files.getPosixFilePermissions(path)).thenReturn(null);
+            mockedFiles.when(() -> Files.getPosixFilePermissions(mockPath)).thenReturn(null);
 
             // when
-            int actualMode = Compressor.mode(path);
+            int actualMode = Compressor.mode(mockPath);
 
             // then
             assertThat(actualMode).isEqualTo(NO_MODE);
+            Compress4JAssertions.assertThat(inMemoryLogAppender)
+                    .contains("Cannot get DOS file attributes for: some/path", TRACE);
         }
     }
 
@@ -936,29 +1037,14 @@ class CompressorTest {
     @Test
     void shouldSetOptionOnArchiveOutputStream() throws IOException {
         // given
-        Map<String, Object> options = Map.of("someOption", 42);
-        try (InMemoryCompressor compressor =
-                new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out, options))) {
+        var builder = new InMemoryCompressorBuilder(out).withSomeOption(42);
+        try (InMemoryCompressor compressor = new InMemoryCompressor(builder)) {
 
             // when
             int actualOption = compressor.archiveOutputStream.getSomeOption();
 
             // then
             assertThat(actualOption).isEqualTo(42);
-        }
-    }
-
-    @Test
-    void shouldThrowExceptionWhenInvalidOptionDefined() {
-        // given
-        Map<String, Object> options = Map.of("nonExistingOption", 42);
-        // when
-        try (InMemoryCompressor ignored =
-                new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out, options))) {
-            fail("Should have thrown an IOException");
-        } catch (IOException e) {
-            // then
-            assertThat(e).hasMessage("Cannot set option: nonExistingOption");
         }
     }
 }

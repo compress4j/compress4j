@@ -18,18 +18,24 @@ package io.github.compress4j.archive.decompression;
 import static io.github.compress4j.archive.decompression.Decompressor.ErrorHandlerChoice.*;
 import static io.github.compress4j.utils.FileUtils.DOS_HIDDEN;
 import static io.github.compress4j.utils.FileUtils.DOS_READ_ONLY;
+import static io.github.compress4j.utils.PosixFilePermissionsMapper.fromUnixMode;
 import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 
-import io.github.compress4j.utils.PosixFilePermissionsMapper;
+import io.github.compress4j.archive.decompression.builder.ArchiveInputStreamBuilder;
 import io.github.compress4j.utils.StringUtil;
 import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.PosixFileAttributeView;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -51,20 +57,16 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
 
     /** Archive input stream to be used for extraction. */
     protected A archiveInputStream;
-
-    /** Filter for the decompressor. */
-    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    private Optional<Predicate<? super Decompressor.Entry>> entryFilter = Optional.empty();
-
-    /** Error handler for the decompressor. */
-    private BiFunction<? super Entry, ? super IOException, ErrorHandlerChoice> errorHandler =
-            (x, y) -> ErrorHandlerChoice.BAIL_OUT;
-
     /** Escaping symlink policy for the decompressor. */
     protected Decompressor.EscapingSymlinkPolicy escapingSymlinkPolicy = EscapingSymlinkPolicy.ALLOW;
-
+    /** Filter for the decompressor. */
+    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+    private Optional<Predicate<Entry>> entryFilter = Optional.empty();
+    /** Error handler for the decompressor. */
+    private BiFunction<Entry, ? super IOException, ErrorHandlerChoice> errorHandler =
+            (x, y) -> ErrorHandlerChoice.BAIL_OUT;
     /** Post processor for the decompressor. */
-    private BiConsumer<? super Decompressor.Entry, ? super Path> postProcessor;
+    private BiConsumer<Entry, ? super Path> postProcessor;
 
     /** Number of leading path components to strip from the extracted entries. */
     private int stripComponents = 0;
@@ -75,11 +77,135 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
     /**
      * Creates a new {@code Decompressor}.
      *
-     * @param inputStream - the {@code InputStream} to the compressed file
+     * @param archiveInputStream - the {@code A} to the compressed file
+     */
+    protected Decompressor(A archiveInputStream) {
+        this.archiveInputStream = archiveInputStream;
+    }
+
+    /**
+     * Creates a new {@code Decompressor}.
+     *
+     * @param builder - the {@code ArchiveInputStreamBuilder} to build the {@code A}
      * @throws IOException - if the {@code A} could not be created
      */
-    protected Decompressor(InputStream inputStream) throws IOException {
-        this.archiveInputStream = buildArchiveInputStream(inputStream);
+    protected Decompressor(ArchiveInputStreamBuilder<A> builder) throws IOException {
+        this.archiveInputStream = builder.build();
+    }
+
+    /**
+     * Normalizes the path and splits it into parts.
+     *
+     * @param path the path to normalize and split
+     * @return the normalized and split path
+     * @throws IOException if an I/O error occurs
+     */
+    public static List<String> normalizePathAndSplit(String path) throws IOException {
+        ensureValidPath(path);
+        String canonicalPath = Paths.get(path).toFile().getCanonicalPath();
+        return splitPath(canonicalPath);
+    }
+
+    /**
+     * Validates the path to prevent directory traversal attacks.
+     *
+     * @param entryName the path to validate
+     * @throws IOException if the path is invalid
+     */
+    private static void ensureValidPath(String entryName) throws IOException {
+        if (entryName.contains("..")) {
+            throw new IOException("Invalid entry name: " + entryName);
+        }
+    }
+
+    /**
+     * Validates entry and returns the path using the output directory.
+     *
+     * @param outputDir the directory to extract the archive to
+     * @param entryName the name of the entry
+     * @return the path to the extracted entry
+     * @throws IOException if an I/O error occurs
+     */
+    private static Path entryFile(Path outputDir, String entryName) throws IOException {
+        ensureValidPath(entryName);
+        return outputDir.resolve(StringUtil.trimLeading(entryName, '/'));
+    }
+
+    /**
+     * Creates the directory for the given path, including any necessary but nonexistent parent directories. Note that
+     * if this operation fails it may have succeeded in creating some of the necessary parent directories.
+     *
+     * @param path the directory to be created
+     * @throws SecurityException If a security manager exists and its
+     *     {@link java.lang.SecurityManager#checkRead(java.lang.String)} method does not permit verification of the
+     *     existence of the named directory and all necessary parent directories; or if the
+     *     {@link java.lang.SecurityManager#checkWrite(java.lang.String)} method does not permit the named directory and
+     *     all necessary parent directories to be created
+     */
+    private static void makeDirectory(Path path) {
+        //noinspection ResultOfMethodCallIgnored
+        path.toFile().mkdirs();
+    }
+
+    private static List<String> splitPath(String canonicalPath) {
+        return Arrays.asList(StringUtil.trimLeading(canonicalPath, '/').split("/"));
+    }
+
+    /**
+     * Sets the attributes of the output file.
+     *
+     * @param mode the mode to set
+     * @param outputFile the file to set the attributes of
+     * @throws IOException if an I/O error occurs
+     */
+    protected static void setAttributes(int mode, Path outputFile) throws IOException {
+        if (isIsOsWindows()) {
+            DosFileAttributeView attrs = Files.getFileAttributeView(outputFile, DosFileAttributeView.class);
+            if (attrs != null) {
+                if ((mode & DOS_READ_ONLY) != 0) attrs.setReadOnly(true);
+                if ((mode & DOS_HIDDEN) != 0) attrs.setHidden(true);
+            } else {
+                LOGGER.trace("Cannot set DOS attributes for file: {}", outputFile);
+            }
+        } else {
+            PosixFileAttributeView attrs = Files.getFileAttributeView(outputFile, PosixFileAttributeView.class);
+            if (attrs != null) {
+                attrs.setPermissions(fromUnixMode(mode));
+            } else {
+                LOGGER.trace("Cannot set POSIX attributes for file: {}", outputFile);
+            }
+        }
+    }
+
+    /**
+     * Check if the OS is Windows.
+     *
+     * @return {@code true} if the OS is Windows, {@code false} otherwise
+     */
+    protected static boolean isIsOsWindows() {
+        return IS_OS_WINDOWS;
+    }
+
+    /**
+     * Verifies that the symlink target is valid.
+     *
+     * @param entryName the name of the entry
+     * @param linkTarget the target of the symlink
+     * @param outputDir the directory to extract the archive to
+     * @param outputFile the file to extract the entry to
+     * @throws IOException if the symlink target is invalid
+     */
+    private static void verifySymlinkTarget(String entryName, String linkTarget, Path outputDir, Path outputFile)
+            throws IOException {
+        Path outputTarget = Paths.get(linkTarget);
+        if (outputTarget.isAbsolute()) {
+            throw new IOException("Invalid symlink (absolute path): " + entryName + " -> " + linkTarget);
+        }
+        Path linkTargetNormalized = outputFile.getParent().resolve(outputTarget).normalize();
+        if (!linkTargetNormalized.startsWith(outputDir.normalize())) {
+            throw new IOException(
+                    "Invalid symlink (points outside of output directory): " + entryName + " -> " + linkTarget);
+        }
     }
 
     /**
@@ -142,19 +268,6 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
         return decision;
     }
 
-    /**
-     * Normalizes the path and splits it into parts.
-     *
-     * @param path the path to normalize and split
-     * @return the normalized and split path
-     * @throws IOException if an I/O error occurs
-     */
-    public static List<String> normalizePathAndSplit(String path) throws IOException {
-        ensureValidPath(path);
-        String canonicalPath = Paths.get(path).toFile().getCanonicalPath();
-        return splitPath(canonicalPath);
-    }
-
     /** {@inheritDoc} */
     @Override
     public void close() throws IOException {
@@ -166,7 +279,7 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
      *
      * @param errorHandler the error handler to set
      */
-    public void setErrorHandler(BiFunction<? super Entry, ? super IOException, ErrorHandlerChoice> errorHandler) {
+    public void setErrorHandler(BiFunction<Entry, ? super IOException, ErrorHandlerChoice> errorHandler) {
         this.errorHandler = errorHandler;
     }
 
@@ -184,7 +297,7 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
      *
      * @param filter Predicate to be used when entries are being extracted
      */
-    public void setEntryFilter(@Nullable Predicate<? super Decompressor.Entry> filter) {
+    public void setEntryFilter(@Nullable Predicate<Entry> filter) {
         this.entryFilter = Optional.ofNullable(filter);
     }
 
@@ -202,7 +315,7 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
      *
      * @param postProcessor the post processor to set
      */
-    public void setPostProcessor(BiConsumer<? super Decompressor.Entry, ? super Path> postProcessor) {
+    public void setPostProcessor(BiConsumer<Entry, ? super Path> postProcessor) {
         this.postProcessor = postProcessor;
     }
 
@@ -223,21 +336,6 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
     public void setOverwrite(boolean overwrite) {
         this.overwrite = overwrite;
     }
-
-    /**
-     * Build a {@code A} from the given {@code InputStream}. If you want to combine an archive format with a compression
-     * format - like when reading a `tar.gz` file - you wrap the {@code ArchiveInputStream} around
-     * {@code CompressorInputStream} for example:
-     *
-     * <pre>{@code
-     * return new TarArchiveInputStream(new GzipCompressorInputStream(inputStream));
-     * }</pre>
-     *
-     * @param inputStream - the {@code InputStream} to the compressed file
-     * @return a {@code A} from the given {@code InputStream}
-     * @throws IOException - if the {@code A} could not be created
-     */
-    protected abstract A buildArchiveInputStream(InputStream inputStream) throws IOException;
 
     /**
      * Close the stream for the current entry. This method is called after the entry has been processed and should close
@@ -265,52 +363,6 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
      * @throws IOException if an I/O error occurs
      */
     protected abstract InputStream openEntryStream(Entry entry) throws IOException;
-
-    /**
-     * Validates the path to prevent directory traversal attacks.
-     *
-     * @param entryName the path to validate
-     * @throws IOException if the path is invalid
-     */
-    private static void ensureValidPath(String entryName) throws IOException {
-        if (entryName.contains("..")
-                && Arrays.asList(entryName.split("[/\\\\]")).contains("..")) {
-            throw new IOException("Invalid entry name: " + entryName);
-        }
-    }
-
-    /**
-     * Validates entry and returns the path using the output directory.
-     *
-     * @param outputDir the directory to extract the archive to
-     * @param entryName the name of the entry
-     * @return the path to the extracted entry
-     * @throws IOException if an I/O error occurs
-     */
-    private static Path entryFile(Path outputDir, String entryName) throws IOException {
-        ensureValidPath(entryName);
-        return outputDir.resolve(StringUtil.trimLeading(entryName, '/'));
-    }
-
-    /**
-     * Creates the directory for the given path, including any necessary but nonexistent parent directories. Note that
-     * if this operation fails it may have succeeded in creating some of the necessary parent directories.
-     *
-     * @param path the directory to be created
-     * @throws SecurityException If a security manager exists and its
-     *     {@link java.lang.SecurityManager#checkRead(java.lang.String)} method does not permit verification of the
-     *     existence of the named directory and all necessary parent directories; or if the
-     *     {@link java.lang.SecurityManager#checkWrite(java.lang.String)} method does not permit the named directory and
-     *     all necessary parent directories to be created
-     */
-    private static void makeDirectory(Path path) {
-        //noinspection ResultOfMethodCallIgnored
-        path.toFile().mkdirs();
-    }
-
-    private static List<String> splitPath(String canonicalPath) {
-        return Arrays.asList(StringUtil.trimLeading(canonicalPath, '/').split("/"));
-    }
 
     private @Nullable Entry stripComponents(Entry e) {
         List<String> ourPathSplit = splitPath(e.name);
@@ -379,14 +431,10 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
         }
 
         if (overwrite || !Files.exists(outputFile, LinkOption.NOFOLLOW_LINKS)) {
-            try {
-                Path outputTarget = Paths.get(target);
-                makeDirectory(outputFile.getParent());
-                Files.deleteIfExists(outputFile);
-                Files.createSymbolicLink(outputFile, outputTarget);
-            } catch (InvalidPathException e) {
-                throw new IOException("Invalid symlink entry: " + entry.name + " -> " + target, e);
-            }
+            Path outputTarget = Paths.get(target);
+            makeDirectory(outputFile.getParent());
+            Files.deleteIfExists(outputFile);
+            Files.createSymbolicLink(outputFile, outputTarget);
         } else {
             LOGGER.debug("Skipping symlink entry: {} -> {} (already exists)", entry.name, target);
         }
@@ -420,55 +468,6 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
 
         if (postProcessor != null) {
             postProcessor.accept(entry, outputFile);
-        }
-    }
-
-    /**
-     * Sets the attributes of the output file.
-     *
-     * @param mode the mode to set
-     * @param outputFile the file to set the attributes of
-     * @throws IOException if an I/O error occurs
-     */
-    private static void setAttributes(int mode, Path outputFile) throws IOException {
-        if (IS_OS_WINDOWS) {
-            DosFileAttributeView attrs = Files.getFileAttributeView(outputFile, DosFileAttributeView.class);
-            if (attrs != null) {
-                if ((mode & DOS_READ_ONLY) != 0) attrs.setReadOnly(true);
-                if ((mode & DOS_HIDDEN) != 0) attrs.setHidden(true);
-            }
-        } else {
-            PosixFileAttributeView attrs = Files.getFileAttributeView(outputFile, PosixFileAttributeView.class);
-            if (attrs != null) {
-                attrs.setPermissions(PosixFilePermissionsMapper.fromUnixMode(mode));
-            }
-        }
-    }
-
-    /**
-     * Verifies that the symlink target is valid.
-     *
-     * @param entryName the name of the entry
-     * @param linkTarget the target of the symlink
-     * @param outputDir the directory to extract the archive to
-     * @param outputFile the file to extract the entry to
-     * @throws IOException if the symlink target is invalid
-     */
-    private static void verifySymlinkTarget(String entryName, String linkTarget, Path outputDir, Path outputFile)
-            throws IOException {
-        try {
-            Path outputTarget = Paths.get(linkTarget);
-            if (outputTarget.isAbsolute()) {
-                throw new IOException("Invalid symlink (absolute path): " + entryName + " -> " + linkTarget);
-            }
-            Path linkTargetNormalized =
-                    outputFile.getParent().resolve(outputTarget).normalize();
-            if (!linkTargetNormalized.startsWith(outputDir.normalize())) {
-                throw new IOException(
-                        "Invalid symlink (points outside of output directory): " + entryName + " -> " + linkTarget);
-            }
-        } catch (InvalidPathException e) {
-            throw new IOException("Failed to verify symlink entry scope: " + entryName + " -> " + linkTarget, e);
         }
     }
 

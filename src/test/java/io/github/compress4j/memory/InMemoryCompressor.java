@@ -19,20 +19,21 @@ import static io.github.compress4j.archive.decompression.Decompressor.Entry.Type
 import static io.github.compress4j.archive.decompression.Decompressor.Entry.Type.SYMLINK;
 
 import io.github.compress4j.archive.compression.Compressor;
-import io.github.compress4j.memory.builder.InMemoryArchiveOutputStreamBuilder;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.util.Optional;
 
 public class InMemoryCompressor extends Compressor<InMemoryArchiveOutputStream> {
 
-    public InMemoryCompressor(InMemoryArchiveOutputStream outputStream) throws IOException {
+    @SuppressWarnings("unused")
+    public InMemoryCompressor(InMemoryArchiveOutputStream outputStream) {
         super(outputStream);
     }
 
-    public InMemoryCompressor(InMemoryArchiveOutputStreamBuilder outputStreamBuilder) throws IOException {
+    public InMemoryCompressor(InMemoryCompressorBuilder outputStreamBuilder) throws IOException {
         super(outputStreamBuilder);
     }
 
@@ -56,5 +57,36 @@ public class InMemoryCompressor extends Compressor<InMemoryArchiveOutputStream> 
             builder.type(FILE).content(new String(source.readAllBytes()));
         }
         archiveOutputStream.putArchiveEntry(builder.build());
+    }
+
+    public static class InMemoryCompressorBuilder
+            extends CompressorBuilder<InMemoryArchiveOutputStream, InMemoryCompressorBuilder, InMemoryCompressor> {
+        private int someOption = 0;
+
+        public InMemoryCompressorBuilder(OutputStream outputStream) {
+            super(outputStream);
+        }
+
+        @Override
+        protected InMemoryCompressorBuilder getThis() {
+            return this;
+        }
+
+        public InMemoryCompressorBuilder withSomeOption(int option) {
+            someOption = option;
+            return this;
+        }
+
+        @Override
+        public InMemoryArchiveOutputStream buildArchiveOutputStream() {
+            InMemoryArchiveOutputStream out = new InMemoryArchiveOutputStream(outputStream);
+            out.setSomeOption(someOption);
+            return out;
+        }
+
+        @Override
+        public InMemoryCompressor build() throws IOException {
+            return new InMemoryCompressor(this);
+        }
     }
 }

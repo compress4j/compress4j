@@ -15,90 +15,92 @@
  */
 package io.github.compress4j.archive.compression;
 
-import io.github.compress4j.archive.compression.builder.TarArchiveOutputStreamBuilder;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.FileTime;
-import java.util.Optional;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
-import org.apache.commons.compress.archivers.tar.TarConstants;
-import org.apache.commons.io.IOUtils;
 
-/** The Tar compressor. */
-public class TarCompressor extends Compressor<TarArchiveOutputStream> {
+/** The Tar compressor. @NotThreadSafe */
+public class TarCompressor extends BaseTarCompressor {
 
     /**
      * Create a new TarCompressor with the given output stream.
      *
      * @param tarArchiveOutputStream the output Tar Archive Output Stream
-     * @throws IOException if an I/O error occurred
      */
-    public TarCompressor(TarArchiveOutputStream tarArchiveOutputStream) throws IOException {
+    public TarCompressor(TarArchiveOutputStream tarArchiveOutputStream) {
         super(tarArchiveOutputStream);
     }
 
     /**
      * Create a new TarCompressor with the given output stream and options.
      *
-     * @param archiveOutputStreamBuilder the archive output stream builder
+     * @param builder the archive output stream builder
      * @throws IOException if an I/O error occurred
      */
-    public TarCompressor(TarArchiveOutputStreamBuilder archiveOutputStreamBuilder) throws IOException {
-        super(archiveOutputStreamBuilder);
-    }
-
-    /** {@inheritDoc} */
-    @Override
-    protected void writeDirectoryEntry(String name, FileTime modTime) throws IOException {
-        TarArchiveEntry e = new TarArchiveEntry(name + '/');
-        e.setModTime(modTime);
-        archiveOutputStream.putArchiveEntry(e);
-        archiveOutputStream.closeArchiveEntry();
+    public TarCompressor(TarCompressorBuilder builder) throws IOException {
+        super(builder);
     }
 
     /**
-     * Write a file entry to the archive.
+     * Helper static method to create an instance of the {@link TarCompressorBuilder}
      *
-     * @param name name of the entry
-     * @param source input stream to read the file from
-     * @param length length of the file
-     * @param modTime last modification time of the file
-     * @param mode file mode
-     * @param symlinkTarget target of the symbolic link, or {@code null} if the entry is not a symbolic link
+     * @param path the path to write the archive to
+     * @return An instance of the {@link TarCompressorBuilder}
      * @throws IOException if an I/O error occurred
      */
-    protected void writeFileEntry(
-            String name, InputStream source, long length, FileTime modTime, int mode, Optional<Path> symlinkTarget)
-            throws IOException {
-        TarArchiveEntry e = getArchiveEntry(name, symlinkTarget);
-        if (length < 0) {
-            length = source.available();
-        }
-        if (symlinkTarget.isEmpty()) {
-            e.setSize(length);
-        }
-        e.setModTime(modTime);
-        if (mode != 0) {
-            e.setMode(mode);
-        }
-        archiveOutputStream.putArchiveEntry(e);
-        if (length > 0) {
-            IOUtils.copy(source, archiveOutputStream);
-        }
-        archiveOutputStream.closeArchiveEntry();
+    public static TarCompressorBuilder builder(Path path) throws IOException {
+        return new TarCompressorBuilder(path);
     }
 
-    private static TarArchiveEntry getArchiveEntry(
-            String name, @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<Path> symlinkTarget) {
-        return symlinkTarget
-                .map(link -> {
-                    var entry = new TarArchiveEntry(name, TarConstants.LF_SYMLINK);
-                    entry.setSize(0);
-                    entry.setLinkName(link.toString());
-                    return entry;
-                })
-                .orElseGet(() -> new TarArchiveEntry(name));
+    /**
+     * Helper static method to create an instance of the {@link TarCompressorBuilder}
+     *
+     * @param outputStream the output stream
+     * @return An instance of the {@link TarCompressorBuilder}
+     */
+    public static TarCompressorBuilder builder(OutputStream outputStream) {
+        return new TarCompressorBuilder(outputStream);
+    }
+
+    /** Tar compressor builder */
+    public static class TarCompressorBuilder extends BaseTarCompressorBuilder<TarCompressorBuilder, TarCompressor> {
+        /**
+         * Create a new {@link TarCompressor} with the given path.
+         *
+         * @param path the path to write the archive to
+         * @throws IOException if an I/O error occurred
+         */
+        public TarCompressorBuilder(Path path) throws IOException {
+            this(Files.newOutputStream(path));
+        }
+
+        /**
+         * Create a new {@link TarCompressor} with the given output stream.
+         *
+         * @param outputStream the output stream
+         */
+        public TarCompressorBuilder(OutputStream outputStream) {
+            super(outputStream);
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        protected TarCompressorBuilder getThis() {
+            return this;
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public TarArchiveOutputStream buildArchiveOutputStream() {
+            return buildTarArchiveOutputStream(outputStream);
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public TarCompressor build() throws IOException {
+            return new TarCompressor(this);
+        }
     }
 }

@@ -57,6 +57,7 @@ public class TarArchiveEntryAssert extends AbstractAssert<TarArchiveEntryAssert,
         return hasModTimeCloseToInSeconds(date.toInstant());
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public TarArchiveEntryAssert hasModTimeCloseToInSeconds(FileTime fileTime) {
         return hasModTimeCloseToInSeconds(fileTime.toInstant());
     }
@@ -71,6 +72,7 @@ public class TarArchiveEntryAssert extends AbstractAssert<TarArchiveEntryAssert,
         return this;
     }
 
+    @SuppressWarnings("UnusedReturnValue")
     public TarArchiveEntryAssert hasMode(Set<PosixFilePermission> permissions) {
         Set<PosixFilePermission> actualPermissions = PosixFilePermissionsMapper.fromUnixMode(actual.getMode());
         Assertions.assertThat(actualPermissions).containsAll(permissions);
