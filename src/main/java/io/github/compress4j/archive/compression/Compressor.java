@@ -517,12 +517,16 @@ public abstract class Compressor<A extends ArchiveOutputStream<? extends Archive
                 if (dosAttrs.isReadOnly()) mode |= DOS_READ_ONLY;
                 if (dosAttrs.isHidden()) mode |= DOS_HIDDEN;
                 return mode;
+            } else {
+                LOGGER.trace("Cannot get DOS file attributes for: {}", path);
             }
         } else {
             PosixFileAttributeView attrs = Files.getFileAttributeView(path, PosixFileAttributeView.class);
             if (attrs != null) {
                 return PosixFilePermissionsMapper.toUnixMode(
                         attrs.readAttributes().permissions());
+            } else {
+                LOGGER.trace("Cannot get POSIX file attributes for: {}", path);
             }
         }
         return NO_MODE;

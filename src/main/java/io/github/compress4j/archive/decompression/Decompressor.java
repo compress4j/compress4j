@@ -18,9 +18,9 @@ package io.github.compress4j.archive.decompression;
 import static io.github.compress4j.archive.decompression.Decompressor.ErrorHandlerChoice.*;
 import static io.github.compress4j.utils.FileUtils.DOS_HIDDEN;
 import static io.github.compress4j.utils.FileUtils.DOS_READ_ONLY;
+import static io.github.compress4j.utils.PosixFilePermissionsMapper.fromUnixMode;
 import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 
-import io.github.compress4j.utils.PosixFilePermissionsMapper;
 import io.github.compress4j.utils.StringUtil;
 import jakarta.annotation.Nullable;
 import java.io.IOException;
@@ -29,7 +29,9 @@ import java.io.OutputStream;
 import java.nio.file.*;
 import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.PosixFileAttributeView;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -379,14 +381,10 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
         }
 
         if (overwrite || !Files.exists(outputFile, LinkOption.NOFOLLOW_LINKS)) {
-            try {
-                Path outputTarget = Paths.get(target);
-                makeDirectory(outputFile.getParent());
-                Files.deleteIfExists(outputFile);
-                Files.createSymbolicLink(outputFile, outputTarget);
-            } catch (InvalidPathException e) {
-                throw new IOException("Invalid symlink entry: " + entry.name + " -> " + target, e);
-            }
+            Path outputTarget = Paths.get(target);
+            makeDirectory(outputFile.getParent());
+            Files.deleteIfExists(outputFile);
+            Files.createSymbolicLink(outputFile, outputTarget);
         } else {
             LOGGER.debug("Skipping symlink entry: {} -> {} (already exists)", entry.name, target);
         }
@@ -430,19 +428,32 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
      * @param outputFile the file to set the attributes of
      * @throws IOException if an I/O error occurs
      */
-    private static void setAttributes(int mode, Path outputFile) throws IOException {
-        if (IS_OS_WINDOWS) {
+    protected static void setAttributes(int mode, Path outputFile) throws IOException {
+        if (isIsOsWindows()) {
             DosFileAttributeView attrs = Files.getFileAttributeView(outputFile, DosFileAttributeView.class);
             if (attrs != null) {
                 if ((mode & DOS_READ_ONLY) != 0) attrs.setReadOnly(true);
                 if ((mode & DOS_HIDDEN) != 0) attrs.setHidden(true);
+            } else {
+                LOGGER.trace("Cannot set DOS attributes for file: {}", outputFile);
             }
         } else {
             PosixFileAttributeView attrs = Files.getFileAttributeView(outputFile, PosixFileAttributeView.class);
             if (attrs != null) {
-                attrs.setPermissions(PosixFilePermissionsMapper.fromUnixMode(mode));
+                attrs.setPermissions(fromUnixMode(mode));
+            } else {
+                LOGGER.trace("Cannot set POSIX attributes for file: {}", outputFile);
             }
         }
+    }
+
+    /**
+     * Check if the OS is Windows.
+     *
+     * @return {@code true} if the OS is Windows, {@code false} otherwise
+     */
+    protected static boolean isIsOsWindows() {
+        return IS_OS_WINDOWS;
     }
 
     /**
