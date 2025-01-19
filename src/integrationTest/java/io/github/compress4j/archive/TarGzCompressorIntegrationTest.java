@@ -15,9 +15,12 @@
  */
 package io.github.compress4j.archive;
 
+import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.LONGFILE_POSIX;
+
 import io.github.compress4j.archive.compression.TarGzCompressor;
-import io.github.compress4j.archive.compression.builder.TarGzArchiveOutputStreamBuilder;
+import io.github.compress4j.archive.compression.TarGzCompressor.TarGzCompressorBuilder;
 import io.github.compress4j.archive.decompression.TarGzDecompressor;
+import io.github.compress4j.archive.decompression.builder.TarGzArchiveInputStreamBuilder;
 import java.io.IOException;
 import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,12 +31,12 @@ class TarGzCompressorIntegrationTest extends TarCompressorIntegrationTest {
     @BeforeEach
     void setup() throws IOException {
         compressFile = tempDir.resolve("test.tar.gz");
-        compressor = new TarGzCompressor(new TarGzArchiveOutputStreamBuilder(compressFile));
+        compressor = new TarGzCompressor(new TarGzCompressorBuilder(compressFile).withLongFileMode(LONGFILE_POSIX));
     }
 
     @Override
     protected void extract(Path in, Path out) throws IOException {
-        try (TarGzDecompressor tarGzDecompressor = new TarGzDecompressor(in)) {
+        try (TarGzDecompressor tarGzDecompressor = new TarGzDecompressor(new TarGzArchiveInputStreamBuilder(in))) {
             tarGzDecompressor.extract(out);
         }
     }

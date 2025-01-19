@@ -16,24 +16,33 @@
 package io.github.compress4j.archive.decompression;
 
 import static ch.qos.logback.classic.Level.DEBUG;
+import static ch.qos.logback.classic.Level.TRACE;
 import static io.github.compress4j.archive.decompression.Decompressor.Entry.Type.DIR;
 import static io.github.compress4j.archive.decompression.Decompressor.Entry.Type.SYMLINK;
 import static io.github.compress4j.archive.decompression.Decompressor.ErrorHandlerChoice.*;
 import static io.github.compress4j.archive.decompression.Decompressor.EscapingSymlinkPolicy.DISALLOW;
 import static io.github.compress4j.archive.decompression.Decompressor.EscapingSymlinkPolicy.RELATIVIZE_ABSOLUTE;
 import static io.github.compress4j.test.util.io.TestFileUtils.createFile;
+import static java.nio.file.attribute.PosixFilePermission.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.*;
 
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import io.github.compress4j.assertion.Compress4JAssertions;
 import io.github.compress4j.memory.InMemoryArchiveEntry;
 import io.github.compress4j.memory.InMemoryDecompressor;
+import io.github.compress4j.memory.builder.InMemoryArchiveInputStreamBuilder;
 import io.github.compress4j.test.util.log.InMemoryLogAppender;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.DosFileAttributeView;
+import java.nio.file.attribute.PosixFileAttributeView;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import org.junit.jupiter.api.AfterEach;
@@ -43,6 +52,7 @@ import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +70,7 @@ class DecompressorTest {
         Logger logger = (Logger) LoggerFactory.getLogger(LOGGER_NAME);
         inMemoryLogAppender = new InMemoryLogAppender();
         inMemoryLogAppender.setContext((LoggerContext) LoggerFactory.getILoggerFactory());
-        logger.setLevel(DEBUG);
+        logger.setLevel(TRACE);
         logger.addAppender(inMemoryLogAppender);
         inMemoryLogAppender.start();
     }
@@ -78,7 +88,8 @@ class DecompressorTest {
                 InMemoryArchiveEntry.builder().name("test1").content("content1").build();
         var entry2 =
                 InMemoryArchiveEntry.builder().name("test2").content("content2").build();
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+        var inMemoryArchiveInputStream = new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry2)).build();
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(inMemoryArchiveInputStream)) {
             // when
             inMemoryDecompressor.extract(tempDir);
 
@@ -98,7 +109,8 @@ class DecompressorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry2)))) {
 
             // when
             inMemoryDecompressor.extract(tempDir);
@@ -121,7 +133,8 @@ class DecompressorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry2)))) {
 
             // when
             inMemoryDecompressor.extract(tempDir);
@@ -146,7 +159,8 @@ class DecompressorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry2)))) {
             inMemoryDecompressor.setOverwrite(true);
 
             // when
@@ -168,7 +182,8 @@ class DecompressorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry2)))) {
             inMemoryDecompressor.setStripComponents(0);
 
             // when
@@ -190,7 +205,8 @@ class DecompressorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry2)))) {
             inMemoryDecompressor.setStripComponents(1);
 
             // when
@@ -213,7 +229,8 @@ class DecompressorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry2)))) {
 
             // when && then
             assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir))
@@ -243,7 +260,8 @@ class DecompressorTest {
                     return RETRY;
                 };
 
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry2)))) {
             inMemoryDecompressor.setErrorHandler(errorHandler);
 
             // when
@@ -266,7 +284,8 @@ class DecompressorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry2)))) {
             inMemoryDecompressor.setErrorHandler((entry, exception) -> ABORT);
 
             // when
@@ -288,7 +307,8 @@ class DecompressorTest {
                 .name("../test2")
                 .content("content2")
                 .build();
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry2)))) {
             inMemoryDecompressor.setErrorHandler((entry, exception) -> ABORT);
 
             // when
@@ -311,7 +331,8 @@ class DecompressorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry2)))) {
             inMemoryDecompressor.setErrorHandler((entry, exception) -> BAIL_OUT);
 
             // when
@@ -335,7 +356,8 @@ class DecompressorTest {
                 .name("../test2")
                 .content("content2")
                 .build();
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry2)))) {
             inMemoryDecompressor.setErrorHandler((entry, exception) -> BAIL_OUT);
 
             // when
@@ -364,7 +386,8 @@ class DecompressorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry1a, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry1a, entry2)))) {
             inMemoryDecompressor.setErrorHandler((entry, exception) -> SKIP);
 
             // when
@@ -394,7 +417,8 @@ class DecompressorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry1a, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry1a, entry2)))) {
             inMemoryDecompressor.setErrorHandler((entry, exception) -> SKIP_ALL);
 
             // when
@@ -426,8 +450,8 @@ class DecompressorTest {
                 .content("content2")
                 .build();
 
-        try (InMemoryDecompressor inMemoryDecompressor =
-                new InMemoryDecompressor(List.of(subdir, entry1, entry1a, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(
+                new InMemoryArchiveInputStreamBuilder(List.of(subdir, entry1, entry1a, entry2)))) {
             inMemoryDecompressor.setEntryFilter(entry -> !entry.name.contains("some"));
 
             // when
@@ -455,7 +479,8 @@ class DecompressorTest {
                 .linkName("subdir/test1")
                 .build();
 
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(subdir, entry1, entry1a)))) {
 
             // when
             inMemoryDecompressor.extract(tempDir);
@@ -483,7 +508,8 @@ class DecompressorTest {
                 .linkName("/subdir/test1")
                 .build();
 
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(subdir, entry1, entry1a)))) {
             inMemoryDecompressor.setEscapingSymlinkPolicy(RELATIVIZE_ABSOLUTE);
 
             // when
@@ -499,7 +525,67 @@ class DecompressorTest {
 
     @DisabledOnOs(OS.WINDOWS)
     @Test
-    void shouldNotExtractSymlinksInDisallowMode() throws IOException {
+    void shouldNotExtractSymlinksInRelativizeAbsoluteModeWhenTargetPathRelative() throws IOException {
+        // given
+        var subdir = InMemoryArchiveEntry.builder().name("subdir").type(DIR).build();
+        var entry1 = InMemoryArchiveEntry.builder()
+                .name("/subdir/test1")
+                .content("content1")
+                .build();
+        var entry1a = InMemoryArchiveEntry.builder()
+                .name("test1a")
+                .type(SYMLINK)
+                .linkName("../subdir/test1")
+                .build();
+
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(subdir, entry1, entry1a)))) {
+            inMemoryDecompressor.setEscapingSymlinkPolicy(RELATIVIZE_ABSOLUTE);
+
+            // when
+            inMemoryDecompressor.extract(tempDir);
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+            assertThat(tempDir.resolve("test1a")).isSymbolicLink();
+        }
+    }
+
+    @DisabledOnOs(OS.WINDOWS)
+    @Test
+    void shouldExtractSymlinksInDisallowModeWithAbsoluteTargetPathWhenWithinTargetOutputDir() throws IOException {
+        // given
+        var subdir = InMemoryArchiveEntry.builder().name("subdir").type(DIR).build();
+        var entry1 = InMemoryArchiveEntry.builder()
+                .name("/subdir/test1")
+                .content("content1")
+                .build();
+        var entry1a = InMemoryArchiveEntry.builder()
+                .name("test1a")
+                .type(SYMLINK)
+                .linkName("subdir/test1")
+                .build();
+
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(subdir, entry1, entry1a)))) {
+            inMemoryDecompressor.setEscapingSymlinkPolicy(DISALLOW);
+
+            // when
+            inMemoryDecompressor.extract(tempDir);
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+            assertThat(tempDir.resolve("test1a")).isSymbolicLink().exists();
+        }
+    }
+
+    @DisabledOnOs(OS.WINDOWS)
+    @Test
+    void shouldNotExtractSymlinksInDisallowModeWithAbsoluteTargetPath() throws IOException {
         // given
         var subdir = InMemoryArchiveEntry.builder().name("subdir").type(DIR).build();
         var entry1 = InMemoryArchiveEntry.builder()
@@ -512,13 +598,46 @@ class DecompressorTest {
                 .linkName("/subdir/test1")
                 .build();
 
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(subdir, entry1, entry1a)))) {
             inMemoryDecompressor.setEscapingSymlinkPolicy(DISALLOW);
 
             // when
             assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir))
                     .isInstanceOf(IOException.class)
                     .hasMessage("Invalid symlink (absolute path): test1a -> /subdir/test1");
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+            assertThat(tempDir.resolve("test1a")).doesNotExist();
+        }
+    }
+
+    @DisabledOnOs(OS.WINDOWS)
+    @Test
+    void shouldNotExtractSymlinksInDisallowModeWithAbsoluteTargetPathTargetOutsideOutput() throws IOException {
+        // given
+        var subdir = InMemoryArchiveEntry.builder().name("subdir").type(DIR).build();
+        var entry1 = InMemoryArchiveEntry.builder()
+                .name("/subdir/test1")
+                .content("content1")
+                .build();
+        var entry1a = InMemoryArchiveEntry.builder()
+                .name("test1a")
+                .type(SYMLINK)
+                .linkName("../subdir2/test1")
+                .build();
+
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(subdir, entry1, entry1a)))) {
+            inMemoryDecompressor.setEscapingSymlinkPolicy(DISALLOW);
+
+            // when
+            assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir))
+                    .isInstanceOf(IOException.class)
+                    .hasMessage("Invalid symlink (points outside of output directory): test1a -> ../subdir2/test1");
 
             // then
             assertThat(tempDir).isDirectory();
@@ -539,7 +658,8 @@ class DecompressorTest {
         var entry1a =
                 InMemoryArchiveEntry.builder().name("test1a").type(SYMLINK).build();
 
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(subdir, entry1, entry1a)))) {
 
             // when
             assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir))
@@ -568,7 +688,8 @@ class DecompressorTest {
                 .linkName("")
                 .build();
 
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(subdir, entry1, entry1a)))) {
 
             // when
             assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir))
@@ -599,7 +720,8 @@ class DecompressorTest {
                 .linkName("some")
                 .build();
 
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(subdir, entry1, entry1a)))) {
 
             // when
             inMemoryDecompressor.extract(tempDir);
@@ -630,7 +752,8 @@ class DecompressorTest {
                 .linkName("subdir/test1")
                 .build();
 
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(subdir, entry1, entry1a)))) {
             inMemoryDecompressor.setOverwrite(true);
 
             // when
@@ -658,7 +781,8 @@ class DecompressorTest {
                 .linkName("subdir/test1")
                 .build();
 
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(subdir, entry1, entry1a)))) {
             AtomicInteger counter = new AtomicInteger();
             inMemoryDecompressor.setPostProcessor((entry, path) -> counter.incrementAndGet());
 
@@ -688,7 +812,8 @@ class DecompressorTest {
                 .linkName("subdir/test1")
                 .build();
 
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(subdir, entry1, entry1a)))) {
             AtomicInteger counter = new AtomicInteger();
             inMemoryDecompressor.setPostProcessor(path -> counter.incrementAndGet());
 
@@ -714,5 +839,185 @@ class DecompressorTest {
 
         // then
         assertThat(result).isNotEmpty();
+    }
+
+    @Test
+    void shouldSetAttributesOnNixFileSystem() throws IOException {
+        // given
+        var mockPath = mock(Path.class);
+        @SuppressWarnings("OctalInteger")
+        int mode = 0644;
+
+        try (@SuppressWarnings("rawtypes")
+                        MockedStatic<Decompressor> mockedCompressor =
+                                mockStatic(Decompressor.class, CALLS_REAL_METHODS);
+                MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
+            mockedCompressor.when(Decompressor::isIsOsWindows).thenReturn(false);
+            var mockAttributeView = mock(PosixFileAttributeView.class);
+            mockedFiles
+                    .when(() -> Files.getFileAttributeView(mockPath, PosixFileAttributeView.class))
+                    .thenReturn(mockAttributeView);
+
+            // when
+            Decompressor.setAttributes(mode, mockPath);
+
+            // then
+            verify(mockAttributeView).setPermissions(Set.of(OWNER_READ, OWNER_WRITE, GROUP_READ, OTHERS_READ));
+        }
+    }
+
+    @Test
+    void shouldNotSetAttributesOnNixFileSystemWhenCouldNotReadExistingAttributes() throws IOException {
+        // given
+        var mockPath = mock(Path.class);
+        given(mockPath.toString()).willReturn("some/path");
+        @SuppressWarnings("OctalInteger")
+        int mode = 0644;
+
+        try (@SuppressWarnings("rawtypes")
+                        MockedStatic<Decompressor> mockedCompressor =
+                                mockStatic(Decompressor.class, CALLS_REAL_METHODS);
+                MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
+            mockedCompressor.when(Decompressor::isIsOsWindows).thenReturn(false);
+            mockedFiles
+                    .when(() -> Files.getFileAttributeView(mockPath, PosixFileAttributeView.class))
+                    .thenReturn(null);
+
+            // when
+            Decompressor.setAttributes(mode, mockPath);
+
+            // then
+            Compress4JAssertions.assertThat(inMemoryLogAppender)
+                    .contains("Cannot set POSIX attributes for file: some/path", TRACE);
+        }
+    }
+
+    @Test
+    void shouldSetAttributesOnWindowsFileSystem() throws IOException {
+        // given
+        var mockPath = mock(Path.class);
+        @SuppressWarnings("OctalInteger")
+        int mode = 0003;
+
+        try (@SuppressWarnings("rawtypes")
+                        MockedStatic<Decompressor> mockedCompressor =
+                                mockStatic(Decompressor.class, CALLS_REAL_METHODS);
+                MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
+            mockedCompressor.when(Decompressor::isIsOsWindows).thenReturn(true);
+            var mockAttributeView = mock(DosFileAttributeView.class);
+            mockedFiles
+                    .when(() -> Files.getFileAttributeView(mockPath, DosFileAttributeView.class))
+                    .thenReturn(mockAttributeView);
+
+            // when
+            Decompressor.setAttributes(mode, mockPath);
+
+            // then
+            verify(mockAttributeView).setReadOnly(true);
+            verify(mockAttributeView).setHidden(true);
+        }
+    }
+
+    @Test
+    void shouldSetAttributesOnWindowsFileSystemWhenReadOnly() throws IOException {
+        // given
+        var mockPath = mock(Path.class);
+        @SuppressWarnings("OctalInteger")
+        int mode = 0001;
+
+        try (@SuppressWarnings("rawtypes")
+                        MockedStatic<Decompressor> mockedCompressor =
+                                mockStatic(Decompressor.class, CALLS_REAL_METHODS);
+                MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
+            mockedCompressor.when(Decompressor::isIsOsWindows).thenReturn(true);
+            var mockAttributeView = mock(DosFileAttributeView.class);
+            mockedFiles
+                    .when(() -> Files.getFileAttributeView(mockPath, DosFileAttributeView.class))
+                    .thenReturn(mockAttributeView);
+
+            // when
+            Decompressor.setAttributes(mode, mockPath);
+
+            // then
+            verify(mockAttributeView).setReadOnly(true);
+            verifyNoMoreInteractions(mockAttributeView);
+        }
+    }
+
+    @Test
+    void shouldSetAttributesOnWindowsFileSystemWhenHidden() throws IOException {
+        // given
+        var mockPath = mock(Path.class);
+        @SuppressWarnings("OctalInteger")
+        int mode = 0002;
+
+        try (@SuppressWarnings("rawtypes")
+                        MockedStatic<Decompressor> mockedCompressor =
+                                mockStatic(Decompressor.class, CALLS_REAL_METHODS);
+                MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
+            mockedCompressor.when(Decompressor::isIsOsWindows).thenReturn(true);
+            var mockAttributeView = mock(DosFileAttributeView.class);
+            mockedFiles
+                    .when(() -> Files.getFileAttributeView(mockPath, DosFileAttributeView.class))
+                    .thenReturn(mockAttributeView);
+
+            // when
+            Decompressor.setAttributes(mode, mockPath);
+
+            // then
+            verify(mockAttributeView).setHidden(true);
+            verifyNoMoreInteractions(mockAttributeView);
+        }
+    }
+
+    @Test
+    void shouldNotSetAttributesOnWindowsFileSystemWhenModeZero() throws IOException {
+        // given
+        var mockPath = mock(Path.class);
+        @SuppressWarnings("OctalInteger")
+        int mode = 0000;
+
+        try (@SuppressWarnings("rawtypes")
+                        MockedStatic<Decompressor> mockedCompressor =
+                                mockStatic(Decompressor.class, CALLS_REAL_METHODS);
+                MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
+            mockedCompressor.when(Decompressor::isIsOsWindows).thenReturn(true);
+            var mockAttributeView = mock(DosFileAttributeView.class);
+            mockedFiles
+                    .when(() -> Files.getFileAttributeView(mockPath, DosFileAttributeView.class))
+                    .thenReturn(mockAttributeView);
+
+            // when
+            Decompressor.setAttributes(mode, mockPath);
+
+            // then
+            verifyNoInteractions(mockAttributeView);
+        }
+    }
+
+    @Test
+    void shouldNotSetAttributesOnWindowsFileSystemWithoutFileAttributes() throws IOException {
+        // given
+        var mockPath = mock(Path.class);
+        given(mockPath.toString()).willReturn("some/path");
+        @SuppressWarnings("OctalInteger")
+        int mode = 0003;
+
+        try (@SuppressWarnings("rawtypes")
+                        MockedStatic<Decompressor> mockedCompressor =
+                                mockStatic(Decompressor.class, CALLS_REAL_METHODS);
+                MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
+            mockedCompressor.when(Decompressor::isIsOsWindows).thenReturn(true);
+            mockedFiles
+                    .when(() -> Files.getFileAttributeView(mockPath, DosFileAttributeView.class))
+                    .thenReturn(null);
+
+            // when
+            Decompressor.setAttributes(mode, mockPath);
+
+            // then
+            Compress4JAssertions.assertThat(inMemoryLogAppender)
+                    .contains("Cannot set DOS attributes for file: some/path", TRACE);
+        }
     }
 }

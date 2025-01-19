@@ -16,21 +16,20 @@
 package io.github.compress4j.memory;
 
 import io.github.compress4j.archive.decompression.Decompressor;
+import io.github.compress4j.memory.builder.InMemoryArchiveInputStreamBuilder;
 import jakarta.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 
 public class InMemoryDecompressor extends Decompressor<InMemoryArchiveInputStream> {
-    public InMemoryDecompressor(final List<InMemoryArchiveEntry> entries) throws IOException {
-        super(InMemoryArchiveInputStream.toInputStream(entries));
+    public InMemoryDecompressor(final InMemoryArchiveInputStream inMemoryArchiveInputStream) {
+        super(inMemoryArchiveInputStream);
     }
 
-    @Override
-    protected InMemoryArchiveInputStream buildArchiveInputStream(InputStream inputStream) throws IOException {
-        return new InMemoryArchiveInputStream(inputStream);
+    public InMemoryDecompressor(final InMemoryArchiveInputStreamBuilder builder) throws IOException {
+        super(builder);
     }
 
     @Override

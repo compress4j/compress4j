@@ -71,9 +71,12 @@ dependencies {
     mockitoAgent(libs.mockito.core) { isTransitive = false }
 }
 
-tasks.test {
+tasks.withType<Test> {
     useJUnitPlatform()
-    jvmArgs("-javaagent:${mockitoAgent.asPath}")
+    jvmArgs(
+        "-javaagent:${mockitoAgent.asPath}",
+        "--add-opens=java.base/java.util.zip=ALL-UNNAMED"
+    )
 }
 
 testing {
