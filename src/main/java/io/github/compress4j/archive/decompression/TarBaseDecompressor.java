@@ -15,12 +15,9 @@
  */
 package io.github.compress4j.archive.decompression;
 
-import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
-
+import io.github.compress4j.archive.decompression.builder.TarArchiveInputStreamBuilder;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 
@@ -30,21 +27,20 @@ public abstract class TarBaseDecompressor extends Decompressor<TarArchiveInputSt
     /**
      * Creates a new {@code TarBaseDecompressor}
      *
-     * @param path the {@code Path} to the tar file
-     * @throws IOException if an I/O error occurs
+     * @param tarArchiveInputStream - the {@code TarArchiveInputStream} to the tar file
      */
-    protected TarBaseDecompressor(Path path) throws IOException {
-        this(Files.newInputStream(path));
+    protected TarBaseDecompressor(TarArchiveInputStream tarArchiveInputStream) {
+        super(tarArchiveInputStream);
     }
 
     /**
-     * Creates a new {@code TarBaseDecompressor}
+     * Creates a new {@code TarBaseDecompressor}.
      *
-     * @param inputStream - the {@code InputStream} to the tar file
-     * @throws IOException - if the {@code A} could not be created
+     * @param builder - the {@code ArchiveInputStreamBuilder} to build the {@code TarArchiveInputStreamBuilder}.
+     * @throws IOException - if the {@code TarArchiveInputStreamBuilder} could not be created
      */
-    protected TarBaseDecompressor(InputStream inputStream) throws IOException {
-        super(inputStream);
+    protected TarBaseDecompressor(TarArchiveInputStreamBuilder builder) throws IOException {
+        super(builder);
     }
 
     /** {@inheritDoc} */
@@ -56,10 +52,9 @@ public abstract class TarBaseDecompressor extends Decompressor<TarArchiveInputSt
     /** {@inheritDoc} */
     @Override
     protected Entry nextEntry() throws IOException {
-        TarArchiveEntry te;
-        te = getNextTarArchiveEntry();
+        TarArchiveEntry te = getNextTarArchiveEntry();
         if (te == null) return null;
-        if (!IS_OS_WINDOWS) return new Entry(te.getName(), type(te), te.getMode(), te.getLinkName(), te.getSize());
+        if (!isIsOsWindows()) return new Entry(te.getName(), type(te), te.getMode(), te.getLinkName(), te.getSize());
         if (te.isSymbolicLink()) return new Entry(te.getName(), Entry.Type.SYMLINK, 0, te.getLinkName(), te.getSize());
         return new Entry(te.getName(), te.isDirectory(), te.getSize());
     }
@@ -83,7 +78,7 @@ public abstract class TarBaseDecompressor extends Decompressor<TarArchiveInputSt
                 && !((te.isFile() && !te.isLink()) // ignore hardlink
                         || te.isDirectory()
                         || te.isSymbolicLink())) {
-            getNextTarArchiveEntry();
+            return getNextTarArchiveEntry();
         }
         return te;
     }

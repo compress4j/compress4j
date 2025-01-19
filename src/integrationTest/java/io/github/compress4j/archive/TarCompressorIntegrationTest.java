@@ -19,13 +19,15 @@ import static io.github.compress4j.test.util.io.TestFileUtils.deleteRecursively;
 import static io.github.compress4j.test.util.io.TestFileUtils.write;
 import static java.nio.file.Files.*;
 import static java.util.Map.entry;
+import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.LONGFILE_POSIX;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import io.github.compress4j.archive.compression.BaseTarCompressor;
 import io.github.compress4j.archive.compression.TarCompressor;
-import io.github.compress4j.archive.compression.builder.TarArchiveOutputStreamBuilder;
 import io.github.compress4j.archive.decompression.TarDecompressor;
+import io.github.compress4j.archive.decompression.builder.TarArchiveInputStreamBuilder;
 import io.github.compress4j.assertion.Compress4JAssertions;
 import java.io.IOException;
 import java.nio.file.*;
@@ -46,12 +48,14 @@ class TarCompressorIntegrationTest {
     Path tempDir;
 
     protected Path compressFile;
-    protected TarCompressor compressor;
+    protected BaseTarCompressor compressor;
 
     @BeforeEach
     void setup() throws IOException {
         compressFile = tempDir.resolve("test.tar");
-        compressor = new TarCompressor(new TarArchiveOutputStreamBuilder(compressFile));
+        compressor = TarCompressor.builder(compressFile)
+                .withLongFileMode(LONGFILE_POSIX)
+                .build();
     }
 
     @AfterEach
@@ -249,7 +253,7 @@ class TarCompressorIntegrationTest {
     }
 
     protected void extract(Path in, Path out) throws IOException {
-        try (TarDecompressor tarDecompressor = new TarDecompressor(in)) {
+        try (TarDecompressor tarDecompressor = new TarDecompressor(new TarArchiveInputStreamBuilder(in))) {
             tarDecompressor.extract(out);
         }
     }

@@ -21,13 +21,13 @@ import static io.github.compress4j.utils.StringUtil.trimTrailing;
 import static java.util.zip.Deflater.DEFAULT_COMPRESSION;
 import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 
-import io.github.compress4j.archive.compression.builder.ArchiveOutputStreamBuilder;
 import io.github.compress4j.utils.PosixFilePermissionsMapper;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -63,23 +63,25 @@ public abstract class Compressor<A extends ArchiveOutputStream<? extends Archive
     protected final A archiveOutputStream;
 
     /**
-     * Create a new Compressor.
+     * Create a new Compressor with the given output stream and options.
      *
-     * @param archiveOutputStream the archive output stream
+     * @param builder the archive output stream builder
+     * @param <B> The type of {@link CompressorBuilder} to build from.
+     * @param <C> The type of the {@link Compressor} to instantiate.
      * @throws IOException if an I/O error occurred
      */
-    protected Compressor(A archiveOutputStream) throws IOException {
-        this.archiveOutputStream = archiveOutputStream;
+    protected <B extends CompressorBuilder<A, B, C>, C extends Compressor<A>> Compressor(B builder) throws IOException {
+        this(builder.buildArchiveOutputStream());
+        this.entryFilter = builder.entryFilter;
     }
 
     /**
-     * Create a new Compressor with the given output stream and options.
+     * Create a new Compressor.
      *
-     * @param archiveOutputStreamBuilder the archive output stream builder
-     * @throws IOException if an I/O error occurred
+     * @param archiveOutputStream the archive output stream
      */
-    protected Compressor(ArchiveOutputStreamBuilder<A> archiveOutputStreamBuilder) throws IOException {
-        this.archiveOutputStream = archiveOutputStreamBuilder.build();
+    protected Compressor(A archiveOutputStream) {
+        this.archiveOutputStream = archiveOutputStream;
     }
 
     /**
@@ -496,6 +498,7 @@ public abstract class Compressor<A extends ArchiveOutputStream<? extends Archive
      *
      * @param entryName name of the entry
      * @param path {@code Path} to add
+     * @return boolean {@code true} if the entry is accepted, {@code false} otherwise
      */
     protected boolean accept(String entryName, @Nullable Path path) {
         return entryFilter.map(f -> f.test(entryName, path)).orElse(true);
@@ -517,12 +520,16 @@ public abstract class Compressor<A extends ArchiveOutputStream<? extends Archive
                 if (dosAttrs.isReadOnly()) mode |= DOS_READ_ONLY;
                 if (dosAttrs.isHidden()) mode |= DOS_HIDDEN;
                 return mode;
+            } else {
+                LOGGER.trace("Cannot get DOS file attributes for: {}", path);
             }
         } else {
             PosixFileAttributeView attrs = Files.getFileAttributeView(path, PosixFileAttributeView.class);
             if (attrs != null) {
                 return PosixFilePermissionsMapper.toUnixMode(
                         attrs.readAttributes().permissions());
+            } else {
+                LOGGER.trace("Cannot get POSIX file attributes for: {}", path);
             }
         }
         return NO_MODE;
@@ -605,5 +612,74 @@ public abstract class Compressor<A extends ArchiveOutputStream<? extends Archive
                     Compressor.sanitiseName(root.relativize(fileOrDir).toString());
             return prefix.isEmpty() ? relativeName : prefix + '/' + relativeName;
         }
+    }
+
+    /**
+     * Build and instance of {@link Compressor}
+     *
+     * @param <A> The type of {@link ArchiveOutputStream} to write entries to.
+     * @param <B> The type of {@link CompressorBuilder}
+     * @param <C> The type of {@link Compressor}
+     */
+    public abstract static class CompressorBuilder<
+            A extends ArchiveOutputStream<? extends ArchiveEntry>,
+            B extends CompressorBuilder<A, B, C>,
+            C extends Compressor<A>> {
+        protected final OutputStream outputStream;
+
+        @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+        Optional<BiPredicate<? super String, ? super Path>> entryFilter = Optional.empty();
+
+        /**
+         * Create a new {@link CompressorBuilder} with the given output stream.
+         *
+         * @param outputStream the output stream
+         */
+        protected CompressorBuilder(OutputStream outputStream) {
+            this.outputStream = outputStream;
+        }
+
+        /**
+         * Filtering entries being added to the archive.
+         *
+         * @param filter the BiPredicate to filter entries to be added to the archive. The first parameter is the entry
+         *     name and the second is the {@code Path} to the file on disk, which might be {@code null} when it is
+         *     applied to an entry not present on a disk, i.e. via {@link #addFile(String, byte[])}.
+         * @return the instance of the {@link CompressorBuilder}
+         */
+        public B withFilter(@Nullable BiPredicate<? super String, ? super Path> filter) {
+            this.entryFilter = Optional.ofNullable(filter);
+            return getThis();
+        }
+
+        /**
+         * get the current instance of the object
+         *
+         * @return current instance
+         */
+        protected abstract B getThis();
+
+        /**
+         * Start a new archive. Entries can be included in the archive using the putEntry method, and then the archive
+         * should be closed using its close method. In addition, options can be applied to the underlying stream. E.g.
+         * compression level.
+         *
+         * <ol>
+         *   <li>Use {@link #outputStream} as underlying output stream to which to write the archive.
+         * </ol>
+         *
+         * @return new archive object for use in putEntry
+         * @throws IOException thrown by the underlying output stream for I/O errors
+         */
+        public abstract A buildArchiveOutputStream() throws IOException;
+
+        /**
+         * Use this method to build an instance of the {@link Compressor}, use
+         * {@link Compressor#Compressor(CompressorBuilder)} to pass in instance of this builder
+         *
+         * @return an instance of the {@link Compressor}
+         * @throws IOException thrown by the underlying output stream for I/O errors
+         */
+        public abstract C build() throws IOException;
     }
 }

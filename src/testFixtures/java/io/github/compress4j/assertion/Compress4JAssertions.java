@@ -17,11 +17,16 @@ package io.github.compress4j.assertion;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import io.github.compress4j.archive.decompression.Decompressor;
 import java.nio.file.Path;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 
 public class Compress4JAssertions {
     private Compress4JAssertions() {}
+
+    public static DecompressorEntryAssert assertThat(Decompressor.Entry entry) {
+        return new DecompressorEntryAssert(entry);
+    }
 
     public static ListAppenderAssert assertThat(ListAppender<ILoggingEvent> listAppender) {
         return new ListAppenderAssert(listAppender);

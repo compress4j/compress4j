@@ -13,42 +13,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.compress4j.archive.compression.builder;
+package io.github.compress4j.archive.compression;
 
 import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.BIGNUMBER_POSIX;
 import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.LONGFILE_POSIX;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 
+import io.github.compress4j.archive.compression.TarCompressor.TarCompressorBuilder;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Collections;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.junit.jupiter.api.Test;
-import org.junit.platform.commons.util.ReflectionUtils;
 
-class TarArchiveOutputStreamBuilderTest {
+class TarCompressorBuilderTest {
 
     @Test
     void shouldBuildArchiveOutputStream() throws IOException {
         // given
         var outputStream = mock(OutputStream.class);
-        var builder = spy(new TarArchiveOutputStreamBuilder(outputStream));
+        TarCompressorBuilder builder = new TarCompressorBuilder(outputStream)
+                .withLongFileMode(LONGFILE_POSIX)
+                .withBigNumberMode(BIGNUMBER_POSIX)
+                .withBlockSize(1024)
+                .withEncoding("UTF-8");
+        var spiedBuilder = spy(builder);
 
         // when
-        try (TarArchiveOutputStream out = spy(builder.build())) {
+        try (TarArchiveOutputStream out = spy(spiedBuilder.buildArchiveOutputStream())) {
 
             // then
-            assertThat(out).isNotNull();
-            var longFileMode = ReflectionUtils.tryToReadFieldValue(TarArchiveOutputStream.class, "longFileMode", out)
-                    .toOptional();
-            assertThat(longFileMode).isPresent().contains(LONGFILE_POSIX);
-
-            var bigNumberMode = ReflectionUtils.tryToReadFieldValue(TarArchiveOutputStream.class, "bigNumberMode", out)
-                    .toOptional();
-            assertThat(bigNumberMode).isPresent().contains(BIGNUMBER_POSIX);
-
-            verify(builder).buildTarArchiveOutputStream(outputStream, Collections.emptyMap());
+            assertThat(out)
+                    .isNotNull()
+                    .extracting("longFileMode", "bigNumberMode", "recordsPerBlock", "charsetName")
+                    .containsExactly(LONGFILE_POSIX, BIGNUMBER_POSIX, 2, "UTF-8");
+            then(spiedBuilder).should().buildTarArchiveOutputStream(outputStream);
         }
     }
 }
