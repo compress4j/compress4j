@@ -508,7 +508,65 @@ class DecompressorTest {
 
     @DisabledOnOs(OS.WINDOWS)
     @Test
-    void shouldNotExtractSymlinksInDisallowMode() throws IOException {
+    void shouldNotExtractSymlinksInRelativizeAbsoluteModeWhenTargetPathRelative() throws IOException {
+        // given
+        var subdir = InMemoryArchiveEntry.builder().name("subdir").type(DIR).build();
+        var entry1 = InMemoryArchiveEntry.builder()
+                .name("/subdir/test1")
+                .content("content1")
+                .build();
+        var entry1a = InMemoryArchiveEntry.builder()
+                .name("test1a")
+                .type(SYMLINK)
+                .linkName("../subdir/test1")
+                .build();
+
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+            inMemoryDecompressor.setEscapingSymlinkPolicy(RELATIVIZE_ABSOLUTE);
+
+            // when
+            inMemoryDecompressor.extract(tempDir);
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+            assertThat(tempDir.resolve("test1a")).isSymbolicLink();
+        }
+    }
+
+    @DisabledOnOs(OS.WINDOWS)
+    @Test
+    void shouldExtractSymlinksInDisallowModeWithAbsoluteTargetPathWhenWithinTargetOutputDir() throws IOException {
+        // given
+        var subdir = InMemoryArchiveEntry.builder().name("subdir").type(DIR).build();
+        var entry1 = InMemoryArchiveEntry.builder()
+                .name("/subdir/test1")
+                .content("content1")
+                .build();
+        var entry1a = InMemoryArchiveEntry.builder()
+                .name("test1a")
+                .type(SYMLINK)
+                .linkName("subdir/test1")
+                .build();
+
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+            inMemoryDecompressor.setEscapingSymlinkPolicy(DISALLOW);
+
+            // when
+            inMemoryDecompressor.extract(tempDir);
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+            assertThat(tempDir.resolve("test1a")).isSymbolicLink().exists();
+        }
+    }
+
+    @DisabledOnOs(OS.WINDOWS)
+    @Test
+    void shouldNotExtractSymlinksInDisallowModeWithAbsoluteTargetPath() throws IOException {
         // given
         var subdir = InMemoryArchiveEntry.builder().name("subdir").type(DIR).build();
         var entry1 = InMemoryArchiveEntry.builder()
@@ -528,6 +586,37 @@ class DecompressorTest {
             assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir))
                     .isInstanceOf(IOException.class)
                     .hasMessage("Invalid symlink (absolute path): test1a -> /subdir/test1");
+
+            // then
+            assertThat(tempDir).isDirectory();
+            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
+            assertThat(tempDir.resolve("test1a")).doesNotExist();
+        }
+    }
+
+    @DisabledOnOs(OS.WINDOWS)
+    @Test
+    void shouldNotExtractSymlinksInDisallowModeWithAbsoluteTargetPathTargetOutsideOutput() throws IOException {
+        // given
+        var subdir = InMemoryArchiveEntry.builder().name("subdir").type(DIR).build();
+        var entry1 = InMemoryArchiveEntry.builder()
+                .name("/subdir/test1")
+                .content("content1")
+                .build();
+        var entry1a = InMemoryArchiveEntry.builder()
+                .name("test1a")
+                .type(SYMLINK)
+                .linkName("../subdir2/test1")
+                .build();
+
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+            inMemoryDecompressor.setEscapingSymlinkPolicy(DISALLOW);
+
+            // when
+            assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir))
+                    .isInstanceOf(IOException.class)
+                    .hasMessage("Invalid symlink (points outside of output directory): test1a -> ../subdir2/test1");
 
             // then
             assertThat(tempDir).isDirectory();

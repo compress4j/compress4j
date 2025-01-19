@@ -4,6 +4,7 @@ out/
 .gradle/
 build/
 .local/
+htmlReport/
 
 # Eclipse project files
 .project
