@@ -61,11 +61,12 @@ dependencies {
 
     testRuntimeOnly(libs.junit.platform.launcher)
 
-    testFixturesImplementation(platform(libs.junit.bom))
+    testFixturesApi(libs.logback.classic)
 
+    testFixturesImplementation(platform(libs.junit.bom))
     testFixturesImplementation(libs.assertj.core)
     testFixturesImplementation(libs.junit.jupiter)
-    testFixturesApi(libs.logback.classic)
+    testFixturesImplementation(libs.mockito.core)
 
     mockitoAgent(libs.mockito.core) { isTransitive = false }
 }
