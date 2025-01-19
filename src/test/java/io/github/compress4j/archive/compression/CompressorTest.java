@@ -91,8 +91,7 @@ class CompressorTest {
         int fileMode = IS_OS_WINDOWS ? 0 : 0644;
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor =
-                        mockStatic(Compressor.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
+        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 InMemoryCompressor compressor =
                         spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
             // when
@@ -128,8 +127,7 @@ class CompressorTest {
         var path = createFile(tempDir, fileName, "789");
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor =
-                        mockStatic(Compressor.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
+        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 InMemoryCompressor compressor =
                         spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
             compressor.withFilter((name, p) -> false);
@@ -158,8 +156,7 @@ class CompressorTest {
         int fileMode = IS_OS_WINDOWS ? 0 : 0644;
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor =
-                        mockStatic(Compressor.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
+        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 InMemoryCompressor compressor =
                         spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
             // when
@@ -199,8 +196,7 @@ class CompressorTest {
         int fileMode = IS_OS_WINDOWS ? 0 : 0644;
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor =
-                        mockStatic(Compressor.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
+        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 InMemoryCompressor compressor =
                         spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
             // when
@@ -229,8 +225,7 @@ class CompressorTest {
         String entryName = "additional_name.txt";
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor =
-                        mockStatic(Compressor.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
+        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 MockedStatic<Instant> mockedStaticInstant = mockStatic(Instant.class, CALLS_REAL_METHODS);
                 InMemoryCompressor compressor =
                         spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
@@ -259,8 +254,7 @@ class CompressorTest {
         String entryName = "additional_name.txt";
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor =
-                        mockStatic(Compressor.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
+        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 MockedStatic<Instant> mockedStaticInstant = mockStatic(Instant.class, CALLS_REAL_METHODS);
                 InMemoryCompressor compressor =
                         spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
@@ -287,8 +281,7 @@ class CompressorTest {
         FileTime modTime = FileTime.from(Instant.now());
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor =
-                        mockStatic(Compressor.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
+        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 InMemoryCompressor compressor =
                         spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
 
@@ -313,8 +306,7 @@ class CompressorTest {
         String entryName = "additional_name.txt";
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor =
-                        mockStatic(Compressor.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
+        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 MockedStatic<Instant> mockedStaticInstant = mockStatic(Instant.class, CALLS_REAL_METHODS);
                 InMemoryCompressor compressor =
                         spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
@@ -343,8 +335,7 @@ class CompressorTest {
         String entryName = "additional_name.txt";
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor =
-                        mockStatic(Compressor.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
+        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 MockedStatic<Instant> mockedStaticInstant = mockStatic(Instant.class, CALLS_REAL_METHODS);
                 InMemoryCompressor compressor =
                         spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
@@ -372,8 +363,7 @@ class CompressorTest {
         FileTime modTime = FileTime.from(Instant.now());
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor =
-                        mockStatic(Compressor.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
+        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 InMemoryCompressor compressor =
                         spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
 
@@ -401,8 +391,7 @@ class CompressorTest {
         String entryName = "dir_name";
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor =
-                        mockStatic(Compressor.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
+        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 MockedStatic<Instant> mockedStaticInstant = mockStatic(Instant.class, CALLS_REAL_METHODS);
                 InMemoryCompressor compressor =
                         spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
@@ -426,8 +415,7 @@ class CompressorTest {
         String entryName = "dir_name";
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor =
-                        mockStatic(Compressor.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
+        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 InMemoryCompressor compressor =
                         spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
             compressor.withFilter((name, p) -> false);
@@ -450,8 +438,7 @@ class CompressorTest {
         FileTime modTime = FileTime.from(Instant.now());
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor =
-                        mockStatic(Compressor.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
+        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 InMemoryCompressor compressor =
                         spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
             // when
@@ -479,8 +466,7 @@ class CompressorTest {
         int file11Mode = IS_OS_WINDOWS ? 0 : 0644;
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor =
-                        mockStatic(Compressor.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
+        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 InMemoryCompressor compressor =
                         spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
 
@@ -541,8 +527,7 @@ class CompressorTest {
         createFile(subDir1, "file11", "11");
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor =
-                        mockStatic(Compressor.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
+        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 InMemoryCompressor compressor =
                         spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
             compressor.withFilter((name, p) -> false);
@@ -572,8 +557,7 @@ class CompressorTest {
         int file11Mode = IS_OS_WINDOWS ? 0 : 0644;
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor =
-                        mockStatic(Compressor.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
+        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 InMemoryCompressor compressor =
                         spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
 
@@ -647,8 +631,7 @@ class CompressorTest {
         int file11Mode = IS_OS_WINDOWS ? 0 : 0644;
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor =
-                        mockStatic(Compressor.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
+        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 InMemoryCompressor compressor =
                         spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
 
@@ -707,8 +690,7 @@ class CompressorTest {
         int file11Mode = IS_OS_WINDOWS ? 0 : 0644;
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor =
-                        mockStatic(Compressor.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
+        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 InMemoryCompressor compressor =
                         spy(new InMemoryCompressor(new InMemoryArchiveOutputStreamBuilder(out)))) {
 
@@ -806,8 +788,7 @@ class CompressorTest {
         int expectedMode = 0644;
 
         try (@SuppressWarnings("rawtypes")
-                        MockedStatic<Compressor> mockedCompressor =
-                                mockStatic(Compressor.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
+                        MockedStatic<Compressor> mockedCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
             mockedCompressor.when(Compressor::isIsOsWindows).thenReturn(false);
             var mockAttributeView = mock(PosixFileAttributeView.class);
@@ -830,8 +811,7 @@ class CompressorTest {
     void shouldGetNodeModeOnNixFileSystemWithoutFileAttributes() throws IOException {
         // given
         try (@SuppressWarnings("rawtypes")
-                        MockedStatic<Compressor> mockedCompressor =
-                                mockStatic(Compressor.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
+                        MockedStatic<Compressor> mockedCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
             mockedCompressor.when(Compressor::isIsOsWindows).thenReturn(false);
             var path = tempDir.resolve("file.txt");
@@ -852,8 +832,7 @@ class CompressorTest {
         int expectedMode = 0b11;
 
         try (@SuppressWarnings("rawtypes")
-                        MockedStatic<Compressor> mockedCompressor =
-                                mockStatic(Compressor.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
+                        MockedStatic<Compressor> mockedCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
             mockedCompressor.when(Compressor::isIsOsWindows).thenReturn(true);
             var mockAttributeView = mock(DosFileAttributeView.class);
@@ -879,8 +858,7 @@ class CompressorTest {
         var path = createFile(tempDir, "file.txt", "789");
 
         try (@SuppressWarnings("rawtypes")
-                        MockedStatic<Compressor> mockedCompressor =
-                                mockStatic(Compressor.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
+                        MockedStatic<Compressor> mockedCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
             mockedCompressor.when(Compressor::isIsOsWindows).thenReturn(true);
             var mockAttributeView = mock(DosFileAttributeView.class);
@@ -904,8 +882,7 @@ class CompressorTest {
     void shouldGetNodeModeOnWindowsFileSystemWithoutFileAttributes() throws IOException {
         // given
         try (@SuppressWarnings("rawtypes")
-                        MockedStatic<Compressor> mockedCompressor =
-                                mockStatic(Compressor.class, withSettings().defaultAnswer(CALLS_REAL_METHODS));
+                        MockedStatic<Compressor> mockedCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
                 MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
             mockedCompressor.when(Compressor::isIsOsWindows).thenReturn(true);
             var path = tempDir.resolve("file.txt");
