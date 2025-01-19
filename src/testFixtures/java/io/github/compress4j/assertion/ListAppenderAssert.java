@@ -21,17 +21,17 @@ import ch.qos.logback.core.read.ListAppender;
 import org.assertj.core.api.AbstractAssert;
 import org.assertj.core.api.Assertions;
 
-public class ListAppenderAssertion extends AbstractAssert<ListAppenderAssertion, ListAppender<ILoggingEvent>> {
+public class ListAppenderAssert extends AbstractAssert<ListAppenderAssert, ListAppender<ILoggingEvent>> {
 
-    protected ListAppenderAssertion(ListAppender<ILoggingEvent> listAppender) {
-        super(listAppender, ListAppenderAssertion.class);
+    protected ListAppenderAssert(ListAppender<ILoggingEvent> listAppender) {
+        super(listAppender, ListAppenderAssert.class);
     }
 
-    public static ListAppenderAssertion assertThat(ListAppender<ILoggingEvent> listAppender) {
-        return new ListAppenderAssertion(listAppender);
+    public static ListAppenderAssert assertThat(ListAppender<ILoggingEvent> listAppender) {
+        return new ListAppenderAssert(listAppender);
     }
 
-    public ListAppenderAssertion contains(String message, Level level) {
+    public ListAppenderAssert contains(String message, Level level) {
         Assertions.assertThat(actual.list)
                 .anyMatch(event ->
                         event.toString().contains(message) && event.getLevel().equals(level));

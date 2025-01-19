@@ -19,14 +19,17 @@ import static java.util.Collections.emptyMap;
 import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.BIGNUMBER_POSIX;
 import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.LONGFILE_POSIX;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Path;
 import java.util.Map;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.platform.commons.util.ReflectionUtils;
 
 class TarGzArchiveOutputStreamBuilderTest {
@@ -82,5 +85,16 @@ class TarGzArchiveOutputStreamBuilderTest {
                             assertArg(o -> assertThat(o).isInstanceOf(GzipCompressorOutputStream.class)),
                             eq(emptyMap()));
         }
+    }
+
+    @Test
+    void shouldNotBuildArchiveOutputStreamWithUnknownOptions(@TempDir Path tempDir) throws IOException {
+        // given
+        var path = tempDir.resolve("archive.tar.gz");
+        Map<String, Object> options = Map.of("something", 9);
+        var builder = spy(new TarGzArchiveOutputStreamBuilder(path, options));
+
+        // when
+        assertThatThrownBy(builder::build).isInstanceOf(IOException.class).hasMessage("Cannot set option: something");
     }
 }
