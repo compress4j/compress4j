@@ -9,7 +9,7 @@ logback = "1.5.16"
 mockito = "5.15.2"
 slf4j = "2.0.16"
 sonarqube = "6.0.1.5171"
-spotless = "7.0.1"
+spotless = "7.0.2"
 tukaani-xz = "1.10"
 
 [libraries]
