@@ -18,6 +18,7 @@ package io.github.compress4j.archive;
 import io.github.compress4j.archive.compression.TarGzCompressor;
 import io.github.compress4j.archive.compression.builder.TarGzArchiveOutputStreamBuilder;
 import io.github.compress4j.archive.decompression.TarGzDecompressor;
+import io.github.compress4j.archive.decompression.builder.TarGzArchiveInputStreamBuilder;
 import java.io.IOException;
 import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +34,7 @@ class TarGzCompressorIntegrationTest extends TarCompressorIntegrationTest {
 
     @Override
     protected void extract(Path in, Path out) throws IOException {
-        try (TarGzDecompressor tarGzDecompressor = new TarGzDecompressor(in)) {
+        try (TarGzDecompressor tarGzDecompressor = new TarGzDecompressor(new TarGzArchiveInputStreamBuilder(in))) {
             tarGzDecompressor.extract(out);
         }
     }

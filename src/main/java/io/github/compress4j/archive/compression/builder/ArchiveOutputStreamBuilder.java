@@ -30,8 +30,8 @@ import org.apache.commons.lang3.StringUtils;
  * @param <A> the type of ArchiveOutputStream to build
  */
 public abstract class ArchiveOutputStreamBuilder<A extends ArchiveOutputStream<? extends ArchiveEntry>> {
-    protected OutputStream outputStream;
-    protected Map<String, Object> options;
+    protected final OutputStream outputStream;
+    protected final Map<String, Object> options;
 
     /**
      * Create a new ArchiveOutputStreamBuilder.

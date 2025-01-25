@@ -21,6 +21,7 @@ import static io.github.compress4j.utils.FileUtils.DOS_READ_ONLY;
 import static io.github.compress4j.utils.PosixFilePermissionsMapper.fromUnixMode;
 import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 
+import io.github.compress4j.archive.decompression.builder.ArchiveInputStreamBuilder;
 import io.github.compress4j.utils.StringUtil;
 import jakarta.annotation.Nullable;
 import java.io.IOException;
@@ -60,12 +61,12 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
     protected Decompressor.EscapingSymlinkPolicy escapingSymlinkPolicy = EscapingSymlinkPolicy.ALLOW;
     /** Filter for the decompressor. */
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    private Optional<Predicate<? super Decompressor.Entry>> entryFilter = Optional.empty();
+    private Optional<Predicate<Entry>> entryFilter = Optional.empty();
     /** Error handler for the decompressor. */
-    private BiFunction<? super Entry, ? super IOException, ErrorHandlerChoice> errorHandler =
+    private BiFunction<Entry, ? super IOException, ErrorHandlerChoice> errorHandler =
             (x, y) -> ErrorHandlerChoice.BAIL_OUT;
     /** Post processor for the decompressor. */
-    private BiConsumer<? super Decompressor.Entry, ? super Path> postProcessor;
+    private BiConsumer<Entry, ? super Path> postProcessor;
 
     /** Number of leading path components to strip from the extracted entries. */
     private int stripComponents = 0;
@@ -76,11 +77,20 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
     /**
      * Creates a new {@code Decompressor}.
      *
-     * @param inputStream - the {@code InputStream} to the compressed file
+     * @param archiveInputStream - the {@code A} to the compressed file
+     */
+    protected Decompressor(A archiveInputStream) {
+        this.archiveInputStream = archiveInputStream;
+    }
+
+    /**
+     * Creates a new {@code Decompressor}.
+     *
+     * @param builder - the {@code ArchiveInputStreamBuilder} to build the {@code A}
      * @throws IOException - if the {@code A} could not be created
      */
-    protected Decompressor(InputStream inputStream) throws IOException {
-        this.archiveInputStream = buildArchiveInputStream(inputStream);
+    protected Decompressor(ArchiveInputStreamBuilder<A> builder) throws IOException {
+        this.archiveInputStream = builder.build();
     }
 
     /**
@@ -103,8 +113,7 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
      * @throws IOException if the path is invalid
      */
     private static void ensureValidPath(String entryName) throws IOException {
-        if (entryName.contains("..")
-                && Arrays.asList(entryName.split("[/\\\\]")).contains("..")) {
+        if (entryName.contains("..")) {
             throw new IOException("Invalid entry name: " + entryName);
         }
     }
@@ -270,7 +279,7 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
      *
      * @param errorHandler the error handler to set
      */
-    public void setErrorHandler(BiFunction<? super Entry, ? super IOException, ErrorHandlerChoice> errorHandler) {
+    public void setErrorHandler(BiFunction<Entry, ? super IOException, ErrorHandlerChoice> errorHandler) {
         this.errorHandler = errorHandler;
     }
 
@@ -288,7 +297,7 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
      *
      * @param filter Predicate to be used when entries are being extracted
      */
-    public void setEntryFilter(@Nullable Predicate<? super Decompressor.Entry> filter) {
+    public void setEntryFilter(@Nullable Predicate<Entry> filter) {
         this.entryFilter = Optional.ofNullable(filter);
     }
 
@@ -306,7 +315,7 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
      *
      * @param postProcessor the post processor to set
      */
-    public void setPostProcessor(BiConsumer<? super Decompressor.Entry, ? super Path> postProcessor) {
+    public void setPostProcessor(BiConsumer<Entry, ? super Path> postProcessor) {
         this.postProcessor = postProcessor;
     }
 
@@ -327,21 +336,6 @@ public abstract class Decompressor<A extends ArchiveInputStream<? extends Archiv
     public void setOverwrite(boolean overwrite) {
         this.overwrite = overwrite;
     }
-
-    /**
-     * Build a {@code A} from the given {@code InputStream}. If you want to combine an archive format with a compression
-     * format - like when reading a `tar.gz` file - you wrap the {@code ArchiveInputStream} around
-     * {@code CompressorInputStream} for example:
-     *
-     * <pre>{@code
-     * return new TarArchiveInputStream(new GzipCompressorInputStream(inputStream));
-     * }</pre>
-     *
-     * @param inputStream - the {@code InputStream} to the compressed file
-     * @return a {@code A} from the given {@code InputStream}
-     * @throws IOException - if the {@code A} could not be created
-     */
-    protected abstract A buildArchiveInputStream(InputStream inputStream) throws IOException;
 
     /**
      * Close the stream for the current entry. This method is called after the entry has been processed and should close

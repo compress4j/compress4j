@@ -34,6 +34,7 @@ import ch.qos.logback.classic.LoggerContext;
 import io.github.compress4j.assertion.Compress4JAssertions;
 import io.github.compress4j.memory.InMemoryArchiveEntry;
 import io.github.compress4j.memory.InMemoryDecompressor;
+import io.github.compress4j.memory.builder.InMemoryArchiveInputStreamBuilder;
 import io.github.compress4j.test.util.log.InMemoryLogAppender;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -87,7 +88,8 @@ class DecompressorTest {
                 InMemoryArchiveEntry.builder().name("test1").content("content1").build();
         var entry2 =
                 InMemoryArchiveEntry.builder().name("test2").content("content2").build();
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+        var inMemoryArchiveInputStream = new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry2)).build();
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(inMemoryArchiveInputStream)) {
             // when
             inMemoryDecompressor.extract(tempDir);
 
@@ -107,7 +109,8 @@ class DecompressorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry2)))) {
 
             // when
             inMemoryDecompressor.extract(tempDir);
@@ -130,7 +133,8 @@ class DecompressorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry2)))) {
 
             // when
             inMemoryDecompressor.extract(tempDir);
@@ -155,7 +159,8 @@ class DecompressorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry2)))) {
             inMemoryDecompressor.setOverwrite(true);
 
             // when
@@ -177,7 +182,8 @@ class DecompressorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry2)))) {
             inMemoryDecompressor.setStripComponents(0);
 
             // when
@@ -199,7 +205,8 @@ class DecompressorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry2)))) {
             inMemoryDecompressor.setStripComponents(1);
 
             // when
@@ -222,7 +229,8 @@ class DecompressorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry2)))) {
 
             // when && then
             assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir))
@@ -252,7 +260,8 @@ class DecompressorTest {
                     return RETRY;
                 };
 
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry2)))) {
             inMemoryDecompressor.setErrorHandler(errorHandler);
 
             // when
@@ -275,7 +284,8 @@ class DecompressorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry2)))) {
             inMemoryDecompressor.setErrorHandler((entry, exception) -> ABORT);
 
             // when
@@ -297,7 +307,8 @@ class DecompressorTest {
                 .name("../test2")
                 .content("content2")
                 .build();
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry2)))) {
             inMemoryDecompressor.setErrorHandler((entry, exception) -> ABORT);
 
             // when
@@ -320,7 +331,8 @@ class DecompressorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry2)))) {
             inMemoryDecompressor.setErrorHandler((entry, exception) -> BAIL_OUT);
 
             // when
@@ -344,7 +356,8 @@ class DecompressorTest {
                 .name("../test2")
                 .content("content2")
                 .build();
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry2)))) {
             inMemoryDecompressor.setErrorHandler((entry, exception) -> BAIL_OUT);
 
             // when
@@ -373,7 +386,8 @@ class DecompressorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry1a, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry1a, entry2)))) {
             inMemoryDecompressor.setErrorHandler((entry, exception) -> SKIP);
 
             // when
@@ -403,7 +417,8 @@ class DecompressorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(entry1, entry1a, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(entry1, entry1a, entry2)))) {
             inMemoryDecompressor.setErrorHandler((entry, exception) -> SKIP_ALL);
 
             // when
@@ -435,8 +450,8 @@ class DecompressorTest {
                 .content("content2")
                 .build();
 
-        try (InMemoryDecompressor inMemoryDecompressor =
-                new InMemoryDecompressor(List.of(subdir, entry1, entry1a, entry2))) {
+        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(
+                new InMemoryArchiveInputStreamBuilder(List.of(subdir, entry1, entry1a, entry2)))) {
             inMemoryDecompressor.setEntryFilter(entry -> !entry.name.contains("some"));
 
             // when
@@ -464,7 +479,8 @@ class DecompressorTest {
                 .linkName("subdir/test1")
                 .build();
 
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(subdir, entry1, entry1a)))) {
 
             // when
             inMemoryDecompressor.extract(tempDir);
@@ -492,7 +508,8 @@ class DecompressorTest {
                 .linkName("/subdir/test1")
                 .build();
 
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(subdir, entry1, entry1a)))) {
             inMemoryDecompressor.setEscapingSymlinkPolicy(RELATIVIZE_ABSOLUTE);
 
             // when
@@ -521,7 +538,8 @@ class DecompressorTest {
                 .linkName("../subdir/test1")
                 .build();
 
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(subdir, entry1, entry1a)))) {
             inMemoryDecompressor.setEscapingSymlinkPolicy(RELATIVIZE_ABSOLUTE);
 
             // when
@@ -550,7 +568,8 @@ class DecompressorTest {
                 .linkName("subdir/test1")
                 .build();
 
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(subdir, entry1, entry1a)))) {
             inMemoryDecompressor.setEscapingSymlinkPolicy(DISALLOW);
 
             // when
@@ -579,7 +598,8 @@ class DecompressorTest {
                 .linkName("/subdir/test1")
                 .build();
 
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(subdir, entry1, entry1a)))) {
             inMemoryDecompressor.setEscapingSymlinkPolicy(DISALLOW);
 
             // when
@@ -610,7 +630,8 @@ class DecompressorTest {
                 .linkName("../subdir2/test1")
                 .build();
 
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(subdir, entry1, entry1a)))) {
             inMemoryDecompressor.setEscapingSymlinkPolicy(DISALLOW);
 
             // when
@@ -637,7 +658,8 @@ class DecompressorTest {
         var entry1a =
                 InMemoryArchiveEntry.builder().name("test1a").type(SYMLINK).build();
 
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(subdir, entry1, entry1a)))) {
 
             // when
             assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir))
@@ -666,7 +688,8 @@ class DecompressorTest {
                 .linkName("")
                 .build();
 
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(subdir, entry1, entry1a)))) {
 
             // when
             assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir))
@@ -697,7 +720,8 @@ class DecompressorTest {
                 .linkName("some")
                 .build();
 
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(subdir, entry1, entry1a)))) {
 
             // when
             inMemoryDecompressor.extract(tempDir);
@@ -728,7 +752,8 @@ class DecompressorTest {
                 .linkName("subdir/test1")
                 .build();
 
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(subdir, entry1, entry1a)))) {
             inMemoryDecompressor.setOverwrite(true);
 
             // when
@@ -756,7 +781,8 @@ class DecompressorTest {
                 .linkName("subdir/test1")
                 .build();
 
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(subdir, entry1, entry1a)))) {
             AtomicInteger counter = new AtomicInteger();
             inMemoryDecompressor.setPostProcessor((entry, path) -> counter.incrementAndGet());
 
@@ -786,7 +812,8 @@ class DecompressorTest {
                 .linkName("subdir/test1")
                 .build();
 
-        try (InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(List.of(subdir, entry1, entry1a))) {
+        try (InMemoryDecompressor inMemoryDecompressor =
+                new InMemoryDecompressor(new InMemoryArchiveInputStreamBuilder(List.of(subdir, entry1, entry1a)))) {
             AtomicInteger counter = new AtomicInteger();
             inMemoryDecompressor.setPostProcessor(path -> counter.incrementAndGet());
 

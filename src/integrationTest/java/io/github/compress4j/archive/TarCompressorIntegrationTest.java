@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import io.github.compress4j.archive.compression.TarCompressor;
 import io.github.compress4j.archive.compression.builder.TarArchiveOutputStreamBuilder;
 import io.github.compress4j.archive.decompression.TarDecompressor;
+import io.github.compress4j.archive.decompression.builder.TarArchiveInputStreamBuilder;
 import io.github.compress4j.assertion.Compress4JAssertions;
 import java.io.IOException;
 import java.nio.file.*;
@@ -249,7 +250,7 @@ class TarCompressorIntegrationTest {
     }
 
     protected void extract(Path in, Path out) throws IOException {
-        try (TarDecompressor tarDecompressor = new TarDecompressor(in)) {
+        try (TarDecompressor tarDecompressor = new TarDecompressor(new TarArchiveInputStreamBuilder(in))) {
             tarDecompressor.extract(out);
         }
     }

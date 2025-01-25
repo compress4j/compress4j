@@ -15,41 +15,29 @@
  */
 package io.github.compress4j.archive.decompression;
 
+import io.github.compress4j.archive.decompression.builder.TarArchiveInputStreamBuilder;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Path;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 
 /** Tar Decompressor */
 public class TarDecompressor extends TarBaseDecompressor {
 
     /**
-     * Creates a new {@code TarDecompressor}.
+     * Creates a new {@code TarDecompressor}
      *
-     * @param path the {@code Path} to the tar file
-     * @throws IOException if an I/O error occurs
+     * @param tarArchiveInputStream - the {@code TarArchiveInputStream} to the tar file
      */
-    public TarDecompressor(Path path) throws IOException {
-        super(path);
+    public TarDecompressor(TarArchiveInputStream tarArchiveInputStream) {
+        super(tarArchiveInputStream);
     }
 
     /**
-     * Creates a new {@code TarDecompressor}.
+     * Creates a new {@code TarBaseDecompressor}.
      *
-     * @param inputStream - the {@code InputStream} to the tar file
-     * @throws IOException - if the {@code A} could not be created
+     * @param builder - the {@code ArchiveInputStreamBuilder} to build the {@code TarArchiveInputStream}.
+     * @throws IOException - if the {@code TarArchiveInputStream} could not be created
      */
-    public TarDecompressor(InputStream inputStream) throws IOException {
-        super(inputStream);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @param inputStream {@inheritDoc}
-     * @return {@inheritDoc}
-     */
-    protected TarArchiveInputStream buildArchiveInputStream(InputStream inputStream) {
-        return new TarArchiveInputStream(inputStream);
+    public TarDecompressor(TarArchiveInputStreamBuilder builder) throws IOException {
+        super(builder);
     }
 }
