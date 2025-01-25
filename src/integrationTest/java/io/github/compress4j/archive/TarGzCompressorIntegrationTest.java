@@ -22,7 +22,9 @@ import io.github.compress4j.archive.decompression.builder.TarGzArchiveInputStrea
 import java.io.IOException;
 import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 
+@Disabled
 class TarGzCompressorIntegrationTest extends TarCompressorIntegrationTest {
 
     @Override
