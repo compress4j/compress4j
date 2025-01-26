@@ -46,7 +46,12 @@ class TarDecompressorTest {
         given(mockTarEntry.getSize()).willReturn(10L);
         given(tarArchiveInputStream.getNextEntry()).willReturn(mockTarEntry, (TarArchiveEntry) null);
 
-        try (TarDecompressor tarDecompressor = new TarDecompressor(tarArchiveInputStream)) {
+        try (@SuppressWarnings("rawtypes")
+                        MockedStatic<Decompressor> mockedCompressor =
+                                mockStatic(Decompressor.class, CALLS_REAL_METHODS);
+                TarDecompressor tarDecompressor = new TarDecompressor(tarArchiveInputStream)) {
+            mockedCompressor.when(Decompressor::isIsOsWindows).thenReturn(false);
+
             // when
             var result = tarDecompressor.nextEntry();
 
@@ -74,7 +79,12 @@ class TarDecompressorTest {
         given(mockTarEntry.getSize()).willReturn(10L);
         given(tarArchiveInputStream.getNextEntry()).willReturn(mockTarEntry, (TarArchiveEntry) null);
 
-        try (TarDecompressor tarDecompressor = new TarDecompressor(tarArchiveInputStream)) {
+        try (@SuppressWarnings("rawtypes")
+                        MockedStatic<Decompressor> mockedCompressor =
+                                mockStatic(Decompressor.class, CALLS_REAL_METHODS);
+                TarDecompressor tarDecompressor = new TarDecompressor(tarArchiveInputStream)) {
+            mockedCompressor.when(Decompressor::isIsOsWindows).thenReturn(false);
+
             // when
             var result = tarDecompressor.nextEntry();
 
@@ -103,7 +113,12 @@ class TarDecompressorTest {
         given(mockTarEntry.getSize()).willReturn(10L);
         given(tarArchiveInputStream.getNextEntry()).willReturn(mockTarEntry, (TarArchiveEntry) null);
 
-        try (TarDecompressor tarDecompressor = new TarDecompressor(tarArchiveInputStream)) {
+        try (@SuppressWarnings("rawtypes")
+                        MockedStatic<Decompressor> mockedCompressor =
+                                mockStatic(Decompressor.class, CALLS_REAL_METHODS);
+                TarDecompressor tarDecompressor = new TarDecompressor(tarArchiveInputStream)) {
+            mockedCompressor.when(Decompressor::isIsOsWindows).thenReturn(false);
+
             // when
             var result = tarDecompressor.nextEntry();
 
