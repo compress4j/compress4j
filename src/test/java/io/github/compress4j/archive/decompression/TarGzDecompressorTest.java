@@ -16,10 +16,10 @@
 package io.github.compress4j.archive.decompression;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
-import io.github.compress4j.archive.decompression.builder.TarGzArchiveInputStreamBuilder;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.junit.jupiter.api.Test;
 
 class TarGzDecompressorTest {
@@ -31,10 +31,9 @@ class TarGzDecompressorTest {
     @Test
     void shouldReturnNullWhenNextEntryIsNull() throws IOException {
         // given
-        var mockInputStream = new ByteArrayInputStream("test".getBytes());
-        var builder = new TarGzArchiveInputStreamBuilder(mockInputStream).build();
+        var mockInputStream = mock(TarArchiveInputStream.class);
 
-        try (TarGzDecompressor tarGzDecompressor = new TarGzDecompressor(builder)) {
+        try (TarGzDecompressor tarGzDecompressor = new TarGzDecompressor(mockInputStream)) {
             // when
             var result = tarGzDecompressor.nextEntry();
 
