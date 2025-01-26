@@ -29,9 +29,6 @@ repositories {
 }
 
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
-    }
     withJavadocJar()
     withSourcesJar()
 }
@@ -44,6 +41,8 @@ tasks.withType<Javadoc> {
     options.encoding = "UTF-8"
 }
 
+val mockitoAgent = configurations.create("mockitoAgent")
+
 dependencies {
     api(libs.jakarta.annotation.api)
     api(libs.org.apache.commons.commons.compress)
@@ -53,6 +52,7 @@ dependencies {
     testImplementation(platform(libs.junit.bom))
 
     testImplementation(libs.assertj.core)
+    testImplementation(libs.jackson.databind)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.junit.jupiter.params)
     testImplementation(libs.logback.classic)
@@ -61,15 +61,19 @@ dependencies {
 
     testRuntimeOnly(libs.junit.platform.launcher)
 
-    testFixturesImplementation(platform(libs.junit.bom))
+    testFixturesApi(libs.logback.classic)
 
+    testFixturesImplementation(platform(libs.junit.bom))
     testFixturesImplementation(libs.assertj.core)
     testFixturesImplementation(libs.junit.jupiter)
-    testFixturesApi(libs.logback.classic)
+    testFixturesImplementation(libs.mockito.core)
+
+    mockitoAgent(libs.mockito.core) { isTransitive = false }
 }
 
 tasks.test {
     useJUnitPlatform()
+    jvmArgs("-javaagent:${mockitoAgent.asPath}")
 }
 
 testing {
