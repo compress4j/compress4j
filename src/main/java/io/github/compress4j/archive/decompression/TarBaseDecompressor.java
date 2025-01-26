@@ -15,8 +15,6 @@
  */
 package io.github.compress4j.archive.decompression;
 
-import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
-
 import io.github.compress4j.archive.decompression.builder.TarArchiveInputStreamBuilder;
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,7 +54,7 @@ public abstract class TarBaseDecompressor extends Decompressor<TarArchiveInputSt
     protected Entry nextEntry() throws IOException {
         TarArchiveEntry te = getNextTarArchiveEntry();
         if (te == null) return null;
-        if (!IS_OS_WINDOWS) return new Entry(te.getName(), type(te), te.getMode(), te.getLinkName(), te.getSize());
+        if (!isIsOsWindows()) return new Entry(te.getName(), type(te), te.getMode(), te.getLinkName(), te.getSize());
         if (te.isSymbolicLink()) return new Entry(te.getName(), Entry.Type.SYMLINK, 0, te.getLinkName(), te.getSize());
         return new Entry(te.getName(), te.isDirectory(), te.getSize());
     }
@@ -80,7 +78,7 @@ public abstract class TarBaseDecompressor extends Decompressor<TarArchiveInputSt
                 && !((te.isFile() && !te.isLink()) // ignore hardlink
                         || te.isDirectory()
                         || te.isSymbolicLink())) {
-            getNextTarArchiveEntry();
+            return getNextTarArchiveEntry();
         }
         return te;
     }
