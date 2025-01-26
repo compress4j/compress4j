@@ -18,9 +18,10 @@ package io.github.compress4j.archive.compression;
 import static io.github.compress4j.assertion.AssertJMatcher.assertArgs;
 import static java.nio.file.attribute.PosixFilePermission.*;
 import static java.time.Instant.now;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-import io.github.compress4j.archive.compression.builder.TarArchiveOutputStreamBuilder;
+import io.github.compress4j.archive.compression.builder.TarGzArchiveOutputStreamBuilder;
 import io.github.compress4j.assertion.Compress4JAssertions;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -36,7 +37,7 @@ import org.apache.commons.io.file.attribute.FileTimes;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
-class TarCompressorTest {
+class TarGzCompressorTest {
 
     @Test
     void shouldWriteEntry() throws IOException {
@@ -45,9 +46,9 @@ class TarCompressorTest {
         var inputStream = new ByteArrayInputStream("test".getBytes());
 
         // when
-        var aOut = spy(new TarArchiveOutputStreamBuilder(outputStream).build());
+        var aOut = spy(new TarGzArchiveOutputStreamBuilder(outputStream).build());
         try (MockedStatic<IOUtils> mockIOUtils = mockStatic(IOUtils.class, CALLS_REAL_METHODS);
-                TarCompressor tarCompressor = new TarCompressor(aOut)) {
+                TarGzCompressor tarCompressor = new TarGzCompressor(aOut)) {
 
             FileTime modTime = FileTime.from(now());
             @SuppressWarnings("OctalInteger")
@@ -83,9 +84,9 @@ class TarCompressorTest {
         var inputStream = mock(InputStream.class);
 
         // when
-        var aOut = spy(new TarArchiveOutputStreamBuilder(outputStream).build());
+        var aOut = spy(new TarGzArchiveOutputStreamBuilder(outputStream).build());
         try (MockedStatic<IOUtils> mockIOUtils = mockStatic(IOUtils.class);
-                TarCompressor tarCompressor = new TarCompressor(aOut)) {
+                TarGzCompressor tarCompressor = new TarGzCompressor(aOut)) {
 
             Instant now = now();
             FileTime modTime = FileTime.from(now);

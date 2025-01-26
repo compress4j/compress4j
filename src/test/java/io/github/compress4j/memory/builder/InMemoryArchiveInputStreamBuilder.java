@@ -30,7 +30,7 @@ public class InMemoryArchiveInputStreamBuilder extends ArchiveInputStreamBuilder
      * @throws IOException if an I/O error occurs
      */
     public InMemoryArchiveInputStreamBuilder(final List<InMemoryArchiveEntry> entries) throws IOException {
-        super(InMemoryArchiveInputStream.toInputStream(entries));
+        this(InMemoryArchiveInputStream.toInputStream(entries));
     }
 
     /**

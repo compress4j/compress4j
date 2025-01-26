@@ -15,7 +15,7 @@
  */
 package io.github.compress4j.archive.compression;
 
-import io.github.compress4j.archive.compression.builder.TarArchiveOutputStreamBuilder;
+import io.github.compress4j.archive.compression.builder.TarGzArchiveOutputStreamBuilder;
 import java.io.IOException;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 
@@ -38,7 +38,7 @@ public class TarGzCompressor extends TarCompressor {
      * @param archiveOutputStreamBuilder the archive output stream builder
      * @throws IOException if an I/O error occurred
      */
-    public TarGzCompressor(TarArchiveOutputStreamBuilder archiveOutputStreamBuilder) throws IOException {
+    public TarGzCompressor(TarGzArchiveOutputStreamBuilder archiveOutputStreamBuilder) throws IOException {
         super(archiveOutputStreamBuilder);
     }
 }

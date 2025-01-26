@@ -63,6 +63,16 @@ public abstract class Compressor<A extends ArchiveOutputStream<? extends Archive
     protected final A archiveOutputStream;
 
     /**
+     * Create a new Compressor with the given output stream and options.
+     *
+     * @param archiveOutputStreamBuilder the archive output stream builder
+     * @throws IOException if an I/O error occurred
+     */
+    protected Compressor(ArchiveOutputStreamBuilder<A> archiveOutputStreamBuilder) throws IOException {
+        this(archiveOutputStreamBuilder.build());
+    }
+
+    /**
      * Create a new Compressor.
      *
      * @param archiveOutputStream the archive output stream
@@ -70,16 +80,6 @@ public abstract class Compressor<A extends ArchiveOutputStream<? extends Archive
      */
     protected Compressor(A archiveOutputStream) throws IOException {
         this.archiveOutputStream = archiveOutputStream;
-    }
-
-    /**
-     * Create a new Compressor with the given output stream and options.
-     *
-     * @param archiveOutputStreamBuilder the archive output stream builder
-     * @throws IOException if an I/O error occurred
-     */
-    protected Compressor(ArchiveOutputStreamBuilder<A> archiveOutputStreamBuilder) throws IOException {
-        this.archiveOutputStream = archiveOutputStreamBuilder.build();
     }
 
     /**
