@@ -49,6 +49,7 @@ import org.slf4j.LoggerFactory;
  * files and directories to an archive.
  *
  * @param <A> The type of {@link ArchiveOutputStream} to write entries to.
+ * @since 2.2
  */
 public abstract class Compressor<A extends ArchiveOutputStream<? extends ArchiveEntry>> implements AutoCloseable {
     /** Compression-level for the archive file. Only values in [0-9] are allowed. */

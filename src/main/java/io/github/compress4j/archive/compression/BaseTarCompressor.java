@@ -30,6 +30,11 @@ import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarConstants;
 import org.apache.commons.io.IOUtils;
 
+/**
+ * Base class for tar/tar.gz compressors
+ *
+ * @since 2.2
+ */
 public abstract class BaseTarCompressor extends Compressor<TarArchiveOutputStream> {
     /**
      * Create a new {@link BaseTarCompressor} with the given output stream and options.

@@ -51,6 +51,7 @@ import org.slf4j.LoggerFactory;
  * add files and directories to an archive.
  *
  * @param <A> The type of {@link ArchiveInputStream} to read entries from.
+ * @since 2.2
  */
 public abstract class Decompressor<A extends ArchiveInputStream<? extends ArchiveEntry>> implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(Decompressor.class);

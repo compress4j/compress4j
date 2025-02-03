@@ -21,7 +21,11 @@ import java.io.InputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 
-/** Tar Base Decompressor */
+/**
+ * Tar Base Decompressor
+ *
+ * @since 2.2
+ */
 public abstract class TarBaseDecompressor extends Decompressor<TarArchiveInputStream> {
 
     /**

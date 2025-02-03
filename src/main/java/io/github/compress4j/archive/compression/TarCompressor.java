@@ -21,7 +21,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 
-/** The Tar compressor. @NotThreadSafe */
+/**
+ * The Tar compressor.
+ *
+ * @since 2.2
+ */
 public class TarCompressor extends BaseTarCompressor {
 
     /**
