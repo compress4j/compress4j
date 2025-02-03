@@ -15,6 +15,11 @@
  */
 package io.github.compress4j.archive;
 
+/**
+ * Archive Types
+ *
+ * @since 2.2
+ */
 public enum ArchiveType {
     TAR,
     TAR_GZ,
