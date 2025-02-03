@@ -19,7 +19,11 @@ import io.github.compress4j.archive.decompression.builder.TarArchiveInputStreamB
 import java.io.IOException;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 
-/** Tar Decompressor */
+/**
+ * Tar Decompressor
+ *
+ * @since 2.2
+ */
 public class TarDecompressor extends TarBaseDecompressor {
 
     /**

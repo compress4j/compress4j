@@ -24,6 +24,11 @@ import io.github.compress4j.archive.decompression.TarGzDecompressor;
 import java.io.OutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 
+/**
+ * Factory class to build compressors and decompressors
+ *
+ * @since 2.2
+ */
 public class ArchiveFactory {
     private ArchiveFactory() {}
 

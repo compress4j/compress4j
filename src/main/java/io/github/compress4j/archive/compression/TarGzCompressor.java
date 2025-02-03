@@ -24,7 +24,11 @@ import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipParameters;
 
-/** The Tar Gz compressor. @NotThreadSafe */
+/**
+ * The Tar Gz compressor.
+ *
+ * @since 2.2
+ */
 public class TarGzCompressor extends BaseTarCompressor {
 
     /**
