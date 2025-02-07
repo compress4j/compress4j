@@ -24,8 +24,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import io.github.compress4j.archive.compression.BaseTarCompressor;
-import io.github.compress4j.archive.compression.TarCompressor;
+import io.github.compress4j.archive.compression.BaseTarArchiveCreator;
+import io.github.compress4j.archive.compression.TarArchiveCreator;
 import io.github.compress4j.archive.decompression.TarDecompressor;
 import io.github.compress4j.archive.decompression.builder.TarArchiveInputStreamBuilder;
 import io.github.compress4j.assertion.Compress4JAssertions;
@@ -43,25 +43,25 @@ import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
-class TarCompressorIntegrationTest {
+class TarArchiveCreatorIntegrationTest {
     @TempDir
     Path tempDir;
 
-    protected Path compressFile;
-    protected BaseTarCompressor compressor;
+    protected Path archiveFile;
+    protected BaseTarArchiveCreator archive;
 
     @BeforeEach
     void setup() throws IOException {
-        compressFile = tempDir.resolve("test.tar");
-        compressor = TarCompressor.builder(compressFile)
+        archiveFile = tempDir.resolve("test.tar");
+        archive = TarArchiveCreator.builder(archiveFile)
                 .withLongFileMode(LONGFILE_POSIX)
                 .build();
     }
 
     @AfterEach
     void tearDown() {
-        compressFile = null;
-        compressor = null;
+        archiveFile = null;
+        archive = null;
     }
 
     @Test
@@ -69,13 +69,13 @@ class TarCompressorIntegrationTest {
         String fileName = "file_name.txt";
         var path = tempDir.resolve(fileName);
         write(path, "789");
-        compressor.addFile(path);
-        compressor.close();
+        archive.addFile(path);
+        archive.close();
 
-        Compress4JAssertions.assertThat(compressFile).containsAllEntriesOf(Map.of(fileName, "789"));
+        Compress4JAssertions.assertThat(archiveFile).containsAllEntriesOf(Map.of(fileName, "789"));
 
         var out = tempDir.resolve("out");
-        extract(compressFile, out);
+        extract(archiveFile, out);
         Assertions.assertThat(out.toFile()).isDirectory().isDirectoryContaining(f -> f.getName()
                 .equals(fileName));
     }
@@ -86,13 +86,13 @@ class TarCompressorIntegrationTest {
                 "looooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong_filename.txt";
         var path = tempDir.resolve(fileName);
         write(path, "789");
-        compressor.addFile(path);
-        compressor.close();
+        archive.addFile(path);
+        archive.close();
 
-        Compress4JAssertions.assertThat(compressFile).containsAllEntriesOf(Map.of(fileName, "789"));
+        Compress4JAssertions.assertThat(archiveFile).containsAllEntriesOf(Map.of(fileName, "789"));
 
         var out = tempDir.resolve("out");
-        extract(compressFile, out);
+        extract(archiveFile, out);
         Assertions.assertThat(out.toFile()).isDirectory().isDirectoryContaining(f -> f.getName()
                 .equals(fileName));
     }
@@ -100,8 +100,8 @@ class TarCompressorIntegrationTest {
     @Test
     void shouldNotAddNonExistingFile() throws IOException {
         var path = Path.of("non-existing-file");
-        assertThatThrownBy(() -> compressor.addFile(path)).isInstanceOf(NoSuchFileException.class);
-        compressor.close();
+        assertThatThrownBy(() -> archive.addFile(path)).isInstanceOf(NoSuchFileException.class);
+        archive.close();
     }
 
     @DisabledOnOs(OS.WINDOWS)
@@ -114,26 +114,26 @@ class TarCompressorIntegrationTest {
         Set<PosixFilePermission> permissions = PosixFilePermissions.fromString("---------");
         Files.setPosixFilePermissions(path, permissions);
 
-        assertThatThrownBy(() -> compressor.addFile(path)).isInstanceOf(AccessDeniedException.class);
-        compressor.close();
+        assertThatThrownBy(() -> archive.addFile(path)).isInstanceOf(AccessDeniedException.class);
+        archive.close();
     }
 
     @Test
     void shouldAddFiles() throws IOException {
         var path = tempDir.resolve("file.txt");
         write(path, "789");
-        compressor.addFile("empty.txt", new byte[0]);
-        compressor.addFile("file1.txt", "123".getBytes());
-        compressor.addFile("file2.txt", "456".getBytes());
-        compressor.addFile("file3.txt", path);
-        compressor.close();
+        archive.addFile("empty.txt", new byte[0]);
+        archive.addFile("file1.txt", "123".getBytes());
+        archive.addFile("file2.txt", "456".getBytes());
+        archive.addFile("file3.txt", path);
+        archive.close();
 
-        Compress4JAssertions.assertThat(compressFile)
+        Compress4JAssertions.assertThat(archiveFile)
                 .containsAllEntriesOf(
                         Map.of("empty.txt", "", "file1.txt", "123", "file2.txt", "456", "file3.txt", "789"));
 
         var out = tempDir.resolve("out");
-        extract(compressFile, out);
+        extract(archiveFile, out);
         Assertions.assertThat(out.toFile()).isDirectory().isDirectoryContaining(f -> f.getName()
                 .equals("empty.txt"));
     }
@@ -152,10 +152,10 @@ class TarCompressorIntegrationTest {
         write(tempDir.resolve("base/subDir2/file22"), "22");
 
         // when
-        compressor.addDirectoryRecursively("tar/", base);
+        archive.addDirectoryRecursively("tar/", base);
 
         // then
-        Compress4JAssertions.assertThat(compressFile)
+        Compress4JAssertions.assertThat(archiveFile)
                 .containsAllEntriesOf(Map.ofEntries(
                         entry("tar/", ""),
                         entry("tar/subDir1/", ""),
@@ -183,9 +183,9 @@ class TarCompressorIntegrationTest {
         write(tempDir.resolve("base/subDir2/file21"), "21");
         write(tempDir.resolve("base/subDir2/file22"), "22");
 
-        compressor.addDirectoryRecursively("", base);
+        archive.addDirectoryRecursively("", base);
 
-        Compress4JAssertions.assertThat(compressFile)
+        Compress4JAssertions.assertThat(archiveFile)
                 .containsAllEntriesOf(Map.ofEntries(
                         entry("subDir1/", ""),
                         entry("subDir1/d11/", ""),
@@ -205,8 +205,8 @@ class TarCompressorIntegrationTest {
         Path file = tempDir.resolve("base/file");
         createDirectories(file.getParent());
         createFile(file);
-        compressor.addDirectoryRecursively("", file.getParent());
-        Compress4JAssertions.assertThat(compressFile)
+        archive.addDirectoryRecursively("", file.getParent());
+        Compress4JAssertions.assertThat(archiveFile)
                 .containsAllEntriesOf(Map.of(file.getFileName().toString(), ""));
     }
 
@@ -219,11 +219,11 @@ class TarCompressorIntegrationTest {
         createFile(regular);
         var executable = base.resolve("executable");
         createFile(executable, PosixFilePermissions.asFileAttribute(Set.of(PosixFilePermission.values())));
-        compressor.addDirectoryRecursively(base);
-        compressor.close();
+        archive.addDirectoryRecursively(base);
+        archive.close();
 
         var out = tempDir.resolve("out");
-        extract(compressFile, out);
+        extract(archiveFile, out);
         assertThat(getPosixFilePermissions(out.resolve(regular.getFileName())))
                 .doesNotContain(PosixFilePermission.OWNER_EXECUTE);
         assertThat(getPosixFilePermissions(out.resolve(executable.getFileName())))
@@ -240,13 +240,13 @@ class TarCompressorIntegrationTest {
         createFile(origin);
         var link = baseDir.resolve("link");
         Files.createSymbolicLink(link, origin.getFileName());
-        compressor.addDirectoryRecursively(baseDir);
-        compressor.close();
+        archive.addDirectoryRecursively(baseDir);
+        archive.close();
 
         deleteRecursively(baseDir);
 
         var out = tempDir.resolve("out");
-        extract(compressFile, out);
+        extract(archiveFile, out);
         assertThat(out.resolve(link.getFileName()))
                 .isSymbolicLink()
                 .hasSameBinaryContentAs(out.resolve(origin.getFileName()));

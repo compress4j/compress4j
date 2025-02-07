@@ -18,7 +18,7 @@ package io.github.compress4j.memory;
 import static io.github.compress4j.archive.decompression.Decompressor.Entry.Type.FILE;
 import static io.github.compress4j.archive.decompression.Decompressor.Entry.Type.SYMLINK;
 
-import io.github.compress4j.archive.compression.Compressor;
+import io.github.compress4j.archive.compression.ArchiveCreator;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -26,14 +26,14 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.util.Optional;
 
-public class InMemoryCompressor extends Compressor<InMemoryArchiveOutputStream> {
+public class InMemoryArchiveCreator extends ArchiveCreator<InMemoryArchiveOutputStream> {
 
     @SuppressWarnings("unused")
-    public InMemoryCompressor(InMemoryArchiveOutputStream outputStream) {
+    public InMemoryArchiveCreator(InMemoryArchiveOutputStream outputStream) {
         super(outputStream);
     }
 
-    public InMemoryCompressor(InMemoryCompressorBuilder outputStreamBuilder) throws IOException {
+    public InMemoryArchiveCreator(InMemoryArchiveCreatorBuilder outputStreamBuilder) throws IOException {
         super(outputStreamBuilder);
     }
 
@@ -59,20 +59,21 @@ public class InMemoryCompressor extends Compressor<InMemoryArchiveOutputStream> 
         archiveOutputStream.putArchiveEntry(builder.build());
     }
 
-    public static class InMemoryCompressorBuilder
-            extends CompressorBuilder<InMemoryArchiveOutputStream, InMemoryCompressorBuilder, InMemoryCompressor> {
+    public static class InMemoryArchiveCreatorBuilder
+            extends ArchiveCreatorBuilder<
+                    InMemoryArchiveOutputStream, InMemoryArchiveCreatorBuilder, InMemoryArchiveCreator> {
         private int someOption = 0;
 
-        public InMemoryCompressorBuilder(OutputStream outputStream) {
+        public InMemoryArchiveCreatorBuilder(OutputStream outputStream) {
             super(outputStream);
         }
 
         @Override
-        protected InMemoryCompressorBuilder getThis() {
+        protected InMemoryArchiveCreatorBuilder getThis() {
             return this;
         }
 
-        public InMemoryCompressorBuilder withSomeOption(int option) {
+        public InMemoryArchiveCreatorBuilder withSomeOption(int option) {
             someOption = option;
             return this;
         }
@@ -85,8 +86,8 @@ public class InMemoryCompressor extends Compressor<InMemoryArchiveOutputStream> 
         }
 
         @Override
-        public InMemoryCompressor build() throws IOException {
-            return new InMemoryCompressor(this);
+        public InMemoryArchiveCreator build() throws IOException {
+            return new InMemoryArchiveCreator(this);
         }
     }
 }
