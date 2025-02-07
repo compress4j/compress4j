@@ -17,10 +17,10 @@ package io.github.compress4j.archive;
 
 import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.LONGFILE_POSIX;
 
-import io.github.compress4j.archive.compression.TarGzArchiveCreator;
-import io.github.compress4j.archive.compression.TarGzArchiveCreator.TarGzArchiveCreatorBuilder;
-import io.github.compress4j.archive.decompression.TarGzDecompressor;
-import io.github.compress4j.archive.decompression.builder.TarGzArchiveInputStreamBuilder;
+import io.github.compress4j.archive.extract.TarGzArchiveExtractor;
+import io.github.compress4j.archive.extract.builder.TarGzArchiveInputStreamBuilder;
+import io.github.compress4j.archive.tar.TarGzArchiveCreator;
+import io.github.compress4j.archive.tar.TarGzArchiveCreator.TarGzArchiveCreatorBuilder;
 import java.io.IOException;
 import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,7 +36,8 @@ class TarGzArchiveCreatorIntegrationTest extends TarArchiveCreatorIntegrationTes
 
     @Override
     protected void extract(Path in, Path out) throws IOException {
-        try (TarGzDecompressor tarGzDecompressor = new TarGzDecompressor(new TarGzArchiveInputStreamBuilder(in))) {
+        try (TarGzArchiveExtractor tarGzDecompressor =
+                new TarGzArchiveExtractor(new TarGzArchiveInputStreamBuilder(in))) {
             tarGzDecompressor.extract(out);
         }
     }

@@ -49,22 +49,11 @@ dependencies {
 
     implementation(libs.slf4j.api)
 
-    testImplementation(platform(libs.junit.bom))
-
-    testImplementation(libs.assertj.core)
-    testImplementation(libs.jackson.databind)
-    testImplementation(libs.junit.jupiter)
-    testImplementation(libs.junit.jupiter.params)
-    testImplementation(libs.logback.classic)
-    testImplementation(libs.mockito.core)
-    testImplementation(libs.mockito.jupiter)
-
-    testRuntimeOnly(libs.junit.platform.launcher)
-
     testFixturesApi(libs.logback.classic)
 
     testFixturesImplementation(platform(libs.junit.bom))
     testFixturesImplementation(libs.assertj.core)
+    testFixturesImplementation(libs.jackson.databind)
     testFixturesImplementation(libs.junit.jupiter)
     testFixturesImplementation(libs.mockito.core)
 
@@ -72,7 +61,6 @@ dependencies {
 }
 
 tasks.withType<Test> {
-    useJUnitPlatform()
     jvmArgs(
         "-javaagent:${mockitoAgent.asPath}",
         "--add-opens=java.base/java.util.zip=ALL-UNNAMED"
@@ -83,6 +71,19 @@ testing {
     suites {
         val test by getting(JvmTestSuite::class) {
             useJUnitJupiter()
+
+            dependencies {
+                implementation(platform(libs.junit.bom))
+
+                implementation(libs.assertj.core)
+                implementation(libs.junit.jupiter)
+                implementation(libs.junit.jupiter.params)
+                implementation(libs.logback.classic)
+                implementation(libs.mockito.core)
+                implementation(libs.mockito.jupiter)
+
+                runtimeOnly(libs.junit.platform.launcher)
+            }
         }
 
         register<JvmTestSuite>("integrationTest") {
