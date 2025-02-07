@@ -18,7 +18,7 @@ package io.github.compress4j.archive;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-import io.github.compress4j.archive.compression.TarCompressor.TarCompressorBuilder;
+import io.github.compress4j.archive.compression.TarArchiveCreator.TarArchiveCreatorBuilder;
 import io.github.compress4j.archive.decompression.TarDecompressor;
 import java.io.OutputStream;
 import org.junit.jupiter.api.Test;
@@ -26,16 +26,16 @@ import org.junit.jupiter.api.Test;
 class ArchiveFactoryTest {
 
     @Test
-    void shouldCompressorFromPath() {
+    void shouldCreateArchiveCreatorFromPath() {
         // given
         var type = ArchiveType.TAR;
         var outputStream = mock(OutputStream.class);
 
         // when
-        var compressor = ArchiveFactory.compressor(type, outputStream);
+        var archiveCreatorBuilder = ArchiveFactory.creator(type, outputStream);
 
         // then
-        assertThat(compressor).isInstanceOf(TarCompressorBuilder.class);
+        assertThat(archiveCreatorBuilder).isInstanceOf(TarArchiveCreatorBuilder.class);
     }
 
     @Test

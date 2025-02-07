@@ -22,7 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.*;
 
-import io.github.compress4j.archive.compression.TarGzCompressor.TarGzCompressorBuilder;
+import io.github.compress4j.archive.compression.TarGzArchiveCreator.TarGzArchiveCreatorBuilder;
 import io.github.compress4j.assertion.Compress4JAssertions;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -38,7 +38,7 @@ import org.apache.commons.io.file.attribute.FileTimes;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
-class TarGzCompressorTest {
+class TarGzArchiveCreatorTest {
 
     @SuppressWarnings("resource")
     @Test
@@ -48,9 +48,9 @@ class TarGzCompressorTest {
         var inputStream = new ByteArrayInputStream("test".getBytes());
 
         // when
-        var aOut = spy(new TarGzCompressorBuilder(outputStream).buildArchiveOutputStream());
+        var aOut = spy(new TarGzArchiveCreatorBuilder(outputStream).buildArchiveOutputStream());
         try (MockedStatic<IOUtils> mockIOUtils = mockStatic(IOUtils.class, CALLS_REAL_METHODS);
-                TarGzCompressor tarCompressor = new TarGzCompressor(aOut)) {
+                TarGzArchiveCreator tarCompressor = new TarGzArchiveCreator(aOut)) {
 
             FileTime modTime = FileTime.from(now());
             @SuppressWarnings("OctalInteger")
@@ -78,11 +78,11 @@ class TarGzCompressorTest {
         var inputStream = mock(InputStream.class);
 
         // when
-        var aOut = spy(new TarGzCompressorBuilder(outputStream)
+        var aOut = spy(new TarGzArchiveCreatorBuilder(outputStream)
                 .withAddPaxHeadersForNonAsciiNames(true)
                 .buildArchiveOutputStream());
         try (MockedStatic<IOUtils> mockIOUtils = mockStatic(IOUtils.class);
-                TarGzCompressor tarCompressor = new TarGzCompressor(aOut)) {
+                TarGzArchiveCreator tarCompressor = new TarGzArchiveCreator(aOut)) {
 
             Instant now = now();
             FileTime modTime = FileTime.from(now);

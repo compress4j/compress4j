@@ -22,19 +22,19 @@ import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 
-import io.github.compress4j.archive.compression.TarCompressor.TarCompressorBuilder;
+import io.github.compress4j.archive.compression.TarArchiveCreator.TarArchiveCreatorBuilder;
 import java.io.IOException;
 import java.io.OutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.junit.jupiter.api.Test;
 
-class TarCompressorBuilderTest {
+class TarArchiveCreatorBuilderTest {
 
     @Test
     void shouldBuildArchiveOutputStream() throws IOException {
         // given
         var outputStream = mock(OutputStream.class);
-        TarCompressorBuilder builder = new TarCompressorBuilder(outputStream)
+        TarArchiveCreatorBuilder builder = new TarArchiveCreatorBuilder(outputStream)
                 .withLongFileMode(LONGFILE_POSIX)
                 .withBigNumberMode(BIGNUMBER_POSIX)
                 .withBlockSize(1024)

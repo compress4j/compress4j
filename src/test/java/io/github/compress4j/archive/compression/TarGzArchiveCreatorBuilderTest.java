@@ -23,7 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.*;
 
-import io.github.compress4j.archive.compression.TarGzCompressor.TarGzCompressorBuilder;
+import io.github.compress4j.archive.compression.TarGzArchiveCreator.TarGzArchiveCreatorBuilder;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.Instant;
@@ -31,13 +31,13 @@ import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.junit.jupiter.api.Test;
 
-class TarGzCompressorBuilderTest {
+class TarGzArchiveCreatorBuilderTest {
 
     @Test
     void shouldBuildArchiveOutputStream() throws IOException {
         // given
         var outputStream = mock(OutputStream.class);
-        var builder = spy(new TarGzCompressorBuilder(outputStream)
+        var builder = spy(new TarGzArchiveCreatorBuilder(outputStream)
                 .withLongFileMode(LONGFILE_POSIX)
                 .withBigNumberMode(BIGNUMBER_POSIX));
 
@@ -59,7 +59,7 @@ class TarGzCompressorBuilderTest {
         // given
         var outputStream = mock(OutputStream.class);
         var now = Instant.now();
-        var builder = spy(new TarGzCompressorBuilder(outputStream)
+        var builder = spy(new TarGzArchiveCreatorBuilder(outputStream)
                 .withBufferSize(1024)
                 .withCompressionLevel(BEST_COMPRESSION)
                 .withComment("comment")

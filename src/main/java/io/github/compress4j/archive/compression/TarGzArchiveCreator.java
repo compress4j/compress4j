@@ -25,54 +25,54 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipParameters;
 
 /**
- * The Tar Gz compressor.
+ * The Tar Gz creator.
  *
  * @since 2.2
  */
-public class TarGzCompressor extends BaseTarCompressor {
+public class TarGzArchiveCreator extends BaseTarArchiveCreator {
 
     /**
-     * Create a new {@link TarGzCompressor} with the given output stream.
+     * Create a new {@link TarGzArchiveCreator} with the given output stream.
      *
      * @param tarArchiveOutputStream the output Tar Archive Output Stream
      */
-    public TarGzCompressor(TarArchiveOutputStream tarArchiveOutputStream) {
+    public TarGzArchiveCreator(TarArchiveOutputStream tarArchiveOutputStream) {
         super(tarArchiveOutputStream);
     }
 
     /**
-     * Create a new {@link TarGzCompressor} with the given output stream and options.
+     * Create a new {@link TarGzArchiveCreator} with the given output stream and options.
      *
      * @param builder the archive output stream builder
      * @throws IOException if an I/O error occurred
      */
-    public TarGzCompressor(TarGzCompressorBuilder builder) throws IOException {
+    public TarGzArchiveCreator(TarGzArchiveCreatorBuilder builder) throws IOException {
         super(builder);
     }
 
     /**
-     * Helper static method to create an instance of the {@link TarGzCompressorBuilder}
+     * Helper static method to create an instance of the {@link TarGzArchiveCreatorBuilder}
      *
      * @param path the path to write the archive to
-     * @return An instance of the {@link TarGzCompressorBuilder}
+     * @return An instance of the {@link TarGzArchiveCreatorBuilder}
      * @throws IOException if an I/O error occurred
      */
-    public static TarGzCompressorBuilder builder(Path path) throws IOException {
-        return new TarGzCompressorBuilder(path);
+    public static TarGzArchiveCreatorBuilder builder(Path path) throws IOException {
+        return new TarGzArchiveCreatorBuilder(path);
     }
 
     /**
-     * Helper static method to create an instance of the {@link TarGzCompressorBuilder}
+     * Helper static method to create an instance of the {@link TarGzArchiveCreatorBuilder}
      *
      * @param outputStream the output stream
-     * @return An instance of the {@link TarGzCompressorBuilder}
+     * @return An instance of the {@link TarGzArchiveCreatorBuilder}
      */
-    public static TarGzCompressorBuilder builder(OutputStream outputStream) {
-        return new TarGzCompressorBuilder(outputStream);
+    public static TarGzArchiveCreatorBuilder builder(OutputStream outputStream) {
+        return new TarGzArchiveCreatorBuilder(outputStream);
     }
 
-    public static class TarGzCompressorBuilder
-            extends BaseTarCompressorBuilder<TarGzCompressorBuilder, TarGzCompressor> {
+    public static class TarGzArchiveCreatorBuilder
+            extends BaseTarArchiveCreatorBuilder<TarGzArchiveCreatorBuilder, TarGzArchiveCreator> {
 
         private int bufferSize = 512;
         private String comment;
@@ -83,21 +83,21 @@ public class TarGzCompressor extends BaseTarCompressor {
         private int operatingSystem = 255; // Unknown OS by default
 
         /**
-         * Create a new {@link TarGzCompressorBuilder} with the given path.
+         * Create a new {@link TarGzArchiveCreatorBuilder} with the given path.
          *
          * @param path the path to write the archive to
          * @throws IOException if an I/O error occurred
          */
-        public TarGzCompressorBuilder(Path path) throws IOException {
+        public TarGzArchiveCreatorBuilder(Path path) throws IOException {
             this(Files.newOutputStream(path));
         }
 
         /**
-         * Create a new {@link TarGzCompressorBuilder} with the given output stream.
+         * Create a new {@link TarGzArchiveCreatorBuilder} with the given output stream.
          *
          * @param outputStream the output stream
          */
-        protected TarGzCompressorBuilder(OutputStream outputStream) {
+        protected TarGzArchiveCreatorBuilder(OutputStream outputStream) {
             super(outputStream);
         }
 
@@ -106,9 +106,9 @@ public class TarGzCompressor extends BaseTarCompressor {
          * {@link OutputStream}.
          *
          * @param bufferSize the bufferSize to set. Must be a positive value.
-         * @return the instance of the {@link TarGzCompressorBuilder}
+         * @return the instance of the {@link TarGzArchiveCreatorBuilder}
          */
-        public TarGzCompressorBuilder withBufferSize(final int bufferSize) {
+        public TarGzArchiveCreatorBuilder withBufferSize(final int bufferSize) {
             if (bufferSize <= 0) {
                 throw new IllegalArgumentException("invalid buffer size: " + bufferSize);
             }
@@ -120,9 +120,9 @@ public class TarGzCompressor extends BaseTarCompressor {
          * Adds comment to be added to the tar.gz file
          *
          * @param comment the comment to be added
-         * @return the instance of the {@link TarGzCompressorBuilder}
+         * @return the instance of the {@link TarGzArchiveCreatorBuilder}
          */
-        public TarGzCompressorBuilder withComment(final String comment) {
+        public TarGzArchiveCreatorBuilder withComment(final String comment) {
             this.comment = comment;
             return this;
         }
@@ -135,9 +135,9 @@ public class TarGzCompressor extends BaseTarCompressor {
          * @see Deflater#BEST_SPEED
          * @see Deflater#DEFAULT_COMPRESSION
          * @see Deflater#BEST_COMPRESSION
-         * @return the instance of the {@link TarGzCompressorBuilder}
+         * @return the instance of the {@link TarGzArchiveCreatorBuilder}
          */
-        public TarGzCompressorBuilder withCompressionLevel(final int compressionLevel) {
+        public TarGzArchiveCreatorBuilder withCompressionLevel(final int compressionLevel) {
             if (compressionLevel < -1 || compressionLevel > 9) {
                 throw new IllegalArgumentException("Invalid gzip compression level: " + compressionLevel);
             }
@@ -150,9 +150,9 @@ public class TarGzCompressor extends BaseTarCompressor {
          *
          * @param deflateStrategy the new compression strategy
          * @see Deflater#setStrategy(int)
-         * @return the instance of the {@link TarGzCompressorBuilder}
+         * @return the instance of the {@link TarGzArchiveCreatorBuilder}
          */
-        public TarGzCompressorBuilder withDeflateStrategy(final int deflateStrategy) {
+        public TarGzArchiveCreatorBuilder withDeflateStrategy(final int deflateStrategy) {
             this.deflateStrategy = deflateStrategy;
             return this;
         }
@@ -161,9 +161,9 @@ public class TarGzCompressor extends BaseTarCompressor {
          * Sets the name of the compressed file.
          *
          * @param fileName the name of the file without the directory path
-         * @return the instance of the {@link TarGzCompressorBuilder}
+         * @return the instance of the {@link TarGzArchiveCreatorBuilder}
          */
-        public TarGzCompressorBuilder withFileName(final String fileName) {
+        public TarGzArchiveCreatorBuilder withFileName(final String fileName) {
             this.fileName = fileName;
             return this;
         }
@@ -172,9 +172,9 @@ public class TarGzCompressor extends BaseTarCompressor {
          * Sets the modification time of the compressed file.
          *
          * @param modificationTime the modification time, in milliseconds
-         * @return the instance of the {@link TarGzCompressorBuilder}
+         * @return the instance of the {@link TarGzArchiveCreatorBuilder}
          */
-        public TarGzCompressorBuilder withModificationTime(final long modificationTime) {
+        public TarGzArchiveCreatorBuilder withModificationTime(final long modificationTime) {
             this.modificationTime = modificationTime;
             return this;
         }
@@ -201,16 +201,16 @@ public class TarGzCompressor extends BaseTarCompressor {
          * </ul>
          *
          * @param operatingSystem the code of the operating system
-         * @return the instance of the {@link TarGzCompressorBuilder}
+         * @return the instance of the {@link TarGzArchiveCreatorBuilder}
          */
-        public TarGzCompressorBuilder withOperatingSystem(final int operatingSystem) {
+        public TarGzArchiveCreatorBuilder withOperatingSystem(final int operatingSystem) {
             this.operatingSystem = operatingSystem;
             return this;
         }
 
         /** {@inheritDoc} */
         @Override
-        protected TarGzCompressorBuilder getThis() {
+        protected TarGzArchiveCreatorBuilder getThis() {
             return this;
         }
 
@@ -230,8 +230,8 @@ public class TarGzCompressor extends BaseTarCompressor {
 
         /** {@inheritDoc} */
         @Override
-        public TarGzCompressor build() throws IOException {
-            return new TarGzCompressor(this);
+        public TarGzArchiveCreator build() throws IOException {
+            return new TarGzArchiveCreator(this);
         }
     }
 }
