@@ -15,9 +15,9 @@
  */
 package io.github.compress4j.archive;
 
-import io.github.compress4j.archive.compression.Compressor.CompressorBuilder;
-import io.github.compress4j.archive.compression.TarCompressor;
-import io.github.compress4j.archive.compression.TarGzCompressor;
+import io.github.compress4j.archive.compression.ArchiveCreator.ArchiveCreatorBuilder;
+import io.github.compress4j.archive.compression.TarArchiveCreator;
+import io.github.compress4j.archive.compression.TarGzArchiveCreator;
 import io.github.compress4j.archive.decompression.Decompressor;
 import io.github.compress4j.archive.decompression.TarDecompressor;
 import io.github.compress4j.archive.decompression.TarGzDecompressor;
@@ -33,12 +33,12 @@ public class ArchiveFactory {
     private ArchiveFactory() {}
 
     @SuppressWarnings({"rawtypes"})
-    public static CompressorBuilder compressor(ArchiveType archiveType, OutputStream outputStream) {
+    public static ArchiveCreatorBuilder creator(ArchiveType archiveType, OutputStream outputStream) {
         switch (archiveType) {
             case TAR:
-                return TarCompressor.builder(outputStream);
+                return TarArchiveCreator.builder(outputStream);
             case TAR_GZ:
-                return TarGzCompressor.builder(outputStream);
+                return TarGzArchiveCreator.builder(outputStream);
             default:
                 throw new UnsupportedOperationException("Unsupported archive type: " + archiveType);
         }

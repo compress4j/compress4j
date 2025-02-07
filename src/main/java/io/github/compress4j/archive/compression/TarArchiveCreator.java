@@ -22,76 +22,77 @@ import java.nio.file.Path;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 
 /**
- * The Tar compressor.
+ * The Tar creator.
  *
  * @since 2.2
  */
-public class TarCompressor extends BaseTarCompressor {
+public class TarArchiveCreator extends BaseTarArchiveCreator {
 
     /**
-     * Create a new TarCompressor with the given output stream.
+     * Create a new TarArchiveCreator with the given output stream.
      *
      * @param tarArchiveOutputStream the output Tar Archive Output Stream
      */
-    public TarCompressor(TarArchiveOutputStream tarArchiveOutputStream) {
+    public TarArchiveCreator(TarArchiveOutputStream tarArchiveOutputStream) {
         super(tarArchiveOutputStream);
     }
 
     /**
-     * Create a new TarCompressor with the given output stream and options.
+     * Create a new TarArchiveCreator with the given output stream and options.
      *
      * @param builder the archive output stream builder
      * @throws IOException if an I/O error occurred
      */
-    public TarCompressor(TarCompressorBuilder builder) throws IOException {
+    public TarArchiveCreator(TarArchiveCreatorBuilder builder) throws IOException {
         super(builder);
     }
 
     /**
-     * Helper static method to create an instance of the {@link TarCompressorBuilder}
+     * Helper static method to create an instance of the {@link TarArchiveCreatorBuilder}
      *
      * @param path the path to write the archive to
-     * @return An instance of the {@link TarCompressorBuilder}
+     * @return An instance of the {@link TarArchiveCreatorBuilder}
      * @throws IOException if an I/O error occurred
      */
-    public static TarCompressorBuilder builder(Path path) throws IOException {
-        return new TarCompressorBuilder(path);
+    public static TarArchiveCreatorBuilder builder(Path path) throws IOException {
+        return new TarArchiveCreatorBuilder(path);
     }
 
     /**
-     * Helper static method to create an instance of the {@link TarCompressorBuilder}
+     * Helper static method to create an instance of the {@link TarArchiveCreatorBuilder}
      *
      * @param outputStream the output stream
-     * @return An instance of the {@link TarCompressorBuilder}
+     * @return An instance of the {@link TarArchiveCreatorBuilder}
      */
-    public static TarCompressorBuilder builder(OutputStream outputStream) {
-        return new TarCompressorBuilder(outputStream);
+    public static TarArchiveCreatorBuilder builder(OutputStream outputStream) {
+        return new TarArchiveCreatorBuilder(outputStream);
     }
 
-    /** Tar compressor builder */
-    public static class TarCompressorBuilder extends BaseTarCompressorBuilder<TarCompressorBuilder, TarCompressor> {
+    /** Tar creator builder */
+    public static class TarArchiveCreatorBuilder
+            extends BaseTarArchiveCreatorBuilder<TarArchiveCreatorBuilder, TarArchiveCreator> {
         /**
-         * Create a new {@link TarCompressor} with the given path.
+         * Create a new {@link TarArchiveCreator} with the given path.
          *
          * @param path the path to write the archive to
          * @throws IOException if an I/O error occurred
          */
-        public TarCompressorBuilder(Path path) throws IOException {
+        public TarArchiveCreatorBuilder(Path path) throws IOException {
             this(Files.newOutputStream(path));
         }
 
         /**
-         * Create a new {@link TarCompressor} with the given output stream.
+         * Create a new {@link TarArchiveCreator} with the given output stream.
          *
          * @param outputStream the output stream
          */
-        public TarCompressorBuilder(OutputStream outputStream) {
+        public TarArchiveCreatorBuilder(OutputStream outputStream) {
             super(outputStream);
         }
 
         /** {@inheritDoc} */
         @Override
-        protected TarCompressorBuilder getThis() {
+        protected TarArchiveCreatorBuilder getThis() {
             return this;
         }
 
@@ -103,8 +104,8 @@ public class TarCompressor extends BaseTarCompressor {
 
         /** {@inheritDoc} */
         @Override
-        public TarCompressor build() throws IOException {
-            return new TarCompressor(this);
+        public TarArchiveCreator build() throws IOException {
+            return new TarArchiveCreator(this);
         }
     }
 }

@@ -16,7 +16,7 @@
 package io.github.compress4j.archive.compression;
 
 import static ch.qos.logback.classic.Level.TRACE;
-import static io.github.compress4j.archive.compression.Compressor.sanitiseName;
+import static io.github.compress4j.archive.compression.ArchiveCreator.sanitiseName;
 import static io.github.compress4j.test.util.io.TestFileUtils.createFile;
 import static io.github.compress4j.utils.FileUtils.NO_MODE;
 import static java.nio.file.attribute.PosixFilePermission.*;
@@ -31,8 +31,8 @@ import static org.mockito.Mockito.*;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import io.github.compress4j.assertion.Compress4JAssertions;
-import io.github.compress4j.memory.InMemoryCompressor;
-import io.github.compress4j.memory.InMemoryCompressor.InMemoryCompressorBuilder;
+import io.github.compress4j.memory.InMemoryArchiveCreator;
+import io.github.compress4j.memory.InMemoryArchiveCreator.InMemoryArchiveCreatorBuilder;
 import io.github.compress4j.test.util.log.InMemoryLogAppender;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -43,7 +43,6 @@ import java.nio.file.Path;
 import java.nio.file.attribute.*;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -62,9 +61,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
 
 @ExtendWith(MockitoExtension.class)
-class CompressorTest {
+class ArchiveCreatorTest {
 
-    private static final String LOGGER_NAME = Compressor.class.getPackageName();
+    private static final String LOGGER_NAME = ArchiveCreator.class.getPackageName();
     private InMemoryLogAppender inMemoryLogAppender;
 
     @TempDir
@@ -121,24 +120,25 @@ class CompressorTest {
         int fileMode = IS_OS_WINDOWS ? 0 : 0644;
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
+        try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
+                InMemoryArchiveCreator archive =
+                        spy(new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out)))) {
             // when
-            compressor.addFile(path);
+            archive.addFile(path);
 
             // then
             BasicFileAttributes fileAttrs = Files.readAttributes(path, BasicFileAttributes.class);
             FileTime modTime = fileAttrs.lastModifiedTime();
 
-            InOrder inOrder = inOrder(compressor);
-            inOrder.verify(compressor).addFile(path);
-            inOrder.verify(compressor)
+            InOrder inOrder = inOrder(archive);
+            inOrder.verify(archive).addFile(path);
+            inOrder.verify(archive)
                     .addFile(eq(fileName), eq(path), any(BasicFileAttributes.class), eq(Optional.empty()));
-            mockCompressor.verify(() -> sanitiseName(fileName));
-            inOrder.verify(compressor).accept(fileName, path);
-            inOrder.verify(compressor)
+            mockArchive.verify(() -> sanitiseName(fileName));
+            inOrder.verify(archive).accept(fileName, path);
+            inOrder.verify(archive)
                     .writeFileEntry(eq(fileName), any(InputStream.class), eq(3L), eq(modTime), eq(fileMode));
-            inOrder.verify(compressor)
+            inOrder.verify(archive)
                     .writeFileEntry(
                             eq(fileName),
                             any(InputStream.class),
@@ -156,20 +156,21 @@ class CompressorTest {
         var path = createFile(tempDir, fileName, "789");
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
-            compressor.withFilter((name, p) -> false);
+        try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
+                InMemoryArchiveCreator archive =
+                        spy(new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out)))) {
+            archive.withFilter((name, p) -> false);
 
             // when
-            compressor.addFile(path);
+            archive.addFile(path);
 
             // then
-            InOrder inOrder = inOrder(compressor);
-            inOrder.verify(compressor).addFile(path);
-            inOrder.verify(compressor)
+            InOrder inOrder = inOrder(archive);
+            inOrder.verify(archive).addFile(path);
+            inOrder.verify(archive)
                     .addFile(eq(fileName), eq(path), any(BasicFileAttributes.class), eq(Optional.empty()));
-            mockCompressor.verify(() -> sanitiseName(fileName));
-            inOrder.verify(compressor).accept(fileName, path);
+            mockArchive.verify(() -> sanitiseName(fileName));
+            inOrder.verify(archive).accept(fileName, path);
             inOrder.verifyNoMoreInteractions();
         }
     }
@@ -181,19 +182,19 @@ class CompressorTest {
         var path = createFile(tempDir, fileName, "789");
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor = spy(
-                        new InMemoryCompressor(new InMemoryCompressorBuilder(out).withFilter((name, p) -> false)))) {
+        try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
+                InMemoryArchiveCreator archive = spy(new InMemoryArchiveCreator(
+                        new InMemoryArchiveCreatorBuilder(out).withFilter((name, p) -> false)))) {
             // when
-            compressor.addFile(path);
+            archive.addFile(path);
 
             // then
-            InOrder inOrder = inOrder(compressor);
-            inOrder.verify(compressor).addFile(path);
-            inOrder.verify(compressor)
+            InOrder inOrder = inOrder(archive);
+            inOrder.verify(archive).addFile(path);
+            inOrder.verify(archive)
                     .addFile(eq(fileName), eq(path), any(BasicFileAttributes.class), eq(Optional.empty()));
-            mockCompressor.verify(() -> sanitiseName(fileName));
-            inOrder.verify(compressor).accept(fileName, path);
+            mockArchive.verify(() -> sanitiseName(fileName));
+            inOrder.verify(archive).accept(fileName, path);
             inOrder.verifyNoMoreInteractions();
         }
     }
@@ -208,24 +209,25 @@ class CompressorTest {
         int fileMode = IS_OS_WINDOWS ? 0 : 0644;
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
+        try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
+                InMemoryArchiveCreator archive =
+                        spy(new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out)))) {
             // when
-            compressor.addFile(entryName, path);
+            archive.addFile(entryName, path);
 
             // then
             BasicFileAttributes fileAttrs = Files.readAttributes(path, BasicFileAttributes.class);
             FileTime modTime = fileAttrs.lastModifiedTime();
 
-            InOrder inOrder = inOrder(compressor);
-            inOrder.verify(compressor).addFile(entryName, path);
-            mockCompressor.verify(() -> sanitiseName(entryName));
-            inOrder.verify(compressor)
+            InOrder inOrder = inOrder(archive);
+            inOrder.verify(archive).addFile(entryName, path);
+            mockArchive.verify(() -> sanitiseName(entryName));
+            inOrder.verify(archive)
                     .addFile(eq(entryName), eq(path), any(BasicFileAttributes.class), eq(Optional.empty()));
-            inOrder.verify(compressor).accept(entryName, path);
-            inOrder.verify(compressor)
+            inOrder.verify(archive).accept(entryName, path);
+            inOrder.verify(archive)
                     .writeFileEntry(eq(entryName), any(InputStream.class), eq(3L), eq(modTime), eq(fileMode));
-            inOrder.verify(compressor)
+            inOrder.verify(archive)
                     .writeFileEntry(
                             eq(entryName),
                             any(InputStream.class),
@@ -247,18 +249,18 @@ class CompressorTest {
         int fileMode = IS_OS_WINDOWS ? 0 : 0644;
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
+        try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
+                InMemoryArchiveCreator archive =
+                        spy(new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out)))) {
             // when
-            compressor.addFile(entryName, path, modTime);
+            archive.addFile(entryName, path, modTime);
 
             // then
-            verify(compressor).accept(entryName, path);
-            verify(compressor)
-                    .addFile(eq(entryName), eq(path), any(BasicFileAttributes.class), eq(Optional.of(modTime)));
-            mockCompressor.verify(() -> sanitiseName(entryName));
-            verify(compressor).writeFileEntry(eq(entryName), any(InputStream.class), eq(3L), eq(modTime), eq(fileMode));
-            verify(compressor)
+            verify(archive).accept(entryName, path);
+            verify(archive).addFile(eq(entryName), eq(path), any(BasicFileAttributes.class), eq(Optional.of(modTime)));
+            mockArchive.verify(() -> sanitiseName(entryName));
+            verify(archive).writeFileEntry(eq(entryName), any(InputStream.class), eq(3L), eq(modTime), eq(fileMode));
+            verify(archive)
                     .writeFileEntry(
                             eq(entryName),
                             any(InputStream.class),
@@ -275,23 +277,24 @@ class CompressorTest {
         String entryName = "additional_name.txt";
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
+        try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
                 MockedStatic<Instant> mockedStaticInstant = mockStatic(Instant.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
+                InMemoryArchiveCreator archive =
+                        spy(new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out)))) {
 
             var mockedInstant = Instant.now();
             mockedStaticInstant.when(Instant::now).thenReturn(mockedInstant);
             byte[] content = "789".getBytes();
 
             // when
-            compressor.addFile(entryName, content);
+            archive.addFile(entryName, content);
 
             // then
-            mockCompressor.verify(() -> sanitiseName(entryName));
-            verify(compressor).accept(entryName, null);
+            mockArchive.verify(() -> sanitiseName(entryName));
+            verify(archive).accept(entryName, null);
             FileTime modTime = FileTime.from(mockedInstant);
-            verify(compressor).writeFileEntry(eq(entryName), any(InputStream.class), eq(3L), eq(modTime), eq(0));
-            verify(compressor)
+            verify(archive).writeFileEntry(eq(entryName), any(InputStream.class), eq(3L), eq(modTime), eq(0));
+            verify(archive)
                     .writeFileEntry(
                             eq(entryName), any(InputStream.class), eq(3L), eq(modTime), eq(0), eq(Optional.empty()));
         }
@@ -303,21 +306,22 @@ class CompressorTest {
         String entryName = "additional_name.txt";
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
+        try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
                 MockedStatic<Instant> mockedStaticInstant = mockStatic(Instant.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
-            compressor.withFilter((name, p) -> false);
+                InMemoryArchiveCreator archive =
+                        spy(new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out)))) {
+            archive.withFilter((name, p) -> false);
             var mockedInstant = Instant.now();
             mockedStaticInstant.when(Instant::now).thenReturn(mockedInstant);
             byte[] content = "789".getBytes();
 
             // when
-            compressor.addFile(entryName, content);
+            archive.addFile(entryName, content);
 
             // then
-            mockCompressor.verify(() -> sanitiseName(entryName));
-            InOrder inOrder = inOrder(compressor);
-            inOrder.verify(compressor).accept(entryName, null);
+            mockArchive.verify(() -> sanitiseName(entryName));
+            InOrder inOrder = inOrder(archive);
+            inOrder.verify(archive).accept(entryName, null);
             inOrder.verifyNoMoreInteractions();
         }
     }
@@ -329,19 +333,20 @@ class CompressorTest {
         FileTime modTime = FileTime.from(Instant.now());
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
+        try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
+                InMemoryArchiveCreator archive =
+                        spy(new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out)))) {
 
             byte[] content = "789".getBytes();
 
             // when
-            compressor.addFile(entryName, content, modTime);
+            archive.addFile(entryName, content, modTime);
 
             // then
-            mockCompressor.verify(() -> sanitiseName(entryName));
-            verify(compressor).accept(entryName, null);
-            verify(compressor).writeFileEntry(eq(entryName), any(InputStream.class), eq(3L), eq(modTime), eq(0));
-            verify(compressor)
+            mockArchive.verify(() -> sanitiseName(entryName));
+            verify(archive).accept(entryName, null);
+            verify(archive).writeFileEntry(eq(entryName), any(InputStream.class), eq(3L), eq(modTime), eq(0));
+            verify(archive)
                     .writeFileEntry(
                             eq(entryName), any(InputStream.class), eq(3L), eq(modTime), eq(0), eq(Optional.empty()));
         }
@@ -353,9 +358,10 @@ class CompressorTest {
         String entryName = "additional_name.txt";
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
+        try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
                 MockedStatic<Instant> mockedStaticInstant = mockStatic(Instant.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
+                InMemoryArchiveCreator archive =
+                        spy(new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out)))) {
 
             var mockedInstant = Instant.now();
             mockedStaticInstant.when(Instant::now).thenReturn(mockedInstant);
@@ -363,13 +369,13 @@ class CompressorTest {
             var content = new ByteArrayInputStream("789".getBytes());
 
             // when
-            compressor.addFile(entryName, content);
+            archive.addFile(entryName, content);
 
             // then
-            mockCompressor.verify(() -> sanitiseName(entryName));
-            verify(compressor).accept(entryName, null);
-            verify(compressor).writeFileEntry(eq(entryName), any(InputStream.class), eq(-1L), eq(modTime), eq(0));
-            verify(compressor)
+            mockArchive.verify(() -> sanitiseName(entryName));
+            verify(archive).accept(entryName, null);
+            verify(archive).writeFileEntry(eq(entryName), any(InputStream.class), eq(-1L), eq(modTime), eq(0));
+            verify(archive)
                     .writeFileEntry(
                             eq(entryName), any(InputStream.class), eq(-1L), eq(modTime), eq(0), eq(Optional.empty()));
         }
@@ -381,22 +387,23 @@ class CompressorTest {
         String entryName = "additional_name.txt";
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
+        try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
                 MockedStatic<Instant> mockedStaticInstant = mockStatic(Instant.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
-            compressor.withFilter((name, p) -> false);
+                InMemoryArchiveCreator archive =
+                        spy(new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out)))) {
+            archive.withFilter((name, p) -> false);
 
             var mockedInstant = Instant.now();
             mockedStaticInstant.when(Instant::now).thenReturn(mockedInstant);
             var content = new ByteArrayInputStream("789".getBytes());
 
             // when
-            compressor.addFile(entryName, content);
+            archive.addFile(entryName, content);
 
             // then
-            mockCompressor.verify(() -> sanitiseName(entryName));
-            InOrder inOrder = inOrder(compressor);
-            inOrder.verify(compressor).accept(entryName, null);
+            mockArchive.verify(() -> sanitiseName(entryName));
+            InOrder inOrder = inOrder(archive);
+            inOrder.verify(archive).accept(entryName, null);
             inOrder.verifyNoMoreInteractions();
         }
     }
@@ -408,19 +415,20 @@ class CompressorTest {
         FileTime modTime = FileTime.from(Instant.now());
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
+        try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
+                InMemoryArchiveCreator archive =
+                        spy(new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out)))) {
 
             var content = new ByteArrayInputStream("789".getBytes());
 
             // when
-            compressor.addFile(entryName, content, modTime);
+            archive.addFile(entryName, content, modTime);
 
             // then
-            mockCompressor.verify(() -> sanitiseName(entryName));
-            verify(compressor).accept(entryName, null);
-            verify(compressor).writeFileEntry(eq(entryName), any(InputStream.class), eq(-1L), eq(modTime), eq(0));
-            verify(compressor)
+            mockArchive.verify(() -> sanitiseName(entryName));
+            verify(archive).accept(entryName, null);
+            verify(archive).writeFileEntry(eq(entryName), any(InputStream.class), eq(-1L), eq(modTime), eq(0));
+            verify(archive)
                     .writeFileEntry(
                             eq(entryName), any(InputStream.class), eq(-1L), eq(modTime), eq(0), eq(Optional.empty()));
         }
@@ -435,20 +443,21 @@ class CompressorTest {
         String entryName = "dir_name";
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
+        try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
                 MockedStatic<Instant> mockedStaticInstant = mockStatic(Instant.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
+                InMemoryArchiveCreator archive =
+                        spy(new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out)))) {
             var mockedInstant = Instant.now();
             mockedStaticInstant.when(Instant::now).thenReturn(mockedInstant);
             FileTime modTime = FileTime.from(mockedInstant);
 
             // when
-            compressor.addDirectory(entryName);
+            archive.addDirectory(entryName);
 
             // then
-            verify(compressor).accept(entryName, null);
-            mockCompressor.verify(() -> sanitiseName(entryName));
-            verify(compressor).writeDirectoryEntry(entryName, modTime);
+            verify(archive).accept(entryName, null);
+            mockArchive.verify(() -> sanitiseName(entryName));
+            verify(archive).writeDirectoryEntry(entryName, modTime);
         }
     }
 
@@ -458,17 +467,18 @@ class CompressorTest {
         String entryName = "dir_name";
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
-            compressor.withFilter((name, p) -> false);
+        try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
+                InMemoryArchiveCreator archive =
+                        spy(new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out)))) {
+            archive.withFilter((name, p) -> false);
 
             // when
-            compressor.addDirectory(entryName);
+            archive.addDirectory(entryName);
 
             // then
-            InOrder inOrder = inOrder(compressor);
-            inOrder.verify(compressor).accept(entryName, null);
-            mockCompressor.verify(() -> sanitiseName(entryName));
+            InOrder inOrder = inOrder(archive);
+            inOrder.verify(archive).accept(entryName, null);
+            mockArchive.verify(() -> sanitiseName(entryName));
             inOrder.verifyNoMoreInteractions();
         }
     }
@@ -480,15 +490,16 @@ class CompressorTest {
         FileTime modTime = FileTime.from(Instant.now());
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
+        try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
+                InMemoryArchiveCreator archive =
+                        spy(new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out)))) {
             // when
-            compressor.addDirectory(entryName, modTime);
+            archive.addDirectory(entryName, modTime);
 
             // then
-            verify(compressor).accept(entryName, null);
-            mockCompressor.verify(() -> sanitiseName(entryName));
-            verify(compressor).writeDirectoryEntry(entryName, modTime);
+            verify(archive).accept(entryName, null);
+            mockArchive.verify(() -> sanitiseName(entryName));
+            verify(archive).writeDirectoryEntry(entryName, modTime);
         }
     }
 
@@ -507,34 +518,35 @@ class CompressorTest {
         int file11Mode = IS_OS_WINDOWS ? 0 : 0644;
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
+        try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
+                InMemoryArchiveCreator archive =
+                        spy(new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out)))) {
 
             // when
-            compressor.addDirectoryRecursively(base);
+            archive.addDirectoryRecursively(base);
 
             // then
-            verify(compressor).addDirectoryRecursively("", base);
-            mockCompressor.verify(() -> sanitiseName("file1"), times(2));
-            mockCompressor.verify(() -> sanitiseName("subDir1"), times(2));
-            mockCompressor.verify(() -> sanitiseName(file11RelativeName), atLeastOnce());
-            verify(compressor).accept("subDir1", subDir1);
+            verify(archive).addDirectoryRecursively("", base);
+            mockArchive.verify(() -> sanitiseName("file1"), times(2));
+            mockArchive.verify(() -> sanitiseName("subDir1"), times(2));
+            mockArchive.verify(() -> sanitiseName(file11RelativeName), atLeastOnce());
+            verify(archive).accept("subDir1", subDir1);
             FileTime subDir1ModTime = Files.getLastModifiedTime(subDir1);
-            verify(compressor).addDirectory(eq("subDir1"), assertArg(time -> assertThat(
+            verify(archive).addDirectory(eq("subDir1"), assertArg(time -> assertThat(
                             time.toInstant().truncatedTo(ChronoUnit.SECONDS))
                     .isEqualTo(subDir1ModTime.toInstant().truncatedTo(ChronoUnit.SECONDS))));
-            verify(compressor).accept("subDir1", null);
-            verify(compressor).writeDirectoryEntry(eq("subDir1"), assertArg(time -> assertThat(
+            verify(archive).accept("subDir1", null);
+            verify(archive).writeDirectoryEntry(eq("subDir1"), assertArg(time -> assertThat(
                             time.toInstant().truncatedTo(ChronoUnit.SECONDS))
                     .isEqualTo(subDir1ModTime.toInstant().truncatedTo(ChronoUnit.SECONDS))));
-            verify(compressor, times(2)).accept("subDir1/file11", file11);
-            verify(compressor)
+            verify(archive, times(2)).accept("subDir1/file11", file11);
+            verify(archive)
                     .addFile(eq("subDir1/file11"), eq(file11), any(BasicFileAttributes.class), eq(Optional.empty()));
             FileTime file11ModTime = Files.getLastModifiedTime(file11);
-            verify(compressor)
+            verify(archive)
                     .writeFileEntry(
                             eq("subDir1/file11"), any(InputStream.class), eq(2L), eq(file11ModTime), eq(file11Mode));
-            verify(compressor)
+            verify(archive)
                     .writeFileEntry(
                             eq("subDir1/file11"),
                             any(InputStream.class),
@@ -542,12 +554,12 @@ class CompressorTest {
                             eq(file11ModTime),
                             eq(file11Mode),
                             eq(Optional.empty()));
-            verify(compressor, times(2)).accept("file1", file1);
-            verify(compressor).addFile(eq("file1"), eq(file1), any(BasicFileAttributes.class), eq(Optional.empty()));
+            verify(archive, times(2)).accept("file1", file1);
+            verify(archive).addFile(eq("file1"), eq(file1), any(BasicFileAttributes.class), eq(Optional.empty()));
             FileTime file1ModTime = Files.getLastModifiedTime(file1);
-            verify(compressor)
+            verify(archive)
                     .writeFileEntry(eq("file1"), any(InputStream.class), eq(1L), eq(file1ModTime), eq(file11Mode));
-            verify(compressor)
+            verify(archive)
                     .writeFileEntry(
                             eq("file1"),
                             any(InputStream.class),
@@ -567,19 +579,20 @@ class CompressorTest {
         createFile(subDir1, "file11", "11");
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
-            compressor.withFilter((name, p) -> false);
+        try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
+                InMemoryArchiveCreator archive =
+                        spy(new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out)))) {
+            archive.withFilter((name, p) -> false);
 
             // when
-            compressor.addDirectoryRecursively(base);
+            archive.addDirectoryRecursively(base);
 
             // then
-            verify(compressor).addDirectoryRecursively("", base);
-            mockCompressor.verify(() -> sanitiseName("file1"));
-            mockCompressor.verify(() -> sanitiseName("subDir1"));
-            verify(compressor).accept("subDir1", subDir1);
-            verify(compressor).accept("file1", file1);
+            verify(archive).addDirectoryRecursively("", base);
+            mockArchive.verify(() -> sanitiseName("file1"));
+            mockArchive.verify(() -> sanitiseName("subDir1"));
+            verify(archive).accept("subDir1", subDir1);
+            verify(archive).accept("file1", file1);
         }
     }
 
@@ -596,42 +609,43 @@ class CompressorTest {
         int file11Mode = IS_OS_WINDOWS ? 0 : 0644;
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
+        try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
+                InMemoryArchiveCreator archive =
+                        spy(new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out)))) {
 
             // when
-            compressor.addDirectoryRecursively(top, base);
+            archive.addDirectoryRecursively(top, base);
 
             // then
-            mockCompressor.verify(() -> sanitiseName("file1"));
-            mockCompressor.verify(() -> sanitiseName("subDir1"));
-            mockCompressor.verify(() -> sanitiseName(file11RelativeName));
-            verify(compressor).accept(top, null);
+            mockArchive.verify(() -> sanitiseName("file1"));
+            mockArchive.verify(() -> sanitiseName("subDir1"));
+            mockArchive.verify(() -> sanitiseName(file11RelativeName));
+            verify(archive).accept(top, null);
             FileTime baseModTime = Files.getLastModifiedTime(base);
-            verify(compressor).writeDirectoryEntry("top", baseModTime);
-            verify(compressor).accept(top, base);
-            verify(compressor).accept("top/subDir1", subDir1);
+            verify(archive).writeDirectoryEntry("top", baseModTime);
+            verify(archive).accept(top, base);
+            verify(archive).accept("top/subDir1", subDir1);
             FileTime subDir1ModTime = Files.getLastModifiedTime(subDir1);
-            verify(compressor).addDirectory(eq("top/subDir1"), assertArg(time -> assertThat(
+            verify(archive).addDirectory(eq("top/subDir1"), assertArg(time -> assertThat(
                             time.toInstant().truncatedTo(ChronoUnit.SECONDS))
                     .isEqualTo(subDir1ModTime.toInstant().truncatedTo(ChronoUnit.SECONDS))));
-            verify(compressor).accept("top/subDir1", null);
-            verify(compressor).writeDirectoryEntry(eq("top/subDir1"), assertArg(time -> assertThat(
+            verify(archive).accept("top/subDir1", null);
+            verify(archive).writeDirectoryEntry(eq("top/subDir1"), assertArg(time -> assertThat(
                             time.toInstant().truncatedTo(ChronoUnit.SECONDS))
                     .isEqualTo(subDir1ModTime.toInstant().truncatedTo(ChronoUnit.SECONDS))));
-            verify(compressor, times(2)).accept("top/subDir1/file11", file11);
-            verify(compressor)
+            verify(archive, times(2)).accept("top/subDir1/file11", file11);
+            verify(archive)
                     .addFile(
                             eq("top/subDir1/file11"), eq(file11), any(BasicFileAttributes.class), eq(Optional.empty()));
             FileTime file11ModTime = Files.getLastModifiedTime(file11);
-            verify(compressor)
+            verify(archive)
                     .writeFileEntry(
                             eq("top/subDir1/file11"),
                             any(InputStream.class),
                             eq(2L),
                             eq(file11ModTime),
                             eq(file11Mode));
-            verify(compressor)
+            verify(archive)
                     .writeFileEntry(
                             eq("top/subDir1/file11"),
                             any(InputStream.class),
@@ -639,13 +653,12 @@ class CompressorTest {
                             eq(file11ModTime),
                             eq(file11Mode),
                             eq(Optional.empty()));
-            verify(compressor, times(2)).accept("top/file1", file1);
-            verify(compressor)
-                    .addFile(eq("top/file1"), eq(file1), any(BasicFileAttributes.class), eq(Optional.empty()));
+            verify(archive, times(2)).accept("top/file1", file1);
+            verify(archive).addFile(eq("top/file1"), eq(file1), any(BasicFileAttributes.class), eq(Optional.empty()));
             FileTime file1ModTime = Files.getLastModifiedTime(file1);
-            verify(compressor)
+            verify(archive)
                     .writeFileEntry(eq("top/file1"), any(InputStream.class), eq(1L), eq(file1ModTime), eq(file11Mode));
-            verify(compressor)
+            verify(archive)
                     .writeFileEntry(
                             eq("top/file1"),
                             any(InputStream.class),
@@ -669,28 +682,29 @@ class CompressorTest {
         int file11Mode = IS_OS_WINDOWS ? 0 : 0644;
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
+        try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
+                InMemoryArchiveCreator archive =
+                        spy(new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out)))) {
 
             // when
-            compressor.addDirectoryRecursively(base, modTime);
+            archive.addDirectoryRecursively(base, modTime);
 
             // then
-            verify(compressor).addDirectoryRecursively("", base, modTime);
-            mockCompressor.verify(() -> sanitiseName("file1"), times(2));
-            mockCompressor.verify(() -> sanitiseName("subDir1"), times(2));
-            mockCompressor.verify(() -> sanitiseName(file11RelativeName), atLeastOnce());
-            verify(compressor).accept("subDir1", subDir1);
-            verify(compressor).addDirectory("subDir1", modTime);
-            verify(compressor).accept("subDir1", null);
-            verify(compressor).writeDirectoryEntry("subDir1", modTime);
-            verify(compressor, times(2)).accept("subDir1/file11", file11);
-            verify(compressor)
+            verify(archive).addDirectoryRecursively("", base, modTime);
+            mockArchive.verify(() -> sanitiseName("file1"), times(2));
+            mockArchive.verify(() -> sanitiseName("subDir1"), times(2));
+            mockArchive.verify(() -> sanitiseName(file11RelativeName), atLeastOnce());
+            verify(archive).accept("subDir1", subDir1);
+            verify(archive).addDirectory("subDir1", modTime);
+            verify(archive).accept("subDir1", null);
+            verify(archive).writeDirectoryEntry("subDir1", modTime);
+            verify(archive, times(2)).accept("subDir1/file11", file11);
+            verify(archive)
                     .addFile(
                             eq("subDir1/file11"), eq(file11), any(BasicFileAttributes.class), eq(Optional.of(modTime)));
-            verify(compressor)
+            verify(archive)
                     .writeFileEntry(eq("subDir1/file11"), any(InputStream.class), eq(2L), eq(modTime), eq(file11Mode));
-            verify(compressor)
+            verify(archive)
                     .writeFileEntry(
                             eq("subDir1/file11"),
                             any(InputStream.class),
@@ -698,11 +712,10 @@ class CompressorTest {
                             eq(modTime),
                             eq(file11Mode),
                             eq(Optional.empty()));
-            verify(compressor, times(2)).accept("file1", file1);
-            verify(compressor)
-                    .addFile(eq("file1"), eq(file1), any(BasicFileAttributes.class), eq(Optional.of(modTime)));
-            verify(compressor).writeFileEntry(eq("file1"), any(InputStream.class), eq(1L), eq(modTime), eq(file11Mode));
-            verify(compressor)
+            verify(archive, times(2)).accept("file1", file1);
+            verify(archive).addFile(eq("file1"), eq(file1), any(BasicFileAttributes.class), eq(Optional.of(modTime)));
+            verify(archive).writeFileEntry(eq("file1"), any(InputStream.class), eq(1L), eq(modTime), eq(file11Mode));
+            verify(archive)
                     .writeFileEntry(
                             eq("file1"),
                             any(InputStream.class),
@@ -727,36 +740,37 @@ class CompressorTest {
         int file11Mode = IS_OS_WINDOWS ? 0 : 0644;
 
         //noinspection rawtypes
-        try (MockedStatic<Compressor> mockCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
-                InMemoryCompressor compressor = spy(new InMemoryCompressor(new InMemoryCompressorBuilder(out)))) {
+        try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
+                InMemoryArchiveCreator archive =
+                        spy(new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out)))) {
 
             // when
-            compressor.addDirectoryRecursively(top, base, modTime);
+            archive.addDirectoryRecursively(top, base, modTime);
 
             // then
-            mockCompressor.verify(() -> sanitiseName("file1"));
-            mockCompressor.verify(() -> sanitiseName("subDir1"));
-            mockCompressor.verify(() -> sanitiseName(file11RelativeName));
-            verify(compressor).addDirectoryRecursively(top, base, modTime);
-            verify(compressor).accept(top, base);
-            verify(compressor).addDirectory(top, modTime);
-            verify(compressor).accept(top, null);
-            verify(compressor).writeDirectoryEntry("top", modTime);
-            verify(compressor).accept("top/subDir1", subDir1);
-            verify(compressor).addDirectory("top/subDir1", modTime);
-            verify(compressor).accept("top/subDir1", null);
-            verify(compressor).writeDirectoryEntry("top/subDir1", modTime);
-            verify(compressor, times(2)).accept("top/subDir1/file11", file11);
-            verify(compressor)
+            mockArchive.verify(() -> sanitiseName("file1"));
+            mockArchive.verify(() -> sanitiseName("subDir1"));
+            mockArchive.verify(() -> sanitiseName(file11RelativeName));
+            verify(archive).addDirectoryRecursively(top, base, modTime);
+            verify(archive).accept(top, base);
+            verify(archive).addDirectory(top, modTime);
+            verify(archive).accept(top, null);
+            verify(archive).writeDirectoryEntry("top", modTime);
+            verify(archive).accept("top/subDir1", subDir1);
+            verify(archive).addDirectory("top/subDir1", modTime);
+            verify(archive).accept("top/subDir1", null);
+            verify(archive).writeDirectoryEntry("top/subDir1", modTime);
+            verify(archive, times(2)).accept("top/subDir1/file11", file11);
+            verify(archive)
                     .addFile(
                             eq("top/subDir1/file11"),
                             eq(file11),
                             any(BasicFileAttributes.class),
                             eq(Optional.of(modTime)));
-            verify(compressor)
+            verify(archive)
                     .writeFileEntry(
                             eq("top/subDir1/file11"), any(InputStream.class), eq(2L), eq(modTime), eq(file11Mode));
-            verify(compressor)
+            verify(archive)
                     .writeFileEntry(
                             eq("top/subDir1/file11"),
                             any(InputStream.class),
@@ -764,12 +778,12 @@ class CompressorTest {
                             eq(modTime),
                             eq(file11Mode),
                             eq(Optional.empty()));
-            verify(compressor, times(2)).accept("top/file1", file1);
-            verify(compressor)
+            verify(archive, times(2)).accept("top/file1", file1);
+            verify(archive)
                     .addFile(eq("top/file1"), eq(file1), any(BasicFileAttributes.class), eq(Optional.of(modTime)));
-            verify(compressor)
+            verify(archive)
                     .writeFileEntry(eq("top/file1"), any(InputStream.class), eq(1L), eq(modTime), eq(file11Mode));
-            verify(compressor)
+            verify(archive)
                     .writeFileEntry(
                             eq("top/file1"),
                             any(InputStream.class),
@@ -824,9 +838,10 @@ class CompressorTest {
         int expectedMode = 0644;
 
         try (@SuppressWarnings("rawtypes")
-                        MockedStatic<Compressor> mockedCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
+                        MockedStatic<ArchiveCreator> mockedArchive =
+                                mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
                 MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
-            mockedCompressor.when(Compressor::isIsOsWindows).thenReturn(false);
+            mockedArchive.when(ArchiveCreator::isIsOsWindows).thenReturn(false);
             var mockAttributeView = mock(PosixFileAttributeView.class);
             var mockedAttributes = mock(PosixFileAttributes.class);
             mockedFiles
@@ -836,7 +851,7 @@ class CompressorTest {
             when(mockedAttributes.permissions()).thenReturn(Set.of(OWNER_READ, OWNER_WRITE, GROUP_READ, OTHERS_READ));
 
             // when
-            int actualMode = Compressor.mode(mockPath);
+            int actualMode = ArchiveCreator.mode(mockPath);
 
             // then
             assertThat(actualMode).isEqualTo(expectedMode);
@@ -850,13 +865,14 @@ class CompressorTest {
         given(mockPath.toString()).willReturn("some/path");
 
         try (@SuppressWarnings("rawtypes")
-                        MockedStatic<Compressor> mockedCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
+                        MockedStatic<ArchiveCreator> mockedArchive =
+                                mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
                 MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
-            mockedCompressor.when(Compressor::isIsOsWindows).thenReturn(false);
+            mockedArchive.when(ArchiveCreator::isIsOsWindows).thenReturn(false);
             mockedFiles.when(() -> Files.getPosixFilePermissions(mockPath)).thenReturn(null);
 
             // when
-            int actualMode = Compressor.mode(mockPath);
+            int actualMode = ArchiveCreator.mode(mockPath);
 
             // then
             assertThat(actualMode).isEqualTo(NO_MODE);
@@ -873,9 +889,10 @@ class CompressorTest {
         int expectedMode = 0003;
 
         try (@SuppressWarnings("rawtypes")
-                        MockedStatic<Compressor> mockedCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
+                        MockedStatic<ArchiveCreator> mockedArchive =
+                                mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
                 MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
-            mockedCompressor.when(Compressor::isIsOsWindows).thenReturn(true);
+            mockedArchive.when(ArchiveCreator::isIsOsWindows).thenReturn(true);
             var mockAttributeView = mock(DosFileAttributeView.class);
             var mockedAttributes = mock(DosFileAttributes.class);
             mockedFiles
@@ -886,7 +903,7 @@ class CompressorTest {
             when(mockedAttributes.isHidden()).thenReturn(true);
 
             // when
-            int actualMode = Compressor.mode(mockPath);
+            int actualMode = ArchiveCreator.mode(mockPath);
 
             // then
             assertThat(actualMode).isEqualTo(expectedMode);
@@ -901,9 +918,10 @@ class CompressorTest {
         int expectedMode = 0001;
 
         try (@SuppressWarnings("rawtypes")
-                        MockedStatic<Compressor> mockedCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
+                        MockedStatic<ArchiveCreator> mockedArchive =
+                                mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
                 MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
-            mockedCompressor.when(Compressor::isIsOsWindows).thenReturn(true);
+            mockedArchive.when(ArchiveCreator::isIsOsWindows).thenReturn(true);
             var mockAttributeView = mock(DosFileAttributeView.class);
             var mockedAttributes = mock(DosFileAttributes.class);
             mockedFiles
@@ -914,7 +932,7 @@ class CompressorTest {
             when(mockedAttributes.isHidden()).thenReturn(false);
 
             // when
-            int actualMode = Compressor.mode(mockPath);
+            int actualMode = ArchiveCreator.mode(mockPath);
 
             // then
             assertThat(actualMode).isEqualTo(expectedMode);
@@ -929,9 +947,10 @@ class CompressorTest {
         int expectedMode = 0002;
 
         try (@SuppressWarnings("rawtypes")
-                        MockedStatic<Compressor> mockedCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
+                        MockedStatic<ArchiveCreator> mockedArchive =
+                                mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
                 MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
-            mockedCompressor.when(Compressor::isIsOsWindows).thenReturn(true);
+            mockedArchive.when(ArchiveCreator::isIsOsWindows).thenReturn(true);
             var mockAttributeView = mock(DosFileAttributeView.class);
             var mockedAttributes = mock(DosFileAttributes.class);
             mockedFiles
@@ -942,7 +961,7 @@ class CompressorTest {
             when(mockedAttributes.isHidden()).thenReturn(true);
 
             // when
-            int actualMode = Compressor.mode(mockPath);
+            int actualMode = ArchiveCreator.mode(mockPath);
 
             // then
             assertThat(actualMode).isEqualTo(expectedMode);
@@ -955,9 +974,10 @@ class CompressorTest {
         var mockPath = mock(Path.class);
 
         try (@SuppressWarnings("rawtypes")
-                        MockedStatic<Compressor> mockedCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
+                        MockedStatic<ArchiveCreator> mockedArchive =
+                                mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
                 MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
-            mockedCompressor.when(Compressor::isIsOsWindows).thenReturn(true);
+            mockedArchive.when(ArchiveCreator::isIsOsWindows).thenReturn(true);
             var mockAttributeView = mock(DosFileAttributeView.class);
             var mockedAttributes = mock(DosFileAttributes.class);
             mockedFiles
@@ -968,7 +988,7 @@ class CompressorTest {
             when(mockedAttributes.isHidden()).thenReturn(false);
 
             // when
-            int actualMode = Compressor.mode(mockPath);
+            int actualMode = ArchiveCreator.mode(mockPath);
 
             // then
             assertThat(actualMode).isEqualTo(NO_MODE);
@@ -982,13 +1002,14 @@ class CompressorTest {
         given(mockPath.toString()).willReturn("some/path");
 
         try (@SuppressWarnings("rawtypes")
-                        MockedStatic<Compressor> mockedCompressor = mockStatic(Compressor.class, CALLS_REAL_METHODS);
+                        MockedStatic<ArchiveCreator> mockedArchive =
+                                mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
                 MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
-            mockedCompressor.when(Compressor::isIsOsWindows).thenReturn(true);
+            mockedArchive.when(ArchiveCreator::isIsOsWindows).thenReturn(true);
             mockedFiles.when(() -> Files.getPosixFilePermissions(mockPath)).thenReturn(null);
 
             // when
-            int actualMode = Compressor.mode(mockPath);
+            int actualMode = ArchiveCreator.mode(mockPath);
 
             // then
             assertThat(actualMode).isEqualTo(NO_MODE);
@@ -998,47 +1019,10 @@ class CompressorTest {
     }
 
     @Test
-    void shouldGetDefaultCompressionLevelFromOptionsWhenNotSet() {
-        // given
-        Map<String, Object> options = Map.of();
-        int expectedLevel = -1;
-
-        // when
-        int actualLevel = Compressor.getCompressionLevel(options);
-
-        // then
-        assertThat(actualLevel).isEqualTo(expectedLevel);
-    }
-
-    @Test
-    void shouldGetCompressionLevelFromOptions() {
-        // given
-        Map<String, Object> options = Map.of("compression-level", 5);
-        int expectedLevel = 5;
-
-        // when
-        int actualLevel = Compressor.getCompressionLevel(options);
-
-        // then
-        assertThat(actualLevel).isEqualTo(expectedLevel);
-    }
-
-    @Test
-    void shouldThrowExceptionWhenInvalidCompressionLevel() {
-        // given
-        Map<String, Object> options = Map.of("compression-level", "5");
-
-        // when & then
-        assertThatThrownBy(() -> Compressor.getCompressionLevel(options))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Cannot set compression level 5");
-    }
-
-    @Test
     void shouldSetOptionOnArchiveOutputStream() throws IOException {
         // given
-        var builder = new InMemoryCompressorBuilder(out).withSomeOption(42);
-        try (InMemoryCompressor compressor = new InMemoryCompressor(builder)) {
+        var builder = new InMemoryArchiveCreatorBuilder(out).withSomeOption(42);
+        try (InMemoryArchiveCreator compressor = new InMemoryArchiveCreator(builder)) {
 
             // when
             int actualOption = compressor.archiveOutputStream.getSomeOption();

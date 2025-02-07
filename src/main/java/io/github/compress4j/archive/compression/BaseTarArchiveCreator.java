@@ -35,26 +35,26 @@ import org.apache.commons.io.IOUtils;
  *
  * @since 2.2
  */
-public abstract class BaseTarCompressor extends Compressor<TarArchiveOutputStream> {
+public abstract class BaseTarArchiveCreator extends ArchiveCreator<TarArchiveOutputStream> {
     /**
-     * Create a new {@link BaseTarCompressor} with the given output stream and options.
+     * Create a new {@link BaseTarArchiveCreator} with the given output stream and options.
      *
      * @param builder the archive output stream builder
-     * @param <B> The type of {@link BaseTarCompressorBuilder} to build a {@link BaseTarCompressor} from.
-     * @param <C> The type of the {@link BaseTarCompressor} to build
+     * @param <B> The type of {@link BaseTarArchiveCreatorBuilder} to build a {@link BaseTarArchiveCreator} from.
+     * @param <C> The type of the {@link BaseTarArchiveCreator} to build
      * @throws IOException if an I/O error occurred
      */
-    protected <B extends BaseTarCompressorBuilder<B, C>, C extends Compressor<TarArchiveOutputStream>>
-            BaseTarCompressor(B builder) throws IOException {
+    protected <B extends BaseTarArchiveCreatorBuilder<B, C>, C extends ArchiveCreator<TarArchiveOutputStream>>
+            BaseTarArchiveCreator(B builder) throws IOException {
         super(builder);
     }
 
     /**
-     * Create a new {@link BaseTarCompressor}.
+     * Create a new {@link BaseTarArchiveCreator}.
      *
      * @param archiveOutputStream the archive output stream
      */
-    protected BaseTarCompressor(TarArchiveOutputStream archiveOutputStream) {
+    protected BaseTarArchiveCreator(TarArchiveOutputStream archiveOutputStream) {
         super(archiveOutputStream);
     }
 
@@ -112,14 +112,14 @@ public abstract class BaseTarCompressor extends Compressor<TarArchiveOutputStrea
     }
 
     /**
-     * Base builder to build a TAR/TAR.GZ compressor
+     * Base builder to build a TAR/TAR.GZ creator
      *
      * @param <B> the type of the Builder.
-     * @param <C> the type of the Compressor.
+     * @param <C> the type of the ArchiveCreator.
      */
-    public abstract static class BaseTarCompressorBuilder<
-                    B extends BaseTarCompressorBuilder<B, C>, C extends Compressor<TarArchiveOutputStream>>
-            extends CompressorBuilder<TarArchiveOutputStream, B, C> {
+    public abstract static class BaseTarArchiveCreatorBuilder<
+                    B extends BaseTarArchiveCreatorBuilder<B, C>, C extends ArchiveCreator<TarArchiveOutputStream>>
+            extends ArchiveCreatorBuilder<TarArchiveOutputStream, B, C> {
         protected int blockSize = -511;
         protected String encoding = UTF_8.name();
         protected int longFileMode = LONGFILE_ERROR;
@@ -127,11 +127,11 @@ public abstract class BaseTarCompressor extends Compressor<TarArchiveOutputStrea
         protected boolean addPaxHeadersForNonAsciiNames;
 
         /**
-         * Create a new {@link CompressorBuilder} with the given output stream.
+         * Create a new {@link ArchiveCreatorBuilder} with the given output stream.
          *
          * @param outputStream the output stream
          */
-        protected BaseTarCompressorBuilder(OutputStream outputStream) {
+        protected BaseTarArchiveCreatorBuilder(OutputStream outputStream) {
             super(outputStream);
         }
 
@@ -139,7 +139,7 @@ public abstract class BaseTarCompressor extends Compressor<TarArchiveOutputStrea
          * Sets the block size
          *
          * @param blockSize the block size to use. Must be a multiple of 512 bytes.
-         * @return the instance of the {@link TarCompressor.TarCompressorBuilder}
+         * @return the instance of the {@link TarArchiveCreator.TarArchiveCreatorBuilder}
          */
         public B withBlockSize(int blockSize) {
             this.blockSize = blockSize;
@@ -150,7 +150,7 @@ public abstract class BaseTarCompressor extends Compressor<TarArchiveOutputStrea
          * Sets name of the encoding to use for file names
          *
          * @param encoding name of the encoding to use for file names
-         * @return the instance of the {@link TarCompressor.TarCompressorBuilder}
+         * @return the instance of the {@link TarArchiveCreator.TarArchiveCreatorBuilder}
          */
         public B withEncoding(String encoding) {
             this.encoding = encoding;
@@ -161,7 +161,7 @@ public abstract class BaseTarCompressor extends Compressor<TarArchiveOutputStrea
          * Sets whether to add a PAX extension header for non-ASCII file names.
          *
          * @param b whether to add a PAX extension header for non-ASCII file names.
-         * @return the instance of the {@link TarCompressor.TarCompressorBuilder}
+         * @return the instance of the {@link TarArchiveCreator.TarArchiveCreatorBuilder}
          */
         public B withAddPaxHeadersForNonAsciiNames(final boolean b) {
             addPaxHeadersForNonAsciiNames = b;
@@ -174,7 +174,7 @@ public abstract class BaseTarCompressor extends Compressor<TarArchiveOutputStrea
          * fit into a traditional tar header. Default is BIGNUMBER_ERROR.
          *
          * @param bigNumberMode the mode to use
-         * @return the instance of the {@link TarCompressor.TarCompressorBuilder}
+         * @return the instance of the {@link TarArchiveCreator.TarArchiveCreatorBuilder}
          */
         public B withBigNumberMode(final int bigNumberMode) {
             this.bigNumberMode = bigNumberMode;
@@ -187,7 +187,7 @@ public abstract class BaseTarCompressor extends Compressor<TarArchiveOutputStrea
          * Default is LONGFILE_ERROR.
          *
          * @param longFileMode the mode to use
-         * @return the instance of the {@link TarCompressor.TarCompressorBuilder}
+         * @return the instance of the {@link TarArchiveCreator.TarArchiveCreatorBuilder}
          */
         public B withLongFileMode(final int longFileMode) {
             this.longFileMode = longFileMode;

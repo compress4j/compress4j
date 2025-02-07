@@ -18,7 +18,6 @@ package io.github.compress4j.archive.compression;
 import static io.github.compress4j.utils.FileUtils.*;
 import static io.github.compress4j.utils.StringUtil.trimLeading;
 import static io.github.compress4j.utils.StringUtil.trimTrailing;
-import static java.util.zip.Deflater.DEFAULT_COMPRESSION;
 import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 
 import io.github.compress4j.utils.PosixFilePermissionsMapper;
@@ -34,10 +33,8 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.*;
 import java.time.Instant;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiPredicate;
-import java.util.zip.Deflater;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.lang3.StringUtils;
@@ -51,11 +48,9 @@ import org.slf4j.LoggerFactory;
  * @param <A> The type of {@link ArchiveOutputStream} to write entries to.
  * @since 2.2
  */
-public abstract class Compressor<A extends ArchiveOutputStream<? extends ArchiveEntry>> implements AutoCloseable {
-    /** Compression-level for the archive file. Only values in [0-9] are allowed. */
-    public static final String COMPRESSION_LEVEL = "compression-level";
+public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends ArchiveEntry>> implements AutoCloseable {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(Compressor.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ArchiveCreator.class);
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private Optional<BiPredicate<? super String, ? super Path>> entryFilter = Optional.empty();
@@ -64,24 +59,25 @@ public abstract class Compressor<A extends ArchiveOutputStream<? extends Archive
     protected final A archiveOutputStream;
 
     /**
-     * Create a new Compressor with the given output stream and options.
+     * Create a new ArchiveCreator with the given output stream and options.
      *
      * @param builder the archive output stream builder
-     * @param <B> The type of {@link CompressorBuilder} to build from.
-     * @param <C> The type of the {@link Compressor} to instantiate.
+     * @param <B> The type of {@link ArchiveCreatorBuilder} to build from.
+     * @param <C> The type of the {@link ArchiveCreator} to instantiate.
      * @throws IOException if an I/O error occurred
      */
-    protected <B extends CompressorBuilder<A, B, C>, C extends Compressor<A>> Compressor(B builder) throws IOException {
+    protected <B extends ArchiveCreatorBuilder<A, B, C>, C extends ArchiveCreator<A>> ArchiveCreator(B builder)
+            throws IOException {
         this(builder.buildArchiveOutputStream());
         this.entryFilter = builder.entryFilter;
     }
 
     /**
-     * Create a new Compressor.
+     * Create a new ArchiveCreator.
      *
      * @param archiveOutputStream the archive output stream
      */
-    protected Compressor(A archiveOutputStream) {
+    protected ArchiveCreator(A archiveOutputStream) {
         this.archiveOutputStream = archiveOutputStream;
     }
 
@@ -430,26 +426,6 @@ public abstract class Compressor<A extends ArchiveOutputStream<? extends Archive
     }
 
     /**
-     * Removes and returns the {@link #COMPRESSION_LEVEL} key from the input map parameter if it exists, or -1 if this
-     * key does not exist.
-     *
-     * @param o options map
-     * @return The compression level if it exists in the map, otherwise {@link Deflater#DEFAULT_COMPRESSION}.
-     * @throws IllegalArgumentException if the {@link #COMPRESSION_LEVEL} option does not parse to an Integer.
-     */
-    public static int getCompressionLevel(Map<String, Object> o) {
-        return Optional.ofNullable(o.get(COMPRESSION_LEVEL))
-                .map(value -> {
-                    try {
-                        return (Integer) value;
-                    } catch (ClassCastException e) {
-                        throw new IllegalArgumentException("Cannot set compression level " + value, e);
-                    }
-                })
-                .orElse(DEFAULT_COMPRESSION);
-    }
-
-    /**
      * Filtering entries being added to the archive.
      *
      * @param filter the BiPredicate to filter entries to be added to the archive. The first parameter is the entry name
@@ -568,17 +544,17 @@ public abstract class Compressor<A extends ArchiveOutputStream<? extends Archive
         @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
         private final Optional<FileTime> modTime;
 
-        private final Compressor<E> compressor;
+        private final ArchiveCreator<E> archiveCreator;
 
         public PathSimpleFileVisitor(
-                Compressor<E> compressor,
+                ArchiveCreator<E> archiveCreator,
                 Path root,
                 String prefix,
                 @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<FileTime> modTime) {
             this.root = root;
             this.prefix = prefix;
             this.modTime = modTime;
-            this.compressor = compressor;
+            this.archiveCreator = archiveCreator;
         }
 
         @Override
@@ -587,9 +563,9 @@ public abstract class Compressor<A extends ArchiveOutputStream<? extends Archive
             String name = dir == root ? prefix : entryName(dir);
             if (name.isEmpty()) {
                 return FileVisitResult.CONTINUE;
-            } else if (compressor.accept(name, dir)) {
+            } else if (archiveCreator.accept(name, dir)) {
                 LOGGER.atTrace().log("  {} -> {}/", dir, name);
-                compressor.addDirectory(name, modTime.orElse(attrs.lastModifiedTime()));
+                archiveCreator.addDirectory(name, modTime.orElse(attrs.lastModifiedTime()));
                 return FileVisitResult.CONTINUE;
             } else {
                 return FileVisitResult.SKIP_SUBTREE;
@@ -600,43 +576,43 @@ public abstract class Compressor<A extends ArchiveOutputStream<? extends Archive
         @Nonnull
         public FileVisitResult visitFile(Path file, @Nonnull BasicFileAttributes attrs) throws IOException {
             String name = entryName(file);
-            if (compressor.accept(name, file)) {
+            if (archiveCreator.accept(name, file)) {
                 LOGGER.atTrace()
                         .log("  {} -> {}{}", file, name, attrs.isSymbolicLink() ? " symlink" : " size=" + attrs.size());
-                compressor.addFile(name, file, attrs, modTime);
+                archiveCreator.addFile(name, file, attrs, modTime);
             }
             return FileVisitResult.CONTINUE;
         }
 
         private String entryName(Path fileOrDir) {
             String relativeName =
-                    Compressor.sanitiseName(root.relativize(fileOrDir).toString());
+                    ArchiveCreator.sanitiseName(root.relativize(fileOrDir).toString());
             return prefix.isEmpty() ? relativeName : prefix + '/' + relativeName;
         }
     }
 
     /**
-     * Build and instance of {@link Compressor}
+     * Build and instance of {@link ArchiveCreator}
      *
      * @param <A> The type of {@link ArchiveOutputStream} to write entries to.
-     * @param <B> The type of {@link CompressorBuilder}
-     * @param <C> The type of {@link Compressor}
+     * @param <B> The type of {@link ArchiveCreatorBuilder}
+     * @param <C> The type of {@link ArchiveCreator}
      */
-    public abstract static class CompressorBuilder<
+    public abstract static class ArchiveCreatorBuilder<
             A extends ArchiveOutputStream<? extends ArchiveEntry>,
-            B extends CompressorBuilder<A, B, C>,
-            C extends Compressor<A>> {
+            B extends ArchiveCreatorBuilder<A, B, C>,
+            C extends ArchiveCreator<A>> {
         protected final OutputStream outputStream;
 
         @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
         Optional<BiPredicate<? super String, ? super Path>> entryFilter = Optional.empty();
 
         /**
-         * Create a new {@link CompressorBuilder} with the given output stream.
+         * Create a new {@link ArchiveCreatorBuilder} with the given output stream.
          *
          * @param outputStream the output stream
          */
-        protected CompressorBuilder(OutputStream outputStream) {
+        protected ArchiveCreatorBuilder(OutputStream outputStream) {
             this.outputStream = outputStream;
         }
 
@@ -646,7 +622,7 @@ public abstract class Compressor<A extends ArchiveOutputStream<? extends Archive
          * @param filter the BiPredicate to filter entries to be added to the archive. The first parameter is the entry
          *     name and the second is the {@code Path} to the file on disk, which might be {@code null} when it is
          *     applied to an entry not present on a disk, i.e. via {@link #addFile(String, byte[])}.
-         * @return the instance of the {@link CompressorBuilder}
+         * @return the instance of the {@link ArchiveCreatorBuilder}
          */
         public B withFilter(@Nullable BiPredicate<? super String, ? super Path> filter) {
             this.entryFilter = Optional.ofNullable(filter);
@@ -675,10 +651,10 @@ public abstract class Compressor<A extends ArchiveOutputStream<? extends Archive
         public abstract A buildArchiveOutputStream() throws IOException;
 
         /**
-         * Use this method to build an instance of the {@link Compressor}, use
-         * {@link Compressor#Compressor(CompressorBuilder)} to pass in instance of this builder
+         * Use this method to build an instance of the {@link ArchiveCreator}, use
+         * {@link ArchiveCreator#ArchiveCreator(ArchiveCreatorBuilder)} to pass in instance of this builder
          *
-         * @return an instance of the {@link Compressor}
+         * @return an instance of the {@link ArchiveCreator}
          * @throws IOException thrown by the underlying output stream for I/O errors
          */
         public abstract C build() throws IOException;
