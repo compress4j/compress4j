@@ -13,32 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.compress4j.archive.extract;
+package io.github.compress4j.archive.tar;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 
 import java.io.IOException;
+import java.io.InputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.junit.jupiter.api.Test;
 
-class TarGzArchiveExtractorTest {
+class TarArchiveInputStreamBuilderTest {
 
-    /**
-     * This is here only to make the code coverage happy, otherwise all the tests are covered in the
-     * {@link TarArchiveExtractorTest}
-     */
     @Test
-    void shouldReturnNullWhenNextEntryIsNull() throws IOException {
+    void shouldBuildArchiveInputStream() throws IOException {
         // given
-        var mockInputStream = mock(TarArchiveInputStream.class);
+        var inputStream = mock(InputStream.class);
+        var builder = spy(TarArchiveExtractor.builder(inputStream));
 
-        try (TarGzArchiveExtractor tarGzDecompressor = new TarGzArchiveExtractor(mockInputStream)) {
-            // when
-            var result = tarGzDecompressor.nextEntry();
+        // when
+        try (TarArchiveInputStream out = spy(builder.buildArchiveInputStream())) {
 
             // then
-            assertThat(result).isNull();
+            assertThat(out).isNotNull();
+
+            //            verify(builder).buildArchiveInputStream(inputStream);
         }
     }
 }

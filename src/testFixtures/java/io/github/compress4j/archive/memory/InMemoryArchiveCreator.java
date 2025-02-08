@@ -15,8 +15,8 @@
  */
 package io.github.compress4j.archive.memory;
 
-import static io.github.compress4j.archive.extract.ArchiveExtractor.Entry.Type.FILE;
-import static io.github.compress4j.archive.extract.ArchiveExtractor.Entry.Type.SYMLINK;
+import static io.github.compress4j.archive.ArchiveExtractor.Entry.Type.FILE;
+import static io.github.compress4j.archive.ArchiveExtractor.Entry.Type.SYMLINK;
 
 import io.github.compress4j.archive.ArchiveCreator;
 import java.io.IOException;
