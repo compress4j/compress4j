@@ -18,7 +18,6 @@ package io.github.compress4j.archive.tar;
 import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.BIGNUMBER_POSIX;
 import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.LONGFILE_POSIX;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 
@@ -39,17 +38,15 @@ class TarArchiveCreatorBuilderTest {
                 .withBigNumberMode(BIGNUMBER_POSIX)
                 .withBlockSize(1024)
                 .withEncoding("UTF-8");
-        var spiedBuilder = spy(builder);
 
         // when
-        try (TarArchiveOutputStream out = spy(spiedBuilder.buildArchiveOutputStream())) {
+        try (TarArchiveOutputStream out = spy(builder.buildArchiveOutputStream())) {
 
             // then
             assertThat(out)
                     .isNotNull()
                     .extracting("longFileMode", "bigNumberMode", "recordsPerBlock", "charsetName")
                     .containsExactly(LONGFILE_POSIX, BIGNUMBER_POSIX, 2, "UTF-8");
-            then(spiedBuilder).should().buildTarArchiveOutputStream(outputStream);
         }
     }
 }

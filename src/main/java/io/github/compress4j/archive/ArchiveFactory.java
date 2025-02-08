@@ -16,12 +16,13 @@
 package io.github.compress4j.archive;
 
 import io.github.compress4j.archive.ArchiveCreator.ArchiveCreatorBuilder;
+import io.github.compress4j.archive.ArchiveExtractor.ArchiveExtractorBuilder;
 import io.github.compress4j.archive.tar.TarArchiveCreator;
 import io.github.compress4j.archive.tar.TarArchiveExtractor;
 import io.github.compress4j.archive.tar.TarGzArchiveCreator;
 import io.github.compress4j.archive.tar.TarGzArchiveExtractor;
+import java.io.InputStream;
 import java.io.OutputStream;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 
 /**
  * Factory class to build creators and decompressors
@@ -31,7 +32,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 public class ArchiveFactory {
     private ArchiveFactory() {}
 
-    @SuppressWarnings({"rawtypes"})
+    @SuppressWarnings("rawtypes")
     public static ArchiveCreatorBuilder creator(ArchiveType archiveType, OutputStream outputStream) {
         switch (archiveType) {
             case TAR:
@@ -43,13 +44,13 @@ public class ArchiveFactory {
         }
     }
 
-    @SuppressWarnings("java:S1452")
-    public static ArchiveExtractor<?> extractor(ArchiveType archiveType) {
+    @SuppressWarnings("rawtypes")
+    public static ArchiveExtractorBuilder extractor(ArchiveType archiveType, InputStream inputStream) {
         switch (archiveType) {
             case TAR:
-                return new TarArchiveExtractor((TarArchiveInputStream) null);
+                return TarArchiveExtractor.builder(inputStream);
             case TAR_GZ:
-                return new TarGzArchiveExtractor((TarArchiveInputStream) null);
+                return TarGzArchiveExtractor.builder(inputStream);
             default:
                 throw new UnsupportedOperationException("Unsupported archive type: " + archiveType);
         }
