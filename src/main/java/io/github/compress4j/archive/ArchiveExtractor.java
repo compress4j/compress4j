@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.compress4j.archive.extract;
+package io.github.compress4j.archive;
 
-import static io.github.compress4j.archive.extract.ArchiveExtractor.ErrorHandlerChoice.*;
+import static io.github.compress4j.archive.ArchiveExtractor.ErrorHandlerChoice.*;
 import static io.github.compress4j.utils.FileUtils.DOS_HIDDEN;
 import static io.github.compress4j.utils.FileUtils.DOS_READ_ONLY;
 import static io.github.compress4j.utils.PosixFilePermissionsMapper.fromUnixMode;
 import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 
-import io.github.compress4j.archive.extract.builder.ArchiveInputStreamBuilder;
 import io.github.compress4j.utils.StringUtil;
 import jakarta.annotation.Nullable;
 import java.io.IOException;
@@ -58,15 +57,15 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
 
     /** Archive input stream to be used for extraction. */
     protected A archiveInputStream;
-    /** Escaping symlink policy for the decompressor. */
+    /** Escaping symlink policy for the extractor. */
     protected ArchiveExtractor.EscapingSymlinkPolicy escapingSymlinkPolicy = EscapingSymlinkPolicy.ALLOW;
-    /** Filter for the decompressor. */
+    /** Filter for the extractor. */
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private Optional<Predicate<Entry>> entryFilter = Optional.empty();
-    /** Error handler for the decompressor. */
+    /** Error handler for the extractor. */
     private BiFunction<Entry, ? super IOException, ErrorHandlerChoice> errorHandler =
             (x, y) -> ErrorHandlerChoice.BAIL_OUT;
-    /** Post processor for the decompressor. */
+    /** Post processor for the extractor. */
     private BiConsumer<Entry, ? super Path> postProcessor;
 
     /** Number of leading path components to strip from the extracted entries. */
@@ -78,20 +77,28 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
     /**
      * Creates a new {@code ArchiveExtractor}.
      *
-     * @param archiveInputStream - the {@code A} to the compressed file
+     * @param builder - the archive input stream builder
+     * @param <B> - the type of the {@code ArchiveExtractorBuilder} to build from
+     * @param <C> The type of the {@link ArchiveExtractor} to instantiate.
+     * @throws IOException - if the {@code A} could not be created
      */
-    protected ArchiveExtractor(A archiveInputStream) {
-        this.archiveInputStream = archiveInputStream;
+    protected <B extends ArchiveExtractorBuilder<A, B, C>, C extends ArchiveExtractor<A>> ArchiveExtractor(B builder)
+            throws IOException {
+        this.archiveInputStream = builder.buildArchiveInputStream();
+        this.entryFilter = builder.entryFilter;
+        this.errorHandler = builder.errorHandler;
+        this.postProcessor = builder.postProcessor;
+        this.stripComponents = builder.stripComponents;
+        this.overwrite = builder.overwrite;
     }
 
     /**
      * Creates a new {@code ArchiveExtractor}.
      *
-     * @param builder - the {@code ArchiveInputStreamBuilder} to build the {@code A}
-     * @throws IOException - if the {@code A} could not be created
+     * @param archiveInputStream - the {@code A} to the compressed file
      */
-    protected ArchiveExtractor(ArchiveInputStreamBuilder<A> builder) throws IOException {
-        this.archiveInputStream = builder.build();
+    protected ArchiveExtractor(A archiveInputStream) {
+        this.archiveInputStream = archiveInputStream;
     }
 
     /**
@@ -183,7 +190,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      *
      * @return {@code true} if the OS is Windows, {@code false} otherwise
      */
-    protected static boolean isIsOsWindows() {
+    public static boolean isIsOsWindows() {
         return IS_OS_WINDOWS;
     }
 
@@ -276,7 +283,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
     }
 
     /**
-     * Sets the error handler for the decompressor.
+     * Sets the error handler for the extractor.
      *
      * @param errorHandler the error handler to set
      */
@@ -285,7 +292,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
     }
 
     /**
-     * Sets the escaping symlink policy for the decompressor.
+     * Sets the escaping symlink policy for the extractor.
      *
      * @param escapingSymlinkPolicy the escaping symlink policy to set
      */
@@ -294,7 +301,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
     }
 
     /**
-     * Sets the filter for the decompressor.
+     * Sets the filter for the extractor.
      *
      * @param filter Predicate to be used when entries are being extracted
      */
@@ -303,7 +310,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
     }
 
     /**
-     * Sets the post processor for the decompressor.
+     * Sets the post processor for the extractor.
      *
      * @param consumer the post processor to set
      */
@@ -312,7 +319,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
     }
 
     /**
-     * Sets the post processor for the decompressor.
+     * Sets the post processor for the extractor.
      *
      * @param postProcessor the post processor to set
      */
@@ -470,6 +477,141 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         if (postProcessor != null) {
             postProcessor.accept(entry, outputFile);
         }
+    }
+
+    public abstract static class ArchiveExtractorBuilder<
+            A extends ArchiveInputStream<? extends ArchiveEntry>,
+            B extends ArchiveExtractorBuilder<A, B, C>,
+            C extends ArchiveExtractor<A>> {
+        protected final InputStream inputStream;
+        protected ArchiveExtractor.EscapingSymlinkPolicy escapingSymlinkPolicy = EscapingSymlinkPolicy.ALLOW;
+
+        @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
+        Optional<Predicate<Entry>> entryFilter = Optional.empty();
+
+        BiFunction<Entry, ? super IOException, ErrorHandlerChoice> errorHandler = (x, y) -> ErrorHandlerChoice.BAIL_OUT;
+        BiConsumer<Entry, ? super Path> postProcessor;
+        int stripComponents = 0;
+        boolean overwrite = false;
+
+        /**
+         * Create a new ArchiveExtractorBuilder.
+         *
+         * @param inputStream the input stream
+         */
+        protected ArchiveExtractorBuilder(InputStream inputStream) {
+            this.inputStream = inputStream;
+        }
+
+        /**
+         * Sets predicate to be used when entries are being extracted
+         *
+         * @param filter the Predicate to filter entries to be extract from the archive.
+         * @return the instance of the {@link ArchiveExtractor.ArchiveExtractorBuilder}
+         */
+        public B withFilter(@Nullable Predicate<Entry> filter) {
+            this.entryFilter = Optional.ofNullable(filter);
+            return getThis();
+        }
+
+        /**
+         * Sets the error handler for the extractor.
+         *
+         * @param errorHandler the error handler to set
+         * @return the instance of the {@link ArchiveExtractor.ArchiveExtractorBuilder}
+         */
+        public B withErrorHandler(BiFunction<Entry, ? super IOException, ErrorHandlerChoice> errorHandler) {
+            this.errorHandler = errorHandler;
+            return getThis();
+        }
+
+        /**
+         * Sets the escaping symlink policy for the extractor.
+         *
+         * @param escapingSymlinkPolicy the escaping symlink policy to set
+         * @return the instance of the {@link ArchiveExtractor.ArchiveExtractorBuilder}
+         */
+        public B withEscapingSymlinkPolicy(ArchiveExtractor.EscapingSymlinkPolicy escapingSymlinkPolicy) {
+            this.escapingSymlinkPolicy = escapingSymlinkPolicy;
+            return getThis();
+        }
+
+        /**
+         * Sets the post processor for the extractor.
+         *
+         * @param consumer the post processor to set
+         * @return the instance of the {@link ArchiveExtractor.ArchiveExtractorBuilder}
+         */
+        public B withPostProcessor(@Nullable Consumer<? super Path> consumer) {
+            this.postProcessor = consumer != null ? (entry, path) -> consumer.accept(path) : null;
+            return getThis();
+        }
+
+        /**
+         * Sets the post processor for the extractor.
+         *
+         * @param postProcessor the post processor to set
+         * @return the instance of the {@link ArchiveExtractor.ArchiveExtractorBuilder}
+         */
+        public B withPostProcessor(BiConsumer<Entry, ? super Path> postProcessor) {
+            this.postProcessor = postProcessor;
+            return getThis();
+        }
+
+        /**
+         * Sets the number of leading path components to strip from the extracted entries.
+         *
+         * @param stripComponents the number of leading path components to strip
+         * @return the instance of the {@link ArchiveExtractor.ArchiveExtractorBuilder}
+         */
+        public B withStripComponents(int stripComponents) {
+            this.stripComponents = stripComponents;
+            return getThis();
+        }
+
+        /**
+         * Sets whether to overwrite existing files.
+         *
+         * @param overwrite whether to overwrite existing files
+         * @return the instance of the {@link ArchiveExtractor.ArchiveExtractorBuilder}
+         */
+        public B withOverwrite(boolean overwrite) {
+            this.overwrite = overwrite;
+            return getThis();
+        }
+
+        /**
+         * get the current instance of the object
+         *
+         * @return current instance
+         */
+        protected abstract B getThis();
+
+        /**
+         * Build a {@code A} from the given {@code InputStream}. If you want to combine an archive format with a
+         * compression format - like when reading a `tar.gz` file - you wrap the {@code ArchiveInputStream} around
+         *
+         * <p>Use {@link #inputStream} as input output stream from to read the archive from.
+         * {@code CompressorInputStream} for example:
+         *
+         * <pre>{@code
+         * return new TarArchiveInputStream(new GzipCompressorInputStream(inputStream));
+         * }</pre>
+         *
+         * @return a {@code A} from the given {@code InputStream}
+         * @throws IOException - if the {@code A} could not be created
+         */
+        public abstract A buildArchiveInputStream() throws IOException;
+
+        /**
+         * Use this method to build an instance of the {@link ArchiveExtractor}, use
+         * {@link ArchiveExtractor#ArchiveExtractor(ArchiveExtractor.ArchiveExtractorBuilder)} to pass in instance of
+         * this builder
+         *
+         * @return an instance of the {@link ArchiveExtractor}
+         * @throws IOException thrown by the underlying output stream for I/O errors
+         */
+        public abstract C build() throws IOException;
     }
 
     /**

@@ -18,8 +18,8 @@ package io.github.compress4j.archive;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-import io.github.compress4j.archive.extract.TarArchiveExtractor;
 import io.github.compress4j.archive.tar.TarArchiveCreator.TarArchiveCreatorBuilder;
+import io.github.compress4j.archive.tar.TarArchiveExtractor;
 import java.io.OutputStream;
 import org.junit.jupiter.api.Test;
 
@@ -39,12 +39,12 @@ class ArchiveFactoryTest {
     }
 
     @Test
-    void decompressor() {
+    void extractor() {
         // given
         var type = ArchiveType.TAR;
 
         // when
-        var decompressor = ArchiveFactory.decompressor(type);
+        var decompressor = ArchiveFactory.extractor(type);
 
         // then
         assertThat(decompressor).isInstanceOf(TarArchiveExtractor.class);

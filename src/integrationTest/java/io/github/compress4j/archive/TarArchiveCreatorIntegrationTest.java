@@ -24,10 +24,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import io.github.compress4j.archive.extract.TarArchiveExtractor;
-import io.github.compress4j.archive.extract.builder.TarArchiveInputStreamBuilder;
 import io.github.compress4j.archive.tar.BaseTarArchiveCreator;
 import io.github.compress4j.archive.tar.TarArchiveCreator;
+import io.github.compress4j.archive.tar.TarArchiveExtractor;
 import io.github.compress4j.assertion.Compress4JAssertions;
 import java.io.IOException;
 import java.nio.file.*;
@@ -253,7 +252,8 @@ class TarArchiveCreatorIntegrationTest {
     }
 
     protected void extract(Path in, Path out) throws IOException {
-        try (TarArchiveExtractor tarDecompressor = new TarArchiveExtractor(new TarArchiveInputStreamBuilder(in))) {
+        try (TarArchiveExtractor tarDecompressor =
+                TarArchiveExtractor.builder(in).build()) {
             tarDecompressor.extract(out);
         }
     }

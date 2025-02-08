@@ -15,20 +15,43 @@
  */
 package io.github.compress4j.archive.memory;
 
-import io.github.compress4j.archive.extract.ArchiveExtractor;
+import io.github.compress4j.archive.ArchiveExtractor;
 import jakarta.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 public class InMemoryArchiveExtractor extends ArchiveExtractor<InMemoryArchiveInputStream> {
-    public InMemoryArchiveExtractor(final InMemoryArchiveInputStream inMemoryArchiveInputStream) {
-        super(inMemoryArchiveInputStream);
+
+    @SuppressWarnings("unused")
+    public InMemoryArchiveExtractor(InMemoryArchiveInputStream inputStream) {
+        super(inputStream);
     }
 
-    public InMemoryArchiveExtractor(final InMemoryArchiveInputStreamBuilder builder) throws IOException {
-        super(builder);
+    public InMemoryArchiveExtractor(InMemoryArchiveExtractorBuilder inputStreamBuilder) throws IOException {
+        super(inputStreamBuilder);
+    }
+
+    /**
+     * Helper static method to create an instance of the {@link InMemoryArchiveExtractorBuilder}
+     *
+     * @param inputStream the input stream
+     * @return An instance of the {@link InMemoryArchiveExtractorBuilder}
+     */
+    public static InMemoryArchiveExtractorBuilder builder(InputStream inputStream) {
+        return new InMemoryArchiveExtractorBuilder(inputStream);
+    }
+
+    /**
+     * Creates a new {@code InMemoryArchiveExtractorBuilder}.
+     *
+     * @param entries the {@code List} of {@code InMemoryArchiveEntry}
+     * @throws IOException if an I/O error occurs
+     */
+    public static InMemoryArchiveExtractorBuilder builder(final List<InMemoryArchiveEntry> entries) throws IOException {
+        return new InMemoryArchiveExtractorBuilder(InMemoryArchiveInputStream.toInputStream(entries));
     }
 
     @Override
@@ -54,5 +77,29 @@ public class InMemoryArchiveExtractor extends ArchiveExtractor<InMemoryArchiveIn
     @Override
     protected InputStream openEntryStream(Entry entry) {
         return new ByteArrayInputStream(archiveInputStream.readString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    public static class InMemoryArchiveExtractorBuilder
+            extends ArchiveExtractor.ArchiveExtractorBuilder<
+                    InMemoryArchiveInputStream, InMemoryArchiveExtractorBuilder, InMemoryArchiveExtractor> {
+
+        public InMemoryArchiveExtractorBuilder(InputStream inputStream) {
+            super(inputStream);
+        }
+
+        @Override
+        protected InMemoryArchiveExtractorBuilder getThis() {
+            return this;
+        }
+
+        @Override
+        public InMemoryArchiveInputStream buildArchiveInputStream() throws IOException {
+            return new InMemoryArchiveInputStream(inputStream);
+        }
+
+        @Override
+        public InMemoryArchiveExtractor build() throws IOException {
+            return new InMemoryArchiveExtractor(this);
+        }
     }
 }

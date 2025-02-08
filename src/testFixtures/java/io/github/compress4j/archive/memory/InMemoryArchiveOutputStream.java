@@ -15,8 +15,8 @@
  */
 package io.github.compress4j.archive.memory;
 
-import static io.github.compress4j.archive.extract.ArchiveExtractor.Entry.Type.DIR;
-import static io.github.compress4j.archive.extract.ArchiveExtractor.Entry.Type.SYMLINK;
+import static io.github.compress4j.archive.ArchiveExtractor.Entry.Type.DIR;
+import static io.github.compress4j.archive.ArchiveExtractor.Entry.Type.SYMLINK;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;

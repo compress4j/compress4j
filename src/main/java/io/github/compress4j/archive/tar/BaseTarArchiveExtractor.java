@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.compress4j.archive.extract;
+package io.github.compress4j.archive.tar;
 
-import io.github.compress4j.archive.extract.builder.TarArchiveInputStreamBuilder;
+import io.github.compress4j.archive.ArchiveExtractor;
 import java.io.IOException;
 import java.io.InputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
@@ -26,25 +26,27 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
  *
  * @since 2.2
  */
-public abstract class TarBaseArchiveExtractor extends ArchiveExtractor<TarArchiveInputStream> {
-
+public abstract class BaseTarArchiveExtractor extends ArchiveExtractor<TarArchiveInputStream> {
     /**
-     * Creates a new {@code TarBaseArchiveExtractor}
+     * Create a new {@link BaseTarArchiveExtractor} with the given input stream.
      *
-     * @param tarArchiveInputStream - the {@code TarArchiveInputStream} to the tar file
+     * @param builder - the archive input stream builder
+     * @param <B> The type of {@link BaseTarArchiveExtractorBuilder} to build a {@link BaseTarArchiveExtractor} from.
+     * @param <C> The type of the {@link BaseTarArchiveExtractor} to build
+     * @throws IOException if an I/O error occurred
      */
-    protected TarBaseArchiveExtractor(TarArchiveInputStream tarArchiveInputStream) {
-        super(tarArchiveInputStream);
+    protected <B extends BaseTarArchiveExtractorBuilder<B, C>, C extends ArchiveExtractor<TarArchiveInputStream>>
+            BaseTarArchiveExtractor(B builder) throws IOException {
+        super(builder);
     }
 
     /**
-     * Creates a new {@code TarBaseArchiveExtractor}.
+     * Creates a new {@code BaseTarArchiveExtractor}
      *
-     * @param builder - the {@code ArchiveInputStreamBuilder} to build the {@code TarArchiveInputStreamBuilder}.
-     * @throws IOException - if the {@code TarArchiveInputStreamBuilder} could not be created
+     * @param tarArchiveInputStream - the {@code TarArchiveInputStream} to the tar file
      */
-    protected TarBaseArchiveExtractor(TarArchiveInputStreamBuilder builder) throws IOException {
-        super(builder);
+    protected BaseTarArchiveExtractor(TarArchiveInputStream tarArchiveInputStream) {
+        super(tarArchiveInputStream);
     }
 
     /** {@inheritDoc} */
@@ -94,6 +96,41 @@ public abstract class TarBaseArchiveExtractor extends ArchiveExtractor<TarArchiv
             return Entry.Type.DIR;
         } else {
             return Entry.Type.FILE;
+        }
+    }
+
+    /**
+     * Base builder to build a TAR/TAR.GZ extractor
+     *
+     * @param <B> the type of the Builder.
+     * @param <C> the type of the ArchiveExtractor.
+     */
+    public abstract static class BaseTarArchiveExtractorBuilder<
+                    B extends BaseTarArchiveExtractorBuilder<B, C>, C extends ArchiveExtractor<TarArchiveInputStream>>
+            extends ArchiveExtractorBuilder<TarArchiveInputStream, B, C> {
+        /**
+         * Create a new ArchiveExtractorBuilder.
+         *
+         * @param inputStream the input stream
+         */
+        protected BaseTarArchiveExtractorBuilder(InputStream inputStream) {
+            super(inputStream);
+        }
+
+        /**
+         * Build a {@code A} from the given {@code InputStream}. If you want to combine an archive format with a
+         * compression format - like when reading a `tar.gz` file - you wrap the {@code ArchiveInputStream} around
+         * {@code CompressorInputStream} for example:
+         *
+         * <pre>{@code
+         * return new TarArchiveInputStream(new GzipCompressorInputStream(inputStream));
+         * }</pre>
+         *
+         * @param inputStream - the {@code InputStream} to the compressed file
+         * @return a {@code A} from the given {@code InputStream}
+         */
+        protected TarArchiveInputStream buildTarArchiveInputStream(InputStream inputStream) {
+            return new TarArchiveInputStream(inputStream);
         }
     }
 }

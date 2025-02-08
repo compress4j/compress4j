@@ -15,11 +15,11 @@
  */
 package io.github.compress4j.archive.memory;
 
-import static io.github.compress4j.archive.extract.ArchiveExtractor.Entry.Type.DIR;
-import static io.github.compress4j.archive.extract.ArchiveExtractor.Entry.Type.FILE;
+import static io.github.compress4j.archive.ArchiveExtractor.Entry.Type.DIR;
+import static io.github.compress4j.archive.ArchiveExtractor.Entry.Type.FILE;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
-import io.github.compress4j.archive.extract.ArchiveExtractor.Entry.Type;
+import io.github.compress4j.archive.ArchiveExtractor.Entry.Type;
 import jakarta.annotation.Nullable;
 import java.nio.file.attribute.FileTime;
 import java.util.Date;
