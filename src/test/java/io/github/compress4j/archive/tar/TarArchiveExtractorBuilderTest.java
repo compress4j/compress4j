@@ -16,28 +16,28 @@
 package io.github.compress4j.archive.tar;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 
+import io.github.compress4j.archive.tar.TarArchiveExtractor.TarArchiveExtractorBuilder;
 import java.io.IOException;
 import java.io.InputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.junit.jupiter.api.Test;
 
-class TarArchiveInputStreamBuilderTest {
+class TarArchiveExtractorBuilderTest {
 
     @Test
     void shouldBuildArchiveInputStream() throws IOException {
         // given
         var inputStream = mock(InputStream.class);
-        var builder = spy(TarArchiveExtractor.builder(inputStream));
+        TarArchiveExtractorBuilder builder = new TarArchiveExtractorBuilder(inputStream);
 
         // when
         try (TarArchiveInputStream out = spy(builder.buildArchiveInputStream())) {
 
             // then
             assertThat(out).isNotNull();
-
-            //            verify(builder).buildArchiveInputStream(inputStream);
         }
     }
 }
