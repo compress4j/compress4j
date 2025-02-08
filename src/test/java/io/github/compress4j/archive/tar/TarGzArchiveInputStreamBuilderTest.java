@@ -16,12 +16,12 @@
 package io.github.compress4j.archive.tar;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 
+import io.github.compress4j.archive.tar.TarGzArchiveExtractor.TarGzArchiveExtractorBuilder;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.zip.Deflater;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.junit.jupiter.api.Test;
 
@@ -31,17 +31,13 @@ class TarGzArchiveInputStreamBuilderTest {
     void shouldBuildArchiveInputStream() throws IOException {
         // given
         var inputStream = mock(InputStream.class);
-        given(inputStream.read()).willReturn(31, 139, Deflater.DEFLATED, 0);
-        given(inputStream.markSupported()).willReturn(true);
-        var builder = spy(TarArchiveExtractor.builder(inputStream));
+        TarGzArchiveExtractorBuilder builder = new TarGzArchiveExtractorBuilder(inputStream);
 
         // when
         try (TarArchiveInputStream out = spy(builder.buildArchiveInputStream())) {
 
             // then
             assertThat(out).isNotNull();
-            //            verify(builder).buildArchiveInputStream(assertArg(in -> assertThat(in)
-            //                    .isInstanceOf(GzipCompressorInputStream.class)));
         }
     }
 }

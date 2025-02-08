@@ -15,38 +15,59 @@
  */
 package io.github.compress4j.archive;
 
+import static io.github.compress4j.archive.ArchiveType.TAR;
+import static io.github.compress4j.archive.ArchiveType.TAR_GZ;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 import io.github.compress4j.archive.tar.TarArchiveCreator.TarArchiveCreatorBuilder;
-import io.github.compress4j.archive.tar.TarArchiveExtractor;
+import io.github.compress4j.archive.tar.TarArchiveExtractor.TarArchiveExtractorBuilder;
+import io.github.compress4j.archive.tar.TarGzArchiveCreator.TarGzArchiveCreatorBuilder;
+import io.github.compress4j.archive.tar.TarGzArchiveExtractor.TarGzArchiveExtractorBuilder;
+import java.io.InputStream;
 import java.io.OutputStream;
-import org.junit.jupiter.api.Test;
+import java.util.stream.Stream;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class ArchiveFactoryTest {
 
-    @Test
-    void shouldCreateArchiveCreatorFromPath() {
+    private static Stream<Arguments> archiveCreatorProvider() {
+        return Stream.of(
+                Arguments.of(TAR, TarArchiveCreatorBuilder.class),
+                Arguments.of(TAR_GZ, TarGzArchiveCreatorBuilder.class));
+    }
+
+    private static Stream<Arguments> archiveExtractorProvider() {
+        return Stream.of(
+                Arguments.of(TAR, TarArchiveExtractorBuilder.class),
+                Arguments.of(TAR_GZ, TarGzArchiveExtractorBuilder.class));
+    }
+
+    @ParameterizedTest
+    @MethodSource("archiveCreatorProvider")
+    void shouldCreateArchiveCreatorFromPath(ArchiveType archiveType, Class<?> expectedClass) {
         // given
-        var type = ArchiveType.TAR;
         var outputStream = mock(OutputStream.class);
 
         // when
-        var archiveCreatorBuilder = ArchiveFactory.creator(type, outputStream);
+        var archiveCreatorBuilder = ArchiveFactory.creator(archiveType, outputStream);
 
         // then
-        assertThat(archiveCreatorBuilder).isInstanceOf(TarArchiveCreatorBuilder.class);
+        assertThat(archiveCreatorBuilder).isInstanceOf(expectedClass);
     }
 
-    @Test
-    void extractor() {
+    @ParameterizedTest
+    @MethodSource("archiveExtractorProvider")
+    void shouldCreateArchiveExtractorFromPath(ArchiveType archiveType, Class<?> expectedClass) {
         // given
-        var type = ArchiveType.TAR;
+        var inputStream = mock(InputStream.class);
 
         // when
-        var decompressor = ArchiveFactory.extractor(type);
+        var decompressor = ArchiveFactory.extractor(archiveType, inputStream);
 
         // then
-        assertThat(decompressor).isInstanceOf(TarArchiveExtractor.class);
+        assertThat(decompressor).isInstanceOf(expectedClass);
     }
 }
