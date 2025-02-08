@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 /**
- * Provides a unified API and factories for dealing with archives in different formats.
+ * Provides a unified API and factories for dealing with compressed streams.
  *
  * @since 2.2
  */
 @Nonnull
-package io.github.compress4j.archive;
+package io.github.compress4j.compressor;
 
 import jakarta.annotation.Nonnull;

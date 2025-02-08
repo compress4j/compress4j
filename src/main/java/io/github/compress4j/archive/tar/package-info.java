@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 /**
- * Provides a unified API and factories for dealing with archives in different formats.
+ * Provides stream classes for reading and writing archives using the TAR format.
  *
- * @since 2.2
+ * <p>There are many different format dialects that call themselves TAR. The classes of this package can read and write
+ * archives in the traditional pre-POSIX <strong>ustar</strong> format and support GNU specific extensions for long file
+ * names that GNU tar itself by now refers to as <strong>oldgnu</strong>.
  */
 @Nonnull
-package io.github.compress4j.archive;
+package io.github.compress4j.archive.tar;
 
 import jakarta.annotation.Nonnull;

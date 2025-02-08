@@ -155,6 +155,10 @@ spotless {
         trimTrailingWhitespace()
         endWithNewline()
     }
+    format("javaMisc") {
+        target("src/**/package-info.java")
+        licenseHeaderFile(rootProject.file(".config/spotless/copyright.java.txt"), "\\/\\*\\*|@Nonnull\\npackage |package ")
+    }
 }
 
 gitVersioning.apply {
