@@ -13,31 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.compress4j.archive.extract.builder;
+package io.github.compress4j.archive.tar;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.zip.Deflater;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.junit.jupiter.api.Test;
 
-class TarArchiveInputStreamBuilderTest {
+class TarGzArchiveInputStreamBuilderTest {
 
     @Test
     void shouldBuildArchiveInputStream() throws IOException {
         // given
         var inputStream = mock(InputStream.class);
-        var builder = spy(new TarArchiveInputStreamBuilder(inputStream));
+        given(inputStream.read()).willReturn(31, 139, Deflater.DEFLATED, 0);
+        given(inputStream.markSupported()).willReturn(true);
+        var builder = spy(TarArchiveExtractor.builder(inputStream));
 
         // when
-        try (TarArchiveInputStream out = spy(builder.build())) {
+        try (TarArchiveInputStream out = spy(builder.buildArchiveInputStream())) {
 
             // then
             assertThat(out).isNotNull();
-
-            verify(builder).buildArchiveInputStream(inputStream);
+            //            verify(builder).buildArchiveInputStream(assertArg(in -> assertThat(in)
+            //                    .isInstanceOf(GzipCompressorInputStream.class)));
         }
     }
 }

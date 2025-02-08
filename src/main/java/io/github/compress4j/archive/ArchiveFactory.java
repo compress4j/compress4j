@@ -16,16 +16,15 @@
 package io.github.compress4j.archive;
 
 import io.github.compress4j.archive.ArchiveCreator.ArchiveCreatorBuilder;
-import io.github.compress4j.archive.extract.ArchiveExtractor;
-import io.github.compress4j.archive.extract.TarArchiveExtractor;
-import io.github.compress4j.archive.extract.TarGzArchiveExtractor;
 import io.github.compress4j.archive.tar.TarArchiveCreator;
+import io.github.compress4j.archive.tar.TarArchiveExtractor;
 import io.github.compress4j.archive.tar.TarGzArchiveCreator;
+import io.github.compress4j.archive.tar.TarGzArchiveExtractor;
 import java.io.OutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 
 /**
- * Factory class to build compressors and decompressors
+ * Factory class to build creators and decompressors
  *
  * @since 2.2
  */
@@ -45,7 +44,7 @@ public class ArchiveFactory {
     }
 
     @SuppressWarnings("java:S1452")
-    public static ArchiveExtractor<?> decompressor(ArchiveType archiveType) {
+    public static ArchiveExtractor<?> extractor(ArchiveType archiveType) {
         switch (archiveType) {
             case TAR:
                 return new TarArchiveExtractor((TarArchiveInputStream) null);

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.compress4j.archive.extract;
+package io.github.compress4j.archive.tar;
 
 import static java.nio.file.attribute.PosixFilePermission.*;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,7 +21,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.*;
 
-import io.github.compress4j.archive.extract.builder.TarArchiveInputStreamBuilder;
+import io.github.compress4j.archive.ArchiveExtractor;
 import io.github.compress4j.assertion.Compress4JAssertions;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -37,7 +37,8 @@ class TarArchiveExtractorTest {
     void shouldReturnNextFileEntry() throws IOException {
         // given
         var mockInputStream = new ByteArrayInputStream("test".getBytes());
-        var tarArchiveInputStream = spy(new TarArchiveInputStreamBuilder(mockInputStream).build());
+        var tarArchiveInputStream =
+                spy(TarArchiveExtractor.builder(mockInputStream).buildArchiveInputStream());
         TarArchiveEntry mockTarEntry = mock(TarArchiveEntry.class);
         given(mockTarEntry.getName()).willReturn("file.txt");
         //noinspection OctalInteger
@@ -68,7 +69,8 @@ class TarArchiveExtractorTest {
     void shouldReturnNextSymlinkEntry() throws IOException {
         // given
         var mockInputStream = new ByteArrayInputStream("test".getBytes());
-        var tarArchiveInputStream = spy(new TarArchiveInputStreamBuilder(mockInputStream).build());
+        var tarArchiveInputStream =
+                spy(TarArchiveExtractor.builder(mockInputStream).buildArchiveInputStream());
         TarArchiveEntry mockTarEntry = mock(TarArchiveEntry.class);
         given(mockTarEntry.getName()).willReturn("file.txt");
         given(mockTarEntry.getLinkName()).willReturn("target.txt");
@@ -102,7 +104,8 @@ class TarArchiveExtractorTest {
     void shouldReturnNextDirectoryEntry() throws IOException {
         // given
         var mockInputStream = new ByteArrayInputStream("test".getBytes());
-        var tarArchiveInputStream = spy(new TarArchiveInputStreamBuilder(mockInputStream).build());
+        var tarArchiveInputStream =
+                spy(TarArchiveExtractor.builder(mockInputStream).buildArchiveInputStream());
         TarArchiveEntry mockTarEntry = mock(TarArchiveEntry.class);
         given(mockTarEntry.getName()).willReturn("file.txt");
         given(mockTarEntry.getLinkName()).willReturn("target.txt");
@@ -135,7 +138,8 @@ class TarArchiveExtractorTest {
     void shouldReturnNextFileEntryOnWindows() throws IOException {
         // given
         var mockInputStream = new ByteArrayInputStream("test".getBytes());
-        var tarArchiveInputStream = spy(new TarArchiveInputStreamBuilder(mockInputStream).build());
+        var tarArchiveInputStream =
+                spy(TarArchiveExtractor.builder(mockInputStream).buildArchiveInputStream());
         TarArchiveEntry mockTarEntry = mock(TarArchiveEntry.class);
         given(mockTarEntry.getName()).willReturn("file.txt");
         given(mockTarEntry.isFile()).willReturn(true);
@@ -164,7 +168,8 @@ class TarArchiveExtractorTest {
     void shouldReturnNextSymlinkEntryOnWindows() throws IOException {
         // given
         var mockInputStream = new ByteArrayInputStream("test".getBytes());
-        var tarArchiveInputStream = spy(new TarArchiveInputStreamBuilder(mockInputStream).build());
+        var tarArchiveInputStream =
+                spy(TarArchiveExtractor.builder(mockInputStream).buildArchiveInputStream());
         TarArchiveEntry mockTarEntry = mock(TarArchiveEntry.class);
         given(mockTarEntry.getName()).willReturn("file.txt");
         given(mockTarEntry.getLinkName()).willReturn("target.txt");
@@ -195,7 +200,8 @@ class TarArchiveExtractorTest {
     void shouldReturnNextDirectoryEntryOnWindows() throws IOException {
         // given
         var mockInputStream = new ByteArrayInputStream("test".getBytes());
-        var tarArchiveInputStream = spy(new TarArchiveInputStreamBuilder(mockInputStream).build());
+        var tarArchiveInputStream =
+                spy(TarArchiveExtractor.builder(mockInputStream).buildArchiveInputStream());
         TarArchiveEntry mockTarEntry = mock(TarArchiveEntry.class);
         given(mockTarEntry.getName()).willReturn("some-path");
         given(mockTarEntry.getLinkName()).willReturn("target.txt");
@@ -225,9 +231,9 @@ class TarArchiveExtractorTest {
     void shouldReturnNullWhenNextEntryIsNull() throws IOException {
         // given
         var mockInputStream = new ByteArrayInputStream("test".getBytes());
-        var builder = new TarArchiveInputStreamBuilder(mockInputStream);
 
-        try (TarArchiveExtractor tarDecompressor = new TarArchiveExtractor(builder)) {
+        try (TarArchiveExtractor tarDecompressor =
+                TarArchiveExtractor.builder(mockInputStream).build()) {
             // when
             var result = tarDecompressor.nextEntry();
 
@@ -240,7 +246,8 @@ class TarArchiveExtractorTest {
     void shouldSkipEntryWhenNextEntryIsHardlink() throws IOException {
         // given
         var mockInputStream = new ByteArrayInputStream("test".getBytes());
-        var tarArchiveInputStream = spy(new TarArchiveInputStreamBuilder(mockInputStream).build());
+        var tarArchiveInputStream =
+                spy(TarArchiveExtractor.builder(mockInputStream).buildArchiveInputStream());
         TarArchiveEntry mockTarEntry = mock(TarArchiveEntry.class);
         given(mockTarEntry.isFile()).willReturn(true);
         given(mockTarEntry.isLink()).willReturn(true);
