@@ -42,7 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This abstract class is the superclass of all classes providing compression. This class provides functionality to add
+ * This abstract class is the superclass of all classes providing archiving. This class provides functionality to add
  * files and directories to an archive.
  *
  * @param <A> The type of {@link ArchiveOutputStream} to write entries to.
@@ -55,7 +55,7 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     private Optional<BiPredicate<? super String, ? super Path>> entryFilter = Optional.empty();
 
-    /** Archive output stream to be used for compression. */
+    /** Archive output stream to be used for archiving. */
     protected final A archiveOutputStream;
 
     /**
@@ -639,7 +639,7 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
         /**
          * Start a new archive. Entries can be included in the archive using the putEntry method, and then the archive
          * should be closed using its close method. In addition, options can be applied to the underlying stream. E.g.
-         * compression level.
+         * archiving level.
          *
          * <ol>
          *   <li>Use {@link #outputStream} as underlying output stream to which to write the archive.
