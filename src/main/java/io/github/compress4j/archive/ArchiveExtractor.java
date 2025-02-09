@@ -90,6 +90,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         this.postProcessor = builder.postProcessor;
         this.stripComponents = builder.stripComponents;
         this.overwrite = builder.overwrite;
+        this.escapingSymlinkPolicy = builder.escapingSymlinkPolicy;
     }
 
     /**
@@ -533,17 +534,6 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
          */
         public B withEscapingSymlinkPolicy(ArchiveExtractor.EscapingSymlinkPolicy escapingSymlinkPolicy) {
             this.escapingSymlinkPolicy = escapingSymlinkPolicy;
-            return getThis();
-        }
-
-        /**
-         * Sets the post processor for the extractor.
-         *
-         * @param consumer the post processor to set
-         * @return the instance of the {@link ArchiveExtractor.ArchiveExtractorBuilder}
-         */
-        public B withPostProcessor(@Nullable Consumer<? super Path> consumer) {
-            this.postProcessor = consumer != null ? (entry, path) -> consumer.accept(path) : null;
             return getThis();
         }
 
