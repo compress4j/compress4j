@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.compress4j.archive;
+package io.github.compress4j.archive.tar;
 
 import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.LONGFILE_POSIX;
 
-import io.github.compress4j.archive.tar.TarGzArchiveCreator;
 import io.github.compress4j.archive.tar.TarGzArchiveCreator.TarGzArchiveCreatorBuilder;
-import io.github.compress4j.archive.tar.TarGzArchiveExtractor;
 import java.io.IOException;
 import java.nio.file.Path;
 import org.junit.jupiter.api.BeforeEach;
