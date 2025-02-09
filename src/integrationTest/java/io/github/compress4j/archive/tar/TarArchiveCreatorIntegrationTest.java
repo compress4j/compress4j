@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.compress4j.archive;
+package io.github.compress4j.archive.tar;
 
 import static io.github.compress4j.test.util.io.TestFileUtils.deleteRecursively;
 import static io.github.compress4j.test.util.io.TestFileUtils.write;
@@ -24,9 +24,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import io.github.compress4j.archive.tar.BaseTarArchiveCreator;
-import io.github.compress4j.archive.tar.TarArchiveCreator;
-import io.github.compress4j.archive.tar.TarArchiveExtractor;
 import io.github.compress4j.assertion.Compress4JAssertions;
 import java.io.IOException;
 import java.nio.file.*;
