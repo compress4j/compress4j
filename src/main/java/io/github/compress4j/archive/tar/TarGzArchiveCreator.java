@@ -15,14 +15,12 @@
  */
 package io.github.compress4j.archive.tar;
 
+import io.github.compress4j.compressor.gzip.GzipCompressor;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.zip.Deflater;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
-import org.apache.commons.compress.compressors.gzip.GzipParameters;
 
 /**
  * The Tar Gz creator.
@@ -74,13 +72,8 @@ public class TarGzArchiveCreator extends BaseTarArchiveCreator {
     public static class TarGzArchiveCreatorBuilder
             extends BaseTarArchiveCreatorBuilder<TarGzArchiveCreatorBuilder, TarGzArchiveCreator> {
 
-        private int bufferSize = 512;
-        private String comment;
-        private int compressionLevel = Deflater.DEFAULT_COMPRESSION;
-        private int deflateStrategy = Deflater.DEFAULT_STRATEGY;
-        private String fileName;
-        private long modificationTime;
-        private int operatingSystem = 255; // Unknown OS by default
+        private final GzipCompressor.GzipCompressorOutputStreamBuilder<TarGzArchiveCreatorBuilder>
+                compressorOutputStreamBuilder;
 
         /**
          * Create a new {@link TarGzArchiveCreatorBuilder} with the given path.
@@ -99,113 +92,8 @@ public class TarGzArchiveCreator extends BaseTarArchiveCreator {
          */
         protected TarGzArchiveCreatorBuilder(OutputStream outputStream) {
             super(outputStream);
-        }
-
-        /**
-         * Sets size of the buffer used to retrieve compressed data from {@link Deflater} and write to underlying
-         * {@link OutputStream}.
-         *
-         * @param bufferSize the bufferSize to set. Must be a positive value.
-         * @return the instance of the {@link TarGzArchiveCreatorBuilder}
-         */
-        public TarGzArchiveCreatorBuilder withBufferSize(final int bufferSize) {
-            if (bufferSize <= 0) {
-                throw new IllegalArgumentException("invalid buffer size: " + bufferSize);
-            }
-            this.bufferSize = bufferSize;
-            return this;
-        }
-
-        /**
-         * Adds comment to be added to the tar.gz file
-         *
-         * @param comment the comment to be added
-         * @return the instance of the {@link TarGzArchiveCreatorBuilder}
-         */
-        public TarGzArchiveCreatorBuilder withComment(final String comment) {
-            this.comment = comment;
-            return this;
-        }
-
-        /**
-         * Sets the compression level.
-         *
-         * @param compressionLevel the compression level (between 0 and 9)
-         * @see Deflater#NO_COMPRESSION
-         * @see Deflater#BEST_SPEED
-         * @see Deflater#DEFAULT_COMPRESSION
-         * @see Deflater#BEST_COMPRESSION
-         * @return the instance of the {@link TarGzArchiveCreatorBuilder}
-         */
-        public TarGzArchiveCreatorBuilder withCompressionLevel(final int compressionLevel) {
-            if (compressionLevel < -1 || compressionLevel > 9) {
-                throw new IllegalArgumentException("Invalid gzip compression level: " + compressionLevel);
-            }
-            this.compressionLevel = compressionLevel;
-            return this;
-        }
-
-        /**
-         * Sets the deflater strategy.
-         *
-         * @param deflateStrategy the new compression strategy
-         * @see Deflater#setStrategy(int)
-         * @return the instance of the {@link TarGzArchiveCreatorBuilder}
-         */
-        public TarGzArchiveCreatorBuilder withDeflateStrategy(final int deflateStrategy) {
-            this.deflateStrategy = deflateStrategy;
-            return this;
-        }
-
-        /**
-         * Sets the name of the compressed file.
-         *
-         * @param fileName the name of the file without the directory path
-         * @return the instance of the {@link TarGzArchiveCreatorBuilder}
-         */
-        public TarGzArchiveCreatorBuilder withFileName(final String fileName) {
-            this.fileName = fileName;
-            return this;
-        }
-
-        /**
-         * Sets the modification time of the compressed file.
-         *
-         * @param modificationTime the modification time, in milliseconds
-         * @return the instance of the {@link TarGzArchiveCreatorBuilder}
-         */
-        public TarGzArchiveCreatorBuilder withModificationTime(final long modificationTime) {
-            this.modificationTime = modificationTime;
-            return this;
-        }
-
-        /**
-         * Sets the operating system on which the compression took place. The defined values are:
-         *
-         * <ul>
-         *   <li>0: FAT file system (MS-DOS, OS/2, NT/Win32)
-         *   <li>1: Amiga
-         *   <li>2: VMS (or OpenVMS)
-         *   <li>3: Unix
-         *   <li>4: VM/CMS
-         *   <li>5: Atari TOS
-         *   <li>6: HPFS file system (OS/2, NT)
-         *   <li>7: Macintosh
-         *   <li>8: Z-System
-         *   <li>9: CP/M
-         *   <li>10: TOPS-20
-         *   <li>11: NTFS file system (NT)
-         *   <li>12: QDOS
-         *   <li>13: Acorn RISCOS
-         *   <li>255: Unknown
-         * </ul>
-         *
-         * @param operatingSystem the code of the operating system
-         * @return the instance of the {@link TarGzArchiveCreatorBuilder}
-         */
-        public TarGzArchiveCreatorBuilder withOperatingSystem(final int operatingSystem) {
-            this.operatingSystem = operatingSystem;
-            return this;
+            this.compressorOutputStreamBuilder =
+                    new GzipCompressor.GzipCompressorOutputStreamBuilder<>(this, this.outputStream);
         }
 
         /** {@inheritDoc} */
@@ -217,15 +105,12 @@ public class TarGzArchiveCreator extends BaseTarArchiveCreator {
         /** {@inheritDoc} */
         @Override
         public TarArchiveOutputStream buildArchiveOutputStream() throws IOException {
-            GzipParameters parameters = new GzipParameters();
-            parameters.setBufferSize(bufferSize);
-            parameters.setComment(comment);
-            parameters.setCompressionLevel(compressionLevel);
-            parameters.setDeflateStrategy(deflateStrategy);
-            parameters.setFileName(fileName);
-            parameters.setModificationTime(modificationTime);
-            parameters.setOperatingSystem(operatingSystem);
-            return super.buildTarArchiveOutputStream(new GzipCompressorOutputStream(outputStream, parameters));
+            return super.buildTarArchiveOutputStream(compressorOutputStreamBuilder.build());
+        }
+
+        public GzipCompressor.GzipCompressorOutputStreamBuilder<TarGzArchiveCreatorBuilder>
+                compressorOutputStreamBuilder() {
+            return compressorOutputStreamBuilder;
         }
 
         /** {@inheritDoc} */

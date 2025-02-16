@@ -34,10 +34,10 @@ class TarArchiveCreatorBuilderTest {
         // given
         var outputStream = mock(OutputStream.class);
         TarArchiveCreatorBuilder builder = new TarArchiveCreatorBuilder(outputStream)
-                .withLongFileMode(LONGFILE_POSIX)
-                .withBigNumberMode(BIGNUMBER_POSIX)
-                .withBlockSize(1024)
-                .withEncoding("UTF-8");
+                .longFileMode(LONGFILE_POSIX)
+                .bigNumberMode(BIGNUMBER_POSIX)
+                .blockSize(1024)
+                .encoding("UTF-8");
 
         // when
         try (TarArchiveOutputStream out = spy(builder.buildArchiveOutputStream())) {

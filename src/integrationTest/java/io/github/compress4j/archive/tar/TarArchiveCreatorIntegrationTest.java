@@ -50,7 +50,7 @@ class TarArchiveCreatorIntegrationTest {
     void setup() throws IOException {
         archiveFile = tempDir.resolve("test.tar");
         archive = TarArchiveCreator.builder(archiveFile)
-                .withLongFileMode(LONGFILE_POSIX)
+                .longFileMode(LONGFILE_POSIX)
                 .build();
     }
 

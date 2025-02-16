@@ -28,7 +28,7 @@ class TarGzArchiveCreatorIntegrationTest extends TarArchiveCreatorIntegrationTes
     @BeforeEach
     void setup() throws IOException {
         archiveFile = tempDir.resolve("test.tar.gz");
-        archive = new TarGzArchiveCreator(new TarGzArchiveCreatorBuilder(archiveFile).withLongFileMode(LONGFILE_POSIX));
+        archive = new TarGzArchiveCreator(new TarGzArchiveCreatorBuilder(archiveFile).longFileMode(LONGFILE_POSIX));
     }
 
     @Override

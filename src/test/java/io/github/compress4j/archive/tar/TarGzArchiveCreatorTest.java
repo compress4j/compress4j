@@ -79,7 +79,7 @@ class TarGzArchiveCreatorTest {
 
         // when
         var aOut = spy(new TarGzArchiveCreatorBuilder(outputStream)
-                .withAddPaxHeadersForNonAsciiNames(true)
+                .addPaxHeadersForNonAsciiNames(true)
                 .buildArchiveOutputStream());
         try (MockedStatic<IOUtils> mockIOUtils = mockStatic(IOUtils.class);
                 TarGzArchiveCreator tarCompressor = new TarGzArchiveCreator(aOut)) {

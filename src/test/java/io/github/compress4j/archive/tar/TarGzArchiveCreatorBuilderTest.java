@@ -38,8 +38,8 @@ class TarGzArchiveCreatorBuilderTest {
         // given
         var outputStream = mock(OutputStream.class);
         var builder = spy(new TarGzArchiveCreatorBuilder(outputStream)
-                .withLongFileMode(LONGFILE_POSIX)
-                .withBigNumberMode(BIGNUMBER_POSIX));
+                .longFileMode(LONGFILE_POSIX)
+                .bigNumberMode(BIGNUMBER_POSIX));
 
         // when
         try (TarArchiveOutputStream out = spy(builder.buildArchiveOutputStream())) {
@@ -60,15 +60,17 @@ class TarGzArchiveCreatorBuilderTest {
         var outputStream = mock(OutputStream.class);
         var now = Instant.now();
         var builder = spy(new TarGzArchiveCreatorBuilder(outputStream)
-                .withBufferSize(1024)
-                .withCompressionLevel(BEST_COMPRESSION)
-                .withComment("comment")
-                .withDeflateStrategy(HUFFMAN_ONLY)
-                .withFileName("test.tar.gz")
-                .withModificationTime(now.toEpochMilli())
-                .withOperatingSystem(0)
-                .withLongFileMode(LONGFILE_POSIX)
-                .withBigNumberMode(BIGNUMBER_POSIX));
+                .compressorOutputStreamBuilder()
+                .bufferSize(1024)
+                .compressionLevel(BEST_COMPRESSION)
+                .comment("comment")
+                .deflateStrategy(HUFFMAN_ONLY)
+                .fileName("test.tar.gz")
+                .modificationTime(now.toEpochMilli())
+                .operatingSystem(0)
+                .compressorBuilder()
+                .longFileMode(LONGFILE_POSIX)
+                .bigNumberMode(BIGNUMBER_POSIX));
 
         // when
         try (TarArchiveOutputStream out = spy(builder.buildArchiveOutputStream())) {
