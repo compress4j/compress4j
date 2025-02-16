@@ -15,25 +15,97 @@
  */
 package io.github.compress4j.compressor;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import org.apache.commons.compress.compressors.CompressorOutputStream;
 
 /**
  * This abstract class is the superclass of all classes providing compression.
  *
- * @param <C> The type of {@link CompressorOutputStream} to write to.
+ * @param <O> The type of {@link CompressorOutputStream} to write to.
  * @since 2.2
  */
-public abstract class Compressor<C extends CompressorOutputStream<? extends OutputStream>> implements AutoCloseable {
+public abstract class Compressor<O extends CompressorOutputStream<? extends OutputStream>> implements AutoCloseable {
     /** Compressor output stream to be used for compression. */
-    protected final C compressorOutputStream;
+    protected final O compressorOutputStream;
 
     /**
      * Create an instance of {@link Compressor}
      *
      * @param compressorOutputStream the {@link CompressorOutputStream} to write to.
      */
-    protected Compressor(C compressorOutputStream) {
+    protected Compressor(O compressorOutputStream) {
         this.compressorOutputStream = compressorOutputStream;
+    }
+
+    @Override
+    public void close() throws Exception {
+        compressorOutputStream.close();
+    }
+
+    /**
+     * Create a new Compressor with the given output stream and options.
+     *
+     * @param builder the compressor output stream builder
+     * @param <B> The type of {@link Compressor.CompressorBuilder} to build from.
+     * @param <C> The type of the {@link Compressor} to instantiate.
+     * @throws IOException if an I/O error occurred
+     */
+    protected <B extends Compressor.CompressorBuilder<O, B, C>, C extends Compressor<O>> Compressor(B builder)
+            throws IOException {
+        this(builder.buildCompressorOutputStream());
+    }
+
+    /**
+     * Build and instance of {@link Compressor}
+     *
+     * @param <O> The type of {@link CompressorOutputStream} to write entries to.
+     * @param <B> The type of {@link Compressor.CompressorBuilder}
+     * @param <C> The type of {@link Compressor}
+     */
+    public abstract static class CompressorBuilder<
+            O extends CompressorOutputStream<? extends OutputStream>,
+            B extends Compressor.CompressorBuilder<O, B, C>,
+            C extends Compressor<O>> {
+        protected final OutputStream outputStream;
+
+        /**
+         * Create a new {@link Compressor.CompressorBuilder} with the given output stream.
+         *
+         * @param outputStream the output stream
+         */
+        protected CompressorBuilder(OutputStream outputStream) {
+            this.outputStream = outputStream;
+        }
+
+        /**
+         * get the current instance of the object
+         *
+         * @return current instance
+         */
+        protected abstract B getThis();
+
+        /**
+         * Start a new compressor. Entries can be included in the compressor using the putEntry method, and then the
+         * compressor should be closed using its close method. In addition, options can be applied to the underlying
+         * stream. E.g. archiving level.
+         *
+         * <ol>
+         *   <li>Use {@link #outputStream} as underlying output stream to which to write the compressor.
+         * </ol>
+         *
+         * @return new compressor object for use in putEntry
+         * @throws IOException thrown by the underlying output stream for I/O errors
+         */
+        public abstract O buildCompressorOutputStream() throws IOException;
+
+        /**
+         * Use this method to build an instance of the {@link Compressor}, use
+         * {@link Compressor#Compressor(Compressor.CompressorBuilder)} to pass in instance of this builder
+         *
+         * @return an instance of the {@link Compressor}
+         * @throws IOException thrown by the underlying output stream for I/O errors
+         */
+        public abstract C build() throws IOException;
     }
 }
