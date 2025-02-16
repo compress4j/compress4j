@@ -142,7 +142,7 @@ public abstract class BaseTarArchiveCreator extends ArchiveCreator<TarArchiveOut
          * @param blockSize the block size to use. Must be a multiple of 512 bytes.
          * @return the instance of the {@link TarArchiveCreator.TarArchiveCreatorBuilder}
          */
-        public B withBlockSize(int blockSize) {
+        public B blockSize(int blockSize) {
             this.blockSize = blockSize;
             return getThis();
         }
@@ -153,7 +153,7 @@ public abstract class BaseTarArchiveCreator extends ArchiveCreator<TarArchiveOut
          * @param encoding name of the encoding to use for file names
          * @return the instance of the {@link TarArchiveCreator.TarArchiveCreatorBuilder}
          */
-        public B withEncoding(String encoding) {
+        public B encoding(String encoding) {
             this.encoding = encoding;
             return getThis();
         }
@@ -164,7 +164,7 @@ public abstract class BaseTarArchiveCreator extends ArchiveCreator<TarArchiveOut
          * @param b whether to add a PAX extension header for non-ASCII file names.
          * @return the instance of the {@link TarArchiveCreator.TarArchiveCreatorBuilder}
          */
-        public B withAddPaxHeadersForNonAsciiNames(final boolean b) {
+        public B addPaxHeadersForNonAsciiNames(final boolean b) {
             addPaxHeadersForNonAsciiNames = b;
             return getThis();
         }
@@ -177,7 +177,7 @@ public abstract class BaseTarArchiveCreator extends ArchiveCreator<TarArchiveOut
          * @param bigNumberMode the mode to use
          * @return the instance of the {@link TarArchiveCreator.TarArchiveCreatorBuilder}
          */
-        public B withBigNumberMode(final int bigNumberMode) {
+        public B bigNumberMode(final int bigNumberMode) {
             this.bigNumberMode = bigNumberMode;
             return getThis();
         }
@@ -190,7 +190,7 @@ public abstract class BaseTarArchiveCreator extends ArchiveCreator<TarArchiveOut
          * @param longFileMode the mode to use
          * @return the instance of the {@link TarArchiveCreator.TarArchiveCreatorBuilder}
          */
-        public B withLongFileMode(final int longFileMode) {
+        public B longFileMode(final int longFileMode) {
             this.longFileMode = longFileMode;
             return getThis();
         }
