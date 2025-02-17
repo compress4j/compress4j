@@ -15,8 +15,13 @@
  */
 package io.github.compress4j.compressor;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.apache.commons.compress.compressors.CompressorOutputStream;
 
 /**
@@ -36,6 +41,80 @@ public abstract class Compressor<O extends CompressorOutputStream<? extends Outp
      */
     protected Compressor(O compressorOutputStream) {
         this.compressorOutputStream = compressorOutputStream;
+    }
+
+    /**
+     * Writes and filters the bytes from the specified String to this output stream using the given Charset.
+     *
+     * @param os the target output stream.
+     * @param data the data.
+     * @param charset The {@link Charset} to be used to encode the {@code String}
+     * @return the ASCII bytes.
+     * @exception IOException if an I/O error occurs.
+     * @see OutputStream#write(byte[])
+     */
+    private static byte[] write(final OutputStream os, final String data, final Charset charset) throws IOException {
+        final byte[] bytes = data.getBytes(charset);
+        os.write(bytes);
+        return bytes;
+    }
+
+    /**
+     * Writes all bytes from a file this output stream.
+     *
+     * @param file the path to the source file.
+     * @return the number of bytes read or written.
+     * @throws IOException if an I/O error occurs when reading or writing.
+     */
+    public long write(final File file) throws IOException {
+        return write(file.toPath());
+    }
+
+    /**
+     * Writes all bytes from a file to this output stream.
+     *
+     * @param path the path to the source file.
+     * @return the number of bytes read or written.
+     * @throws IOException if an I/O error occurs when reading or writing.
+     */
+    public long write(final Path path) throws IOException {
+        return Files.copy(path, compressorOutputStream);
+    }
+
+    /**
+     * Writes and filters the ASCII bytes from the specified String to this output stream.
+     *
+     * @param data the data.
+     * @return the ASCII bytes.
+     * @throws IOException if an I/O error occurs.
+     * @see OutputStream#write(byte[])
+     */
+    public byte[] writeUsAscii(final String data) throws IOException {
+        return write(compressorOutputStream, data, StandardCharsets.US_ASCII);
+    }
+
+    /**
+     * Writes the raw ASCII bytes from the specified String to this output stream.
+     *
+     * @param data the data.
+     * @return the ASCII bytes.
+     * @throws IOException if an I/O error occurs.
+     * @see OutputStream#write(byte[])
+     */
+    public byte[] writeUsAsciiRaw(final String data) throws IOException {
+        return write(compressorOutputStream, data, StandardCharsets.US_ASCII);
+    }
+
+    /**
+     * Writes and filters the UTF-8 bytes from the specified String to this output stream.
+     *
+     * @param data the data.
+     * @return the ASCII bytes.
+     * @throws IOException if an I/O error occurs.
+     * @see OutputStream#write(byte[])
+     */
+    public byte[] writeUtf8(final String data) throws IOException {
+        return write(compressorOutputStream, data, StandardCharsets.UTF_8);
     }
 
     @Override

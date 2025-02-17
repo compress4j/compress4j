@@ -68,7 +68,7 @@ class TarGzArchiveCreatorBuilderTest {
                 .fileName("test.tar.gz")
                 .modificationTime(now.toEpochMilli())
                 .operatingSystem(0)
-                .compressorBuilder()
+                .parentBuilder()
                 .longFileMode(LONGFILE_POSIX)
                 .bigNumberMode(BIGNUMBER_POSIX));
 
