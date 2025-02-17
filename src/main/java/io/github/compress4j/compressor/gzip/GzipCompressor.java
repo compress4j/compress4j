@@ -195,7 +195,7 @@ public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
             return new GzipCompressorOutputStream(outputStream, parameters);
         }
 
-        public P compressorBuilder() {
+        public P parentBuilder() {
             return parent;
         }
     }
