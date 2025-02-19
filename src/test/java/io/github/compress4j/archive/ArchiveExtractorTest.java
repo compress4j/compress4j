@@ -65,7 +65,7 @@ class ArchiveExtractorTest {
     private Path tempDir;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         Logger logger = (Logger) LoggerFactory.getLogger(LOGGER_NAME);
         inMemoryLogAppender = new InMemoryLogAppender();
         inMemoryLogAppender.setContext((LoggerContext) LoggerFactory.getILoggerFactory());
@@ -75,7 +75,7 @@ class ArchiveExtractorTest {
     }
 
     @AfterEach
-    public void cleanUp() {
+    void cleanUp() {
         inMemoryLogAppender.reset();
         inMemoryLogAppender.stop();
     }
