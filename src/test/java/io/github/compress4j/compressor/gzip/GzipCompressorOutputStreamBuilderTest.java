@@ -18,6 +18,7 @@ package io.github.compress4j.compressor.gzip;
 import static java.util.zip.Deflater.BEST_COMPRESSION;
 import static java.util.zip.Deflater.HUFFMAN_ONLY;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
@@ -68,5 +69,41 @@ class GzipCompressorOutputStreamBuilderTest {
                     .extracting("level", "strategy")
                     .containsExactly(BEST_COMPRESSION, HUFFMAN_ONLY);
         }
+    }
+
+    @Test
+    void shouldNotAllowIncorrectBufferSize() {
+        // given
+        var outputStream = mock(OutputStream.class);
+        var builder = GzipCompressor.builder(outputStream).compressorOutputStreamBuilder();
+
+        // when & then
+        assertThatThrownBy(() -> builder.bufferSize(0))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("invalid buffer size: 0");
+    }
+
+    @Test
+    void shouldNotAllowCompressionLevelLowerOutOfRange() {
+        // given
+        var outputStream = mock(OutputStream.class);
+        var builder = GzipCompressor.builder(outputStream).compressorOutputStreamBuilder();
+
+        // when & then
+        assertThatThrownBy(() -> builder.compressionLevel(-2))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Invalid gzip compression level: -2");
+    }
+
+    @Test
+    void shouldNotAllowCompressionLevelHigherOutOfRange() {
+        // given
+        var outputStream = mock(OutputStream.class);
+        var builder = GzipCompressor.builder(outputStream).compressorOutputStreamBuilder();
+
+        // when & then
+        assertThatThrownBy(() -> builder.compressionLevel(10))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Invalid gzip compression level: 10");
     }
 }
