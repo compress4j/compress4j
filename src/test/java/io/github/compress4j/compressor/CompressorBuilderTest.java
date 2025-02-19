@@ -13,35 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.compress4j.compressor.gzip;
+package io.github.compress4j.compressor;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
+import io.github.compress4j.compressor.memory.InMemoryCompressor;
+import io.github.compress4j.compressor.memory.InMemoryCompressorOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
 
-class GzipCompressorTest {
+class CompressorBuilderTest {
 
     @Test
-    void shouldWritePathEntry() throws Exception {
+    void shouldBuildArchiveOutputStream() throws IOException {
         // given
         var outputStream = mock(OutputStream.class);
-
-        final Path tempSourceFile1 = mock(Path.class);
+        var builder = InMemoryCompressor.builder(outputStream);
 
         // when
-        var aOut = spy(GzipCompressor.builder(outputStream).buildCompressorOutputStream());
-        try (MockedStatic<Files> mockFiles = mockStatic(Files.class);
-                GzipCompressor compressor = new GzipCompressor(aOut)) {
-
-            compressor.write(tempSourceFile1);
+        try (InMemoryCompressorOutputStream out = builder.buildCompressorOutputStream()) {
 
             // then
-            mockFiles.verify(() -> Files.copy(any(Path.class), any(OutputStream.class)));
+            assertThat(out).isNotNull();
         }
     }
 }

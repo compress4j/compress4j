@@ -69,6 +69,7 @@ public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
         /**
          * Create a new {@link GzipCompressorBuilder} with the given output stream.
          *
+         * @param parent parent builder calling this {@link GzipCompressorOutputStreamBuilder}
          * @param outputStream the output stream
          */
         public GzipCompressorOutputStreamBuilder(P parent, OutputStream outputStream) {

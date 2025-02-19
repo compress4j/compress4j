@@ -18,8 +18,6 @@ package io.github.compress4j.compressor;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.commons.compress.compressors.CompressorOutputStream;
@@ -44,19 +42,16 @@ public abstract class Compressor<O extends CompressorOutputStream<? extends Outp
     }
 
     /**
-     * Writes and filters the bytes from the specified String to this output stream using the given Charset.
+     * Create a new Compressor with the given output stream and options.
      *
-     * @param os the target output stream.
-     * @param data the data.
-     * @param charset The {@link Charset} to be used to encode the {@code String}
-     * @return the ASCII bytes.
-     * @exception IOException if an I/O error occurs.
-     * @see OutputStream#write(byte[])
+     * @param builder the compressor output stream builder
+     * @param <B> The type of {@link Compressor.CompressorBuilder} to build from.
+     * @param <C> The type of the {@link Compressor} to instantiate.
+     * @throws IOException if an I/O error occurred
      */
-    private static byte[] write(final OutputStream os, final String data, final Charset charset) throws IOException {
-        final byte[] bytes = data.getBytes(charset);
-        os.write(bytes);
-        return bytes;
+    protected <B extends Compressor.CompressorBuilder<O, B, C>, C extends Compressor<O>> Compressor(B builder)
+            throws IOException {
+        this(builder.buildCompressorOutputStream());
     }
 
     /**
@@ -81,58 +76,9 @@ public abstract class Compressor<O extends CompressorOutputStream<? extends Outp
         return Files.copy(path, compressorOutputStream);
     }
 
-    /**
-     * Writes and filters the ASCII bytes from the specified String to this output stream.
-     *
-     * @param data the data.
-     * @return the ASCII bytes.
-     * @throws IOException if an I/O error occurs.
-     * @see OutputStream#write(byte[])
-     */
-    public byte[] writeUsAscii(final String data) throws IOException {
-        return write(compressorOutputStream, data, StandardCharsets.US_ASCII);
-    }
-
-    /**
-     * Writes the raw ASCII bytes from the specified String to this output stream.
-     *
-     * @param data the data.
-     * @return the ASCII bytes.
-     * @throws IOException if an I/O error occurs.
-     * @see OutputStream#write(byte[])
-     */
-    public byte[] writeUsAsciiRaw(final String data) throws IOException {
-        return write(compressorOutputStream, data, StandardCharsets.US_ASCII);
-    }
-
-    /**
-     * Writes and filters the UTF-8 bytes from the specified String to this output stream.
-     *
-     * @param data the data.
-     * @return the ASCII bytes.
-     * @throws IOException if an I/O error occurs.
-     * @see OutputStream#write(byte[])
-     */
-    public byte[] writeUtf8(final String data) throws IOException {
-        return write(compressorOutputStream, data, StandardCharsets.UTF_8);
-    }
-
     @Override
     public void close() throws Exception {
         compressorOutputStream.close();
-    }
-
-    /**
-     * Create a new Compressor with the given output stream and options.
-     *
-     * @param builder the compressor output stream builder
-     * @param <B> The type of {@link Compressor.CompressorBuilder} to build from.
-     * @param <C> The type of the {@link Compressor} to instantiate.
-     * @throws IOException if an I/O error occurred
-     */
-    protected <B extends Compressor.CompressorBuilder<O, B, C>, C extends Compressor<O>> Compressor(B builder)
-            throws IOException {
-        this(builder.buildCompressorOutputStream());
     }
 
     /**
