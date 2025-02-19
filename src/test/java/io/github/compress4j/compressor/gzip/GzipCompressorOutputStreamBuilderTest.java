@@ -19,7 +19,6 @@ import static java.util.zip.Deflater.BEST_COMPRESSION;
 import static java.util.zip.Deflater.HUFFMAN_ONLY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -33,10 +32,10 @@ class GzipCompressorOutputStreamBuilderTest {
     void shouldBuildArchiveOutputStream() throws IOException {
         // given
         var outputStream = mock(OutputStream.class);
-        var builder = spy(GzipCompressor.builder(outputStream));
+        var builder = GzipCompressor.builder(outputStream);
 
         // when
-        try (GzipCompressorOutputStream out = spy(builder.buildCompressorOutputStream())) {
+        try (GzipCompressorOutputStream out = builder.buildCompressorOutputStream()) {
 
             // then
             assertThat(out).isNotNull();
@@ -48,7 +47,7 @@ class GzipCompressorOutputStreamBuilderTest {
         // given
         var outputStream = mock(OutputStream.class);
         var now = Instant.now();
-        var builder = spy(GzipCompressor.builder(outputStream)
+        var builder = GzipCompressor.builder(outputStream)
                 .compressorOutputStreamBuilder()
                 .bufferSize(1024)
                 .compressionLevel(BEST_COMPRESSION)
@@ -57,10 +56,10 @@ class GzipCompressorOutputStreamBuilderTest {
                 .fileName("test.tar.gz")
                 .modificationTime(now.toEpochMilli())
                 .operatingSystem(0)
-                .parentBuilder());
+                .parentBuilder();
 
         // when
-        try (GzipCompressorOutputStream out = spy(builder.buildCompressorOutputStream())) {
+        try (GzipCompressorOutputStream out = builder.buildCompressorOutputStream()) {
 
             // then
             assertThat(out).isNotNull().extracting("deflateBuffer").isEqualTo(new byte[1024]);
