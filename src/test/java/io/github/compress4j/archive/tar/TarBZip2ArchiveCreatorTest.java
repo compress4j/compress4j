@@ -19,6 +19,7 @@ import static io.github.compress4j.assertion.AssertJMatcher.assertArgs;
 import static java.nio.file.attribute.PosixFilePermission.*;
 import static java.time.Instant.now;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.assertArg;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.*;
 
@@ -37,7 +38,7 @@ import org.apache.commons.io.file.attribute.FileTimes;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
-class TarGzArchiveCreatorTest {
+class TarBZip2ArchiveCreatorTest {
 
     @SuppressWarnings("resource")
     @Test
@@ -47,9 +48,9 @@ class TarGzArchiveCreatorTest {
         var inputStream = new ByteArrayInputStream("test".getBytes());
 
         // when
-        var aOut = spy(TarGzArchiveCreator.builder(outputStream).buildArchiveOutputStream());
+        var aOut = spy(TarBZip2ArchiveCreator.builder(outputStream).buildArchiveOutputStream());
         try (MockedStatic<IOUtils> mockIOUtils = mockStatic(IOUtils.class, CALLS_REAL_METHODS);
-                TarGzArchiveCreator tarCompressor = new TarGzArchiveCreator(aOut)) {
+                TarBZip2ArchiveCreator tarCompressor = new TarBZip2ArchiveCreator(aOut)) {
 
             FileTime modTime = FileTime.from(now());
             @SuppressWarnings("OctalInteger")
@@ -77,11 +78,11 @@ class TarGzArchiveCreatorTest {
         var inputStream = mock(InputStream.class);
 
         // when
-        var aOut = spy(TarGzArchiveCreator.builder(outputStream)
+        var aOut = spy(TarBZip2ArchiveCreator.builder(outputStream)
                 .addPaxHeadersForNonAsciiNames(true)
                 .buildArchiveOutputStream());
         try (MockedStatic<IOUtils> mockIOUtils = mockStatic(IOUtils.class);
-                TarGzArchiveCreator tarCompressor = new TarGzArchiveCreator(aOut)) {
+                TarBZip2ArchiveCreator tarCompressor = new TarBZip2ArchiveCreator(aOut)) {
 
             Instant now = now();
             FileTime modTime = FileTime.from(now);

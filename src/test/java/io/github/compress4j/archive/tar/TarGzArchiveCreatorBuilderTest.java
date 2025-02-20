@@ -23,7 +23,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.*;
 
-import io.github.compress4j.archive.tar.TarGzArchiveCreator.TarGzArchiveCreatorBuilder;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.Instant;
@@ -37,7 +36,7 @@ class TarGzArchiveCreatorBuilderTest {
     void shouldBuildArchiveOutputStream() throws IOException {
         // given
         var outputStream = mock(OutputStream.class);
-        var builder = spy(new TarGzArchiveCreatorBuilder(outputStream)
+        var builder = spy(TarGzArchiveCreator.builder(outputStream)
                 .longFileMode(LONGFILE_POSIX)
                 .bigNumberMode(BIGNUMBER_POSIX));
 
@@ -59,7 +58,7 @@ class TarGzArchiveCreatorBuilderTest {
         // given
         var outputStream = mock(OutputStream.class);
         var now = Instant.now();
-        var builder = spy(new TarGzArchiveCreatorBuilder(outputStream)
+        var builder = spy(TarGzArchiveCreator.builder(outputStream)
                 .compressorOutputStreamBuilder()
                 .bufferSize(1024)
                 .compressionLevel(BEST_COMPRESSION)
