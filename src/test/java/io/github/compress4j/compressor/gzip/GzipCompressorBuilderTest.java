@@ -27,7 +27,7 @@ import java.time.Instant;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.junit.jupiter.api.Test;
 
-class GzipCompressorOutputStreamBuilderTest {
+class GzipCompressorBuilderTest {
 
     @Test
     void shouldBuildArchiveOutputStream() throws IOException {
