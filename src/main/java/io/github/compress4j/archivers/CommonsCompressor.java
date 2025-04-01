@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Compress4J Project
+ * Copyright 2024-2025 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,7 @@ class CommonsCompressor implements Compressor {
         return compressionType;
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public void compress(File source, File destination) throws IllegalArgumentException, IOException {
         assertSource(source);
@@ -73,7 +74,7 @@ class CommonsCompressor implements Compressor {
 
         try (CompressorInputStream compressed =
                         CommonsStreamFactory.createCompressorInputStream(getCompressionType(), source);
-                FileOutputStream output = new FileOutputStream(destination); ) {
+                FileOutputStream output = new FileOutputStream(destination)) {
             compressed.transferTo(output);
         } catch (CompressorException e) {
             throw new IOException(e);
