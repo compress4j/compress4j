@@ -8,7 +8,7 @@ junit-bom = "5.12.1"
 logback = "1.5.18"
 mockito = "5.16.1"
 slf4j = "2.0.17"
-sonarqube = "6.0.1.5171"
+sonarqube = "6.1.0.5360"
 spotless = "7.0.2"
 tukaani-xz = "1.10"
 
