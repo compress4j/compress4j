@@ -1,0 +1,39 @@
+name: Deploy Docs
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18' # or your node version
+
+      - name: Set up Java JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17' # or your java version
+
+      - name: Generate Antora site
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: generateAntoraSite
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/site # or the directory where your Antora site is generated
+          publish_branch: gh-pages
+          cname: yourdomain.com # optional custom domain.
+          force_orphan: true #clears the gh-pages branch before pushing.

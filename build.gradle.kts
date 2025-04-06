@@ -9,6 +9,7 @@ plugins {
     `maven-publish`
     jacoco
 
+    alias(libs.plugins.antora)
     alias(libs.plugins.git.version)
     alias(libs.plugins.jreleaser)
     alias(libs.plugins.sonarqube)
@@ -222,3 +223,27 @@ jreleaser {
         }
     }
 }
+
+// Antora documentation generation
+antora {
+    packages =
+        mapOf(
+            "@antora/lunr-extension" to "^1.0.0-alpha.8",
+            "@asciidoctor/tabs" to "^1.0.0-beta.6",
+            "asciidoctor-kroki" to "^0.18.1",
+        )
+}
+
+tasks.antora { outputs.dir(layout.buildDirectory.dir("site")) }
+
+//gitPublish {
+//    repoUri.set("https://github.com/collibra/dgc-core.git")
+//    branch.set("gh-pages")
+//    commitMessage.set("Publishing a new user guide")
+//
+//    contents { from(tasks.antora) }
+//
+//    preserve { include(".gitignore", "CNAME") }
+//    username = System.getenv("GITHUB_API_USER")
+//    password = System.getenv("GITHUB_API_TOKEN")
+//}

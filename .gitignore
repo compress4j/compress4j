@@ -1,22 +1,17 @@
-target/
-bin/
-out/
-.gradle/
-build/
-
-# Eclipse project files
-.project
-.classpath
-.settings
-
-# Mac OS
-.DS_Store
-
-# IntelliJ IDEA files
 *.iml
 *.ipr
 *.iws
-.idea
-
-#backup-files
 *~
+.DS_Store
+.cache/
+.classpath
+.gradle/
+.idea
+.local/
+.project
+.settings
+bin/
+build/
+htmlReport/
+out/
+target/
