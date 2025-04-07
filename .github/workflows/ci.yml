@@ -90,9 +90,7 @@ jobs:
 
     steps:
       - name: Generate Antora site
-        uses: gradle/gradle-build-action@v2
-        with:
-        arguments: antora
+        run: ./gradlew antora --continue --no-daemon
 
       - name: Upload static files as artifact
         id: deployment
