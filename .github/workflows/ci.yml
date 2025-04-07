@@ -73,3 +73,33 @@ jobs:
             -f headRef=${{github.head_ref}}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy-docs:
+    runs-on: ubuntu-latest
+    needs:
+        - ci
+        - configure_sonar
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Generate Antora site
+        uses: gradle/gradle-build-action@v2
+        with:
+        arguments: antora
+
+      - name: Upload static files as artifact
+        id: deployment
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/site/
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

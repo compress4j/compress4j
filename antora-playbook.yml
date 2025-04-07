@@ -1,6 +1,8 @@
+---
 site:
   title: Compress4J
   url: https://dgc-core.docs.collibra.dev
+  start_page: compress4j::index.adoc
   robots: allow
 
 # see https://docs.antora.org/antora/2.3/playbook/configure-runtime/
@@ -12,7 +14,7 @@ runtime:
     # set to info to get details from the Antora extensions
     level: info
     # Antora exits with a non-zero exit code if an error is logged -> https://docs.antora.org/antora/latest/playbook/runtime-log-failure-level
-    failure_level: error
+    failure_level: warn
 
 content:
   sources:
@@ -20,11 +22,12 @@ content:
       branches:
         - HEAD
       version: true
+      start_path: docs
 ui:
   bundle:
     url: https://gitlab.com/antora/antora-ui-default/-/jobs/artifacts/HEAD/raw/build/ui-bundle.zip?job=bundle-stable
     snapshot: true
-
+  supplemental_files: ./docs/supplemental-ui
 antora:
   extensions:
     - require: '@antora/lunr-extension'

@@ -1,0 +1,20 @@
+.navbar {
+    background: #336699;
+}
+
+.doc h1, .doc h2, .doc h3, .doc h4, .doc h5, .doc h6 {
+    color: #336699;
+}
+
+.edit-this-page a {
+    display: inline-block;
+    width: 100%;
+    height: 100%;
+    text-indent: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    background: url(../images/edit.svg) no-repeat 50%;
+    background-size: 50%;
+    vertical-align: top;
+    color: transparent
+}
