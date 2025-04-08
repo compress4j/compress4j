@@ -1,4 +1,12 @@
 = Compress4J
+:description: Compress4j is an up-to-date fork of JArchiveLib, providing a simple Java API layer over apache.commons.compress for archiving and compression.
+:keywords: JArchiveLib, apache-compress, java, compress4j, compress, archive, zip, tar, gzip, bzip2, lzma, xz, jar, 7z, rar
+
+== Overview
+
+Compress4J is an up-to-date fork of https://github.com/thrau/jarchivelib[JArchiveLib]. +
+
+It's a simple archiving and compression library for Java that provides a thin and easy-to-use API layer on top of the powerful and feature-rich http://commons.apache.org/proper/commons-compress[org.apache.commons.compress].
 
 == Usage
 
