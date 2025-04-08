@@ -1,7 +1,4 @@
 name: compress4j
 title: Compress4J
-version:
-  v.*: 2
-  main: unstable
 nav:
 - modules/ROOT/nav.adoc
