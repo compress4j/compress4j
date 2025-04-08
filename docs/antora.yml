@@ -1,7 +1,7 @@
 name: compress4j
 title: Compress4J
 version:
-  vv(\d+\.\d+(\.\d+)?): $1
+  v2.1.2: 2
   main: unstable
 nav:
 - modules/ROOT/nav.adoc
