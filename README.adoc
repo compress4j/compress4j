@@ -12,7 +12,7 @@ This project is a fork of https://github.com/thrau/jarchivelib[JArchiveLib].
 
 == Documentation
 
-Documentation for this is built using https://antora.org/[Antora], available at https://docs.appuio.cloud.
+Documentation for this is built using https://antora.org/[Antora], available at https://compress4j.github.io
 
 === Basic Antora Setup
 

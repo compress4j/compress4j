@@ -29,7 +29,6 @@ mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockito-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
 
 [plugins]
-antora = { id = "org.antora", version = "1.0.0" }
 git-version = { id = "me.qoomon.git-versioning", version.ref = "git-version" }
 jreleaser = { id = "org.jreleaser", version.ref = "jreleaser" }
 sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
