@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Compress4J Project
+ * Copyright 2024-2025 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package io.github.compress4j.archivers;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 
 import java.io.File;
 import org.junit.jupiter.api.Test;
@@ -25,17 +25,20 @@ class FactoryTest extends AbstractResourceTest {
 
     @Test
     void createArchiver_withUnknownArchiveType_fails() {
-        assertThrows(IllegalArgumentException.class, () -> ArchiverFactory.createArchiver("foo"));
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> ArchiverFactory.createArchiver("foo"));
     }
 
     @Test
     void createArchiver_withUnknownArchiveAndCompressionType_fails() {
-        assertThrows(IllegalArgumentException.class, () -> ArchiverFactory.createArchiver("foo", "bar"));
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> ArchiverFactory.createArchiver("foo", "bar"));
     }
 
     @Test
     void createArchiver_withUnknownCompressionType_fails() {
-        assertThrows(IllegalArgumentException.class, () -> ArchiverFactory.createArchiver("tar", "bar"));
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> ArchiverFactory.createArchiver("tar", "bar"));
     }
 
     @Test
@@ -68,18 +71,21 @@ class FactoryTest extends AbstractResourceTest {
 
     @Test
     void createArchiver_fromUnknownFileExtension_fails() {
-        assertThrows(IllegalArgumentException.class, () -> ArchiverFactory.createArchiver(nonReadableFile));
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> ArchiverFactory.createArchiver(nonReadableFile));
     }
 
     @Test
     void createArchiver_fromUnknownArchiveType_fails() {
         File archive = new File(RESOURCES_DIR, "compress.txt.gz");
-        assertThrows(IllegalArgumentException.class, () -> ArchiverFactory.createArchiver(archive));
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> ArchiverFactory.createArchiver(archive));
     }
 
     @Test
     void createCompressor_withUnknownCompressionType_fails() {
-        assertThrows(IllegalArgumentException.class, () -> CompressorFactory.createCompressor("foo"));
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> CompressorFactory.createCompressor("foo"));
     }
 
     @Test
@@ -98,17 +104,20 @@ class FactoryTest extends AbstractResourceTest {
 
     @Test
     void createCompressor_fromUnknownFileExtension_fails() {
-        assertThrows(IllegalArgumentException.class, () -> CompressorFactory.createCompressor(nonReadableFile));
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> CompressorFactory.createCompressor(nonReadableFile));
     }
 
     @Test
     void createCompressor_fromUnknownCompressionType_fails() {
         File archive = new File(RESOURCES_DIR, "archive.tar");
-        assertThrows(IllegalArgumentException.class, () -> CompressorFactory.createCompressor(archive));
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> CompressorFactory.createCompressor(archive));
     }
 
     @Test
     void createCompressor_fromUnknownFileType_throwsException() {
-        assertThrows(IllegalArgumentException.class, () -> CompressorFactory.createCompressor(FileType.UNKNOWN));
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> CompressorFactory.createCompressor(FileType.UNKNOWN));
     }
 }

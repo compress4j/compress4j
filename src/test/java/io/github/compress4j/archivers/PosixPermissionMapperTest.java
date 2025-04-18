@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Compress4J Project
+ * Copyright 2024-2025 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ class PosixPermissionMapperTest {
     private Path tmpDir;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         Logger logger = (Logger) LoggerFactory.getLogger(LOGGER_NAME);
         memoryAppender = new MemoryAppender();
         memoryAppender.setContext((LoggerContext) LoggerFactory.getILoggerFactory());
@@ -64,7 +64,7 @@ class PosixPermissionMapperTest {
     }
 
     @AfterEach
-    public void cleanUp() {
+    void cleanUp() {
         memoryAppender.reset();
         memoryAppender.stop();
     }

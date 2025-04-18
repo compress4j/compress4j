@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Compress4J Project
+ * Copyright 2024-2025 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -150,6 +150,7 @@ final class CommonsStreamFactory {
         return compressorStreamFactory.createCompressorInputStream(in);
     }
 
+    @SuppressWarnings({"java:S3740", "rawtypes"})
     static CompressorOutputStream createCompressorOutputStream(CompressionType compressionType, File destination)
             throws IOException, CompressorException {
         return createCompressorOutputStream(compressionType.getName(), new FileOutputStream(destination));
@@ -165,12 +166,14 @@ final class CommonsStreamFactory {
      * @throws IOException if an I/O error occurs
      * @throws CompressorException if the compressor name is not known
      */
+    @SuppressWarnings({"java:S3740", "rawtypes"})
     static CompressorOutputStream createCompressorOutputStream(CommonsCompressor compressor, File destination)
             throws IOException, CompressorException {
         return createCompressorOutputStream(compressor.getCompressionType(), destination);
     }
 
     /** @see CompressorStreamFactory#createCompressorOutputStream(String, OutputStream) */
+    @SuppressWarnings({"java:S3740", "rawtypes"})
     static CompressorOutputStream createCompressorOutputStream(String compressorName, OutputStream out)
             throws CompressorException {
         ArchiverDependencyChecker.check(compressorName);
