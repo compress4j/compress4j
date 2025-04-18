@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Compress4J Project
+ * Copyright 2024-2025 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.io.IOException;
 import org.apache.commons.compress.archivers.StreamingNotSupportedException;
 import org.junit.jupiter.api.Test;
 
-public class Archiver7zTest extends AbstractArchiverTest {
+class Archiver7zTest extends AbstractArchiverTest {
 
     @Override
     protected Archiver getArchiver() {

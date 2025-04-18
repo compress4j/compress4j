@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Compress4J Project
+ * Copyright 2024-2025 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,16 @@ package io.github.compress4j.archivers;
 
 import static io.github.compress4j.test.util.FileTestUtils.assertDirectoryContentMatches;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.assertj.core.api.Assertions.fail;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 
 import io.github.compress4j.test.util.FileTestUtils;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -112,44 +109,50 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
 
     @Test
     void create_withNonExistingSource_fails() {
-        assertThrows(
-                FileNotFoundException.class, () -> archiver.create("archive", archiveCreateTmpDir, NON_EXISTING_FILE));
+        assertThatExceptionOfType(FileNotFoundException.class)
+                .isThrownBy(() -> archiver.create("archive", archiveCreateTmpDir, NON_EXISTING_FILE));
     }
 
     @Test
     void create_withNonReadableSource_fails() {
-        assertThrows(
-                FileNotFoundException.class, () -> archiver.create("archive", archiveCreateTmpDir, nonReadableFile));
+        assertThatExceptionOfType(FileNotFoundException.class)
+                .isThrownBy(() -> archiver.create("archive", archiveCreateTmpDir, nonReadableFile));
     }
 
     @Test
     void create_withFileAsDestination_fails() {
-        assertThrows(IllegalArgumentException.class, () -> archiver.create("archive", nonReadableFile, ARCHIVE_DIR));
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> archiver.create("archive", nonReadableFile, ARCHIVE_DIR));
     }
 
     @Test
     void create_withNonWritableDestination_fails() {
-        assertThrows(IllegalArgumentException.class, () -> archiver.create("archive", nonWritableDir, ARCHIVE_DIR));
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> archiver.create("archive", nonWritableDir, ARCHIVE_DIR));
     }
 
     @Test
     void extract_withNonExistingSource_fails() {
-        assertThrows(FileNotFoundException.class, () -> archiver.extract(NON_EXISTING_FILE, archiveExtractTmpDir));
+        assertThatExceptionOfType(FileNotFoundException.class)
+                .isThrownBy(() -> archiver.extract(NON_EXISTING_FILE, archiveExtractTmpDir));
     }
 
     @Test
     void extract_withNonReadableSource_fails() {
-        assertThrows(IllegalArgumentException.class, () -> archiver.extract(nonReadableFile, archiveExtractTmpDir));
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> archiver.extract(nonReadableFile, archiveExtractTmpDir));
     }
 
     @Test
     void extract_withFileAsDestination_fails() {
-        assertThrows(IllegalArgumentException.class, () -> archiver.extract(archive, nonReadableFile));
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> archiver.extract(archive, nonReadableFile));
     }
 
     @Test
     void extract_withNonWritableDestination_fails() {
-        assertThrows(IllegalArgumentException.class, () -> archiver.extract(archive, nonWritableDir));
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> archiver.extract(archive, nonWritableDir));
     }
 
     @Test
@@ -254,16 +257,10 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
     @Test
     void stream_extractPassedEntry_throwsException() throws Exception {
         try (ArchiveStream stream = archiver.stream(archive)) {
-            ArchiveEntry entry = null;
-            try {
-                entry = stream.getNextEntry();
-                stream.getNextEntry();
-            } catch (IllegalStateException e) {
-                fail("Illegal state exception caught to early");
-            }
-
-            ArchiveEntry finalEntry = entry;
-            assertThrows(IllegalStateException.class, () -> finalEntry.extract(archiveExtractTmpDir));
+            ArchiveEntry entry = stream.getNextEntry();
+            Assertions.assertDoesNotThrow(stream::getNextEntry, "Illegal state exception caught to early");
+            assertThatExceptionOfType(IllegalStateException.class)
+                    .isThrownBy(() -> entry.extract(archiveExtractTmpDir));
         }
     }
 
@@ -277,6 +274,7 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
         }
 
         ArchiveEntry finalEntry = entry;
-        assertThrows(IllegalStateException.class, () -> finalEntry.extract(archiveExtractTmpDir));
+        assertThatExceptionOfType(IllegalStateException.class)
+                .isThrownBy(() -> finalEntry.extract(archiveExtractTmpDir));
     }
 }

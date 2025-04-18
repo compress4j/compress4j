@@ -14,6 +14,7 @@ plugins {
     alias(libs.plugins.sonarqube)
     alias(libs.plugins.spotless)
 }
+
 val stagingDir: Provider<Directory> = layout.buildDirectory.dir("staging-deploy")
 val snapshotVersion: String = "\${describe.tag.version.major}." +
         "\${describe.tag.version.minor}." +
@@ -45,60 +46,65 @@ tasks.withType<Javadoc> {
 }
 
 dependencies {
-    api(libs.jakarta.annotation.api)
     api(libs.org.apache.commons.commons.compress)
 
+    implementation(libs.commons.io)
+    implementation(libs.jakarta.annotation.api)
     implementation(libs.slf4j.api)
-
-    testImplementation(platform(libs.junit.bom))
-
-    testImplementation(libs.assertj.core)
-    testImplementation(libs.junit.jupiter)
-    testImplementation(libs.junit.jupiter.params)
-    testImplementation(libs.logback.classic)
-    testImplementation(libs.mockito.core)
-    testImplementation(libs.mockito.jupiter)
-
-    testRuntimeOnly(libs.junit.platform.launcher)
 
     testFixturesImplementation(platform(libs.junit.bom))
 
-    testFixturesImplementation(libs.assertj.core)
-    testFixturesImplementation(libs.junit.jupiter)
+    testFixturesApi(libs.junit.jupiter.api)
     testFixturesApi(libs.logback.classic)
-}
-
-tasks.test {
-    useJUnitPlatform()
+    testFixturesApi(libs.logback.core)
+    testFixturesImplementation(libs.assertj.core)
 }
 
 testing {
     suites {
-        val test by getting(JvmTestSuite::class) {
-            useJUnitJupiter()
+        named("test", JvmTestSuite::class) {
+            dependencies {
+                implementation(platform(libs.junit.bom))
+
+                implementation(libs.assertj.core)
+                implementation(libs.junit.jupiter.api)
+                implementation(libs.junit.jupiter.params)
+                implementation(libs.logback.classic)
+                implementation(libs.logback.core)
+                implementation(libs.mockito.core)
+                implementation(libs.mockito.jupiter)
+            }
         }
 
         register<JvmTestSuite>("integrationTest") {
             dependencies {
+                implementation(platform(libs.junit.bom))
                 implementation(project())
                 implementation(testFixtures(project()))
 
-                implementation(platform(libs.junit.bom))
-
-                implementation(libs.org.tukaani.xz)
                 implementation(libs.assertj.core)
-                implementation(libs.junit.jupiter)
-                implementation(libs.junit.jupiter.params)
+                implementation(libs.junit.jupiter.api)
 
-                runtimeOnly(libs.junit.platform.launcher)
+                runtimeOnly(libs.org.tukaani.xz)
             }
 
-            targets {
-                all {
+            targets.all {
                     testTask.configure {
-                        shouldRunAfter(test)
+                        shouldRunAfter(tasks.test)
                     }
-                }
+            }
+        }
+    }
+}
+
+dependencyAnalysis {
+    issues {
+        all {
+            onUnusedDependencies {
+                exclude("org.junit.jupiter:junit-jupiter")
+            }
+            onAny {
+                severity("fail")
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Compress4J Project
+ * Copyright 2024-2025 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package io.github.compress4j.archivers;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.File;
@@ -77,20 +77,20 @@ public abstract class AbstractCompressorTest extends AbstractResourceTest {
     @Test
     public void compress_nonReadableFile_throwsException() {
         try {
-            assertThrows(IllegalArgumentException.class, () -> getCompressor()
-                    .compress(nonReadableFile, compressDestinationFile));
+            assertThatExceptionOfType(IllegalArgumentException.class)
+                    .isThrownBy(() -> getCompressor().compress(nonReadableFile, compressDestinationFile));
         } finally {
-            assertFalse(compressDestinationFile.exists());
+            assertThat(compressDestinationFile).doesNotExist();
         }
     }
 
     @Test
     public void compress_nonExistingFile_throwsException() {
         try {
-            assertThrows(FileNotFoundException.class, () -> getCompressor()
-                    .compress(NON_EXISTING_FILE, compressDestinationFile));
+            assertThatExceptionOfType(FileNotFoundException.class)
+                    .isThrownBy(() -> getCompressor().compress(NON_EXISTING_FILE, compressDestinationFile));
         } finally {
-            assertFalse(compressDestinationFile.exists());
+            assertThat(compressDestinationFile).doesNotExist();
         }
     }
 
@@ -103,17 +103,20 @@ public abstract class AbstractCompressorTest extends AbstractResourceTest {
 
     @Test
     public void compress_withNonExistingDestination_throwsException() {
-        assertThrows(FileNotFoundException.class, () -> getCompressor().compress(COMPRESS_TXT, NON_EXISTING_FILE));
+        assertThatExceptionOfType(FileNotFoundException.class)
+                .isThrownBy(() -> getCompressor().compress(COMPRESS_TXT, NON_EXISTING_FILE));
     }
 
     @Test
     public void compress_withNonWritableDestinationFile_throwsException() {
-        assertThrows(IllegalArgumentException.class, () -> getCompressor().compress(COMPRESS_TXT, nonWritableFile));
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> getCompressor().compress(COMPRESS_TXT, nonWritableFile));
     }
 
     @Test
     public void compress_withNonWritableDestinationDirectory_throwsException() {
-        assertThrows(IllegalArgumentException.class, () -> getCompressor().compress(COMPRESS_TXT, nonWritableDir));
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> getCompressor().compress(COMPRESS_TXT, nonWritableDir));
     }
 
     @Test
@@ -154,20 +157,20 @@ public abstract class AbstractCompressorTest extends AbstractResourceTest {
 
     @Test
     public void decompress_withNonExistingDestination_throwsException() {
-        assertThrows(
-                FileNotFoundException.class, () -> getCompressor().decompress(getCompressedFile(), NON_EXISTING_FILE));
+        assertThatExceptionOfType(FileNotFoundException.class)
+                .isThrownBy(() -> getCompressor().decompress(getCompressedFile(), NON_EXISTING_FILE));
     }
 
     @Test
     public void decompress_withNonWritableDestinationFile_throwsException() {
-        assertThrows(
-                IllegalArgumentException.class, () -> getCompressor().decompress(getCompressedFile(), nonWritableFile));
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> getCompressor().decompress(getCompressedFile(), nonWritableFile));
     }
 
     @Test
     public void decompress_withNonWritableDestinationDirectory_throwsException() {
-        assertThrows(
-                IllegalArgumentException.class, () -> getCompressor().decompress(getCompressedFile(), nonWritableDir));
+        assertThatExceptionOfType(IllegalArgumentException.class)
+                .isThrownBy(() -> getCompressor().decompress(getCompressedFile(), nonWritableDir));
     }
 
     @Test
@@ -179,8 +182,8 @@ public abstract class AbstractCompressorTest extends AbstractResourceTest {
 
     @Test
     public void decompress_nonExistingFile_throwsException() {
-        assertThrows(FileNotFoundException.class, () -> getCompressor()
-                .decompress(NON_EXISTING_FILE, decompressDestinationFile));
+        assertThatExceptionOfType(FileNotFoundException.class)
+                .isThrownBy(() -> getCompressor().decompress(NON_EXISTING_FILE, decompressDestinationFile));
     }
 
     private void assertCompressionWasSuccessful() throws Exception {
