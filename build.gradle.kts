@@ -45,8 +45,10 @@ tasks.withType<Javadoc> {
     options.encoding = "UTF-8"
 }
 
+val mockitoAgent = configurations.create("mockitoAgent")
+
 dependencies {
-    api(libs.org.apache.commons.commons.compress)
+    api(libs.commons.compress)
 
     implementation(libs.commons.io)
     implementation(libs.jakarta.annotation.api)
@@ -58,6 +60,8 @@ dependencies {
     testFixturesApi(libs.logback.classic)
     testFixturesApi(libs.logback.core)
     testFixturesImplementation(libs.assertj.core)
+
+    mockitoAgent(libs.mockito.core) { isTransitive = false }
 }
 
 testing {
@@ -74,6 +78,13 @@ testing {
                 implementation(libs.mockito.core)
                 implementation(libs.mockito.jupiter)
             }
+            targets.all { testTask.configure {
+                jvmArgs =
+                    listOf(
+                        "-javaagent:${mockitoAgent.asPath}",
+                        "--add-opens=java.base/java.util.zip=ALL-UNNAMED"
+                    )
+            } }
         }
 
         register<JvmTestSuite>("integrationTest") {
@@ -121,7 +132,7 @@ dependencyAnalysis {
 }
 
 tasks.check {
-    dependsOn(tasks.testCodeCoverageReport)
+    dependsOn(tasks.buildHealth, tasks.testCodeCoverageReport)
 }
 
 sonar {
@@ -152,6 +163,10 @@ spotless {
         removeUnusedImports()
         trimTrailingWhitespace()
         endWithNewline()
+    }
+    format("javaMisc") {
+        target("src/**/package-info.java")
+        licenseHeaderFile(rootProject.file(".config/spotless/copyright.java.txt"), "\\/\\*\\*|@Nonnull\\npackage |package ")
     }
 }
 

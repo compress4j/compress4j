@@ -9,9 +9,9 @@ slf4j = "2.0.17"
 tukaani-xz = "1.10"
 
 [libraries]
+commons-compress = { module = "org.apache.commons:commons-compress", version.ref = "apache-commons-compress" }
 commons-io = { module = "commons-io:commons-io", version = "2.19.0" }
 jakarta-annotation-api = { module = "jakarta.annotation:jakarta.annotation-api", version.ref = "jakarta-annotation" }
-org-apache-commons-commons-compress = { module = "org.apache.commons:commons-compress", version.ref = "apache-commons-compress" }
 org-tukaani-xz = { module = "org.tukaani:xz", version.ref = "tukaani-xz" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 
