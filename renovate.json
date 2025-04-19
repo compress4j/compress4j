@@ -1,6 +1,31 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "baseBranches": [
+    "main"
+  ],
+  "branchPrefix": "renovate-",
+  "dependencyDashboard": false,
   "extends": [
     "config:recommended"
-  ]
+  ],
+  "hashedBranchLength": 24,
+  "labels": [
+    "dependencies",
+    "renovate"
+  ],
+  "major": {
+    "automerge": false,
+    "labels": [
+      "dependency-update",
+      "major-dependency-update"
+    ]
+  },
+  "prHourlyLimit": 10,
+  "rebaseWhen": "behind-base-branch",
+  "reviewersSampleSize": 1,
+  "schedule": [
+    "at any time"
+  ],
+  "timezone": "Europe/London",
+  "updateNotScheduled": false
 }
