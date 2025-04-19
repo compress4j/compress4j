@@ -13,19 +13,17 @@
     "dependencies",
     "renovate"
   ],
-  "major": {
-    "automerge": false,
-    "labels": [
-      "dependency-update",
-      "major-dependency-update"
-    ]
-  },
-  "prHourlyLimit": 10,
-  "rebaseWhen": "behind-base-branch",
-  "reviewersSampleSize": 1,
-  "schedule": [
-    "at any time"
-  ],
-  "timezone": "Europe/London",
-  "updateNotScheduled": false
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchCurrentVersion": "!/^0/",
+      "automerge": true
+    },
+    {
+      "matchManagers": [
+        "gradle-wrapper"
+      ],
+      "groupName": "Gradle Wrapper"
+    }
+  ]
 }
