@@ -16,7 +16,7 @@
 package io.github.compress4j.archivers;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.File;
 import org.junit.jupiter.api.Test;
@@ -25,20 +25,19 @@ class FactoryTest extends AbstractResourceTest {
 
     @Test
     void createArchiver_withUnknownArchiveType_fails() {
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> ArchiverFactory.createArchiver("foo"));
+        assertThatThrownBy(() -> ArchiverFactory.createArchiver("foo")).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void createArchiver_withUnknownArchiveAndCompressionType_fails() {
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> ArchiverFactory.createArchiver("foo", "bar"));
+        assertThatThrownBy(() -> ArchiverFactory.createArchiver("foo", "bar"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void createArchiver_withUnknownCompressionType_fails() {
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> ArchiverFactory.createArchiver("tar", "bar"));
+        assertThatThrownBy(() -> ArchiverFactory.createArchiver("tar", "bar"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -71,21 +70,20 @@ class FactoryTest extends AbstractResourceTest {
 
     @Test
     void createArchiver_fromUnknownFileExtension_fails() {
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> ArchiverFactory.createArchiver(nonReadableFile));
+        assertThatThrownBy(() -> ArchiverFactory.createArchiver(nonReadableFile))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void createArchiver_fromUnknownArchiveType_fails() {
         File archive = new File(RESOURCES_DIR, "compress.txt.gz");
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> ArchiverFactory.createArchiver(archive));
+        assertThatThrownBy(() -> ArchiverFactory.createArchiver(archive)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void createCompressor_withUnknownCompressionType_fails() {
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> CompressorFactory.createCompressor("foo"));
+        assertThatThrownBy(() -> CompressorFactory.createCompressor("foo"))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -104,20 +102,20 @@ class FactoryTest extends AbstractResourceTest {
 
     @Test
     void createCompressor_fromUnknownFileExtension_fails() {
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> CompressorFactory.createCompressor(nonReadableFile));
+        assertThatThrownBy(() -> CompressorFactory.createCompressor(nonReadableFile))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void createCompressor_fromUnknownCompressionType_fails() {
         File archive = new File(RESOURCES_DIR, "archive.tar");
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> CompressorFactory.createCompressor(archive));
+        assertThatThrownBy(() -> CompressorFactory.createCompressor(archive))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void createCompressor_fromUnknownFileType_throwsException() {
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> CompressorFactory.createCompressor(FileType.UNKNOWN));
+        assertThatThrownBy(() -> CompressorFactory.createCompressor(FileType.UNKNOWN))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

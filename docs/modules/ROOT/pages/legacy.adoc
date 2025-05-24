@@ -1,0 +1,98 @@
+= Compress4J Legacy (Deprecated)
+
+== Overview
+
+This is the legacy implementation of the library, it's been deprecated in favour of the new, more extensible implementation and will be removed in the next major release.
+
+== Usage
+
+=== Using the ArchiverFactory
+
+Create a new Archiver to handle zip archives
+
+[source,java]
+----
+Archiver archiver = ArchiverFactory.createArchiver(ArchiveFormat.ZIP);
+----
+
+Create a new Archiver to handle tar archives with gzip compression
+
+[source,java]
+----
+Archiver archiver = ArchiverFactory.createArchiver(ArchiveFormat.TAR, CompressionType.GZIP);
+----
+
+Alternatively you can use string representations of the archive and compression types.
+
+[source,java]
+----
+Archiver archiver = ArchiverFactory.createArchiver("zip");
+----
+
+The ArchiveFactory can also detect archive types based on file extensions and hand you the correct Archiver.
+This example returns an Archiver instance that handles tar.gz files.
+(It would also recognize the `.tgz` extension)
+
+[source,java]
+----
+Archiver archiver = ArchiverFactory.createArchiver(new File("archive.tar.gz"));
+----
+
+=== Using Archivers
+
+==== Extract
+
+To extract the zip archive `/home/jack/archive.zip` to `/home/jack/archive`:
+
+[source,java]
+----
+File archive = new File("/home/jack/archive.zip");
+File destination = new File("/home/jack/archive");
+
+Archiver archiver = ArchiverFactory.createArchiver(ArchiveFormat.ZIP);
+archiver.extract(archive, destination);
+----
+
+==== Create
+
+To create a new tar archive with gzip compression `archive.tar.gz` in `/home/jack/` containing the entire directory `/home/jack/archive`
+
+[source,java]
+----
+String archiveName = "archive";
+File destination = new File("/home/jack");
+File source = new File("/home/jack/archive");
+
+Archiver archiver = ArchiverFactory.createArchiver(ArchiveFormat.TAR, CompressionType.GZIP);
+File archive = archiver.create(archiveName, destination, source);
+----
+
+notice that you can omit the filename extension in the archive name, as it will be appended by the archiver automatically if it is missing.
+
+==== Stream
+
+To access the contents of an archive as a Stream, rather than extracting them directly onto the filesystem
+
+[source,java]
+----
+ArchiveStream stream = archiver.stream(archive);
+ArchiveEntry entry;
+
+while((entry = stream.getNextEntry()) != null) {
+    // access each archive entry individually using the stream
+    // or extract it using entry.extract(destination)
+    // or fetch meta-data using entry.getName(), entry.isDirectory(), ...
+}
+stream.close();
+----
+
+== Compatibility
+
+* Java 11, 17, 21
+* Currently only tested for *nix file systems.
+
+== Known limitations
+
+* Permissions are not stored when creating archives
+* There is no support for Windows permissions
+* JAR files are treated like streamed zip files and can not restore permissions
