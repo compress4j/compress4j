@@ -27,7 +27,7 @@ class TarBZip2ArchiveCreatorIntegrationTest extends TarArchiveCreatorIntegration
     @Override
     @BeforeEach
     void setup() throws IOException {
-        archiveFile = tempDir.resolve("test.tar.gz");
+        archiveFile = tempDir.resolve("test.tar.bzip2");
         archive =
                 new TarBZip2ArchiveCreator(new TarBZip2ArchiveCreatorBuilder(archiveFile).longFileMode(LONGFILE_POSIX));
     }
