@@ -15,7 +15,7 @@
  */
 package io.github.compress4j.archive.tar;
 
-import io.github.compress4j.compression.bzip2.BZip2Compressor.BZip2CompressorOutputStreamBuilder;
+import io.github.compress4j.compressors.bzip2.BZip2Compressor.BZip2CompressorOutputStreamBuilder;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;

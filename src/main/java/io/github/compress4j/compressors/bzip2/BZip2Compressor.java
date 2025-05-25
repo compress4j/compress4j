@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.compress4j.compression.bzip2;
+package io.github.compress4j.compressors.bzip2;
 
 import static org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream.MAX_BLOCKSIZE;
 
-import io.github.compress4j.compression.Compressor;
+import io.github.compress4j.compressors.Compressor;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;

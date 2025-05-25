@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.compress4j.compression.memory;
+package io.github.compress4j.compressors.memory;
 
 import java.io.OutputStream;
 import org.apache.commons.compress.compressors.CompressorOutputStream;

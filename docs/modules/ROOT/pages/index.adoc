@@ -8,7 +8,7 @@ Compress4J is an up-to-date fork of https://github.com/thrau/jarchivelib[JArchiv
 
 It's a simple archiving and compression library for Java that provides a thin and easy-to-use API layer on top of the powerful and feature-rich http://commons.apache.org/proper/commons-compress[org.apache.commons.compress].
 
-Compress4J is a Java library dedicated to simplifying the handling of various data **compression** formats. Its primary goal is to provide developers with a unified and straightforward API for compressing and decompressing files and data streams, regardless of the underlying algorithm being used.
+Compress4J is a Java library dedicated to simplifying the handling of various data **compressors** formats. Its primary goal is to provide developers with a unified and straightforward API for compressing and decompressing files and data streams, regardless of the underlying algorithm being used.
 
 Inspired by the need for a consistent way to interact with different compression techniques, Compress4J abstracts the specific implementations behind common interfaces, making it easier to incorporate compression into Java applications or to switch between compression formats.
 
