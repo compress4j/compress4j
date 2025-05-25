@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.compress4j.compression.gzip;
+package io.github.compress4j.compressors.gzip;
 
 import static java.util.zip.Deflater.BEST_COMPRESSION;
 import static java.util.zip.Deflater.HUFFMAN_ONLY;

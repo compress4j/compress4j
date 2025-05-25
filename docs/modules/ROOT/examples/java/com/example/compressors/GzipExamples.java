@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.compression;
+package com.example.compressors;
 
 import static java.util.zip.Deflater.BEST_COMPRESSION;
 import static java.util.zip.Deflater.HUFFMAN_ONLY;
 
-import io.github.compress4j.compression.gzip.GzipCompressor;
+import io.github.compress4j.compressors.gzip.GzipCompressor;
 import java.nio.file.Path;
 
 @SuppressWarnings("unused")

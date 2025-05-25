@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.compress4j.compression;
+package io.github.compress4j.compressors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-import io.github.compress4j.compression.memory.InMemoryCompressor;
-import io.github.compress4j.compression.memory.InMemoryCompressorOutputStream;
+import io.github.compress4j.compressors.memory.InMemoryCompressor;
+import io.github.compress4j.compressors.memory.InMemoryCompressorOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import org.junit.jupiter.api.Test;

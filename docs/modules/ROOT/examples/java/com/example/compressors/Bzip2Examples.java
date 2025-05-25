@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.compression;
+package com.example.compressors;
 
-import io.github.compress4j.compression.bzip2.BZip2Compressor;
+import io.github.compress4j.compressors.bzip2.BZip2Compressor;
 import java.nio.file.Path;
 
 public class Bzip2Examples {

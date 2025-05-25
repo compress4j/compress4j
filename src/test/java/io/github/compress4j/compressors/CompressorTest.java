@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.compress4j.compression;
+package io.github.compress4j.compressors;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
-import io.github.compress4j.compression.memory.InMemoryCompressor;
+import io.github.compress4j.compressors.memory.InMemoryCompressor;
 import java.io.File;
 import java.io.OutputStream;
 import java.nio.file.Files;
