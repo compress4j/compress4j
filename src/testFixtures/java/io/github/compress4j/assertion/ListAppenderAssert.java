@@ -37,4 +37,17 @@ public class ListAppenderAssert extends AbstractAssert<ListAppenderAssert, ListA
                         event.toString().contains(message) && event.getLevel().equals(level));
         return this;
     }
+
+    public ListAppenderAssert contains(String message, Level level, Exception exception) {
+        Assertions.assertThat(actual.list)
+                .anyMatch(event -> event.getThrowableProxy().getMessage().equals(exception.getMessage())
+                        && event.toString().contains(message)
+                        && event.getLevel().equals(level));
+        return this;
+    }
+
+    public ListAppenderAssert isEmpty() {
+        Assertions.assertThat(actual.list).isEmpty();
+        return this;
+    }
 }

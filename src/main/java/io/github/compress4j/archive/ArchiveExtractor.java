@@ -232,6 +232,9 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
             if (decision.equals(SKIP) && !entryFilter.orElse(e -> true).test(entry)) {
                 continue;
             }
+            if (decision.equals(RETRY)) {
+                decision = SKIP;
+            }
 
             try {
                 processEntry(outputDir, entry);
@@ -607,6 +610,13 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
 
     /**
      * Policy for handling symbolic links which point to outside of archive.
+     *
+     * <p>This is needed to prevent directory traversal attacks when extracting archives from untrusted sources.
+     *
+     * <p>For example, if an archive contains a symlink {@code foo -> /opt/foo} and the archive is extracted to
+     * {@code /foo/bar}, then the symlink should not point to {@code /opt/foo} but rather to {@code /foo/bar/opt/foo}.
+     *
+     * <p>
      *
      * <p>Example: {@code foo -> /opt/foo}
      *

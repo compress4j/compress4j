@@ -25,7 +25,7 @@ import java.util.List;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 
 /** A test input stream. */
-public final class InMemoryArchiveInputStream extends ArchiveInputStream<InMemoryArchiveEntry> {
+public class InMemoryArchiveInputStream extends ArchiveInputStream<InMemoryArchiveEntry> {
 
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final CollectionType collectionType =
