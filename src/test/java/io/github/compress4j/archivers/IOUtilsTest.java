@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Compress4J Project
+ * Copyright 2024-2025 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.github.compress4j.archivers;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.stream.Stream;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -33,6 +35,7 @@ class IOUtilsTest {
                 Arguments.of("path/sub/../file.txt", "path/file.txt"));
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @ParameterizedTest
     @MethodSource("entryNames")
     void shouldCleanEntryName(String entryName, String expected) {

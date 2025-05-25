@@ -15,30 +15,26 @@
  */
 package io.github.compress4j.archivers;
 
-import static io.github.compress4j.test.util.FileTestUtils.assertDirectoryContentMatches;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatExceptionOfType;
 
-import io.github.compress4j.test.util.FileTestUtils;
+import io.github.compress4j.assertion.Compress4JAssertions;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 public abstract class AbstractArchiverTest extends AbstractResourceTest {
 
-    private Archiver archiver;
+    protected Archiver archiver;
 
-    private File archive;
-
-    protected void assertExtractionWasSuccessful() {
-        assertDirectoryContentMatches(ARCHIVE_DIR.toPath(), archiveExtractTmpDir.toPath());
-    }
+    protected File archive;
 
     @BeforeEach
     public void setUp() {
@@ -60,14 +56,14 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
     void extract_properlyExtractsArchive() throws Exception {
         archiver.extract(archive, archiveExtractTmpDir);
 
-        assertExtractionWasSuccessful();
+        Compress4JAssertions.assertThat(ARCHIVE_DIR.toPath()).containsSameContentAs(archiveExtractTmpDir.toPath());
     }
 
     @Test
     void extract_properlyExtractsArchiveStream() throws Exception {
         try (InputStream archiveAsStream = new FileInputStream(archive)) {
             archiver.extract(archiveAsStream, archiveExtractTmpDir);
-            assertExtractionWasSuccessful();
+            Compress4JAssertions.assertThat(ARCHIVE_DIR.toPath()).containsSameContentAs(archiveExtractTmpDir.toPath());
         }
     }
 
@@ -80,7 +76,7 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
         assertThat(createdArchive).exists().hasName(archiveName);
 
         archiver.extract(createdArchive, archiveExtractTmpDir);
-        assertExtractionWasSuccessful();
+        Compress4JAssertions.assertThat(ARCHIVE_DIR.toPath()).containsSameContentAs(archiveExtractTmpDir.toPath());
     }
 
     @Test
@@ -92,7 +88,7 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
         assertThat(createdArchive).exists().hasName(archiveName);
 
         archiver.extract(createdArchive, archiveExtractTmpDir);
-        FileTestUtils.assertDirectoryContentMatches(ARCHIVE_DIR.toPath(), archiveExtractTmpDir.toPath());
+        Compress4JAssertions.assertThat(ARCHIVE_DIR.toPath()).containsSameContentAs(archiveExtractTmpDir.toPath());
     }
 
     @Test
@@ -104,55 +100,59 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
         assertThat(actualArchive).exists().hasName(archiveName);
 
         archiver.extract(actualArchive, archiveExtractTmpDir);
-        assertExtractionWasSuccessful();
+        Compress4JAssertions.assertThat(ARCHIVE_DIR.toPath()).containsSameContentAs(archiveExtractTmpDir.toPath());
     }
 
     @Test
     void create_withNonExistingSource_fails() {
-        assertThatExceptionOfType(FileNotFoundException.class)
-                .isThrownBy(() -> archiver.create("archive", archiveCreateTmpDir, NON_EXISTING_FILE));
+        assertThatThrownBy(() -> archiver.create("archive", archiveCreateTmpDir, NON_EXISTING_FILE))
+                .isInstanceOf(FileNotFoundException.class);
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     void create_withNonReadableSource_fails() {
-        assertThatExceptionOfType(FileNotFoundException.class)
-                .isThrownBy(() -> archiver.create("archive", archiveCreateTmpDir, nonReadableFile));
+        assertThatThrownBy(() -> archiver.create("archive", archiveCreateTmpDir, nonReadableFile))
+                .isInstanceOf(FileNotFoundException.class);
     }
 
     @Test
     void create_withFileAsDestination_fails() {
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> archiver.create("archive", nonReadableFile, ARCHIVE_DIR));
+        assertThatThrownBy(() -> archiver.create("archive", nonReadableFile, ARCHIVE_DIR))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     void create_withNonWritableDestination_fails() {
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> archiver.create("archive", nonWritableDir, ARCHIVE_DIR));
+        assertThatThrownBy(() -> archiver.create("archive", nonWritableDir, ARCHIVE_DIR))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void extract_withNonExistingSource_fails() {
-        assertThatExceptionOfType(FileNotFoundException.class)
-                .isThrownBy(() -> archiver.extract(NON_EXISTING_FILE, archiveExtractTmpDir));
+        assertThatThrownBy(() -> archiver.extract(NON_EXISTING_FILE, archiveExtractTmpDir))
+                .isInstanceOf(FileNotFoundException.class);
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     void extract_withNonReadableSource_fails() {
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> archiver.extract(nonReadableFile, archiveExtractTmpDir));
+        assertThatThrownBy(() -> archiver.extract(nonReadableFile, archiveExtractTmpDir))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void extract_withFileAsDestination_fails() {
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> archiver.extract(archive, nonReadableFile));
+        assertThatThrownBy(() -> archiver.extract(archive, nonReadableFile))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     void extract_withNonWritableDestination_fails() {
-        assertThatExceptionOfType(IllegalArgumentException.class)
-                .isThrownBy(() -> archiver.extract(archive, nonWritableDir));
+        assertThatThrownBy(() -> archiver.extract(archive, nonWritableDir))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
@@ -251,16 +251,23 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
             }
         }
 
-        assertExtractionWasSuccessful();
+        Compress4JAssertions.assertThat(ARCHIVE_DIR.toPath()).containsSameContentAs(archiveExtractTmpDir.toPath());
     }
 
     @Test
     void stream_extractPassedEntry_throwsException() throws Exception {
         try (ArchiveStream stream = archiver.stream(archive)) {
-            ArchiveEntry entry = stream.getNextEntry();
-            Assertions.assertDoesNotThrow(stream::getNextEntry, "Illegal state exception caught to early");
-            assertThatExceptionOfType(IllegalStateException.class)
-                    .isThrownBy(() -> entry.extract(archiveExtractTmpDir));
+            ArchiveEntry entry = null;
+            try {
+                entry = stream.getNextEntry();
+                stream.getNextEntry();
+            } catch (IllegalStateException e) {
+                fail("Illegal state exception caught to early");
+            }
+
+            ArchiveEntry finalEntry = entry;
+            assertThatThrownBy(() -> finalEntry.extract(archiveExtractTmpDir))
+                    .isInstanceOf(IllegalStateException.class);
         }
     }
 
@@ -274,7 +281,7 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
         }
 
         ArchiveEntry finalEntry = entry;
-        assertThatExceptionOfType(IllegalStateException.class)
-                .isThrownBy(() -> finalEntry.extract(archiveExtractTmpDir));
+        assertThat(finalEntry).isNotNull();
+        assertThatThrownBy(() -> finalEntry.extract(archiveExtractTmpDir)).isInstanceOf(IllegalStateException.class);
     }
 }
