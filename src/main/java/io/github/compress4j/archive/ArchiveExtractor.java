@@ -616,8 +616,6 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * <p>For example, if an archive contains a symlink {@code foo -> /opt/foo} and the archive is extracted to
      * {@code /foo/bar}, then the symlink should not point to {@code /opt/foo} but rather to {@code /foo/bar/opt/foo}.
      *
-     * <p>
-     *
      * <p>Example: {@code foo -> /opt/foo}
      *
      * <p>or {@code foo -> ../foo}
