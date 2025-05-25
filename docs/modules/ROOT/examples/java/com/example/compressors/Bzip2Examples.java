@@ -18,6 +18,7 @@ package com.example.compressors;
 import io.github.compress4j.compressors.bzip2.BZip2Compressor;
 import java.nio.file.Path;
 
+@SuppressWarnings({"unused", "java:S112", "java:S1192"})
 public class Bzip2Examples {
     private Bzip2Examples() {
         // Usage example
