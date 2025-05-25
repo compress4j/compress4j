@@ -15,19 +15,18 @@
  */
 package com.example.archivers.tar;
 
-import static io.github.compress4j.archive.ArchiveExtractor.ErrorHandlerChoice.RETRY;
+import static io.github.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice.RETRY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.zip.Deflater.BEST_COMPRESSION;
 import static java.util.zip.Deflater.HUFFMAN_ONLY;
 import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.*;
-import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.BIGNUMBER_POSIX;
 
-import io.github.compress4j.archive.ArchiveExtractor;
-import io.github.compress4j.archive.tar.*;
+import io.github.compress4j.archivers.ArchiveExtractor;
+import io.github.compress4j.archivers.tar.*;
 import java.io.IOException;
 import java.nio.file.Path;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"java:S1192", "unused"})
 public class TarExamples {
 
     private TarExamples() {

@@ -21,7 +21,7 @@ import static java.util.zip.Deflater.HUFFMAN_ONLY;
 import io.github.compress4j.compressors.gzip.GzipCompressor;
 import java.nio.file.Path;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "java:S112", "java:S1192"})
 public class GzipExamples {
     private GzipExamples() {
         // Usage example

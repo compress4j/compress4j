@@ -15,7 +15,7 @@
  */
 package io.github.compress4j.assertion;
 
-import io.github.compress4j.archive.ArchiveExtractor.Entry;
+import io.github.compress4j.archivers.ArchiveExtractor.Entry;
 import io.github.compress4j.utils.PosixFilePermissionsMapper;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Set;
