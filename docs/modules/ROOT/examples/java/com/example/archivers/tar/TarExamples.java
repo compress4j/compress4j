@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.archive.tar;
+package com.example.archivers.tar;
 
 import static io.github.compress4j.archive.ArchiveExtractor.ErrorHandlerChoice.RETRY;
 import static java.nio.charset.StandardCharsets.UTF_8;

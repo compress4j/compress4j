@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 /**
- * Provides a unified API and factories for dealing with compressed streams.
+ * Provides stream classes for compressing and decompressing streams using the GZip algorithm.
  *
- * @since 2.2
+ * <p>The classes in this package are wrappers around {@link java.util.zip.GZIPInputStream
+ * java.util.zip.GZIPInputStream} and {@link java.util.zip.GZIPOutputStream java.util.zip.GZIPOutputStream}.
  */
-@Nonnull
-package io.github.compress4j.compression;
-
-import jakarta.annotation.Nonnull;
+package io.github.compress4j.compressors.gzip;
