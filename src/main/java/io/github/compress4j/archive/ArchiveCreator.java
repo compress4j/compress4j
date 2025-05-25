@@ -227,6 +227,9 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
             Path directory,
             @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<FileTime> modTime)
             throws IOException {
+        if (!Files.isDirectory(directory)) {
+            throw new IllegalArgumentException("Path is not a directory: " + directory);
+        }
         topLevelDir = topLevelDir.isEmpty() ? "" : sanitiseName(topLevelDir);
         LOGGER.atTrace().log("dir={} topLevelDir={}", directory, topLevelDir);
 
@@ -531,7 +534,7 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
      */
     @SuppressWarnings("java:S5361")
     public static String sanitiseName(String name) {
-        String entryName = trimLeading(trimTrailing(name.replaceAll("\\\\", "/"), '/'), '/');
+        String entryName = trimLeading(trimTrailing(name.replaceAll("\\\\+", "/"), '/'), '/');
         if (StringUtils.isBlank(entryName)) throw new IllegalArgumentException("Invalid entry name: " + name);
         return entryName;
     }
@@ -559,7 +562,8 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
 
         @Override
         @Nonnull
-        public FileVisitResult preVisitDirectory(Path dir, @Nonnull BasicFileAttributes attrs) throws IOException {
+        public FileVisitResult preVisitDirectory(@Nonnull Path dir, @Nonnull BasicFileAttributes attrs)
+                throws IOException {
             String name = dir == root ? prefix : entryName(dir);
             if (name.isEmpty()) {
                 return FileVisitResult.CONTINUE;
@@ -574,7 +578,7 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
 
         @Override
         @Nonnull
-        public FileVisitResult visitFile(Path file, @Nonnull BasicFileAttributes attrs) throws IOException {
+        public FileVisitResult visitFile(@Nonnull Path file, @Nonnull BasicFileAttributes attrs) throws IOException {
             String name = entryName(file);
             if (archiveCreator.accept(name, file)) {
                 LOGGER.atTrace()

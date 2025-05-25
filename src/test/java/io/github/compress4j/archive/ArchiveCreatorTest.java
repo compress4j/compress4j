@@ -38,14 +38,18 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.*;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -1030,5 +1034,131 @@ class ArchiveCreatorTest {
             // then
             assertThat(actualOption).isEqualTo(42);
         }
+    }
+
+    @Test
+    void addFile_whenSourcePathDoesNotExist_shouldThrowIOException() throws IOException {
+        // Given
+        Path nonExistentPath = tempDir.resolve("non_existent_file.txt");
+        try (InMemoryArchiveCreator archive = new InMemoryArchiveCreatorBuilder(out).build()) {
+            // When & Then
+            assertThatThrownBy(() -> archive.addFile(nonExistentPath)).isInstanceOf(IOException.class);
+        }
+    }
+
+    @Test
+    void addFile_whenSourcePathIsNotReadable_shouldThrowIOException(@Mock Path unreadablePath) throws IOException {
+        // Given
+        given(unreadablePath.getFileName()).willReturn(Paths.get("unreadable.txt"));
+        BasicFileAttributes mockAttrs = mock(BasicFileAttributes.class);
+
+        try (MockedStatic<Files> mockedFiles = mockStatic(Files.class, CALLS_REAL_METHODS);
+                InMemoryArchiveCreator archive = new InMemoryArchiveCreatorBuilder(out).build()) {
+
+            mockedFiles
+                    .when(() -> Files.readAttributes(eq(unreadablePath), eq(BasicFileAttributes.class)))
+                    .thenReturn(mockAttrs);
+            //noinspection resource
+            mockedFiles
+                    .when(() -> Files.newInputStream(eq(unreadablePath)))
+                    .thenThrow(new AccessDeniedException("Simulated not readable"));
+
+            // When & Then
+            assertThatThrownBy(() -> archive.addFile(unreadablePath)).isInstanceOf(AccessDeniedException.class);
+        }
+    }
+
+    @Test
+    void addDirectoryRecursively_whenSourceDirDoesNotExist_shouldThrowIOException() throws IOException {
+        // Given
+        Path nonExistentDir = tempDir.resolve("non_existent_dir");
+        try (InMemoryArchiveCreator archive = new InMemoryArchiveCreatorBuilder(out).build()) {
+            // When & Then
+            assertThatThrownBy(() -> archive.addDirectoryRecursively(nonExistentDir))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Path is not a directory: %s", nonExistentDir.toString());
+        }
+    }
+
+    @Test
+    void addDirectoryRecursively_whenSourceIsNotDirectory_shouldThrowIOException() throws IOException {
+        // Given
+        Path filePath = createFile(tempDir, "iam_a_file.txt", "content");
+        try (InMemoryArchiveCreator archive = new InMemoryArchiveCreatorBuilder(out).build()) {
+            // When & Then
+            assertThatThrownBy(() -> archive.addDirectoryRecursively(filePath))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Path is not a directory: %s", filePath.toString());
+        }
+    }
+
+    @Test
+    void sanitiseName_withConsecutiveSlashes_shouldNormalize() {
+        assertThat(sanitiseName("/a/b\\\\c/d/")).isEqualTo("a/b/c/d");
+        assertThat(sanitiseName("/a/b/")).isEqualTo("a/b");
+    }
+
+    @Test
+    void close_shouldCloseUnderlyingArchiveOutputStream() throws IOException {
+        // Given
+        @SuppressWarnings("unchecked")
+        ArchiveOutputStream<org.apache.commons.compress.archivers.ArchiveEntry> mockAos =
+                mock(ArchiveOutputStream.class);
+        ArchiveCreator<ArchiveOutputStream<org.apache.commons.compress.archivers.ArchiveEntry>> creator =
+                new ArchiveCreator<>(mockAos) {
+                    @Override
+                    protected void writeDirectoryEntry(String name, FileTime modTime) {
+                        // No-op for this test
+                    }
+
+                    @Override
+                    protected void writeFileEntry(
+                            String name,
+                            InputStream source,
+                            long length,
+                            FileTime modTime,
+                            int mode,
+                            Optional<Path> symlinkTarget) {
+                        // No-op for this test
+                    }
+                };
+
+        // When
+        creator.close();
+
+        // Then
+        verify(mockAos).close();
+    }
+
+    @Test
+    void close_onClosedArchiveOutputStream_shouldHandleGracefully() throws IOException {
+        // Given
+        @SuppressWarnings("unchecked")
+        ArchiveOutputStream<ArchiveEntry> mockAos = mock(ArchiveOutputStream.class);
+        ArchiveCreator<ArchiveOutputStream<org.apache.commons.compress.archivers.ArchiveEntry>> creator =
+                new ArchiveCreator<>(mockAos) {
+                    @Override
+                    protected void writeDirectoryEntry(String name, FileTime modTime) {
+                        // No-op for this test
+                    }
+
+                    @Override
+                    protected void writeFileEntry(
+                            String name,
+                            InputStream source,
+                            long length,
+                            FileTime modTime,
+                            int mode,
+                            Optional<Path> symlinkTarget) {
+                        // No-op for this test
+                    }
+                };
+
+        // when
+        creator.close();
+        creator.close();
+
+        // then
+        verify(mockAos, times(2)).close();
     }
 }
