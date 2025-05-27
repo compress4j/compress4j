@@ -29,4 +29,4 @@ mockito-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = 
 git-version = { id = "me.qoomon.git-versioning", version = "6.4.4" }
 jreleaser = { id = "org.jreleaser", version = "1.18.0" }
 sonarqube = { id = "org.sonarqube", version = "6.2.0.5505" }
-spotless = { id = "com.diffplug.spotless", version = "7.0.3" }
+spotless = { id = "com.diffplug.spotless", version = "7.0.4" }
