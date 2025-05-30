@@ -2,7 +2,7 @@
 apache-commons-compress = "1.27.1"
 assertJ = "3.27.3"
 jakarta-annotation = "3.0.0"
-junit-bom = "5.12.2"
+junit-bom = "5.13.0"
 logback = "1.5.18"
 mockito = "5.18.0"
 slf4j = "2.0.17"
