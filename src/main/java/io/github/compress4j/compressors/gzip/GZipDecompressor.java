@@ -17,6 +17,8 @@ package io.github.compress4j.compressors.gzip;
 
 import io.github.compress4j.compressors.Decompressor;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 
 public class GZipDecompressor extends Decompressor<GzipCompressorInputStream> {
@@ -32,7 +34,11 @@ public class GZipDecompressor extends Decompressor<GzipCompressorInputStream> {
         super(compressorInputStream);
     }
 
-    public static GZipDecompressorBuilder builder(GzipCompressorInputStream inputStream) {
+    public static GZipDecompressorBuilder builder(Path path) throws IOException {
+        return new GZipDecompressorBuilder(new GzipCompressorInputStream(Files.newInputStream(path)));
+    }
+
+    public static GZipDecompressorBuilder builder(GzipCompressorInputStream inputStream) throws IOException {
         return new GZipDecompressorBuilder(inputStream);
     }
 

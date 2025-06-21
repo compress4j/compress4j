@@ -17,6 +17,8 @@ package io.github.compress4j.compressors.bzip2;
 
 import io.github.compress4j.compressors.Decompressor;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
 public class BZip2Decompressor extends Decompressor<BZip2CompressorInputStream> {
@@ -33,12 +35,20 @@ public class BZip2Decompressor extends Decompressor<BZip2CompressorInputStream> 
         return new BZip2DecompressorBuilder(inputStream);
     }
 
+    public static BZip2DecompressorBuilder builder(Path path) throws IOException {
+        return new BZip2DecompressorBuilder(new BZip2CompressorInputStream(Files.newInputStream(path)));
+    }
+
     public static class BZip2DecompressorBuilder
             extends Decompressor.DecompressorBuilder<
                     BZip2CompressorInputStream, BZip2Decompressor, BZip2DecompressorBuilder> {
 
-        protected BZip2DecompressorBuilder(BZip2CompressorInputStream inputStream) {
+        public BZip2DecompressorBuilder(BZip2CompressorInputStream inputStream) {
             super(inputStream);
+        }
+
+        public BZip2DecompressorBuilder(Path path) throws IOException {
+            super((BZip2CompressorInputStream) Files.newInputStream(path));
         }
 
         @Override
