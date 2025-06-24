@@ -24,7 +24,7 @@ import java.io.OutputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 import org.junit.jupiter.api.Test;
 
-class BZip2CompressorBuilderTest {
+class   BZip2CompressorBuilderTest {
 
     @Test
     void shouldBuildArchiveOutputStream() throws IOException {
