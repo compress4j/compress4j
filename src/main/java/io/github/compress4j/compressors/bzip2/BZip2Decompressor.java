@@ -17,9 +17,7 @@ package io.github.compress4j.compressors.bzip2;
 
 import io.github.compress4j.compressors.Decompressor;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
+
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
 public class BZip2Decompressor extends Decompressor<BZip2CompressorInputStream> {
@@ -29,39 +27,23 @@ public class BZip2Decompressor extends Decompressor<BZip2CompressorInputStream> 
         super(inputStream);
     }
 
-    protected BZip2Decompressor(BZip2DecompressorBuilder builder) {
+    protected BZip2Decompressor(BZip2DecompressorBuilder builder) throws IOException {
         super(builder);
     }
 
-    public static BZip2DecompressorBuilder builder(Path path) throws IOException {
-        return new BZip2DecompressorBuilder(path);
-    }
-
-    public static BZip2DecompressorBuilder builder(InputStream inputStream) {
+    public static BZip2DecompressorBuilder builder(BZip2CompressorInputStream inputStream) {
         return new BZip2DecompressorBuilder(inputStream);
     }
 
     public static class BZip2DecompressorBuilder
             extends Decompressor.DecompressorBuilder<
-
+            BZip2CompressorInputStream,
+            BZip2Decompressor,
+            BZip2DecompressorBuilder
             > {
 
-        private boolean decompressConcatenated = false;
-
-
-        protected BZip2DecompressorBuilder(Path path) throws IOException {
-            super(Files.newInputStream(path));
-        }
-
-
-        protected BZip2DecompressorBuilder(InputStream inputStream) {
+        protected BZip2DecompressorBuilder(BZip2CompressorInputStream inputStream) {
             super(inputStream);
-        }
-
-
-        public BZip2DecompressorBuilder withConcatenated(boolean decompressConcatenated) {
-            this.decompressConcatenated = decompressConcatenated;
-            return this;
         }
 
         @Override
@@ -71,9 +53,7 @@ public class BZip2Decompressor extends Decompressor<BZip2CompressorInputStream> 
 
         @Override
         public BZip2Decompressor build() throws IOException {
-            BZip2CompressorInputStream bz2InputStream =
-                    new BZip2CompressorInputStream(this.inputStream, this.decompressConcatenated);
-            return new BZip2Decompressor(bz2InputStream);
+            return new BZip2Decompressor(this);
         }
     }
 }

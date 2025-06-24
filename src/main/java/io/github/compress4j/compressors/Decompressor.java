@@ -17,12 +17,9 @@ package io.github.compress4j.compressors;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.commons.compress.compressors.CompressorInputStream;
-import org.apache.commons.compress.compressors.CompressorOutputStream;
 
 public abstract class Decompressor<I extends CompressorInputStream> implements AutoCloseable {
 
@@ -30,12 +27,12 @@ public abstract class Decompressor<I extends CompressorInputStream> implements A
 
     protected Decompressor(I compressorInputStream) {
         this.compressorInputStream = compressorInputStream;
-    }
-
-    protected Decompressor(B builder) throws IOException {
 
     }
 
+    protected <B extends Decompressor.DecompressorBuilder<I,D,B>, D extends Decompressor<I>> Decompressor(B builder) throws IOException {
+        this(builder.compressorInputStream);
+    }
 
     public long write(final File file) throws IOException {
         return write(file.toPath());
@@ -55,14 +52,14 @@ public abstract class Decompressor<I extends CompressorInputStream> implements A
             D extends Decompressor<I>,
             B extends Decompressor.DecompressorBuilder<I, D, B>> {
 
-        protected final InputStream inputStream;
+        protected final I compressorInputStream;
 
-        protected DecompressorBuilder(InputStream inputStream) {
-            this.inputStream = inputStream;
+        protected DecompressorBuilder(I compressorInputStream) {
+            this.compressorInputStream = compressorInputStream;
         }
 
         protected abstract B getThis();
 
         public abstract D build() throws IOException;
     }
-}
+}//todo -> test -> if builder passedInToDec constructor should create compressorInputStream
