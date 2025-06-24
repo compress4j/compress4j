@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 
 class CompressorBuilderTest {
 
+
     @Test
     void shouldBuildArchiveOutputStream() throws IOException {
         // given
