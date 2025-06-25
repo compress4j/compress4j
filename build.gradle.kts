@@ -124,6 +124,22 @@ testing {
                     }
             }
         }
+        register<JvmTestSuite>("e2e") {
+            dependencies {
+                implementation(platform(libs.junit.bom)) // Add this line
+                implementation(project())
+                implementation(testFixtures(project()))
+                implementation(libs.junit.jupiter.api)
+            }
+
+            targets.all {
+                testTask.configure {
+                    useJUnitJupiter()
+                    shouldRunAfter(tasks.named<Test>("integrationTest"))
+                }
+            }
+        }
+
     }
 }
 
