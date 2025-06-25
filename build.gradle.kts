@@ -217,9 +217,9 @@ publishing {
                 description = project.description
                 url = "https://github.com/compress4j/compress4j"
                 scm {
-                    connection = "scm:git:https://github.com/renasustek/compress4j.git"
-                    developerConnection = "scm:git:git@github.com:renasustek/compress4j.git"
-                    url = "https://github.com/renasustek/compress4j"
+                    connection = "scm:git:https://github.com/compress4j/compress4j.git"
+                    developerConnection = "scm:git:git@github.com:compress4j/compress4j.git"
+                    url = "https://github.com/compress4j/compress4j.git"
                 }
                 licenses {
                     license {

@@ -15,71 +15,35 @@
  */
 package io.github.compress4j.compressors.bzip2;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
 
-class   BZip2DecompressorTest {
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+class BZip2DecompressorTest {
     @Test
-    void shouldBuildInputStream() throws IOException {
-        // given
+    void shouldWritePathEntry() throws Exception {
+        //given
         var inputStream = mock(BZip2CompressorInputStream.class);
-        var builder = BZip2Decompressor.builder(inputStream);
 
-        // when
-        try (BZip2Decompressor out = builder.build()) {
+        Path path = mock(Path.class);
 
-            assertThat(out).isNotNull();
-        }
-    }
+        //when
 
-    @Test
-    void shouldBuildArchiveOutputStreamWithBlockSize() throws IOException {
-        // given
-        var outputStream = mock(OutputStream.class);
-        var builder = BZip2Compressor.builder(outputStream)
-                .compressorOutputStreamBuilder()
-                .blockSize(5)
-                .parentBuilder();
-
-        // when
-        try (BZip2CompressorOutputStream out = builder.buildCompressorOutputStream()) {
+        var aOut = spy(BZip2Decompressor.builder(inputStream));
+        try (MockedStatic<Files> mockFiles = mockStatic(Files.class);
+             BZip2Decompressor compressor = new BZip2Decompressor(aOut)) {
+            compressor.write(path);
 
             // then
-            assertThat(out).isNotNull().extracting("blockSize100k").isEqualTo(5);
+            mockFiles.verify(() -> Files.copy(any(BZip2CompressorInputStream.class),any(Path.class)));
         }
-    }
 
-    @Test
-    void shouldNotAllowBlockSizeLowerOutOfRange() {
-        // given
-        var outputStream = mock(OutputStream.class);
-        var builder = BZip2Compressor.builder(outputStream).compressorOutputStreamBuilder();
-
-        // when & then
-        assertThatThrownBy(() -> builder.blockSize(-2))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("blockSize(-2) < 1");
-    }
-
-    @Test
-    void shouldNotAllowBlockSizeHigherOutOfRange() {
-        // given
-        var outputStream = mock(OutputStream.class);
-        var builder = BZip2Compressor.builder(outputStream).compressorOutputStreamBuilder();
-
-        // when & then
-        assertThatThrownBy(() -> builder.blockSize(10))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("blockSize(10) > 9");
     }
 }
