@@ -2,7 +2,7 @@ rootProject.name = "compress4j"
 
 plugins {
     id("com.gradle.develocity") version("3.19")
-    id("com.autonomousapps.build-health") version "2.17.0"
+    id("com.autonomousapps.build-health") version "2.19.0"
 }
 
 develocity {
