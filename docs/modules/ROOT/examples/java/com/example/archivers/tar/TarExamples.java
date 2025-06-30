@@ -19,10 +19,18 @@ import static io.github.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.zip.Deflater.BEST_COMPRESSION;
 import static java.util.zip.Deflater.HUFFMAN_ONLY;
-import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.*;
+import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.BIGNUMBER_ERROR;
+import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.BIGNUMBER_POSIX;
+import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.LONGFILE_GNU;
+import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.LONGFILE_POSIX;
 
 import io.github.compress4j.archivers.ArchiveExtractor;
-import io.github.compress4j.archivers.tar.*;
+import io.github.compress4j.archivers.tar.TarArchiveCreator;
+import io.github.compress4j.archivers.tar.TarArchiveExtractor;
+import io.github.compress4j.archivers.tar.TarBZip2ArchiveCreator;
+import io.github.compress4j.archivers.tar.TarBZip2ArchiveExtractor;
+import io.github.compress4j.archivers.tar.TarGzArchiveCreator;
+import io.github.compress4j.archivers.tar.TarGzArchiveExtractor;
 import java.io.IOException;
 import java.nio.file.Path;
 

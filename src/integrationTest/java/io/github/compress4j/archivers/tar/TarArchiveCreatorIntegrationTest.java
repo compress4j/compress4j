@@ -17,7 +17,9 @@ package io.github.compress4j.archivers.tar;
 
 import static io.github.compress4j.test.util.io.TestFileUtils.deleteRecursively;
 import static io.github.compress4j.test.util.io.TestFileUtils.write;
-import static java.nio.file.Files.*;
+import static java.nio.file.Files.createDirectories;
+import static java.nio.file.Files.createFile;
+import static java.nio.file.Files.getPosixFilePermissions;
 import static java.util.Map.entry;
 import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.LONGFILE_POSIX;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,7 +28,11 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import io.github.compress4j.assertion.Compress4JAssertions;
 import java.io.IOException;
-import java.nio.file.*;
+import java.nio.file.AccessDeniedException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Map;
