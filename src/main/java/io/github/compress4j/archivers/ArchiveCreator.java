@@ -15,7 +15,9 @@
  */
 package io.github.compress4j.archivers;
 
-import static io.github.compress4j.utils.FileUtils.*;
+import static io.github.compress4j.utils.FileUtils.DOS_HIDDEN;
+import static io.github.compress4j.utils.FileUtils.DOS_READ_ONLY;
+import static io.github.compress4j.utils.FileUtils.NO_MODE;
 import static io.github.compress4j.utils.StringUtil.trimLeading;
 import static io.github.compress4j.utils.StringUtil.trimTrailing;
 import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
@@ -31,7 +33,11 @@ import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.DosFileAttributeView;
+import java.nio.file.attribute.DosFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.PosixFileAttributeView;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.BiPredicate;

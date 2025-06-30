@@ -15,7 +15,10 @@
  */
 package io.github.compress4j.archivers;
 
-import static io.github.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice.*;
+import static io.github.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice.ABORT;
+import static io.github.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice.RETRY;
+import static io.github.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice.SKIP;
+import static io.github.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice.SKIP_ALL;
 import static io.github.compress4j.utils.FileUtils.DOS_HIDDEN;
 import static io.github.compress4j.utils.FileUtils.DOS_READ_ONLY;
 import static io.github.compress4j.utils.PosixFilePermissionsMapper.fromUnixMode;

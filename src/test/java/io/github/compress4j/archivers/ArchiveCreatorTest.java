@@ -19,14 +19,31 @@ import static ch.qos.logback.classic.Level.TRACE;
 import static io.github.compress4j.archivers.ArchiveCreator.sanitiseName;
 import static io.github.compress4j.test.util.io.TestFileUtils.createFile;
 import static io.github.compress4j.utils.FileUtils.NO_MODE;
-import static java.nio.file.attribute.PosixFilePermission.*;
+import static java.nio.file.attribute.PosixFilePermission.GROUP_READ;
+import static java.nio.file.attribute.PosixFilePermission.OTHERS_READ;
+import static java.nio.file.attribute.PosixFilePermission.OWNER_READ;
+import static java.nio.file.attribute.PosixFilePermission.OWNER_WRITE;
 import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.assertArg;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
@@ -40,9 +57,16 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.DosFileAttributeView;
+import java.nio.file.attribute.DosFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
@@ -53,6 +77,8 @@ import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -1160,5 +1186,384 @@ class ArchiveCreatorTest {
 
         // then
         verify(mockAos, times(2)).close();
+    }
+
+    @DisabledOnOs(OS.WINDOWS)
+    @Test
+    void addFile_whenPathIsSymbolicLink_shouldPassLinkTargetToWriter() throws IOException {
+        // Given
+        Path actualFile = createFile(tempDir, "actual_file.txt", "link content");
+        Path symlinkPath = tempDir.resolve("symlink_to_file.txt");
+        Files.createSymbolicLink(symlinkPath, actualFile.getFileName());
+
+        try (InMemoryArchiveCreator archive = spy(new InMemoryArchiveCreatorBuilder(out).build())) {
+            // When
+            archive.addFile(symlinkPath);
+
+            // Then
+            verify(archive).addFile(symlinkPath);
+            verify(archive)
+                    .addFile(
+                            eq("symlink_to_file.txt"),
+                            eq(symlinkPath),
+                            any(BasicFileAttributes.class),
+                            eq(Optional.empty()));
+            verify(archive).accept("symlink_to_file.txt", symlinkPath);
+            verify(archive)
+                    .writeFileEntry(
+                            eq("symlink_to_file.txt"),
+                            any(InputStream.class),
+                            anyLong(),
+                            any(FileTime.class),
+                            anyInt());
+            verify(archive)
+                    .writeFileEntry(
+                            eq("symlink_to_file.txt"),
+                            any(InputStream.class),
+                            anyLong(),
+                            any(FileTime.class),
+                            anyInt(),
+                            eq(Optional.empty()));
+        }
+    }
+
+    @DisabledOnOs(OS.WINDOWS)
+    @Test
+    void addDirectoryRecursively_withSymbolicLinkToFile_shouldAddAsSymlink() throws IOException {
+        // Given
+        Path base = tempDir.resolve("base_dir_with_symlink");
+        Files.createDirectories(base);
+        Path targetFile = createFile(base, "target.txt", "data");
+        Path symlinkInDir = base.resolve("my_link.txt");
+        Path target = Paths.get("target.txt");
+        Files.createSymbolicLink(symlinkInDir, target); // Relative link within the dir
+
+        try (InMemoryArchiveCreator archive = spy(new InMemoryArchiveCreatorBuilder(out).build())) {
+            // When
+            archive.addDirectoryRecursively(base);
+
+            // Then
+            // Check that target.txt was added as a file
+            verify(archive).addFile(eq("target.txt"), eq(targetFile), any(BasicFileAttributes.class), any());
+
+            // Check that my_link.txt was added as a symlink
+            BasicFileAttributes linkAttrs =
+                    Files.readAttributes(symlinkInDir, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+            verify(archive)
+                    .addFile(
+                            eq("my_link.txt"),
+                            eq(symlinkInDir),
+                            any(BasicFileAttributes.class), // Specifically the attributes of the link
+                            any());
+            // This implies writeFileEntry for symlink should have been called by the addFile above
+            verify(archive)
+                    .writeFileEntry(
+                            eq("my_link.txt"),
+                            any(InputStream.class),
+                            eq(linkAttrs.size()),
+                            eq(linkAttrs.lastModifiedTime()),
+                            anyInt(),
+                            eq(Optional.of(target)));
+        }
+    }
+
+    @DisabledOnOs(OS.WINDOWS)
+    @Test
+    void addDirectoryRecursively_withSymbolicLinkToDirectory_shouldAddAsSymlinkNotRecurseTarget() throws IOException {
+        // Given
+        Path base = tempDir.resolve("base_dir_with_dir_symlink");
+        Files.createDirectories(base);
+        Path targetDir = base.resolve("actual_dir");
+        Files.createDirectories(targetDir);
+        createFile(targetDir, "file_in_actual_dir.txt", "secret"); // This should NOT be added via symlink recursion
+
+        Path symlinkToDir = base.resolve("link_to_actual_dir");
+        Path actualDir = Paths.get("actual_dir");
+        Files.createSymbolicLink(symlinkToDir, actualDir);
+
+        try (InMemoryArchiveCreator archive = spy(new InMemoryArchiveCreatorBuilder(out).build())) {
+            // When
+            archive.addDirectoryRecursively(base);
+
+            // Then
+            // Verify actual_dir and its content are added directly
+            verify(archive).addDirectory(eq("actual_dir"), any(FileTime.class));
+            verify(archive)
+                    .addFile(
+                            eq("actual_dir/file_in_actual_dir.txt"),
+                            eq(targetDir.resolve("file_in_actual_dir.txt")),
+                            any(BasicFileAttributes.class),
+                            any());
+
+            // Verify the symlink 'link_to_actual_dir' is added as a symlink entry, not as a directory to recurse
+            BasicFileAttributes linkAttrs =
+                    Files.readAttributes(symlinkToDir, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+            verify(archive)
+                    .addFile(
+                            eq("link_to_actual_dir"),
+                            eq(symlinkToDir),
+                            any(BasicFileAttributes.class), // Attributes of the link
+                            any() // Optional modTime
+                            );
+            verify(archive)
+                    .writeFileEntry(
+                            eq("link_to_actual_dir"),
+                            any(InputStream.class),
+                            eq(linkAttrs.size()),
+                            eq(linkAttrs.lastModifiedTime()),
+                            anyInt(),
+                            eq(Optional.of(actualDir)));
+
+            // Crucially, ensure 'file_in_actual_dir.txt' is not added a second time via the symlink path
+            // This is implicitly checked if writeFileEntry for "link_to_actual_dir/file_in_actual_dir.txt" is not
+            // called.
+            // We already verified that "link_to_actual_dir" is added as a symlink (which is a file-like entry),
+            // so the visitor shouldn't try to recurse into it as a directory.
+        }
+    }
+
+    @Test
+    void addDirectoryRecursively_withEmptySourceDirectory() throws IOException {
+        // Given
+        Path emptyBaseDir = tempDir.resolve("empty_base");
+        Files.createDirectories(emptyBaseDir);
+
+        try (InMemoryArchiveCreator archive = spy(new InMemoryArchiveCreatorBuilder(out).build())) {
+            // When
+            archive.addDirectoryRecursively(emptyBaseDir);
+
+            // Then
+            // No files or subdirectories to add.
+            // The visitor's preVisitDirectory for emptyBaseDir itself will have an empty name if topLevelDir is empty,
+            // which results in FileVisitResult.CONTINUE but no addDirectory call from within preVisit.
+            // So, no entries should be written.
+            verify(archive, never()).writeDirectoryEntry(anyString(), any(FileTime.class));
+            verify(archive, never()).writeFileEntry(anyString(), any(), anyLong(), any(), anyInt(), any(Path.class));
+            Compress4JAssertions.assertThat(inMemoryLogAppender)
+                    .contains("dir=" + emptyBaseDir + " topLevelDir=", TRACE);
+        }
+    }
+
+    @Test
+    void addDirectoryRecursively_withEmptySourceDirectoryAndTopLevelDir() throws IOException {
+        // Given
+        Path emptyBaseDir = tempDir.resolve("empty_base_for_top");
+        Files.createDirectories(emptyBaseDir);
+        String topLevelDirName = "myArchiveDir";
+
+        try (InMemoryArchiveCreator archive = spy(new InMemoryArchiveCreatorBuilder(out).build())) {
+            // When
+            archive.addDirectoryRecursively(topLevelDirName, emptyBaseDir);
+
+            // Then
+            // The top-level directory itself should be added.
+            FileTime expectedModTime = Files.getLastModifiedTime(emptyBaseDir);
+            verify(archive).addDirectory(eq(topLevelDirName), argThat(ft -> ft.toInstant()
+                    .truncatedTo(ChronoUnit.SECONDS)
+                    .equals(expectedModTime.toInstant().truncatedTo(ChronoUnit.SECONDS))));
+            verify(archive).writeDirectoryEntry(eq(topLevelDirName), argThat(ft -> ft.toInstant()
+                    .truncatedTo(ChronoUnit.SECONDS)
+                    .equals(expectedModTime.toInstant().truncatedTo(ChronoUnit.SECONDS))));
+            // No other entries.
+            verify(archive, times(1)).writeDirectoryEntry(anyString(), any(FileTime.class));
+            verify(archive, never()).writeFileEntry(anyString(), any(), anyLong(), any(), anyInt(), any(Path.class));
+        }
+    }
+
+    @Test
+    void addDirectoryRecursively_filterSkipsSubtree() throws IOException {
+        // Given
+        Path base = tempDir.resolve("base_for_skip_subtree");
+        createFile(base, "keep_this_file.txt", "content");
+        Path dirToSkip = Files.createDirectory(base.resolve("skip_this_dir"));
+        createFile(dirToSkip, "file_in_skipped_dir.txt", "secret");
+
+        try (InMemoryArchiveCreator archive = spy(new InMemoryArchiveCreatorBuilder(out).build())) {
+            archive.withFilter((entryName, path) -> !entryName.equals("skip_this_dir"));
+
+            // When
+            archive.addDirectoryRecursively(base);
+
+            // Then
+            verify(archive)
+                    .addFile(
+                            eq("keep_this_file.txt"),
+                            eq(base.resolve("keep_this_file.txt")),
+                            any(BasicFileAttributes.class),
+                            any());
+            verify(archive, never()).addDirectory(eq("skip_this_dir"), any(FileTime.class));
+            verify(archive, never())
+                    .addFile(
+                            eq("skip_this_dir/file_in_skipped_dir.txt"),
+                            any(Path.class),
+                            any(BasicFileAttributes.class),
+                            any());
+        }
+    }
+
+    @Test
+    void addDirectoryRecursively_filterAllowsDirButRejectsFileInside() throws IOException {
+        // Given
+        Path base = tempDir.resolve("base_for_partial_skip");
+        Path subDir = Files.createDirectories(base.resolve("sub"));
+        createFile(subDir, "allowed_file.txt", "content1");
+        createFile(subDir, "denied_file.txt", "content2");
+
+        try (InMemoryArchiveCreator archive = spy(new InMemoryArchiveCreatorBuilder(out).build())) {
+            archive.withFilter((entryName, path) -> !entryName.endsWith("denied_file.txt"));
+            // When
+            archive.addDirectoryRecursively(base);
+            // Then
+            verify(archive).addDirectory(eq("sub"), any(FileTime.class));
+            verify(archive)
+                    .addFile(
+                            eq("sub/allowed_file.txt"),
+                            eq(subDir.resolve("allowed_file.txt")),
+                            any(BasicFileAttributes.class),
+                            any());
+            verify(archive, never())
+                    .addFile(eq("sub/denied_file.txt"), any(Path.class), any(BasicFileAttributes.class), any());
+        }
+    }
+
+    @Test
+    void addDirectoryRecursively_withOverridingModTime() throws IOException {
+        // Given
+        Path base = tempDir.resolve("base_override_modtime");
+        Path fileInBase = createFile(base, "file.txt", "content");
+        Path subDir = Files.createDirectory(base.resolve("subdir"));
+        createFile(subDir, "file_in_sub.txt", "content2");
+
+        FileTime overrideModTime = FileTime.from(Instant.now().minus(1, ChronoUnit.DAYS));
+
+        try (InMemoryArchiveCreator archive = spy(new InMemoryArchiveCreatorBuilder(out).build())) {
+            // When
+            archive.addDirectoryRecursively(base, overrideModTime);
+
+            // Then
+            // Directories should use the overrideModTime
+            verify(archive).addDirectory(eq("subdir"), eq(overrideModTime));
+            // Files should also use the overrideModTime when passed down
+            verify(archive)
+                    .addFile(
+                            eq("file.txt"),
+                            eq(fileInBase),
+                            any(BasicFileAttributes.class),
+                            eq(Optional.of(overrideModTime)));
+            verify(archive)
+                    .addFile(
+                            eq("subdir/file_in_sub.txt"),
+                            eq(subDir.resolve("file_in_sub.txt")),
+                            any(BasicFileAttributes.class),
+                            eq(Optional.of(overrideModTime)));
+
+            // Check the actual write calls
+            verify(archive, times(2))
+                    .writeFileEntry(
+                            anyString(),
+                            any(InputStream.class),
+                            anyLong(),
+                            eq(overrideModTime),
+                            anyInt(),
+                            eq(Optional.empty()));
+            verify(archive, times(1)).writeDirectoryEntry("subdir", overrideModTime);
+        }
+    }
+
+    @Test
+    void addDirectoryRecursively_visitorPreVisitDirectoryRootIsEmptyName() throws IOException {
+        Path base = tempDir.resolve("visitor_root_test");
+        createFile(base, "file.txt", "test");
+
+        // We need a concrete ArchiveCreator that we can spy on, and whose PathSimpleFileVisitor we can somewhat
+        // inspect.
+        // The existing test `shouldAddDirectoryRecursivelyWithPath` covers this implicitly if `topLevelDir` is empty.
+        // This test is more about ensuring the `if (name.isEmpty())` branch in preVisitDirectory is hit
+        // and correctly results in no `addDirectory` call for the root itself if `topLevelDir` is empty.
+
+        try (InMemoryArchiveCreator archive = spy(new InMemoryArchiveCreatorBuilder(out).build())) {
+            archive.addDirectoryRecursively(base); // topLevelDir is ""
+
+            // The root directory `base` itself when `topLevelDir` is empty should result in `name=""` in
+            // preVisitDirectory.
+            // So, `addDirectory("", ...)` should not be called.
+            // Files within it like "file.txt" should be added.
+            verify(archive, never()).addDirectory(eq(""), any(FileTime.class));
+            verify(archive)
+                    .addFile(eq("file.txt"), eq(base.resolve("file.txt")), any(BasicFileAttributes.class), any());
+        }
+    }
+
+    @DisabledOnOs(OS.WINDOWS)
+    @Test
+    void mode_whenPathIsSymlink_returnsModeOfTargetNotLink_onNix() throws IOException {
+        // Given
+        Path targetFile = tempDir.resolve("target_for_mode_test.txt");
+        Files.writeString(targetFile, "content");
+        Files.setPosixFilePermissions(targetFile, PosixFilePermissions.fromString("rw-r--r--")); // 0644 for target
+
+        Path symlinkPath = tempDir.resolve("link_for_mode_test.txt");
+        Files.createSymbolicLink(symlinkPath, targetFile.getFileName());
+        // Symlinks themselves often have rwxrwxrwx (0777) permissions on Unix
+        // We want to ensure mode(symlinkPath) gives mode of targetFile due to current impl.
+
+        @SuppressWarnings("OctalInteger")
+        int expectedTargetMode =
+                0644; // PosixFilePermissionsMapper.toUnixMode(PosixFilePermissions.fromString("rw-r--r--"))
+
+        // When
+        int actualMode = ArchiveCreator.mode(symlinkPath); // This will read target's attributes
+
+        // Then
+        assertThat(actualMode).isEqualTo(expectedTargetMode);
+    }
+
+    @Test
+    void addFile_fromEmptyByteArray_shouldWriteZeroLengthEntry() throws IOException {
+        // Given
+        String entryName = "empty_from_bytes.txt";
+        byte[] emptyContent = new byte[0];
+        FileTime modTime = FileTime.from(Instant.now());
+
+        try (InMemoryArchiveCreator archive = spy(new InMemoryArchiveCreatorBuilder(out).build())) {
+            // When
+            archive.addFile(entryName, emptyContent, modTime);
+
+            // Then
+            verify(archive)
+                    .writeFileEntry(
+                            eq(entryName),
+                            any(ByteArrayInputStream.class), // Will be an empty stream
+                            eq(0L),
+                            eq(modTime),
+                            eq(NO_MODE),
+                            eq(Optional.empty()));
+        }
+    }
+
+    @Test
+    void builder_filterNull_shouldResultInNoFiltering() throws IOException {
+        // Given
+        InMemoryArchiveCreatorBuilder builder = new InMemoryArchiveCreatorBuilder(out);
+        builder.filter(null); // Set filter to null
+
+        String fileName = "file.txt";
+        Path path = createFile(tempDir, fileName, "content");
+
+        try (InMemoryArchiveCreator archive = spy(builder.build())) {
+            // When
+            archive.addFile(path);
+
+            // Then
+            verify(archive).accept(fileName, path);
+            verify(archive)
+                    .writeFileEntry(
+                            eq(fileName),
+                            any(InputStream.class),
+                            anyLong(),
+                            any(FileTime.class),
+                            anyInt(),
+                            eq(Optional.empty()));
+        }
     }
 }

@@ -16,7 +16,9 @@
 package io.github.compress4j.compressors.gzip;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.spy;
 
 import java.io.OutputStream;
 import java.nio.file.Files;

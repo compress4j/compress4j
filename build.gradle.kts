@@ -1,6 +1,8 @@
 @file:Suppress("UnstableApiUsage")
 
+import com.diffplug.spotless.FormatterFunc
 import org.jreleaser.model.Active
+import java.io.Serializable
 
 plugins {
     `jacoco-report-aggregation`
@@ -182,6 +184,17 @@ spotless {
         removeUnusedImports()
         trimTrailingWhitespace()
         endWithNewline()
+        custom("Refuse wildcard imports", object : Serializable, FormatterFunc {
+            override fun apply(input: String): String {
+                if (input.contains("\nimport .*\\*;".toRegex())) {
+                    throw AssertionError(
+                        "Wildcard imports (e.g., 'import java.util.*;') are not allowed. " +
+                                "Please use explicit imports. 'spotlessApply' cannot resolve this issue automatically."
+                    )
+                }
+                return input
+            }
+        })
     }
     format("javaMisc") {
         target("src/**/package-info.java")

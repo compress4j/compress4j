@@ -17,7 +17,10 @@ package io.github.compress4j.compressors;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.spy;
 
 import io.github.compress4j.compressors.memory.InMemoryCompressor;
 import java.io.File;

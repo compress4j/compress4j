@@ -15,7 +15,10 @@
  */
 package io.github.compress4j.utils;
 
-import static io.github.compress4j.utils.DependencyCheckerTestConstants.*;
+import static io.github.compress4j.utils.DependencyCheckerTestConstants.EXPECTED_MESSAGE_BROTLI;
+import static io.github.compress4j.utils.DependencyCheckerTestConstants.EXPECTED_MESSAGE_LZMA;
+import static io.github.compress4j.utils.DependencyCheckerTestConstants.EXPECTED_MESSAGE_XZ;
+import static io.github.compress4j.utils.DependencyCheckerTestConstants.EXPECTED_MESSAGE_ZSTD;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
