@@ -8,6 +8,7 @@ on:
   pull_request:
     branches:
       - main
+      - refactor/restructure_new_framework
 
 permissions:
   contents: read
@@ -37,7 +38,7 @@ jobs:
       - name: Build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
-        run: ./gradlew build --continue --no-daemon
+        run: ./gradlew build --continue --no-daemon --scan
       - name: Upload Test reports
         uses: actions/upload-artifact@v4
         if: ${{ matrix.operating-system == 'ubuntu-latest' }}
