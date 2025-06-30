@@ -21,7 +21,6 @@ public class BZip2compressionE2E {
     @TempDir
     Path tempDir;
 
-
     @Test
     void compressDecompressSameFile() throws Exception {
         Path sourceFile = Paths.get("/home/renas/workspace/compress4j/src/e2e/resources/compression/compressTest.txt");
