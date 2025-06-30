@@ -90,7 +90,8 @@ public class BZip2Compressor extends Compressor<BZip2CompressorOutputStream> {
         }
     }
 
-    public static class BZip2CompressorBuilder extends CompressorBuilder<BZip2CompressorOutputStream, BZip2CompressorBuilder, BZip2Compressor> {
+    public static class BZip2CompressorBuilder
+            extends CompressorBuilder<BZip2CompressorOutputStream, BZip2CompressorBuilder, BZip2Compressor> {
 
         private final BZip2CompressorOutputStreamBuilder<BZip2CompressorBuilder> compressorOutputStreamBuilder;
 

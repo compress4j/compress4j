@@ -109,7 +109,7 @@ public abstract class Compressor<O extends CompressorOutputStream<? extends Outp
          * @return current instance
          */
         protected abstract B getThis();
-        
+
         /**
          * Start a new compressor. Entries can be included in the compressor using the putEntry method, and then the
          * compressor should be closed using its close method. In addition, options can be applied to the underlying
