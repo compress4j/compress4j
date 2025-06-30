@@ -4,6 +4,8 @@ import io.github.compress4j.compressors.Decompressor;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class GZipDecompressor extends Decompressor<GzipCompressorInputStream> {
 
@@ -13,6 +15,14 @@ public class GZipDecompressor extends Decompressor<GzipCompressorInputStream> {
 
     protected GZipDecompressor(GzipCompressorInputStream compressorInputStream) {
         super(compressorInputStream);
+    }
+
+    public static GZipDecompressorBuilder builder(Path path) throws IOException {
+        return new GZipDecompressorBuilder(new GzipCompressorInputStream(Files.newInputStream(path)));
+    }
+
+    public static GZipDecompressorBuilder builder(GzipCompressorInputStream inputStream) throws IOException {
+        return new GZipDecompressorBuilder(inputStream);
     }
 
     public static class GZipDecompressorBuilder
