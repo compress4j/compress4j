@@ -15,79 +15,120 @@
  */
 package io.github.compress4j.compressors;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.spy;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
-import io.github.compress4j.compressors.memory.InMemoryCompressor;
+import io.github.compress4j.compressors.memory.InMemoryDecompressor;
+import io.github.compress4j.compressors.memory.InMemoryDecompressor.InMemoryDecompressorBuilder;
+import io.github.compress4j.compressors.memory.InMemoryDecompressorInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import org.apache.commons.compress.compressors.CompressorInputStream;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.MockedStatic;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class DecompressorTest {
+
+    @Mock
+    private InMemoryDecompressorInputStream mockCompressorInputStream;
+
+    @TempDir
+    Path tempDir;
+
     @Test
-    void inputStreamSameInClassAndBuilderClass() throws IOException {
-        var inputStream = mock(CompressorInputStream.class);
+    @DisplayName("Should construct Decompressor with a builder")
+    void constructor_WithBuilder_SetsField() throws IOException {
+        // given
+        InMemoryDecompressorBuilder builder = new InMemoryDecompressorBuilder(mockCompressorInputStream);
 
-        Decompressor.DecompressorBuilder decompressorBuilder = new Decompressor.DecompressorBuilder(inputStream) {
-            @Override
-            protected Decompressor.DecompressorBuilder getThis() {
-                return this;
-            }
+        // when
+        InMemoryDecompressor inMemoryDecompressor = new InMemoryDecompressor(builder);
+        inMemoryDecompressor.close();
 
-            @Override
-            public Decompressor build() throws IOException {
-                return null;
-            }
-        };
-
-        assertTrue(inputStream == decompressorBuilder.compressorInputStream);
+        // then
+        assertThat(inMemoryDecompressor).isNotNull();
+        verify(mockCompressorInputStream).close();
     }
 
     @Test
-    void shouldWriteFileEntry() throws Exception {
+    @DisplayName("Should write all bytes from input stream to a file")
+    void write_ToFile_CopiesBytes() throws IOException {
         // given
-        var outputStream = mock(OutputStream.class);
-        var tempSourceFile = mock(File.class);
-        var tempSourcePath = mock(Path.class);
-        given(tempSourceFile.toPath()).willReturn(tempSourcePath);
+        Path outputPath = tempDir.resolve("output.txt");
+        byte[] testBytes = "Hello Decompressor".getBytes();
 
-        // when
-        var aOut = spy(InMemoryCompressor.builder(outputStream).buildCompressorOutputStream());
-        try (MockedStatic<Files> mockFiles = mockStatic(Files.class);
-                InMemoryCompressor compressor = new InMemoryCompressor(aOut)) {
+        try (InMemoryDecompressor decompressor = InMemoryDecompressor.builder(
+                        new InMemoryDecompressorInputStream(new ByteArrayInputStream(testBytes)))
+                .build()) {
 
-            compressor.write(tempSourceFile);
+            // when
+            long bytesWritten = decompressor.write(outputPath.toFile());
 
             // then
-            mockFiles.verify(() -> Files.copy(eq(tempSourcePath), any(OutputStream.class)));
+            assertThat(outputPath).exists().hasContent("Hello Decompressor");
+            assertThat(bytesWritten).isEqualTo(testBytes.length);
         }
     }
 
     @Test
-    void shouldWritePathEntry() throws Exception {
+    @DisplayName("Should throw IOException when writing to file fails")
+    void write_ToFile_ThrowsIOException_WhenCopyFails() {
         // given
-        var outputStream = mock(OutputStream.class);
-        var tempSourcePath = mock(Path.class);
+        File nonWritableFile = new File("/nonexistent/path/cannot_write.txt");
+
+        // when & then
+        InMemoryDecompressor decompressor = new InMemoryDecompressor(mockCompressorInputStream);
+        assertThatThrownBy(() -> decompressor.write(nonWritableFile))
+                .isInstanceOf(IOException.class)
+                .hasMessage(nonWritableFile.getPath());
+    }
+
+    @Test
+    @DisplayName("Should throw IOException when writing to path fails")
+    void write_ToPath_ThrowsIOException_WhenCopyFails() {
+        // given
+        Path nonWritablePath = tempDir.resolve("non_existent_dir/output.txt");
+
+        // when & then
+        InMemoryDecompressor decompressor = new InMemoryDecompressor(mockCompressorInputStream);
+        assertThatThrownBy(() -> decompressor.write(nonWritablePath))
+                .isInstanceOf(IOException.class)
+                .hasMessage(nonWritablePath.toString());
+    }
+
+    @Test
+    @DisplayName("Should close the compressor input stream")
+    void close_ClosesCompressorInputStream() throws IOException {
+        // given
+        InMemoryDecompressor decompressor = new InMemoryDecompressor(mockCompressorInputStream);
 
         // when
-        var aOut = spy(InMemoryCompressor.builder(outputStream).buildCompressorOutputStream());
-        try (MockedStatic<Files> mockFiles = mockStatic(Files.class);
-                InMemoryCompressor compressor = new InMemoryCompressor(aOut)) {
+        decompressor.close();
 
-            compressor.write(tempSourcePath);
+        // then
+        verify(mockCompressorInputStream, times(1)).close();
+    }
 
-            // then
-            mockFiles.verify(() -> Files.copy(eq(tempSourcePath), any(OutputStream.class)));
-        }
+    @Test
+    @DisplayName("Should throw IOException when closing compressor input stream fails")
+    void close_ThrowsIOException_WhenCompressorInputStreamCloseFails() throws IOException {
+        // given
+        doThrow(new IOException("Failed to close stream"))
+                .when(mockCompressorInputStream)
+                .close();
+        InMemoryDecompressor decompressor = new InMemoryDecompressor(mockCompressorInputStream);
+
+        // when & then
+        assertThatThrownBy(decompressor::close).isInstanceOf(IOException.class).hasMessage("Failed to close stream");
+        verify(mockCompressorInputStream, times(1)).close();
     }
 }

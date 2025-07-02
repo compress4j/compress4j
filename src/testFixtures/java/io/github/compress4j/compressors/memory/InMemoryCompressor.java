@@ -24,7 +24,7 @@ public class InMemoryCompressor extends Compressor<InMemoryCompressorOutputStrea
         super(compressorOutputStream);
     }
 
-    protected InMemoryCompressor(InMemoryCompressorBuilder builder) throws IOException {
+    public InMemoryCompressor(InMemoryCompressorBuilder builder) throws IOException {
         super(builder);
     }
 
@@ -40,17 +40,17 @@ public class InMemoryCompressor extends Compressor<InMemoryCompressorOutputStrea
          *
          * @param outputStream the output stream
          */
-        protected InMemoryCompressorBuilder(OutputStream outputStream) {
+        public InMemoryCompressorBuilder(OutputStream outputStream) {
             super(outputStream);
         }
 
         @Override
-        protected InMemoryCompressorBuilder getThis() {
+        public InMemoryCompressorBuilder getThis() {
             return this;
         }
 
         @Override
-        public InMemoryCompressorOutputStream buildCompressorOutputStream() {
+        public InMemoryCompressorOutputStream buildCompressorOutputStream() throws IOException {
             return new InMemoryCompressorOutputStream(outputStream);
         }
 

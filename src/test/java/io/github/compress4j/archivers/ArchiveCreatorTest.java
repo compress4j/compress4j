@@ -1236,26 +1236,18 @@ class ArchiveCreatorTest {
         Path targetFile = createFile(base, "target.txt", "data");
         Path symlinkInDir = base.resolve("my_link.txt");
         Path target = Paths.get("target.txt");
-        Files.createSymbolicLink(symlinkInDir, target); // Relative link within the dir
+        Files.createSymbolicLink(symlinkInDir, target);
 
         try (InMemoryArchiveCreator archive = spy(new InMemoryArchiveCreatorBuilder(out).build())) {
             // When
             archive.addDirectoryRecursively(base);
 
             // Then
-            // Check that target.txt was added as a file
             verify(archive).addFile(eq("target.txt"), eq(targetFile), any(BasicFileAttributes.class), any());
 
-            // Check that my_link.txt was added as a symlink
             BasicFileAttributes linkAttrs =
                     Files.readAttributes(symlinkInDir, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
-            verify(archive)
-                    .addFile(
-                            eq("my_link.txt"),
-                            eq(symlinkInDir),
-                            any(BasicFileAttributes.class), // Specifically the attributes of the link
-                            any());
-            // This implies writeFileEntry for symlink should have been called by the addFile above
+            verify(archive).addFile(eq("my_link.txt"), eq(symlinkInDir), any(BasicFileAttributes.class), any());
             verify(archive)
                     .writeFileEntry(
                             eq("my_link.txt"),
@@ -1275,7 +1267,7 @@ class ArchiveCreatorTest {
         Files.createDirectories(base);
         Path targetDir = base.resolve("actual_dir");
         Files.createDirectories(targetDir);
-        createFile(targetDir, "file_in_actual_dir.txt", "secret"); // This should NOT be added via symlink recursion
+        createFile(targetDir, "file_in_actual_dir.txt", "secret");
 
         Path symlinkToDir = base.resolve("link_to_actual_dir");
         Path actualDir = Paths.get("actual_dir");
@@ -1286,7 +1278,6 @@ class ArchiveCreatorTest {
             archive.addDirectoryRecursively(base);
 
             // Then
-            // Verify actual_dir and its content are added directly
             verify(archive).addDirectory(eq("actual_dir"), any(FileTime.class));
             verify(archive)
                     .addFile(
@@ -1295,16 +1286,9 @@ class ArchiveCreatorTest {
                             any(BasicFileAttributes.class),
                             any());
 
-            // Verify the symlink 'link_to_actual_dir' is added as a symlink entry, not as a directory to recurse
             BasicFileAttributes linkAttrs =
                     Files.readAttributes(symlinkToDir, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
-            verify(archive)
-                    .addFile(
-                            eq("link_to_actual_dir"),
-                            eq(symlinkToDir),
-                            any(BasicFileAttributes.class), // Attributes of the link
-                            any() // Optional modTime
-                            );
+            verify(archive).addFile(eq("link_to_actual_dir"), eq(symlinkToDir), any(BasicFileAttributes.class), any());
             verify(archive)
                     .writeFileEntry(
                             eq("link_to_actual_dir"),
@@ -1313,12 +1297,6 @@ class ArchiveCreatorTest {
                             eq(linkAttrs.lastModifiedTime()),
                             anyInt(),
                             eq(Optional.of(actualDir)));
-
-            // Crucially, ensure 'file_in_actual_dir.txt' is not added a second time via the symlink path
-            // This is implicitly checked if writeFileEntry for "link_to_actual_dir/file_in_actual_dir.txt" is not
-            // called.
-            // We already verified that "link_to_actual_dir" is added as a symlink (which is a file-like entry),
-            // so the visitor shouldn't try to recurse into it as a directory.
         }
     }
 
@@ -1333,10 +1311,6 @@ class ArchiveCreatorTest {
             archive.addDirectoryRecursively(emptyBaseDir);
 
             // Then
-            // No files or subdirectories to add.
-            // The visitor's preVisitDirectory for emptyBaseDir itself will have an empty name if topLevelDir is empty,
-            // which results in FileVisitResult.CONTINUE but no addDirectory call from within preVisit.
-            // So, no entries should be written.
             verify(archive, never()).writeDirectoryEntry(anyString(), any(FileTime.class));
             verify(archive, never()).writeFileEntry(anyString(), any(), anyLong(), any(), anyInt(), any(Path.class));
             Compress4JAssertions.assertThat(inMemoryLogAppender)
@@ -1356,7 +1330,6 @@ class ArchiveCreatorTest {
             archive.addDirectoryRecursively(topLevelDirName, emptyBaseDir);
 
             // Then
-            // The top-level directory itself should be added.
             FileTime expectedModTime = Files.getLastModifiedTime(emptyBaseDir);
             verify(archive).addDirectory(eq(topLevelDirName), argThat(ft -> ft.toInstant()
                     .truncatedTo(ChronoUnit.SECONDS)
@@ -1364,7 +1337,6 @@ class ArchiveCreatorTest {
             verify(archive).writeDirectoryEntry(eq(topLevelDirName), argThat(ft -> ft.toInstant()
                     .truncatedTo(ChronoUnit.SECONDS)
                     .equals(expectedModTime.toInstant().truncatedTo(ChronoUnit.SECONDS))));
-            // No other entries.
             verify(archive, times(1)).writeDirectoryEntry(anyString(), any(FileTime.class));
             verify(archive, never()).writeFileEntry(anyString(), any(), anyLong(), any(), anyInt(), any(Path.class));
         }
@@ -1441,9 +1413,7 @@ class ArchiveCreatorTest {
             archive.addDirectoryRecursively(base, overrideModTime);
 
             // Then
-            // Directories should use the overrideModTime
-            verify(archive).addDirectory(eq("subdir"), eq(overrideModTime));
-            // Files should also use the overrideModTime when passed down
+            verify(archive).addDirectory("subdir", overrideModTime);
             verify(archive)
                     .addFile(
                             eq("file.txt"),
@@ -1457,7 +1427,6 @@ class ArchiveCreatorTest {
                             any(BasicFileAttributes.class),
                             eq(Optional.of(overrideModTime)));
 
-            // Check the actual write calls
             verify(archive, times(2))
                     .writeFileEntry(
                             anyString(),
@@ -1475,19 +1444,9 @@ class ArchiveCreatorTest {
         Path base = tempDir.resolve("visitor_root_test");
         createFile(base, "file.txt", "test");
 
-        // We need a concrete ArchiveCreator that we can spy on, and whose PathSimpleFileVisitor we can somewhat
-        // inspect.
-        // The existing test `shouldAddDirectoryRecursivelyWithPath` covers this implicitly if `topLevelDir` is empty.
-        // This test is more about ensuring the `if (name.isEmpty())` branch in preVisitDirectory is hit
-        // and correctly results in no `addDirectory` call for the root itself if `topLevelDir` is empty.
-
         try (InMemoryArchiveCreator archive = spy(new InMemoryArchiveCreatorBuilder(out).build())) {
-            archive.addDirectoryRecursively(base); // topLevelDir is ""
+            archive.addDirectoryRecursively(base);
 
-            // The root directory `base` itself when `topLevelDir` is empty should result in `name=""` in
-            // preVisitDirectory.
-            // So, `addDirectory("", ...)` should not be called.
-            // Files within it like "file.txt" should be added.
             verify(archive, never()).addDirectory(eq(""), any(FileTime.class));
             verify(archive)
                     .addFile(eq("file.txt"), eq(base.resolve("file.txt")), any(BasicFileAttributes.class), any());
@@ -1500,19 +1459,15 @@ class ArchiveCreatorTest {
         // Given
         Path targetFile = tempDir.resolve("target_for_mode_test.txt");
         Files.writeString(targetFile, "content");
-        Files.setPosixFilePermissions(targetFile, PosixFilePermissions.fromString("rw-r--r--")); // 0644 for target
-
+        Files.setPosixFilePermissions(targetFile, PosixFilePermissions.fromString("rw-r--r--"));
         Path symlinkPath = tempDir.resolve("link_for_mode_test.txt");
         Files.createSymbolicLink(symlinkPath, targetFile.getFileName());
-        // Symlinks themselves often have rwxrwxrwx (0777) permissions on Unix
-        // We want to ensure mode(symlinkPath) gives mode of targetFile due to current impl.
 
         @SuppressWarnings("OctalInteger")
-        int expectedTargetMode =
-                0644; // PosixFilePermissionsMapper.toUnixMode(PosixFilePermissions.fromString("rw-r--r--"))
+        int expectedTargetMode = 0644;
 
         // When
-        int actualMode = ArchiveCreator.mode(symlinkPath); // This will read target's attributes
+        int actualMode = ArchiveCreator.mode(symlinkPath);
 
         // Then
         assertThat(actualMode).isEqualTo(expectedTargetMode);
@@ -1533,7 +1488,7 @@ class ArchiveCreatorTest {
             verify(archive)
                     .writeFileEntry(
                             eq(entryName),
-                            any(ByteArrayInputStream.class), // Will be an empty stream
+                            any(ByteArrayInputStream.class),
                             eq(0L),
                             eq(modTime),
                             eq(NO_MODE),
@@ -1545,7 +1500,7 @@ class ArchiveCreatorTest {
     void builder_filterNull_shouldResultInNoFiltering() throws IOException {
         // Given
         InMemoryArchiveCreatorBuilder builder = new InMemoryArchiveCreatorBuilder(out);
-        builder.filter(null); // Set filter to null
+        builder.filter(null);
 
         String fileName = "file.txt";
         Path path = createFile(tempDir, fileName, "content");
