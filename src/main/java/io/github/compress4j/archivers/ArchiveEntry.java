@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Compress4J Project
+ * Copyright 2024-2025 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ public interface ArchiveEntry {
 
     /** Special value indicating that the size is unknown */
     @SuppressWarnings("unused")
-    static final long UNKNOWN_SIZE = -1;
+    long UNKNOWN_SIZE = -1;
 
     /**
      * The name of the entry in the archive. May refer to a file or directory or other item.
