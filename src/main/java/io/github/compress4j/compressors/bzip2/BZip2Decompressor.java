@@ -25,7 +25,7 @@ public class BZip2Decompressor extends Decompressor<BZip2CompressorInputStream> 
         super(inputStream);
     }
 
-    protected BZip2Decompressor(BZip2DecompressorBuilder builder) throws IOException {
+    protected BZip2Decompressor(BZip2DecompressorBuilder builder) {
         super(builder);
     }
 
@@ -34,8 +34,7 @@ public class BZip2Decompressor extends Decompressor<BZip2CompressorInputStream> 
     }
 
     public static class BZip2DecompressorBuilder
-            extends Decompressor.DecompressorBuilder<
-                    BZip2CompressorInputStream, BZip2Decompressor, BZip2DecompressorBuilder> {
+            extends DecompressorBuilder<BZip2CompressorInputStream, BZip2Decompressor, BZip2DecompressorBuilder> {
 
         protected BZip2DecompressorBuilder(BZip2CompressorInputStream inputStream) {
             super(inputStream);
