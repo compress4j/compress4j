@@ -51,7 +51,12 @@ public class GZipDecompressor extends Decompressor<GzipCompressorInputStream> {
             extends Decompressor.DecompressorBuilder<
                     GzipCompressorInputStream, GZipDecompressor, GZipDecompressorBuilder> {
 
-        protected GZipDecompressorBuilder(GzipCompressorInputStream inputStream) {
+        /**
+         * Constructor that takes a GzipCompressorInputStream.
+         *
+         * @param inputStream the GzipCompressorInputStream to read from.
+         */
+        public GZipDecompressorBuilder(GzipCompressorInputStream inputStream) {
             super(inputStream);
         }
 

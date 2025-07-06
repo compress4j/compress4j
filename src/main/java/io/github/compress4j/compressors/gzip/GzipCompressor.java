@@ -236,7 +236,7 @@ public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
          *
          * @param outputStream the output stream
          */
-        protected GzipCompressorBuilder(OutputStream outputStream) {
+        public GzipCompressorBuilder(OutputStream outputStream) {
             super(outputStream);
             this.compressorOutputStreamBuilder = new GzipCompressorOutputStreamBuilder<>(this, this.outputStream);
         }
