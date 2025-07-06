@@ -24,12 +24,27 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 
+/**
+ * This class provides a BZip2 compressor that writes to a BZip2CompressorOutputStream. It extends the Compressor class
+ * and provides a builder for creating instances.
+ */
 public class BZip2Compressor extends Compressor<BZip2CompressorOutputStream> {
-    protected BZip2Compressor(BZip2CompressorOutputStream compressorOutputStream) {
+    /**
+     * Constructor that takes a BZip2CompressorOutputStream.
+     *
+     * @param compressorOutputStream the BZip2CompressorOutputStream to write to.
+     */
+    public BZip2Compressor(BZip2CompressorOutputStream compressorOutputStream) {
         super(compressorOutputStream);
     }
 
-    protected BZip2Compressor(BZip2CompressorBuilder builder) throws IOException {
+    /**
+     * Constructor that takes a BZip2CompressorBuilder.
+     *
+     * @param builder the BZip2CompressorBuilder to build from.
+     * @throws IOException if an I/O error occurred
+     */
+    public BZip2Compressor(BZip2CompressorBuilder builder) throws IOException {
         super(builder);
     }
 

@@ -24,12 +24,27 @@ import java.util.zip.Deflater;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipParameters;
 
+/**
+ * This class provides a Gzip compressor that writes to a GzipCompressorOutputStream. It extends the Compressor class
+ * and provides a builder for creating instances.
+ */
 public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
 
-    protected GzipCompressor(GzipCompressorOutputStream compressorOutputStream) {
+    /**
+     * Constructor that takes a GzipCompressorOutputStream.
+     *
+     * @param compressorOutputStream the GzipCompressorOutputStream to write to.
+     */
+    public GzipCompressor(GzipCompressorOutputStream compressorOutputStream) {
         super(compressorOutputStream);
     }
 
+    /**
+     * Constructor that takes a GzipCompressorBuilder.
+     *
+     * @param builder the GzipCompressorBuilder to build from.
+     * @throws IOException if an I/O error occurred
+     */
     public GzipCompressor(GzipCompressorBuilder builder) throws IOException {
         super(builder);
     }

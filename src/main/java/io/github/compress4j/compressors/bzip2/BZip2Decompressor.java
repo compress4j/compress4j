@@ -19,16 +19,36 @@ import io.github.compress4j.compressors.Decompressor;
 import java.io.IOException;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
+/**
+ * This class provides a BZip2 decompressor that reads from a BZip2CompressorInputStream. It extends the Decompressor
+ * class and provides a builder for creating instances.
+ */
 public class BZip2Decompressor extends Decompressor<BZip2CompressorInputStream> {
 
-    protected BZip2Decompressor(BZip2CompressorInputStream inputStream) {
+    /**
+     * Constructor that takes a BZip2CompressorInputStream.
+     *
+     * @param inputStream the BZip2CompressorInputStream to read from.
+     */
+    public BZip2Decompressor(BZip2CompressorInputStream inputStream) {
         super(inputStream);
     }
 
-    protected BZip2Decompressor(BZip2DecompressorBuilder builder) {
+    /**
+     * Constructor that takes a BZip2DecompressorBuilder.
+     *
+     * @param builder the BZip2DecompressorBuilder to build from.
+     */
+    public BZip2Decompressor(BZip2DecompressorBuilder builder) {
         super(builder);
     }
 
+    /**
+     * Helper static method to create an instance of the {@link BZip2DecompressorBuilder}
+     *
+     * @param inputStream the BZip2CompressorInputStream to read from
+     * @return An instance of the {@link BZip2DecompressorBuilder}
+     */
     public static BZip2DecompressorBuilder builder(BZip2CompressorInputStream inputStream) {
         return new BZip2DecompressorBuilder(inputStream);
     }
@@ -36,7 +56,12 @@ public class BZip2Decompressor extends Decompressor<BZip2CompressorInputStream> 
     public static class BZip2DecompressorBuilder
             extends DecompressorBuilder<BZip2CompressorInputStream, BZip2Decompressor, BZip2DecompressorBuilder> {
 
-        protected BZip2DecompressorBuilder(BZip2CompressorInputStream inputStream) {
+        /**
+         * Constructor that takes a BZip2CompressorInputStream.
+         *
+         * @param inputStream the BZip2CompressorInputStream to read from.
+         */
+        public BZip2DecompressorBuilder(BZip2CompressorInputStream inputStream) {
             super(inputStream);
         }
 

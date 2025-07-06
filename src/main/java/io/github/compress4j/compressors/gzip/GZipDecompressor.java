@@ -19,16 +19,27 @@ import io.github.compress4j.compressors.Decompressor;
 import java.io.IOException;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 
+/**
+ * This class provides a GZip decompressor that reads from a GzipCompressorInputStream. It extends the Decompressor
+ * class and provides a builder for creating instances.
+ */
 public class GZipDecompressor extends Decompressor<GzipCompressorInputStream> {
 
-    protected <
-                    B extends DecompressorBuilder<GzipCompressorInputStream, D, B>,
-                    D extends Decompressor<GzipCompressorInputStream>>
-            GZipDecompressor(B builder) throws IOException {
+    /**
+     * Constructor that takes a GZipDecompressorBuilder.
+     *
+     * @param builder the GZipDecompressorBuilder to build from.
+     */
+    public GZipDecompressor(GZipDecompressorBuilder builder) {
         super(builder);
     }
 
-    protected GZipDecompressor(GzipCompressorInputStream compressorInputStream) {
+    /**
+     * Constructor that takes a GzipCompressorInputStream.
+     *
+     * @param compressorInputStream the GzipCompressorInputStream to read from.
+     */
+    public GZipDecompressor(GzipCompressorInputStream compressorInputStream) {
         super(compressorInputStream);
     }
 
