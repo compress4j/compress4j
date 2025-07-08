@@ -55,17 +55,17 @@ public class BZip2Decompressor extends Decompressor<BZip2CompressorInputStream> 
         return new BZip2DecompressorBuilder(Files.newInputStream(path));
     }
 
-    public static class BZip2DecompressorInputStreamBuilder<P> {
-        private final P parent;
+    public static class BZip2DecompressorInputStreamBuilder<BZip2DecompressorBuilder> {
+        private final BZip2Decompressor.BZip2DecompressorBuilder parent;
         private final InputStream inputStream;
         private boolean decompressConcatenated = false;
 
-        public BZip2DecompressorInputStreamBuilder(P parent, InputStream inputStream) {
+        public BZip2DecompressorInputStreamBuilder(BZip2Decompressor.BZip2DecompressorBuilder parent, InputStream inputStream) {
             this.parent = parent;
             this.inputStream = inputStream;
         }
 
-        public BZip2DecompressorInputStreamBuilder<P> setDecompressConcatenated(boolean decompressConcatenated) {
+        public BZip2DecompressorInputStreamBuilder<BZip2DecompressorBuilder> setDecompressConcatenated(boolean decompressConcatenated) {
             this.decompressConcatenated = decompressConcatenated;
             return this;
         }
@@ -74,7 +74,7 @@ public class BZip2Decompressor extends Decompressor<BZip2CompressorInputStream> 
             return new BZip2CompressorInputStream(inputStream, decompressConcatenated);
         }
 
-        public P parentBuilder() {
+        public BZip2Decompressor.BZip2DecompressorBuilder parentBuilder() {
             return parent;
         }
     }

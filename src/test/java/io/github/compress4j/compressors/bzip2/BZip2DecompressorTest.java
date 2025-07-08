@@ -24,8 +24,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.github.compress4j.compressors.bzip2.BZip2Decompressor.BZip2DecompressorBuilder;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
@@ -57,7 +61,13 @@ class BZip2DecompressorTest {
     @DisplayName("Should construct BZip2Decompressor with a BZip2DecompressorBuilder")
     void constructor_WithBuilder_SetsField() throws IOException {
         // given
-        BZip2DecompressorBuilder mockBuilder = new BZip2DecompressorBuilder(mockBZip2CompressorInputStream);
+
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+        byte[] emptyValidBZip2Data = bos.toByteArray();
+        InputStream mockRawInputStream = new ByteArrayInputStream(emptyValidBZip2Data);
+
+        BZip2DecompressorBuilder mockBuilder = new BZip2DecompressorBuilder(mockRawInputStream);
 
         BZip2Decompressor decompressorFromBuilder = new BZip2Decompressor(mockBuilder);
 
@@ -74,7 +84,7 @@ class BZip2DecompressorTest {
         when(mockBZip2CompressorInputStream.transferTo(any(OutputStream.class))).thenAnswer(invocation -> {
             OutputStream outputStream = invocation.getArgument(0);
             outputStream.write(testBytes);
-            return ((Number) testBytes.length).longValue();
+            return ((Number)testBytes.length).longValue();
         });
 
         // When
