@@ -26,6 +26,7 @@ import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 
 import io.github.compress4j.utils.StringUtil;
 import jakarta.annotation.Nullable;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -55,7 +56,7 @@ import org.slf4j.LoggerFactory;
  * @param <A> The type of {@link ArchiveInputStream} to read entries from.
  * @since 2.2
  */
-public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends ArchiveEntry>> implements AutoCloseable {
+public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends ArchiveEntry>> implements Closeable {
     private static final Logger LOGGER = LoggerFactory.getLogger(ArchiveExtractor.class);
 
     /** Archive input stream to be used for extraction. */
