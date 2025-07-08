@@ -15,35 +15,113 @@
  */
 package io.github.compress4j.compressors.deflate;
 
-import static org.mockito.Mockito.any;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
 import org.apache.commons.compress.compressors.deflate.DeflateCompressorOutputStream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class DeflateCompressorTest {
+
+    @Mock
+    private DeflateCompressorOutputStream mockDeflateCompressorOutputStream;
+
+    @Mock
+    private OutputStream mockOutputStream;
+
+    @Test
+    void shouldConstructWithGzipCompressorOutputStream() {
+        // When
+        DeflateCompressor compressor = new DeflateCompressor(mockDeflateCompressorOutputStream);
+
+        // Then
+        assertThat(compressor).isNotNull();
+    }
+
+    @Test
+    void shouldConstructWithGzipCompressorBuilder() throws IOException {
+        // Given
+        DeflateCompressor.DeflateCompressorBuilder mockBuilder = mock(DeflateCompressor.DeflateCompressorBuilder.class);
+        when(mockBuilder.buildCompressorOutputStream()).thenReturn(mockDeflateCompressorOutputStream);
+
+        // When
+        DeflateCompressor compressor = new DeflateCompressor(mockBuilder);
+
+        // Then
+        assertThat(compressor).isNotNull();
+        //noinspection resource
+        verify(mockBuilder).buildCompressorOutputStream();
+    }
+
+    @Test
+    void shouldReturnBuilderWithCorrectPath() throws IOException {
+        try (MockedStatic<Files> mockFiles = mockStatic(Files.class)) {
+            // Given
+            Path mockPath = mock(Path.class);
+            //noinspection resource
+            mockFiles.when(() -> Files.newOutputStream(mockPath)).thenReturn(mockOutputStream);
+
+            // When
+            DeflateCompressor.DeflateCompressorBuilder builder = DeflateCompressor.builder(mockPath);
+
+            // Then
+            assertThat(builder).isNotNull();
+        }
+    }
+
     @Test
     void shouldWritePathEntry() throws Exception {
-        // given
-        var outputStream = mock(DeflateCompressorOutputStream.class);
+        try (MockedStatic<Files> mockFiles = mockStatic(Files.class)) {
+            // Given
+            Path mockPath = mock(Path.class);
 
-        final Path tempSourceFile1 = mock(Path.class);
+            // When
+            new DeflateCompressor(mockDeflateCompressorOutputStream).write(mockPath);
 
-        // when
-        var aOut = spy(DeflateCompressor.builder(outputStream).buildCompressorOutputStream());
-        try (MockedStatic<Files> mockFiles = mockStatic(Files.class);
-                DeflateCompressor compressor = new DeflateCompressor(aOut)) {
-
-            compressor.write(tempSourceFile1);
-
-            // then
-            mockFiles.verify(() -> Files.copy(any(Path.class), any(OutputStream.class)));
+            // Then
+            mockFiles.verify(() -> Files.copy(mockPath, mockDeflateCompressorOutputStream));
         }
+    }
+
+    @Test
+    void shouldWriteFileEntry() throws Exception {
+        try (MockedStatic<Files> mockFiles = mockStatic(Files.class)) {
+            // Given
+            File mockFile = mock(File.class);
+            Path mockPath = mock(Path.class);
+            when(mockFile.toPath()).thenReturn(mockPath);
+
+            // When
+            new DeflateCompressor(mockDeflateCompressorOutputStream).write(mockFile);
+
+            // Then
+            mockFiles.verify(() -> Files.copy(mockPath, mockDeflateCompressorOutputStream));
+        }
+    }
+
+    @Test
+    void shouldCloseOutputStreamOnClose() throws IOException {
+        // Given
+        DeflateCompressor compressor = new DeflateCompressor(mockDeflateCompressorOutputStream);
+
+        // When
+        compressor.close();
+
+        // Then
+        verify(mockDeflateCompressorOutputStream).close();
     }
 }
