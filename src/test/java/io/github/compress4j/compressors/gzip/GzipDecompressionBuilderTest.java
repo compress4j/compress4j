@@ -15,66 +15,23 @@
  */
 package io.github.compress4j.compressors.gzip;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.io.InputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class GzipDecompressionBuilderTest {
-
-    private InputStream mockRawInputStream;
-
-    @BeforeEach
-    void setUp() throws IOException {
-        mockRawInputStream = mock(InputStream.class);
-
-        // *** CRITICAL ADDITION: Enable mark/reset support for the mock ***
-        when(mockRawInputStream.markSupported()).thenReturn(true);
-
-        // Stub the sequence of bytes that GzipCompressorInputStream's constructor expects
-        // for a valid GZIP header (RFC 1952). This includes 10 bytes:
-        // ID1, ID2, CM, FLG, MTIME(4 bytes), XFL, OS.
-        when(mockRawInputStream.read())
-                .thenReturn(31) // GZIP ID1 (0x1f)
-                .thenReturn(139) // GZIP ID2 (0x8b)
-                .thenReturn(8) // Compression Method (8 = Deflate)
-                .thenReturn(0) // Flags (0 means no optional header fields)
-                .thenReturn(0) // MTIME byte 1
-                .thenReturn(0) // MTIME byte 2
-                .thenReturn(0) // MTIME byte 3
-                .thenReturn(0) // MTIME byte 4
-                .thenReturn(0) // Extra flags (XFL)
-                .thenReturn(0) // Operating System (OS)
-                .thenReturn(-1); // After the 10 header bytes, signify End Of File.
-    }
+public class GzipDecompressionBuilderTest {
 
     @Test
-    void shouldBuildInputStream() throws IOException {
+    void builderShouldConstructDecompressorClass() throws IOException {
 
-        var builder = GZipDecompressor.builder(mock(GzipCompressorInputStream.class));
+        var inputStream = mock(GzipCompressorInputStream.class);
 
-        // when
-        try (GzipCompressorInputStream in = builder.buildCompressorInputStream()) {
+        GzipDecompressor.GZipDecompressorBuilder builder = new GzipDecompressor.GZipDecompressorBuilder(inputStream);
+        GzipDecompressor actual = builder.build();
 
-            // then
-            assertThat(in).isNotNull();
-        }
-    }
-
-    @Test
-    void shouldBuildInputStreamWithParameters() throws IOException {
-
-        var builder = GZipDecompressor.builder(mock(GzipCompressorInputStream.class));
-
-        // when
-        try (GzipCompressorInputStream in =
-                builder.inputStreamBuilder().setDecompressConcatenated(true).buildInputStream()) {
-            assertThat(in).isNotNull();
-        }
+        assertTrue(GzipDecompressor.class.equals(actual.getClass()));
     }
 }

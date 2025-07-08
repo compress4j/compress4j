@@ -15,6 +15,7 @@
  */
 package io.github.compress4j.compressors;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -28,7 +29,7 @@ import org.apache.commons.compress.compressors.CompressorOutputStream;
  * @param <O> The type of {@link CompressorOutputStream} to write to.
  * @since 2.2
  */
-public abstract class Compressor<O extends CompressorOutputStream<? extends OutputStream>> implements AutoCloseable {
+public abstract class Compressor<O extends CompressorOutputStream<? extends OutputStream>> implements Closeable {
     /** Compressor output stream to be used for compression. */
     protected final O compressorOutputStream;
 
@@ -77,7 +78,7 @@ public abstract class Compressor<O extends CompressorOutputStream<? extends Outp
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() throws IOException {
         compressorOutputStream.close();
     }
 

@@ -26,6 +26,7 @@ import io.github.compress4j.utils.PosixFilePermissionsMapper;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.io.ByteArrayInputStream;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -54,7 +55,7 @@ import org.slf4j.LoggerFactory;
  * @param <A> The type of {@link ArchiveOutputStream} to write entries to.
  * @since 2.2
  */
-public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends ArchiveEntry>> implements AutoCloseable {
+public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends ArchiveEntry>> implements Closeable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ArchiveCreator.class);
 
