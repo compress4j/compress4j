@@ -25,7 +25,7 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
-class GZipDecompressorTest {
+class GzipDecompressorTest {
     @Test
     void shouldWritePathEntry() throws Exception {
         // given
@@ -35,9 +35,9 @@ class GZipDecompressorTest {
 
         // when
 
-        var aIn = GZipDecompressor.builder(inputStream);
+        var aIn = GzipDecompressor.builder(inputStream);
         try (MockedStatic<Files> mockFiles = mockStatic(Files.class);
-                GZipDecompressor compressor = new GZipDecompressor(aIn)) {
+                GzipDecompressor compressor = new GzipDecompressor(aIn)) {
             compressor.write(path);
 
             // then

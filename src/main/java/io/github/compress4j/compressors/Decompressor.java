@@ -15,6 +15,7 @@
  */
 package io.github.compress4j.compressors;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,7 +28,7 @@ import org.apache.commons.compress.compressors.CompressorInputStream;
  * @param <I> The type of {@link CompressorInputStream} to read from.
  * @since 2.2
  */
-public abstract class Decompressor<I extends CompressorInputStream> implements AutoCloseable {
+public abstract class Decompressor<I extends CompressorInputStream> implements Closeable {
     /** Compressor input stream to be used for decompression. */
     protected final I compressorInputStream;
 

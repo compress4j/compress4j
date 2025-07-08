@@ -15,35 +15,113 @@
  */
 package io.github.compress4j.compressors.gzip;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import io.github.compress4j.compressors.gzip.GzipCompressor.GzipCompressorBuilder;
+import java.io.File;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.junit.jupiter.MockitoExtension;
 
+@ExtendWith(MockitoExtension.class)
 class GzipCompressorTest {
+
+    @Mock
+    private GzipCompressorOutputStream mockGzipCompressorOutputStream;
+
+    @Mock
+    private OutputStream mockOutputStream;
+
+    @Test
+    void shouldConstructWithGzipCompressorOutputStream() {
+        // When
+        GzipCompressor compressor = new GzipCompressor(mockGzipCompressorOutputStream);
+
+        // Then
+        assertThat(compressor).isNotNull();
+    }
+
+    @Test
+    void shouldConstructWithGzipCompressorBuilder() throws IOException {
+        // Given
+        GzipCompressorBuilder mockBuilder = mock(GzipCompressorBuilder.class);
+        when(mockBuilder.buildCompressorOutputStream()).thenReturn(mockGzipCompressorOutputStream);
+
+        // When
+        GzipCompressor compressor = new GzipCompressor(mockBuilder);
+
+        // Then
+        assertThat(compressor).isNotNull();
+        //noinspection resource
+        verify(mockBuilder).buildCompressorOutputStream();
+    }
+
+    @Test
+    void shouldReturnBuilderWithCorrectPath() throws IOException {
+        try (MockedStatic<Files> mockFiles = mockStatic(Files.class)) {
+            // Given
+            Path mockPath = mock(Path.class);
+            //noinspection resource
+            mockFiles.when(() -> Files.newOutputStream(mockPath)).thenReturn(mockOutputStream);
+
+            // When
+            GzipCompressorBuilder builder = GzipCompressor.builder(mockPath);
+
+            // Then
+            assertThat(builder).isNotNull();
+        }
+    }
 
     @Test
     void shouldWritePathEntry() throws Exception {
-        // given
-        var outputStream = mock(OutputStream.class);
+        try (MockedStatic<Files> mockFiles = mockStatic(Files.class)) {
+            // Given
+            Path mockPath = mock(Path.class);
 
-        final Path tempSourceFile1 = mock(Path.class);
+            // When
+            new GzipCompressor(mockGzipCompressorOutputStream).write(mockPath);
 
-        // when
-        var aOut = spy(GzipCompressor.builder(outputStream).buildCompressorOutputStream());
-        try (MockedStatic<Files> mockFiles = mockStatic(Files.class);
-                GzipCompressor compressor = new GzipCompressor(aOut)) {
-
-            compressor.write(tempSourceFile1);
-
-            // then
-            mockFiles.verify(() -> Files.copy(any(Path.class), any(OutputStream.class)));
+            // Then
+            mockFiles.verify(() -> Files.copy(mockPath, mockGzipCompressorOutputStream));
         }
+    }
+
+    @Test
+    void shouldWriteFileEntry() throws Exception {
+        try (MockedStatic<Files> mockFiles = mockStatic(Files.class)) {
+            // Given
+            File mockFile = mock(File.class);
+            Path mockPath = mock(Path.class);
+            when(mockFile.toPath()).thenReturn(mockPath);
+
+            // When
+            new GzipCompressor(mockGzipCompressorOutputStream).write(mockFile);
+
+            // Then
+            mockFiles.verify(() -> Files.copy(mockPath, mockGzipCompressorOutputStream));
+        }
+    }
+
+    @Test
+    void shouldCloseOutputStreamOnClose() throws IOException {
+        // Given
+        GzipCompressor compressor = new GzipCompressor(mockGzipCompressorOutputStream);
+
+        // When
+        compressor.close();
+
+        // Then
+        verify(mockGzipCompressorOutputStream).close();
     }
 }

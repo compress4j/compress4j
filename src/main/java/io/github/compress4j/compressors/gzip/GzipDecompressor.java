@@ -23,14 +23,14 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
  * This class provides a GZip decompressor that reads from a GzipCompressorInputStream. It extends the Decompressor
  * class and provides a builder for creating instances.
  */
-public class GZipDecompressor extends Decompressor<GzipCompressorInputStream> {
+public class GzipDecompressor extends Decompressor<GzipCompressorInputStream> {
 
     /**
      * Constructor that takes a GZipDecompressorBuilder.
      *
      * @param builder the GZipDecompressorBuilder to build from.
      */
-    public GZipDecompressor(GZipDecompressorBuilder builder) {
+    public GzipDecompressor(GZipDecompressorBuilder builder) {
         super(builder);
     }
 
@@ -39,7 +39,7 @@ public class GZipDecompressor extends Decompressor<GzipCompressorInputStream> {
      *
      * @param compressorInputStream the GzipCompressorInputStream to read from.
      */
-    public GZipDecompressor(GzipCompressorInputStream compressorInputStream) {
+    public GzipDecompressor(GzipCompressorInputStream compressorInputStream) {
         super(compressorInputStream);
     }
 
@@ -49,7 +49,7 @@ public class GZipDecompressor extends Decompressor<GzipCompressorInputStream> {
 
     public static class GZipDecompressorBuilder
             extends Decompressor.DecompressorBuilder<
-                    GzipCompressorInputStream, GZipDecompressor, GZipDecompressorBuilder> {
+                    GzipCompressorInputStream, GzipDecompressor, GZipDecompressorBuilder> {
 
         /**
          * Constructor that takes a GzipCompressorInputStream.
@@ -61,13 +61,13 @@ public class GZipDecompressor extends Decompressor<GzipCompressorInputStream> {
         }
 
         @Override
-        protected GZipDecompressor.GZipDecompressorBuilder getThis() {
+        protected GzipDecompressor.GZipDecompressorBuilder getThis() {
             return this;
         }
 
         @Override
-        public GZipDecompressor build() throws IOException {
-            return new GZipDecompressor(this);
+        public GzipDecompressor build() throws IOException {
+            return new GzipDecompressor(this);
         }
     }
 }

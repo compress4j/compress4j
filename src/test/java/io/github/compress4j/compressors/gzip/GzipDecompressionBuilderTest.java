@@ -29,9 +29,9 @@ public class GzipDecompressionBuilderTest {
 
         var inputStream = mock(GzipCompressorInputStream.class);
 
-        GZipDecompressor.GZipDecompressorBuilder builder = new GZipDecompressor.GZipDecompressorBuilder(inputStream);
-        GZipDecompressor actual = builder.build();
+        GzipDecompressor.GZipDecompressorBuilder builder = new GzipDecompressor.GZipDecompressorBuilder(inputStream);
+        GzipDecompressor actual = builder.build();
 
-        assertTrue(GZipDecompressor.class.equals(actual.getClass()));
+        assertTrue(GzipDecompressor.class.equals(actual.getClass()));
     }
 }
