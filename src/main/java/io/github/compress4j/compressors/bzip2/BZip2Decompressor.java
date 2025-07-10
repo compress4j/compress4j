@@ -15,15 +15,14 @@
  */
 package io.github.compress4j.compressors.bzip2;
 
-import io.github.compress4j.compressors.Decompressor;
+import static java.nio.file.Files.newInputStream;
 
+import io.github.compress4j.compressors.Decompressor;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
-
-import static java.nio.file.Files.newInputStream;
 
 /**
  * This class provides a BZip2 decompressor that reads from a BZip2CompressorInputStream. It extends the Decompressor
@@ -103,7 +102,7 @@ public class BZip2Decompressor extends Decompressor<BZip2CompressorInputStream> 
 
         public BZip2DecompressorBuilder(File file) throws IOException {
             this(file.toPath());
-        }//todo is it bad practice to call another constructer which would then invoke another constructer?
+        } // todo is it bad practice to call another constructer which would then invoke another constructer?
 
         public BZip2DecompressorInputStreamBuilder<BZip2DecompressorBuilder> inputStreamBuilder() {
             return inputStreamBuilder;

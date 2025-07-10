@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
-
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -49,9 +48,8 @@ class GZipDecompressorTest {
     @TempDir
     Path tempDir;
 
-
     @BeforeEach
-    void setUp(){
+    void setUp() {
         gZipDecompressor = new GZipDecompressor(mockedGzipCompressorInputStream);
     }
 
@@ -80,32 +78,32 @@ class GZipDecompressorTest {
                 .thenReturn(0) // Operating System (OS)
                 .thenReturn(-1); // After the 10 header bytes, signify End Of File.
 
-        GZipDecompressor.GZipDecompressorBuilder mockBuilder = new GZipDecompressor.GZipDecompressorBuilder(mockRawInputStream);
+        GZipDecompressor.GZipDecompressorBuilder mockBuilder =
+                new GZipDecompressor.GZipDecompressorBuilder(mockRawInputStream);
 
         GZipDecompressor decompressorFromBuilder = new GZipDecompressor(mockBuilder);
 
         assertThat(decompressorFromBuilder).isNotNull();
-
     }
 
     @Test
     @DisplayName("Should write all bytes from input stream to a file")
     void write_ToFile_CopiesBytes() throws IOException {
-        //given
+        // given
         Path outputPath = tempDir.resolve("output.txt");
         byte[] testBytes = "Gzip is Great".getBytes();
 
-        when(mockedGzipCompressorInputStream.transferTo(any(OutputStream.class))).thenAnswer(invocation -> {
+        when(mockedGzipCompressorInputStream.transferTo(any(OutputStream.class)))
+                .thenAnswer(invocation -> {
                     OutputStream outputStream = invocation.getArgument(0);
                     outputStream.write(testBytes);
                     return ((Number) testBytes.length).longValue();
-                }
-        );
+                });
 
-        //when
+        // when
         long bytesWritten = gZipDecompressor.write(outputPath.toFile());
 
-        //then
+        // then
         assertThat(bytesWritten).isEqualTo(testBytes.length);
         assertThat(outputPath).exists().hasContent("Gzip is Great");
     }
@@ -113,21 +111,21 @@ class GZipDecompressorTest {
     @Test
     @DisplayName("Should write all bytes from input stream to a path")
     void write_ToPath_CopiesBytes() throws IOException {
-        //given
+        // given
         Path outputPath = tempDir.resolve("output.txt");
         byte[] testBytes = "Gzip is Great".getBytes();
 
-        when(mockedGzipCompressorInputStream.transferTo(any(OutputStream.class))).thenAnswer(invocation -> {
+        when(mockedGzipCompressorInputStream.transferTo(any(OutputStream.class)))
+                .thenAnswer(invocation -> {
                     OutputStream outputStream = invocation.getArgument(0);
                     outputStream.write(testBytes);
                     return ((Number) testBytes.length).longValue();
-                }
-        );
+                });
 
-        //when
+        // when
         long bytesWritten = gZipDecompressor.write(outputPath);
 
-        //then
+        // then
         assertThat(bytesWritten).isEqualTo(testBytes.length);
         assertThat(outputPath).exists().hasContent("Gzip is Great");
     }
@@ -151,6 +149,7 @@ class GZipDecompressorTest {
                 .isInstanceOf(IOException.class)
                 .hasMessage(nonWritablePath.toString());
     }
+
     @Test
     @DisplayName("Should close the gzip compressor input stream")
     void close_ClosesBZip2CompressorInputStream() throws IOException {
@@ -170,5 +169,4 @@ class GZipDecompressorTest {
                 .hasMessage("Failed to close BZip2 stream");
         verify(mockedGzipCompressorInputStream, times(1)).close();
     }
-
 }

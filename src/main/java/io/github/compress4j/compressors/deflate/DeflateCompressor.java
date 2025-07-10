@@ -21,8 +21,6 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.zip.Deflater;
-
-import io.github.compress4j.compressors.gzip.GzipCompressor;
 import org.apache.commons.compress.compressors.deflate.DeflateCompressorOutputStream;
 import org.apache.commons.compress.compressors.deflate.DeflateParameters;
 
@@ -43,6 +41,7 @@ public class DeflateCompressor extends Compressor<DeflateCompressorOutputStream>
     public static DeflateCompressorBuilder builder(Path path) throws IOException {
         return new DeflateCompressorBuilder(path);
     }
+
     public static class DeflateOutputStreamBuilder<P> {
         private final P parent;
         private final OutputStream outputStream;

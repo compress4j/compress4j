@@ -22,12 +22,11 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 
+import io.github.compress4j.compressors.bzip2.BZip2Decompressor.BZip2DecompressorBuilder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.nio.file.Path;
-
-import io.github.compress4j.compressors.bzip2.BZip2Decompressor.BZip2DecompressorBuilder;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -89,9 +88,12 @@ class BZip2DecompressorBuilderTest {
     void shouldBuildInputStream() throws IOException {
         BZip2DecompressorBuilder parentBuilder = new BZip2DecompressorBuilder(mockRawInputStream);
 
-        BZip2Decompressor.BZip2DecompressorInputStreamBuilder compressorInputStreamBuilder = spy(new BZip2Decompressor.BZip2DecompressorInputStreamBuilder<>(parentBuilder,mockRawInputStream));
+        BZip2Decompressor.BZip2DecompressorInputStreamBuilder compressorInputStreamBuilder =
+                spy(new BZip2Decompressor.BZip2DecompressorInputStreamBuilder<>(parentBuilder, mockRawInputStream));
 
-        doReturn(mock(BZip2CompressorInputStream.class)).when(compressorInputStreamBuilder).buildInputStream();
+        doReturn(mock(BZip2CompressorInputStream.class))
+                .when(compressorInputStreamBuilder)
+                .buildInputStream();
 
         // when
         try (BZip2CompressorInputStream buildCompresserInputStream = compressorInputStreamBuilder.buildInputStream()) {
@@ -101,21 +103,25 @@ class BZip2DecompressorBuilderTest {
     }
 
     @Test
-    void shouldBuildInputStreamWithDecompressConcatTrue() throws IOException, NoSuchFieldException, IllegalAccessException {
+    void shouldBuildInputStreamWithDecompressConcatTrue()
+            throws IOException, NoSuchFieldException, IllegalAccessException {
         BZip2DecompressorBuilder parentBuilder = new BZip2DecompressorBuilder(mockRawInputStream);
 
-        BZip2Decompressor.BZip2DecompressorInputStreamBuilder<BZip2DecompressorBuilder> compressorInputStreamBuilder = spy(parentBuilder.inputStreamBuilder());
+        BZip2Decompressor.BZip2DecompressorInputStreamBuilder<BZip2DecompressorBuilder> compressorInputStreamBuilder =
+                spy(parentBuilder.inputStreamBuilder());
 
-        doReturn(mock(BZip2CompressorInputStream.class)).when(compressorInputStreamBuilder).buildInputStream();
+        doReturn(mock(BZip2CompressorInputStream.class))
+                .when(compressorInputStreamBuilder)
+                .buildInputStream();
         compressorInputStreamBuilder.setDecompressConcatenated(true);
 
-        Field decompressConcatenatedField = BZip2Decompressor.BZip2DecompressorInputStreamBuilder.class.getDeclaredField("decompressConcatenated");
+        Field decompressConcatenatedField =
+                BZip2Decompressor.BZip2DecompressorInputStreamBuilder.class.getDeclaredField("decompressConcatenated");
         decompressConcatenatedField.setAccessible(true);
 
         boolean decompressConcatenatedValue = (boolean) decompressConcatenatedField.get(compressorInputStreamBuilder);
 
         assertThat(decompressConcatenatedValue).isTrue();
-
 
         // when
         try (BZip2CompressorInputStream buildCompresserInputStream = compressorInputStreamBuilder.buildInputStream()) {

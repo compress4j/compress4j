@@ -17,7 +17,6 @@ package io.github.compress4j.compressors.bzip2;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.InstanceOfAssertFactories.iterable;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -26,12 +25,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.github.compress4j.compressors.bzip2.BZip2Decompressor.BZip2DecompressorBuilder;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
@@ -66,10 +61,10 @@ class BZip2DecompressorTest {
 
         BZip2DecompressorBuilder mockBuilder = mock(BZip2DecompressorBuilder.class);
 
-        //when
+        // when
         BZip2Decompressor decompressorFromBuilder = new BZip2Decompressor(mockBuilder);
 
-        //then
+        // then
         assertThat(decompressorFromBuilder).isNotNull();
     }
 
@@ -83,7 +78,7 @@ class BZip2DecompressorTest {
         when(mockBZip2CompressorInputStream.transferTo(any(OutputStream.class))).thenAnswer(invocation -> {
             OutputStream outputStream = invocation.getArgument(0);
             outputStream.write(testBytes);
-            return ((Number)testBytes.length).longValue();
+            return ((Number) testBytes.length).longValue();
         });
 
         // When

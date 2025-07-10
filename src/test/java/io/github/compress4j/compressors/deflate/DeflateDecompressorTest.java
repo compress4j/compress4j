@@ -28,7 +28,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Path;
-
 import org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -49,9 +48,8 @@ class DeflateDecompressorTest {
     @TempDir
     Path tempDir;
 
-
     @BeforeEach
-    void setUp(){
+    void setUp() {
         deflateDecompressor = new DeflateDecompressor(mockedDeflateCompressorInputStream);
     }
 
@@ -59,32 +57,32 @@ class DeflateDecompressorTest {
     @DisplayName("Should construct a deflate decompressor using Builder")
     void shouldConstructGzipDecompressorUsingBuilder() throws IOException {
 
-        DeflateDecompressor.DeflateDecompressorBuilder mockBuilder = mock(DeflateDecompressor.DeflateDecompressorBuilder.class);
+        DeflateDecompressor.DeflateDecompressorBuilder mockBuilder =
+                mock(DeflateDecompressor.DeflateDecompressorBuilder.class);
 
         DeflateDecompressor decompressorFromBuilder = new DeflateDecompressor(mockBuilder);
 
         assertThat(decompressorFromBuilder).isNotNull();
-
     }
 
     @Test
     @DisplayName("Should write all bytes from input stream to a file")
     void write_ToFile_CopiesBytes() throws IOException {
-        //given
+        // given
         Path outputPath = tempDir.resolve("output.txt");
         byte[] testBytes = "deflate is Great".getBytes();
 
-        when(mockedDeflateCompressorInputStream.transferTo(any(OutputStream.class))).thenAnswer(invocation -> {
+        when(mockedDeflateCompressorInputStream.transferTo(any(OutputStream.class)))
+                .thenAnswer(invocation -> {
                     OutputStream outputStream = invocation.getArgument(0);
                     outputStream.write(testBytes);
                     return ((Number) testBytes.length).longValue();
-                }
-        );
+                });
 
-        //when
+        // when
         long bytesWritten = deflateDecompressor.write(outputPath.toFile());
 
-        //then
+        // then
         assertThat(outputPath).exists().hasContent("deflate is Great");
         assertThat(bytesWritten).isEqualTo(testBytes.length);
     }
@@ -92,21 +90,21 @@ class DeflateDecompressorTest {
     @Test
     @DisplayName("Should write all bytes from input stream to a path")
     void write_ToPath_CopiesBytes() throws IOException {
-        //given
+        // given
         Path outputPath = tempDir.resolve("output.txt");
         byte[] testBytes = "deflate is Great".getBytes();
 
-        when(mockedDeflateCompressorInputStream.transferTo(any(OutputStream.class))).thenAnswer(invocation -> {
+        when(mockedDeflateCompressorInputStream.transferTo(any(OutputStream.class)))
+                .thenAnswer(invocation -> {
                     OutputStream outputStream = invocation.getArgument(0);
                     outputStream.write(testBytes);
                     return ((Number) testBytes.length).longValue();
-                }
-        );
+                });
 
-        //when
+        // when
         long bytesWritten = deflateDecompressor.write(outputPath);
 
-        //then
+        // then
         assertThat(bytesWritten).isEqualTo(testBytes.length);
         assertThat(outputPath).exists().hasContent("deflate is Great");
     }
@@ -130,6 +128,7 @@ class DeflateDecompressorTest {
                 .isInstanceOf(IOException.class)
                 .hasMessage(nonWritablePath.toString());
     }
+
     @Test
     @DisplayName("Should close the deflate compressor input stream")
     void close_ClosesBZip2CompressorInputStream() throws IOException {
@@ -149,5 +148,4 @@ class DeflateDecompressorTest {
                 .hasMessage("Failed to close deflate stream");
         verify(mockedDeflateCompressorInputStream, times(1)).close();
     }
-
 }
