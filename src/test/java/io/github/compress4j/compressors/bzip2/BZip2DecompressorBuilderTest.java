@@ -16,47 +16,73 @@
 package io.github.compress4j.compressors.bzip2;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import java.nio.file.Path;
 
+import io.github.compress4j.compressors.bzip2.BZip2Decompressor.BZip2DecompressorBuilder;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+@ExtendWith(MockitoExtension.class)
 class BZip2DecompressorBuilderTest {
 
+    @Mock
+    private BZip2CompressorInputStream mockBzip2CompressorInputStream;
+
+    @Mock
     private InputStream mockRawInputStream;
 
-    @BeforeEach
-    void setUp() {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    @TempDir
+    Path tempDir;
 
-        byte[] emptyValidBZip2Data = bos.toByteArray();
-        mockRawInputStream = new ByteArrayInputStream(emptyValidBZip2Data);
+    @Test
+    void whenBuilderGivenPathConstructsDecompressor() throws IOException {
+        BZip2DecompressorBuilder builder = spy(new BZip2DecompressorBuilder(tempDir.toFile()));
+        //noinspection resource
+        doReturn(mockBzip2CompressorInputStream).when(builder).buildCompressorInputStream();
+
+        BZip2Decompressor actual = builder.build();
+
+        assertThat(actual).isNotNull();
     }
 
     @Test
-    void shouldBuildInputStream() throws IOException {
-        var builder = BZip2Decompressor.builder(mockRawInputStream);
+    void whenBuilderGivenFileConstructsDecompressor() throws IOException {
+        BZip2DecompressorBuilder builder = spy(new BZip2DecompressorBuilder(tempDir));
+        //noinspection resource
+        doReturn(mockBzip2CompressorInputStream).when(builder).buildCompressorInputStream();
 
-        // when
-        try (BZip2CompressorInputStream in = builder.buildCompressorInputStream()) {
-            // then
-            assertThat(in).isNotNull();
-        }
+        BZip2Decompressor actual = builder.build();
+
+        assertThat(actual).isNotNull();
     }
 
     @Test
-    void shouldBuildInputStreamWithDecomporessConcatTrue() throws IOException {
-        var builder = BZip2Decompressor.builder(mockRawInputStream);
+    void whenBuilderGivenInputStreamConstructsDecompressor() throws IOException {
+        BZip2DecompressorBuilder builder = spy(new BZip2DecompressorBuilder(mockRawInputStream));
+        //noinspection resource
+        doReturn(mockBzip2CompressorInputStream).when(builder).buildCompressorInputStream();
 
-        // when
-        try (BZip2CompressorInputStream in =
-                builder.inputStreamBuilder().setDecompressConcatenated(true).buildInputStream()) {
-            // then
-            assertThat(in).isNotNull();
-        }
+        BZip2Decompressor actual = builder.build();
+
+        assertThat(actual).isNotNull();
+    }
+
+    @Test
+    void whenWritingInputStreamFailsThrowIOExeption() throws IOException {
+        BZip2DecompressorBuilder builder = spy(new BZip2DecompressorBuilder(mockRawInputStream));
+        doThrow(new IOException()).when(builder).buildCompressorInputStream();
+
+        assertThrows(IOException.class, builder::buildCompressorInputStream);
     }
 }

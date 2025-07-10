@@ -16,11 +16,14 @@
 package io.github.compress4j.compressors.bzip2;
 
 import io.github.compress4j.compressors.Decompressor;
+
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+
+import static java.nio.file.Files.newInputStream;
 
 /**
  * This class provides a BZip2 decompressor that reads from a BZip2CompressorInputStream. It extends the Decompressor
@@ -52,20 +55,20 @@ public class BZip2Decompressor extends Decompressor<BZip2CompressorInputStream> 
     }
 
     public static BZip2DecompressorBuilder builder(Path path) throws IOException {
-        return new BZip2DecompressorBuilder(Files.newInputStream(path));
+        return new BZip2DecompressorBuilder(newInputStream(path));
     }
 
-    public static class BZip2DecompressorInputStreamBuilder<BZip2DecompressorBuilder> {
-        private final BZip2Decompressor.BZip2DecompressorBuilder parent;
+    public static class BZip2DecompressorInputStreamBuilder<P> {
+        private final P parent;
         private final InputStream inputStream;
         private boolean decompressConcatenated = false;
 
-        public BZip2DecompressorInputStreamBuilder(BZip2Decompressor.BZip2DecompressorBuilder parent, InputStream inputStream) {
+        public BZip2DecompressorInputStreamBuilder(P parent, InputStream inputStream) {
             this.parent = parent;
             this.inputStream = inputStream;
         }
 
-        public BZip2DecompressorInputStreamBuilder<BZip2DecompressorBuilder> setDecompressConcatenated(boolean decompressConcatenated) {
+        public BZip2DecompressorInputStreamBuilder<P> setDecompressConcatenated(boolean decompressConcatenated) {
             this.decompressConcatenated = decompressConcatenated;
             return this;
         }
@@ -74,7 +77,7 @@ public class BZip2Decompressor extends Decompressor<BZip2CompressorInputStream> 
             return new BZip2CompressorInputStream(inputStream, decompressConcatenated);
         }
 
-        public BZip2Decompressor.BZip2DecompressorBuilder parentBuilder() {
+        public P parentBuilder() {
             return parent;
         }
     }
@@ -93,6 +96,14 @@ public class BZip2Decompressor extends Decompressor<BZip2CompressorInputStream> 
             super(inputStream);
             this.inputStreamBuilder = new BZip2DecompressorInputStreamBuilder<>(this, inputStream);
         }
+
+        public BZip2DecompressorBuilder(Path path) throws IOException {
+            this(newInputStream(path));
+        }
+
+        public BZip2DecompressorBuilder(File file) throws IOException {
+            this(file.toPath());
+        }//todo is it bad practice to call another constructer which would then invoke another constructer?
 
         public BZip2DecompressorInputStreamBuilder<BZip2DecompressorBuilder> inputStreamBuilder() {
             return inputStreamBuilder;
