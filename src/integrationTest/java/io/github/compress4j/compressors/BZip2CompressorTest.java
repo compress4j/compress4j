@@ -16,52 +16,25 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static io.github.compress4j.assertion.Compress4JAssertions.assertThat;
+import static io.github.compress4j.test.util.io.TestFileUtils.createFile;
 
-public class BZip2CompressorTest {
-
-    @TempDir
-    private Path targetTempDir;
+class BZip2CompressorTest {
 
     @TempDir
-    private Path expectedFilePath;
+    private Path tempDir;
 
-    private Path sourceFilePath;
 
-    private Path targetFilePath;
-
-    @BeforeEach
-    void setUp() throws IOException {
-        sourceFilePath = Paths.get("/home/renas/workspace/compress4j/src/integrationTest/resources/compression/compressTest.txt");
-        targetFilePath = targetTempDir.resolve("compressedActual.txt.bz2");
-        expectedFilePath = expectedFilePath.resolve("compressedExpected.txt.bz2");
-
-        try (InputStream in = new FileInputStream(sourceFilePath.toFile());
-             OutputStream out = new FileOutputStream(expectedFilePath.toFile());
-             BZip2CompressorOutputStream bzipOut = new BZip2CompressorOutputStream(out)) {
-            byte[] buffer = new byte[4096];
-            int bytesRead;
-            while ((bytesRead = in.read(buffer)) != -1) {
-                bzipOut.write(buffer, 0, bytesRead);
-            }
-        }
-    }
 
     @Test
     void whenGivenPathShouldCompress() throws IOException {
         //when
+        var sourceFilePath = createFile(tempDir, "source.txt", "Lorem impsum");
+        var targetFilePath = tempDir.resolve("compressedActual.txt.bz2");
+        var expectedFilePath = tempDir.resolve("compressedExpected.txt.bz2");
+        appacheCompressor(sourceFilePath, expectedFilePath);
+
         try(BZip2Compressor bZip2Compressor = new BZip2Compressor.BZip2CompressorBuilder(targetFilePath).build()) {
             bZip2Compressor.write(sourceFilePath);
-        }
-
-        //given
-        try (InputStream in = new FileInputStream(sourceFilePath.toFile());
-             OutputStream out = new FileOutputStream(expectedFilePath.toFile());
-             BZip2CompressorOutputStream bzipOut = new BZip2CompressorOutputStream(out)) {
-            byte[] buffer = new byte[4096];
-            int bytesRead;
-            while ((bytesRead = in.read(buffer)) != -1) {
-                bzipOut.write(buffer, 0, bytesRead);
-            }
         }
 
         //should
@@ -74,6 +47,11 @@ public class BZip2CompressorTest {
     @Test
     void whenGivenOutputStreamShouldCompress() throws IOException {
         //when
+        var sourceFilePath = createFile(tempDir, "source.txt", "Lorem impsum");
+        var targetFilePath = tempDir.resolve("compressedActual.txt.bz2");
+        var expectedFilePath = tempDir.resolve("compressedExpected.txt.bz2");
+        appacheCompressor(sourceFilePath, expectedFilePath);
+
         OutputStream targetOutputStream = Files.newOutputStream(targetFilePath);
 
         try(BZip2Compressor bZip2Compressor = new BZip2Compressor.BZip2CompressorBuilder(targetOutputStream).build()) {
@@ -88,26 +66,34 @@ public class BZip2CompressorTest {
     }
 
     @Test
-    void whenGivenEmptyFileShouldCompress(){
+    void whenGivenEmptyPathShouldCompress() throws IOException{
+        var emptySourceFile = createFile(tempDir, "empty.txt", ""); // Create an empty file
+        var targetFilePath = tempDir.resolve("compressedActual.txt.bz2");
+        var expectedFilePath =  tempDir.resolve("decompressed_empty.txt");
 
-//        try(BZip2Compressor bZip2Compressor = new BZip2Compressor.BZip2CompressorBuilder(targetOutputStream).build()) {
-//            bZip2Compressor.write(sourceFilePath);
-//        }
 
+        try(BZip2Compressor bZip2Compressor = new BZip2Compressor.BZip2CompressorBuilder(targetFilePath).build()) {
+            bZip2Compressor.write(emptySourceFile);
+        }
+
+        appacheCompressor(emptySourceFile, expectedFilePath);
+        assertThat(targetFilePath).exists();
+        assertThat(emptySourceFile).exists();
+
+        assertThat(targetFilePath).hasSameBinaryContentAs(expectedFilePath);
     }
 
-    @Test
-    void whenGivenEmptyPathShouldCompress(){}
+    private void appacheCompressor(Path sourceFilePath, Path expectedFilePath) throws IOException {
+        try (InputStream in = new FileInputStream(sourceFilePath.toFile());
+             OutputStream out = new FileOutputStream(expectedFilePath.toFile());
+             BZip2CompressorOutputStream bzipOut = new BZip2CompressorOutputStream(out)) {
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = in.read(buffer)) != -1) {
+                bzipOut.write(buffer, 0, bytesRead);
+            }
+        }
+    }
 
-    @Test
-    void whenGiven_Empty_OutputStreamShould_not_Compress_QUESTION(){}
 
-    @Test
-    void whenGivenInvalidPathShouldReturnExpection(){}
-
-    @Test
-    void whenGivenInvalidFileShouldReturnExpection(){}
-
-    @Test
-    void whenGivenDifferentBlockSizeValuesShouldCompress(){}
 }
