@@ -11,6 +11,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -25,6 +26,7 @@ public class BZip2CompressorTest {
     private Path expectedFilePath;
 
     private Path sourceFilePath;
+
     private Path targetFilePath;
 
     @BeforeEach
@@ -33,6 +35,15 @@ public class BZip2CompressorTest {
         targetFilePath = targetTempDir.resolve("compressedActual.txt.bz2");
         expectedFilePath = expectedFilePath.resolve("compressedExpected.txt.bz2");
 
+        try (InputStream in = new FileInputStream(sourceFilePath.toFile());
+             OutputStream out = new FileOutputStream(expectedFilePath.toFile());
+             BZip2CompressorOutputStream bzipOut = new BZip2CompressorOutputStream(out)) {
+            byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = in.read(buffer)) != -1) {
+                bzipOut.write(buffer, 0, bytesRead);
+            }
+        }
     }
 
     @Test
@@ -53,7 +64,7 @@ public class BZip2CompressorTest {
             }
         }
 
-
+        //should
         assertThat(targetFilePath).exists();
         assertThat(sourceFilePath).exists();
 
@@ -61,10 +72,29 @@ public class BZip2CompressorTest {
     }
 
     @Test
-    void whenGivenOutputStreamShouldCompress(){}
+    void whenGivenOutputStreamShouldCompress() throws IOException {
+        //when
+        OutputStream targetOutputStream = Files.newOutputStream(targetFilePath);
+
+        try(BZip2Compressor bZip2Compressor = new BZip2Compressor.BZip2CompressorBuilder(targetOutputStream).build()) {
+            bZip2Compressor.write(sourceFilePath);
+        }
+
+        //should
+        assertThat(targetFilePath).exists();
+        assertThat(sourceFilePath).exists();
+
+        assertThat(targetFilePath).hasSameBinaryContentAs(expectedFilePath);
+    }
 
     @Test
-    void whenGivenEmptyFileShouldCompress(){}
+    void whenGivenEmptyFileShouldCompress(){
+
+//        try(BZip2Compressor bZip2Compressor = new BZip2Compressor.BZip2CompressorBuilder(targetOutputStream).build()) {
+//            bZip2Compressor.write(sourceFilePath);
+//        }
+
+    }
 
     @Test
     void whenGivenEmptyPathShouldCompress(){}
