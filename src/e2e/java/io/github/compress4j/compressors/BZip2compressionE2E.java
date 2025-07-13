@@ -13,41 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package compressors;
+package io.github.compress4j.compressors;
 
 import static io.github.compress4j.assertion.Compress4JAssertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import io.github.compress4j.compressors.gzip.GZipDecompressor;
-import io.github.compress4j.compressors.gzip.GzipCompressor;
+import io.github.compress4j.compressors.bzip2.BZip2Compressor;
+import io.github.compress4j.compressors.bzip2.BZip2Decompressor;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-class GzipCompressionE2E {
+class BZip2compressionE2ETest {
 
     @TempDir
     Path tempDir;
 
     @Test
-    void whenCompressingDataThenDecompressed() throws Exception {
+    void compressDecompressSameFile() throws Exception {
         Path sourceFile = Paths.get("/home/renas/workspace/compress4j/src/e2e/resources/compression/compressTest.txt");
         Path compressedTarget = tempDir.resolve("compressTest.txt.bz2");
 
-        try (GzipCompressor gzipCompressor =
-                GzipCompressor.builder(compressedTarget).build()) {
-            gzipCompressor.write(sourceFile);
+        try (BZip2Compressor bZip2Compressor =
+                BZip2Compressor.builder(compressedTarget).build()) {
+            bZip2Compressor.write(sourceFile);
         }
 
         assertThat(compressedTarget).exists();
 
         Path decompressedFileTarget = tempDir.resolve("decompressedTest.txt");
 
-        try (GZipDecompressor gZipDecompressor =
-                GZipDecompressor.builder(compressedTarget).build()) {
-            gZipDecompressor.write(decompressedFileTarget);
+        try (BZip2Decompressor bZip2Decompressor =
+                BZip2Decompressor.builder(compressedTarget).build()) {
+            bZip2Decompressor.write(decompressedFileTarget);
         }
 
         assertThat(decompressedFileTarget).exists();
@@ -57,26 +57,25 @@ class GzipCompressionE2E {
     }
 
     @Test
-    void whenCompressingDataWithParamsThenDecompressed() throws Exception {
+    void compressWithParametersThenDecompress() throws Exception {
         Path sourceFile = Paths.get("/home/renas/workspace/compress4j/src/e2e/resources/compression/compressTest.txt");
         Path compressedTarget = tempDir.resolve("compressTest.txt.bz2");
 
-        try (GzipCompressor gzipCompressor = GzipCompressor.builder(compressedTarget)
+        try (BZip2Compressor bZip2Compressor = BZip2Compressor.builder(compressedTarget)
                 .compressorOutputStreamBuilder()
-                .bufferSize(3)
-                .compressionLevel(1)
+                .blockSize(6)
                 .parentBuilder()
                 .build()) {
-            gzipCompressor.write(sourceFile);
+            bZip2Compressor.write(sourceFile);
         }
 
         assertThat(compressedTarget).exists();
 
         Path decompressedFileTarget = tempDir.resolve("decompressedTest.txt");
 
-        try (GZipDecompressor gZipDecompressor =
-                GZipDecompressor.builder(compressedTarget).build()) {
-            gZipDecompressor.write(decompressedFileTarget);
+        try (BZip2Decompressor bZip2Decompressor =
+                BZip2Decompressor.builder(compressedTarget).build()) {
+            bZip2Decompressor.write(decompressedFileTarget);
         }
 
         assertThat(decompressedFileTarget).exists();

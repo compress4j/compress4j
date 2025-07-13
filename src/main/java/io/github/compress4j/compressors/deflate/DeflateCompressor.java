@@ -34,7 +34,7 @@ public class DeflateCompressor extends Compressor<DeflateCompressorOutputStream>
         super(builder);
     }
 
-    public static DeflateCompressorBuilder builder(DeflateCompressorOutputStream compressorOutputStream) {
+    public static DeflateCompressorBuilder builder(OutputStream compressorOutputStream) {
         return new DeflateCompressorBuilder(compressorOutputStream);
     }
 
