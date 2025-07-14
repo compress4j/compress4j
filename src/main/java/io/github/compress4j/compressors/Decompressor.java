@@ -18,6 +18,7 @@ package io.github.compress4j.compressors;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.commons.compress.compressors.CompressorInputStream;
@@ -47,9 +48,11 @@ public abstract class Decompressor<I extends CompressorInputStream> implements C
      * @param builder the compressor input stream builder
      * @param <B> The type of {@link Decompressor.DecompressorBuilder} to build from.
      * @param <D> The type of the {@link Decompressor} to instantiate.
+     * @throws IOException thrown by the underlying output stream for I/O errors
      */
-    protected <B extends Decompressor.DecompressorBuilder<I, D, B>, D extends Decompressor<I>> Decompressor(B builder) {
-        this(builder.compressorInputStream);
+    protected <B extends Decompressor.DecompressorBuilder<I, D, B>, D extends Decompressor<I>> Decompressor(B builder)
+            throws IOException {
+        this(builder.buildCompressorInputStream());
     }
 
     /**
@@ -96,11 +99,13 @@ public abstract class Decompressor<I extends CompressorInputStream> implements C
             D extends Decompressor<I>,
             B extends Decompressor.DecompressorBuilder<I, D, B>> {
 
-        protected final I compressorInputStream;
+        protected final InputStream inputStream;
 
-        protected DecompressorBuilder(I compressorInputStream) {
-            this.compressorInputStream = compressorInputStream;
+        protected DecompressorBuilder(InputStream inputStream) {
+            this.inputStream = inputStream;
         }
+
+        public abstract I buildCompressorInputStream() throws IOException;
 
         protected abstract B getThis();
 
