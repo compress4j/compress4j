@@ -1,17 +1,31 @@
+/*
+ * Copyright 2025 The Compress4J Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.github.compress4j.compressors;
-
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
-import org.junit.jupiter.api.io.TempDir;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
 
 import static io.github.compress4j.assertion.Compress4JAssertions.assertThat;
 import static io.github.compress4j.test.util.io.TestFileUtils.createFile;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+import org.junit.jupiter.api.io.TempDir;
 
 public abstract class AbstractCompressorTest {
 
@@ -26,7 +40,7 @@ public abstract class AbstractCompressorTest {
 
     @Test
     public void whenGivenPathShouldCompress() throws IOException {
-        //when
+        // when
         var sourceFilePath = createFile(tempDir, "source.txt", "Lorem impsum");
         var targetFilePath = tempDir.resolve("compressedActual.txt" + getCompressorExtension());
         var expectedFilePath = tempDir.resolve("compressedExpected.txt" + getCompressorExtension());
@@ -35,7 +49,7 @@ public abstract class AbstractCompressorTest {
         try (Compressor compressor = compressorBuilder(targetFilePath)) {
             compressor.write(sourceFilePath);
         }
-        //should
+        // should
         assertThat(targetFilePath).exists();
         assertThat(sourceFilePath).exists();
 
@@ -59,36 +73,36 @@ public abstract class AbstractCompressorTest {
     }
 
     @Test
-    void whenSourceFileNonReadableShouldThrowExepction(){
+    void whenSourceFileNonReadableShouldThrowExepction() {
         File nonReadableSourceFile = new File(tempDir.toFile(), "source.txt");
         var targetFilePath = tempDir.resolve("compressedActual.txt" + getCompressorExtension());
 
         nonReadableSourceFile.setReadable(false);
 
         assertThatThrownBy(() -> {
-            Compressor compressor = compressorBuilder(targetFilePath);
-            compressor.write(nonReadableSourceFile);
-
-        }).isInstanceOf(IOException.class);
+                    Compressor compressor = compressorBuilder(targetFilePath);
+                    compressor.write(nonReadableSourceFile);
+                })
+                .isInstanceOf(IOException.class);
     }
 
-
     @Test
-    void whenSourceFileNonWritableShouldThrowExepction(){
+    void whenSourceFileNonWritableShouldThrowExepction() {
         File nonWritableSourceFile = new File(tempDir.toFile(), "source.txt");
         var targetFilePath = tempDir.resolve("compressedActual.txt" + getCompressorExtension());
 
         nonWritableSourceFile.setWritable(false);
 
         assertThatThrownBy(() -> {
-            Compressor compressor = compressorBuilder(targetFilePath);
-            compressor.write(nonWritableSourceFile);
-        }).isInstanceOf(IOException.class);
+                    Compressor compressor = compressorBuilder(targetFilePath);
+                    compressor.write(nonWritableSourceFile);
+                })
+                .isInstanceOf(IOException.class);
     }
 
     @DisabledOnOs(OS.WINDOWS)
     @Test
-    void whenSourceFileInNonReadableDirShouldThrowExepction(){
+    void whenSourceFileInNonReadableDirShouldThrowExepction() {
         File nonReadableDir = new File(tempDir.toFile(), "source.txt");
         var targetFilePath = tempDir.resolve("compressedActual.txt" + getCompressorExtension());
 
@@ -96,14 +110,15 @@ public abstract class AbstractCompressorTest {
         nonReadableDir.setReadable(false);
 
         assertThatThrownBy(() -> {
-            Compressor compressor = compressorBuilder(targetFilePath);
-            compressor.write(nonReadableDir);
-        }).isInstanceOf(IOException.class);
+                    Compressor compressor = compressorBuilder(targetFilePath);
+                    compressor.write(nonReadableDir);
+                })
+                .isInstanceOf(IOException.class);
     }
 
     @DisabledOnOs(OS.WINDOWS)
     @Test
-    void whenSourceFileInNonWritableDirShouldThrowExepction(){
+    void whenSourceFileInNonWritableDirShouldThrowExepction() {
         File nonWritableDir = new File(tempDir.toFile(), "source.txt");
         var targetFilePath = tempDir.resolve("compressedActual.txt" + getCompressorExtension());
 
@@ -111,14 +126,15 @@ public abstract class AbstractCompressorTest {
         nonWritableDir.setWritable(false);
 
         assertThatThrownBy(() -> {
-            Compressor compressor = compressorBuilder(targetFilePath);
-            compressor.write(nonWritableDir);
-        }).isInstanceOf(IOException.class);
+                    Compressor compressor = compressorBuilder(targetFilePath);
+                    compressor.write(nonWritableDir);
+                })
+                .isInstanceOf(IOException.class);
     }
 
     @DisabledOnOs(OS.WINDOWS)
     @Test
-    void whenTargetPathNonReadableShouldThrowExepction(){
+    void whenTargetPathNonReadableShouldThrowExepction() {
         File sourceFile = new File(tempDir.toFile(), "source.txt");
         File nonReadableTargetFile = new File(tempDir.toFile(), "target.txt");
 
@@ -126,14 +142,15 @@ public abstract class AbstractCompressorTest {
         Path nonReadableTargetPath = nonReadableTargetFile.toPath();
 
         assertThatThrownBy(() -> {
-            Compressor compressor = compressorBuilder(nonReadableTargetPath);
-            compressor.write(sourceFile);
-        }).isInstanceOf(IOException.class);
+                    Compressor compressor = compressorBuilder(nonReadableTargetPath);
+                    compressor.write(sourceFile);
+                })
+                .isInstanceOf(IOException.class);
     }
 
     @DisabledOnOs(OS.WINDOWS)
     @Test
-    void whenTargetPathNonWritableShouldThrowExepction(){
+    void whenTargetPathNonWritableShouldThrowExepction() {
         File sourceFile = new File(tempDir.toFile(), "source.txt");
         File nonWritableSourceFile = new File(tempDir.toFile(), "target.txt");
 
@@ -141,31 +158,33 @@ public abstract class AbstractCompressorTest {
         Path nonWritableTargetPath = nonWritableSourceFile.toPath();
 
         assertThatThrownBy(() -> {
-            Compressor compressor = compressorBuilder(nonWritableTargetPath);
-            compressor.write(sourceFile);
-        }).isInstanceOf(IOException.class);
+                    Compressor compressor = compressorBuilder(nonWritableTargetPath);
+                    compressor.write(sourceFile);
+                })
+                .isInstanceOf(IOException.class);
     }
 
     @Test
-    void whenTargetPathIsNonExistent(){
+    void whenTargetPathIsNonExistent() {
         File sourceFile = new File(tempDir.toFile(), "source.txt");
         Path targetFilePath = Path.of("non/existent/file/path.txt");
 
         assertThatThrownBy(() -> {
-            Compressor compressor = compressorBuilder(targetFilePath);
-            compressor.write(sourceFile);
-        }).isInstanceOf(IOException.class);
+                    Compressor compressor = compressorBuilder(targetFilePath);
+                    compressor.write(sourceFile);
+                })
+                .isInstanceOf(IOException.class);
     }
 
     @Test
-    void whenSourcePathIsNonExistent(){
+    void whenSourcePathIsNonExistent() {
         Path sourceFile = Path.of("non/existent/file/path.txt");
         var targetFilePath = tempDir.resolve("compressedActual.txt" + getCompressorExtension());
 
         assertThatThrownBy(() -> {
-            Compressor compressor = compressorBuilder(targetFilePath);
-            compressor.write(sourceFile);
-        }).isInstanceOf(IOException.class);
+                    Compressor compressor = compressorBuilder(targetFilePath);
+                    compressor.write(sourceFile);
+                })
+                .isInstanceOf(IOException.class);
     }
-
 }

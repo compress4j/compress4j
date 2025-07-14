@@ -15,16 +15,15 @@
  */
 package io.github.compress4j.compressors.gzip;
 
-import io.github.compress4j.compressors.Decompressor;
+import static java.nio.file.Files.newInputStream;
 
+import io.github.compress4j.compressors.Decompressor;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-
-import static java.nio.file.Files.newInputStream;
 
 /**
  * This class provides a GZip decompressor that reads from a GzipCompressorInputStream. It extends the Decompressor
@@ -105,7 +104,6 @@ public class GZipDecompressor extends Decompressor<GzipCompressorInputStream> {
         public GZipDecompressorBuilder(File file) throws IOException {
             this(file.toPath());
         } // todo is it bad practice to call another constructer which would then invoke another constructer?
-
 
         public GZipDecompressorInputStreamBuilder inputStreamBuilder() {
             return inputStreamBuilder;

@@ -15,8 +15,9 @@
  */
 package io.github.compress4j.compressors.deflate;
 
-import io.github.compress4j.compressors.Decompressor;
+import static java.nio.file.Files.newInputStream;
 
+import io.github.compress4j.compressors.Decompressor;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,8 +25,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStream;
 import org.apache.commons.compress.compressors.deflate.DeflateParameters;
-
-import static java.nio.file.Files.newInputStream;
 
 public class DeflateDecompressor extends Decompressor<DeflateCompressorInputStream> {
 
@@ -82,6 +81,7 @@ public class DeflateDecompressor extends Decompressor<DeflateCompressorInputStre
             super(inputStream);
             this.inputStreamBuilder = new DeflateDecompressorInputStreamBuilder<>(this, inputStream);
         }
+
         public DeflateDecompressorBuilder(Path path) throws IOException {
             this(newInputStream(path));
         }

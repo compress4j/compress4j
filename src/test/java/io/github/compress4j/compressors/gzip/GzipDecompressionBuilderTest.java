@@ -17,7 +17,6 @@ package io.github.compress4j.compressors.gzip;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -27,7 +26,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.nio.file.Path;
-
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -46,7 +44,8 @@ public class GzipDecompressionBuilderTest {
 
     @Test
     void whenBuilderGivenPathConstructsDecompressor() throws IOException {
-        GZipDecompressor.GZipDecompressorBuilder builder = spy(new GZipDecompressor.GZipDecompressorBuilder(tempDir.toFile()));
+        GZipDecompressor.GZipDecompressorBuilder builder =
+                spy(new GZipDecompressor.GZipDecompressorBuilder(tempDir.toFile()));
         doReturn(mockGzipCompressorInputStream).when(builder).buildCompressorInputStream();
 
         GZipDecompressor actual = builder.build();
@@ -66,7 +65,8 @@ public class GzipDecompressionBuilderTest {
 
     @Test
     void whenBuilderGivenInputStreamConstructsDecompressor() throws IOException {
-        GZipDecompressor.GZipDecompressorBuilder builder = spy(new GZipDecompressor.GZipDecompressorBuilder(mockRawInputStream));
+        GZipDecompressor.GZipDecompressorBuilder builder =
+                spy(new GZipDecompressor.GZipDecompressorBuilder(mockRawInputStream));
         doReturn(mockGzipCompressorInputStream).when(builder).buildCompressorInputStream();
 
         GZipDecompressor actual = builder.build();
@@ -76,7 +76,8 @@ public class GzipDecompressionBuilderTest {
 
     @Test
     void whenWritingInputStreamFailsThrowIOExeption() throws IOException {
-        GZipDecompressor.GZipDecompressorBuilder builder = spy(new GZipDecompressor.GZipDecompressorBuilder(mockRawInputStream));
+        GZipDecompressor.GZipDecompressorBuilder builder =
+                spy(new GZipDecompressor.GZipDecompressorBuilder(mockRawInputStream));
         doThrow(new IOException()).when(builder).buildCompressorInputStream();
 
         assertThrows(IOException.class, builder::buildCompressorInputStream);
@@ -84,7 +85,8 @@ public class GzipDecompressionBuilderTest {
 
     @Test
     void shouldBuildInputStream() throws IOException {
-        GZipDecompressor.GZipDecompressorBuilder parentBuilder = new GZipDecompressor.GZipDecompressorBuilder(mockRawInputStream);
+        GZipDecompressor.GZipDecompressorBuilder parentBuilder =
+                new GZipDecompressor.GZipDecompressorBuilder(mockRawInputStream);
 
         GZipDecompressor.GZipDecompressorInputStreamBuilder compressorInputStreamBuilder =
                 spy(new GZipDecompressor.GZipDecompressorInputStreamBuilder(parentBuilder, mockRawInputStream));
@@ -103,7 +105,8 @@ public class GzipDecompressionBuilderTest {
     @Test
     void shouldBuildInputStreamWithDecompressConcatTrue()
             throws IOException, NoSuchFieldException, IllegalAccessException {
-        GZipDecompressor.GZipDecompressorBuilder parentBuilder = new GZipDecompressor.GZipDecompressorBuilder(mockRawInputStream);
+        GZipDecompressor.GZipDecompressorBuilder parentBuilder =
+                new GZipDecompressor.GZipDecompressorBuilder(mockRawInputStream);
 
         GZipDecompressor.GZipDecompressorInputStreamBuilder compressorInputStreamBuilder =
                 spy(parentBuilder.inputStreamBuilder());

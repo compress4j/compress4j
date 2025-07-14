@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * https://www.apache.org/licenses/LICENSE-2.0
+ *     https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.nio.file.Path;
-
 import org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -45,7 +44,8 @@ class DeflateDecompressorBuilderTest {
 
     @Test
     void whenBuilderGivenPathConstructsDecompressor() throws IOException {
-        DeflateDecompressor.DeflateDecompressorBuilder builder = spy(new DeflateDecompressor.DeflateDecompressorBuilder(tempDir.toFile())); // Changed class name
+        DeflateDecompressor.DeflateDecompressorBuilder builder =
+                spy(new DeflateDecompressor.DeflateDecompressorBuilder(tempDir.toFile())); // Changed class name
         doReturn(mockDeflateCompressorInputStream).when(builder).buildCompressorInputStream();
 
         DeflateDecompressor actual = builder.build();
@@ -55,7 +55,8 @@ class DeflateDecompressorBuilderTest {
 
     @Test
     void whenBuilderGivenFileConstructsDecompressor() throws IOException {
-        DeflateDecompressor.DeflateDecompressorBuilder builder = spy(new DeflateDecompressor.DeflateDecompressorBuilder(tempDir)); // Changed class name
+        DeflateDecompressor.DeflateDecompressorBuilder builder =
+                spy(new DeflateDecompressor.DeflateDecompressorBuilder(tempDir)); // Changed class name
         doReturn(mockDeflateCompressorInputStream).when(builder).buildCompressorInputStream();
 
         DeflateDecompressor actual = builder.build();
@@ -65,7 +66,8 @@ class DeflateDecompressorBuilderTest {
 
     @Test
     void whenBuilderGivenInputStreamConstructsDecompressor() throws IOException {
-        DeflateDecompressor.DeflateDecompressorBuilder builder = spy(new DeflateDecompressor.DeflateDecompressorBuilder(mockRawInputStream)); // Changed class name
+        DeflateDecompressor.DeflateDecompressorBuilder builder =
+                spy(new DeflateDecompressor.DeflateDecompressorBuilder(mockRawInputStream)); // Changed class name
         doReturn(mockDeflateCompressorInputStream).when(builder).buildCompressorInputStream();
 
         DeflateDecompressor actual = builder.build();
@@ -75,7 +77,8 @@ class DeflateDecompressorBuilderTest {
 
     @Test
     void whenWritingInputStreamFailsThrowIOExeption() throws IOException {
-        DeflateDecompressor.DeflateDecompressorBuilder builder = spy(new DeflateDecompressor.DeflateDecompressorBuilder(mockRawInputStream)); // Changed class name
+        DeflateDecompressor.DeflateDecompressorBuilder builder =
+                spy(new DeflateDecompressor.DeflateDecompressorBuilder(mockRawInputStream)); // Changed class name
         doThrow(new IOException()).when(builder).buildCompressorInputStream();
 
         assertThrows(IOException.class, builder::buildCompressorInputStream);
@@ -83,26 +86,30 @@ class DeflateDecompressorBuilderTest {
 
     @Test
     void shouldBuildInputStream() throws IOException {
-        DeflateDecompressor.DeflateDecompressorBuilder parentBuilder = new DeflateDecompressor.DeflateDecompressorBuilder(mockRawInputStream); // Changed class name
+        DeflateDecompressor.DeflateDecompressorBuilder parentBuilder =
+                new DeflateDecompressor.DeflateDecompressorBuilder(mockRawInputStream); // Changed class name
 
         DeflateDecompressor.DeflateDecompressorInputStreamBuilder compressorInputStreamBuilder =
-                spy(new DeflateDecompressor.DeflateDecompressorInputStreamBuilder(parentBuilder, mockRawInputStream)); // Changed class name
+                spy(new DeflateDecompressor.DeflateDecompressorInputStreamBuilder(
+                        parentBuilder, mockRawInputStream)); // Changed class name
 
         doReturn(mock(DeflateCompressorInputStream.class))
                 .when(compressorInputStreamBuilder)
                 .buildInputStream();
 
         // when
-        try (DeflateCompressorInputStream buildCompresserInputStream = compressorInputStreamBuilder.buildInputStream()) { // Changed class type
+        try (DeflateCompressorInputStream buildCompresserInputStream =
+                compressorInputStreamBuilder.buildInputStream()) { // Changed class type
             // then
-            assertThat(buildCompresserInputStream).isInstanceOf(DeflateCompressorInputStream.class); // Changed class type
+            assertThat(buildCompresserInputStream)
+                    .isInstanceOf(DeflateCompressorInputStream.class); // Changed class type
         }
     }
 
     @Test
-    void shouldBuildInputStreamWithZlibHeaderTrue()
-            throws IOException, NoSuchFieldException, IllegalAccessException {
-        DeflateDecompressor.DeflateDecompressorBuilder parentBuilder = new DeflateDecompressor.DeflateDecompressorBuilder(mockRawInputStream); // Changed class name
+    void shouldBuildInputStreamWithZlibHeaderTrue() throws IOException, NoSuchFieldException, IllegalAccessException {
+        DeflateDecompressor.DeflateDecompressorBuilder parentBuilder =
+                new DeflateDecompressor.DeflateDecompressorBuilder(mockRawInputStream); // Changed class name
 
         DeflateDecompressor.DeflateDecompressorInputStreamBuilder compressorInputStreamBuilder =
                 spy(parentBuilder.inputStreamBuilder());
@@ -112,8 +119,8 @@ class DeflateDecompressorBuilderTest {
                 .buildInputStream();
         compressorInputStreamBuilder.setWithZlibHeader(true);
 
-        Field withZlibHeaderField =
-                DeflateDecompressor.DeflateDecompressorInputStreamBuilder.class.getDeclaredField("withZlibHeader"); // Changed class name and field name
+        Field withZlibHeaderField = DeflateDecompressor.DeflateDecompressorInputStreamBuilder.class.getDeclaredField(
+                "withZlibHeader"); // Changed class name and field name
         withZlibHeaderField.setAccessible(true);
 
         boolean withZlibHeaderValue = (boolean) withZlibHeaderField.get(compressorInputStreamBuilder);
@@ -121,7 +128,8 @@ class DeflateDecompressorBuilderTest {
         assertThat(withZlibHeaderValue).isTrue();
 
         // when
-        try (DeflateCompressorInputStream buildCompresserInputStream = compressorInputStreamBuilder.buildInputStream()) {
+        try (DeflateCompressorInputStream buildCompresserInputStream =
+                compressorInputStreamBuilder.buildInputStream()) {
             // then
             assertThat(buildCompresserInputStream).isInstanceOf(DeflateCompressorInputStream.class);
         }
