@@ -81,13 +81,11 @@ public class DirectoryAssert extends AbstractPathAssert<DirectoryAssert> {
 
     @SuppressWarnings("UnusedReturnValue")
     public DirectoryAssert containsSameContentAs(final Path expected) {
-        // Compare file paths
         final Map<String, Path> actualContents = directoryContents(actual);
         final Map<String, Path> expectedContents = directoryContents(expected);
         final Set<String> relativeFilePaths = expectedContents.keySet();
         Assertions.assertThat(actualContents).containsOnlyKeys(relativeFilePaths);
 
-        // Compare file contents
         final SoftAssertions assertions = new SoftAssertions();
         relativeFilePaths.forEach(relativeFilePath -> {
             final Path actualFilePath = actualContents.get(relativeFilePath);

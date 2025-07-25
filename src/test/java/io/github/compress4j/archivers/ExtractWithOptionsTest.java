@@ -57,27 +57,19 @@ class ExtractWithOptionsTest extends AbstractResourceTest {
 
     @Test
     void extract_without_options_must_fail() throws IOException {
-        // Extract original file
         getArchiver().extract(getArchiveOriginal(), archiveExtractTmpDir);
-        // Validate that file was extracted and contains the expected content
         assertFileContains("old content");
 
-        // Try to extract the updated file, but it must fail as no CopyOptions
-        // were passed to overwrite files
         assertThatExceptionOfType(FileAlreadyExistsException.class)
                 .isThrownBy(() -> getArchiver().extract(getArchiveUpdated(), archiveExtractTmpDir));
     }
 
     @Test
     void extract_with_options_replace() throws IOException {
-        // Extract original file
         getArchiver().extract(getArchiveOriginal(), archiveExtractTmpDir);
-        // Validate that the file was extracted and contains the expected content
         assertFileContains("old content");
 
-        // Extract the updated file with REPLACE_EXISTING option
         getArchiver().extract(getArchiveUpdated(), archiveExtractTmpDir, StandardCopyOption.REPLACE_EXISTING);
-        // Validate that the file was extracted and contains the expected updated content
         assertFileContains("new content");
     }
 
