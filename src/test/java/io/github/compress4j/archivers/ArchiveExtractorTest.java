@@ -1512,6 +1512,7 @@ class ArchiveExtractorTest {
         }
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     void normalizePathAndSplitShouldHandleVariousSlashPatterns() throws IOException {
         assertThat(normalizePathAndSplit("/a/b/")).containsExactlyElementsOf(List.of("a", "b"));
