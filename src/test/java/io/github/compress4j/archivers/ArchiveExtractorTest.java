@@ -1236,7 +1236,6 @@ class ArchiveExtractorTest {
                     .isInstanceOf(RuntimeException.class)
                     .hasMessage("Simulated error reading next entry");
 
-            // Check that the first entry was processed
             assertThat(tempDir.resolve("file1.txt")).hasContent("abc");
         }
     }
@@ -1479,11 +1478,9 @@ class ArchiveExtractorTest {
             Path linkPath = tempDir.resolve("linkToDir");
             assertThat(tempDir.resolve("actualDir")).isDirectory();
             assertThat(linkPath).isSymbolicLink();
-            // Check that the target of the symlink is indeed 'actualDir'
             assertThat(Files.readSymbolicLink(linkPath).toString().replace('\\', '/'))
                     .isEqualTo("actualDir");
 
-            // Check that navigating through the symlink leads to a directory
             Path resolvedLinkPath = Files.readSymbolicLink(linkPath);
             assertThat(tempDir.resolve(resolvedLinkPath)).isDirectory();
         }
@@ -1507,8 +1504,8 @@ class ArchiveExtractorTest {
             assertThat(linkPath).isSymbolicLink();
             assertThat(Files.readSymbolicLink(linkPath).toString().replace('\\', '/'))
                     .isEqualTo("non_existent_target");
-            assertThat(Files.exists(linkPath, LinkOption.NOFOLLOW_LINKS)).isTrue(); // The link itself exists
-            assertThat(Files.exists(linkPath)).isFalse(); // But it points to nowhere
+            assertThat(Files.exists(linkPath, LinkOption.NOFOLLOW_LINKS)).isTrue();
+            assertThat(Files.exists(linkPath)).isFalse();
         }
     }
 
@@ -1636,7 +1633,7 @@ class ArchiveExtractorTest {
                     .isInstanceOf(IOException.class)
                     .hasMessageContaining("Invalid symlink (absolute path): absLink -> ");
 
-            assertThat(tempDir.resolve("file.txt")).hasContent("content"); // Previous entry
+            assertThat(tempDir.resolve("file.txt")).hasContent("content");
             assertThat(tempDir.resolve("absLink")).doesNotExist();
         }
     }

@@ -55,7 +55,7 @@ public abstract class AbstractCompressorTest {
 
     @Test
     void whenGivenEmptyPathShouldCompress() throws IOException {
-        var emptySourceFile = createFile(tempDir, "empty.txt", ""); // Create an empty file
+        var emptySourceFile = createFile(tempDir, "empty.txt", "");
         var targetFilePath = tempDir.resolve("compressedActual.txt");
         var expectedFilePath = tempDir.resolve("compressedExpected.txt");
         apacheCompressor(emptySourceFile, expectedFilePath);

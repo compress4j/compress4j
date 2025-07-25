@@ -59,7 +59,6 @@ class GzipDecompressorTest {
 
         InputStream mockRawInputStream = mock(InputStream.class);
 
-        // *** CRITICAL ADDITION: Enable mark/reset support for the mock ***
         when(mockRawInputStream.markSupported()).thenReturn(true);
 
         // Stub the sequence of bytes that GzipCompressorInputStream's constructor expects
