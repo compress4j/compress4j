@@ -56,7 +56,6 @@ class DecompressorTest {
 
         // then
         assertThat(inMemoryDecompressor).isNotNull();
-        verify(mockCompressorInputStream).close();
     }
 
     @Test

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.compress4j.compressors.gzip;
+package io.github.compress4j.compressors.deflate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -26,10 +26,9 @@ import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,49 +38,29 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class GzipDecompressorTest {
-    @Mock
-    private GzipCompressorInputStream mockedGzipCompressorInputStream;
+class DeflateDecompressorTest {
 
-    private GzipDecompressor gZipDecompressor;
+    @Mock
+    private DeflateCompressorInputStream mockedDeflateCompressorInputStream;
+
+    private DeflateDecompressor deflateDecompressor;
 
     @TempDir
     Path tempDir;
 
     @BeforeEach
     void setUp() {
-        gZipDecompressor = new GzipDecompressor(mockedGzipCompressorInputStream);
+        deflateDecompressor = new DeflateDecompressor(mockedDeflateCompressorInputStream);
     }
 
     @Test
-    @DisplayName("Should construct a Gzip decompressor using Builder")
+    @DisplayName("Should construct a deflate decompressor using Builder")
     void shouldConstructGzipDecompressorUsingBuilder() throws IOException {
 
-        InputStream mockRawInputStream = mock(InputStream.class);
+        DeflateDecompressor.DeflateDecompressorBuilder mockBuilder =
+                mock(DeflateDecompressor.DeflateDecompressorBuilder.class);
 
-        // *** CRITICAL ADDITION: Enable mark/reset support for the mock ***
-        when(mockRawInputStream.markSupported()).thenReturn(true);
-
-        // Stub the sequence of bytes that GzipCompressorInputStream's constructor expects
-        // for a valid GZIP header (RFC 1952). This includes 10 bytes:
-        // ID1, ID2, CM, FLG, MTIME(4 bytes), XFL, OS.
-        when(mockRawInputStream.read())
-                .thenReturn(31) // GZIP ID1 (0x1f)
-                .thenReturn(139) // GZIP ID2 (0x8b)
-                .thenReturn(8) // Compression Method (8 = Deflate)
-                .thenReturn(0) // Flags (0 means no optional header fields)
-                .thenReturn(0) // MTIME byte 1
-                .thenReturn(0) // MTIME byte 2
-                .thenReturn(0) // MTIME byte 3
-                .thenReturn(0) // MTIME byte 4
-                .thenReturn(0) // Extra flags (XFL)
-                .thenReturn(0) // Operating System (OS)
-                .thenReturn(-1); // After the 10 header bytes, signify End Of File.
-
-        GzipDecompressor.GzipDecompressorBuilder mockBuilder =
-                new GzipDecompressor.GzipDecompressorBuilder(mockRawInputStream);
-
-        GzipDecompressor decompressorFromBuilder = new GzipDecompressor(mockBuilder);
+        DeflateDecompressor decompressorFromBuilder = new DeflateDecompressor(mockBuilder);
 
         assertThat(decompressorFromBuilder).isNotNull();
     }
@@ -91,9 +70,9 @@ class GzipDecompressorTest {
     void write_ToFile_CopiesBytes() throws IOException {
         // given
         Path outputPath = tempDir.resolve("output.txt");
-        byte[] testBytes = "Gzip is Great".getBytes();
+        byte[] testBytes = "deflate is Great".getBytes();
 
-        when(mockedGzipCompressorInputStream.transferTo(any(OutputStream.class)))
+        when(mockedDeflateCompressorInputStream.transferTo(any(OutputStream.class)))
                 .thenAnswer(invocation -> {
                     OutputStream outputStream = invocation.getArgument(0);
                     outputStream.write(testBytes);
@@ -101,11 +80,11 @@ class GzipDecompressorTest {
                 });
 
         // when
-        long bytesWritten = gZipDecompressor.write(outputPath.toFile());
+        long bytesWritten = deflateDecompressor.write(outputPath.toFile());
 
         // then
+        assertThat(outputPath).exists().hasContent("deflate is Great");
         assertThat(bytesWritten).isEqualTo(testBytes.length);
-        assertThat(outputPath).exists().hasContent("Gzip is Great");
     }
 
     @Test
@@ -113,9 +92,9 @@ class GzipDecompressorTest {
     void write_ToPath_CopiesBytes() throws IOException {
         // given
         Path outputPath = tempDir.resolve("output.txt");
-        byte[] testBytes = "Gzip is Great".getBytes();
+        byte[] testBytes = "deflate is Great".getBytes();
 
-        when(mockedGzipCompressorInputStream.transferTo(any(OutputStream.class)))
+        when(mockedDeflateCompressorInputStream.transferTo(any(OutputStream.class)))
                 .thenAnswer(invocation -> {
                     OutputStream outputStream = invocation.getArgument(0);
                     outputStream.write(testBytes);
@@ -123,11 +102,11 @@ class GzipDecompressorTest {
                 });
 
         // when
-        long bytesWritten = gZipDecompressor.write(outputPath);
+        long bytesWritten = deflateDecompressor.write(outputPath);
 
         // then
         assertThat(bytesWritten).isEqualTo(testBytes.length);
-        assertThat(outputPath).exists().hasContent("Gzip is Great");
+        assertThat(outputPath).exists().hasContent("deflate is Great");
     }
 
     @Test
@@ -135,7 +114,7 @@ class GzipDecompressorTest {
     void write_ToFile_ThrowsIOException_WhenCopyFails() {
         File nonWritableFile = new File("/nonexistent/path/cannot_write.txt");
 
-        assertThatThrownBy(() -> gZipDecompressor.write(nonWritableFile))
+        assertThatThrownBy(() -> deflateDecompressor.write(nonWritableFile))
                 .isInstanceOf(IOException.class)
                 .hasMessage(nonWritableFile.toString());
     }
@@ -145,28 +124,28 @@ class GzipDecompressorTest {
     void write_ToPath_ThrowsIOException_WhenCopyFails() {
         Path nonWritablePath = tempDir.resolve("non_existent_dir/output.txt");
 
-        assertThatThrownBy(() -> gZipDecompressor.write(nonWritablePath))
+        assertThatThrownBy(() -> deflateDecompressor.write(nonWritablePath))
                 .isInstanceOf(IOException.class)
                 .hasMessage(nonWritablePath.toString());
     }
 
     @Test
-    @DisplayName("Should close the gzip compressor input stream")
+    @DisplayName("Should close the deflate compressor input stream")
     void close_ClosesBZip2CompressorInputStream() throws IOException {
-        gZipDecompressor.close();
-        verify(mockedGzipCompressorInputStream, times(1)).close();
+        deflateDecompressor.close();
+        verify(mockedDeflateCompressorInputStream, times(1)).close();
     }
 
     @Test
-    @DisplayName("Should throw IOException when closing gzip compressor input stream fails")
+    @DisplayName("Should throw IOException when closing deflate compressor input stream fails")
     void close_ThrowsIOException_WhenBZip2CompressorInputStreamCloseFails() throws IOException {
-        doThrow(new IOException("Failed to close BZip2 stream"))
-                .when(mockedGzipCompressorInputStream)
+        doThrow(new IOException("Failed to close deflate stream"))
+                .when(mockedDeflateCompressorInputStream)
                 .close();
 
-        assertThatThrownBy(() -> gZipDecompressor.close())
+        assertThatThrownBy(() -> deflateDecompressor.close())
                 .isInstanceOf(IOException.class)
-                .hasMessage("Failed to close BZip2 stream");
-        verify(mockedGzipCompressorInputStream, times(1)).close();
+                .hasMessage("Failed to close deflate stream");
+        verify(mockedDeflateCompressorInputStream, times(1)).close();
     }
 }

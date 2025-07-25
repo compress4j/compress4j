@@ -108,23 +108,39 @@ testing {
             } }
         }
 
-        register<JvmTestSuite>("integrationTest") {
-            dependencies {
-                implementation(platform(libs.junit.bom))
-                implementation(project())
-                implementation(testFixtures(project()))
+    }
+}
 
-                implementation(libs.assertj.core)
-                implementation(libs.junit.jupiter.api)
+val integrationTest by testing.suites.registering(JvmTestSuite::class) {
+    dependencies {
+        implementation(platform(libs.junit.bom))
+        implementation(project())
+        implementation(testFixtures(project()))
 
-                runtimeOnly(libs.org.tukaani.xz)
-            }
+        implementation(libs.assertj.core)
+        implementation(libs.junit.jupiter.api)
 
-            targets.all {
-                    testTask.configure {
-                        shouldRunAfter(tasks.test)
-                    }
-            }
+        runtimeOnly(libs.org.tukaani.xz)
+    }
+
+    targets.all {
+        testTask.configure {
+            shouldRunAfter(tasks.test)
+        }
+    }
+}
+
+val e2eTest by testing.suites.registering(JvmTestSuite::class) {
+    dependencies {
+        implementation(platform(libs.junit.bom))
+        implementation(project())
+        implementation(testFixtures(project()))
+        implementation(libs.junit.jupiter.api)
+    }
+
+    targets.all {
+        testTask.configure {
+            shouldRunAfter(integrationTest)
         }
     }
 }
@@ -143,7 +159,7 @@ dependencyAnalysis {
 }
 
  tasks.testCodeCoverageReport {
-    dependsOn(tasks.test, tasks.named<Test>("integrationTest"))
+    dependsOn(tasks.test, integrationTest, e2eTest)
      executionData(fileTree(layout.buildDirectory).include("jacoco/*.exec"))
     reports {
         xml.required = true

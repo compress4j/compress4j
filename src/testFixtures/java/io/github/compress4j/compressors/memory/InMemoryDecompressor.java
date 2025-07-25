@@ -17,13 +17,14 @@ package io.github.compress4j.compressors.memory;
 
 import io.github.compress4j.compressors.Decompressor;
 import java.io.IOException;
+import java.io.InputStream;
 
 public class InMemoryDecompressor extends Decompressor<InMemoryDecompressorInputStream> {
     public InMemoryDecompressor(InMemoryDecompressorInputStream compressorInputStream) {
         super(compressorInputStream);
     }
 
-    public InMemoryDecompressor(InMemoryDecompressorBuilder builder) {
+    public InMemoryDecompressor(InMemoryDecompressorBuilder builder) throws IOException {
         super(builder);
     }
 
@@ -35,8 +36,13 @@ public class InMemoryDecompressor extends Decompressor<InMemoryDecompressorInput
             extends DecompressorBuilder<
                     InMemoryDecompressorInputStream, InMemoryDecompressor, InMemoryDecompressorBuilder> {
 
-        public InMemoryDecompressorBuilder(InMemoryDecompressorInputStream inputStream) {
+        public InMemoryDecompressorBuilder(InputStream inputStream) {
             super(inputStream);
+        }
+
+        @Override
+        public InMemoryDecompressorInputStream buildCompressorInputStream() {
+            return new InMemoryDecompressorInputStream(inputStream);
         }
 
         @Override
