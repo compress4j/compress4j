@@ -16,15 +16,17 @@
 package com.example.compressors;
 
 import io.github.compress4j.compressors.bzip2.BZip2Compressor;
+import io.github.compress4j.compressors.bzip2.BZip2Decompressor;
+import java.io.IOException;
 import java.nio.file.Path;
 
-@SuppressWarnings({"unused", "java:S112", "java:S1192"})
+@SuppressWarnings({"unused"})
 public class Bzip2Examples {
     private Bzip2Examples() {
         // Usage example
     }
 
-    public static void compressor() throws Exception {
+    public static void compressor() throws IOException {
         // tag::bzip2-compressor[]
         try (BZip2Compressor bzip2Compressor = BZip2Compressor.builder(Path.of("example.bz2"))
                 .compressorOutputStreamBuilder()
@@ -36,11 +38,12 @@ public class Bzip2Examples {
         // end::bzip2-compressor[]
     }
 
-    public static void decompressor() {
+    public static void decompressor() throws IOException {
         // tag::bzip2-decompressor[]
-        // TODO: Implement decompression logic
-        // BZip2Decompressor gzipDecompressor = BZip2Decompressor.builder(inputStream).build();
-        // gzipDecompressor.decompress(outputStream);
+        try (BZip2Decompressor gzipDecompressor =
+                BZip2Decompressor.builder(Path.of("example.bz2")).build()) {
+            gzipDecompressor.write(Path.of("path/to/file.txt"));
+        }
         // end::bzip2-decompressor[]
     }
 }
