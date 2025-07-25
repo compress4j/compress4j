@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 
+@SuppressWarnings("java:S2187")
 public class ExtractPermissionsTest {
 
     @Nested
@@ -55,7 +56,6 @@ public class ExtractPermissionsTest {
         }
     }
 
-    @SuppressWarnings("unused")
     public abstract static class BaseArchivePermissionsTest extends AbstractResourceTest {
         private Archiver archiver;
         private File archive;

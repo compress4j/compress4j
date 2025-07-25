@@ -19,15 +19,17 @@ import static java.util.zip.Deflater.BEST_COMPRESSION;
 import static java.util.zip.Deflater.HUFFMAN_ONLY;
 
 import io.github.compress4j.compressors.gzip.GzipCompressor;
+import io.github.compress4j.compressors.gzip.GzipDecompressor;
+import java.io.IOException;
 import java.nio.file.Path;
 
-@SuppressWarnings({"unused", "java:S112", "java:S1192"})
+@SuppressWarnings({"unused"})
 public class GzipExamples {
     private GzipExamples() {
         // Usage example
     }
 
-    public static void compressor() throws Exception {
+    public static void compressor() throws IOException {
         // tag::gzip-compressor[]
         try (GzipCompressor gzipCompressor = GzipCompressor.builder(Path.of("example.gz"))
                 .compressorOutputStreamBuilder()
@@ -43,11 +45,12 @@ public class GzipExamples {
         // end::gzip-compressor[]
     }
 
-    public static void decompressor() {
+    public static void decompressor() throws IOException {
         // tag::gzip-decompressor[]
-        // TODO: Implement decompression logic
-        // GzipDecompressor gzipDecompressor = GzipDecompressor.builder(inputStream).build();
-        // gzipDecompressor.decompress(outputStream);
+        try (GzipDecompressor gzipDecompressor =
+                GzipDecompressor.builder(Path.of("example.gz")).build()) {
+            gzipDecompressor.write(Path.of("path/to/file.txt"));
+        }
         // end::gzip-decompressor[]
     }
 }
