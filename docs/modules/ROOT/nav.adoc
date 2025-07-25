@@ -1,1 +1,7 @@
-** xref:index.adoc[]
+* xref:index.adoc[]
+** Archive
+*** xref:archivers/tar/tar.adoc[]
+** Compression
+*** xref:compressors/gzip.adoc[]
+*** xref:compressors/bzip2.adoc[]
+* xref:legacy.adoc[]

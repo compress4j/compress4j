@@ -32,9 +32,6 @@ repositories {
 }
 
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
-    }
     withJavadocJar()
     withSourcesJar()
 }
@@ -49,19 +46,41 @@ tasks.withType<Javadoc> {
 
 val mockitoAgent = configurations.create("mockitoAgent")
 
+sourceSets {
+    create("examples") {
+        java {
+            srcDir(file("docs/modules/ROOT/examples/java"))
+        }
+        resources {
+            srcDir(file("docs/modules/ROOT/examples/resources"))
+        }
+
+        compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
+        runtimeClasspath += sourceSets.main.get().output + sourceSets.main.get().runtimeClasspath
+    }
+}
+
 dependencies {
     api(libs.commons.compress)
+    api(libs.jakarta.annotation.api)
 
     implementation(libs.commons.io)
-    implementation(libs.jakarta.annotation.api)
+    implementation(libs.commons.lang3)
     implementation(libs.slf4j.api)
 
-    testFixturesImplementation(platform(libs.junit.bom))
-
+    testFixturesApi(libs.assertj.core)
+    testFixturesApi(libs.commons.compress)
+    testFixturesApi(libs.jackson.core)
+    testFixturesApi(libs.jakarta.annotation.api)
     testFixturesApi(libs.junit.jupiter.api)
     testFixturesApi(libs.logback.classic)
     testFixturesApi(libs.logback.core)
-    testFixturesImplementation(libs.assertj.core)
+
+    testFixturesImplementation(platform(libs.junit.bom))
+    testFixturesImplementation(libs.commons.io)
+    testFixturesImplementation(libs.jackson.annotations)
+    testFixturesImplementation(libs.jackson.databind)
+    testFixturesImplementation(libs.mockito.core)
 
     mockitoAgent(libs.mockito.core) { isTransitive = false }
 }
@@ -89,23 +108,39 @@ testing {
             } }
         }
 
-        register<JvmTestSuite>("integrationTest") {
-            dependencies {
-                implementation(platform(libs.junit.bom))
-                implementation(project())
-                implementation(testFixtures(project()))
+    }
+}
 
-                implementation(libs.assertj.core)
-                implementation(libs.junit.jupiter.api)
+val integrationTest by testing.suites.registering(JvmTestSuite::class) {
+    dependencies {
+        implementation(platform(libs.junit.bom))
+        implementation(project())
+        implementation(testFixtures(project()))
 
-                runtimeOnly(libs.org.tukaani.xz)
-            }
+        implementation(libs.assertj.core)
+        implementation(libs.junit.jupiter.api)
 
-            targets.all {
-                    testTask.configure {
-                        shouldRunAfter(tasks.test)
-                    }
-            }
+        runtimeOnly(libs.org.tukaani.xz)
+    }
+
+    targets.all {
+        testTask.configure {
+            shouldRunAfter(tasks.test)
+        }
+    }
+}
+
+val e2eTest by testing.suites.registering(JvmTestSuite::class) {
+    dependencies {
+        implementation(platform(libs.junit.bom))
+        implementation(project())
+        implementation(testFixtures(project()))
+        implementation(libs.junit.jupiter.api)
+    }
+
+    targets.all {
+        testTask.configure {
+            shouldRunAfter(integrationTest)
         }
     }
 }
@@ -124,7 +159,7 @@ dependencyAnalysis {
 }
 
  tasks.testCodeCoverageReport {
-    dependsOn(tasks.test, tasks.named<Test>("integrationTest"))
+    dependsOn(tasks.test, integrationTest, e2eTest)
      executionData(fileTree(layout.buildDirectory).include("jacoco/*.exec"))
     reports {
         xml.required = true

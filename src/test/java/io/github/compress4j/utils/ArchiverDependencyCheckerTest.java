@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Compress4J Project
+ * Copyright 2024-2025 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,12 @@ import static io.github.compress4j.utils.DependencyCheckerTestConstants.EXPECTED
 import static io.github.compress4j.utils.DependencyCheckerTestConstants.EXPECTED_MESSAGE_LZMA;
 import static io.github.compress4j.utils.DependencyCheckerTestConstants.EXPECTED_MESSAGE_XZ;
 import static io.github.compress4j.utils.DependencyCheckerTestConstants.EXPECTED_MESSAGE_ZSTD;
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import io.github.compress4j.exceptions.MissingArchiveDependencyException;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -43,11 +41,10 @@ class ArchiverDependencyCheckerTest {
 
     @ParameterizedTest
     @MethodSource("individualCheckers")
-    void shouldCheckArchiverDependency(String entryName, String message) {
-        var exception =
-                assertThrows(MissingArchiveDependencyException.class, () -> ArchiverDependencyChecker.check(entryName));
-
-        assertThat(exception).hasMessage(message);
+    void shouldCheckArchiverDependency(String entryName, String expectedMessage) {
+        assertThatThrownBy(() -> ArchiverDependencyChecker.check(entryName))
+                .isInstanceOf(MissingArchiveDependencyException.class)
+                .hasMessage(expectedMessage);
     }
 
     @Test
@@ -57,30 +54,29 @@ class ArchiverDependencyCheckerTest {
 
     @Test
     void shouldCheckBrotli() {
-        Executable checkBrotli = ArchiverDependencyChecker::checkBrotli;
-        var exception = assertThrows(MissingArchiveDependencyException.class, checkBrotli);
-
-        assertThat(exception).hasMessage(EXPECTED_MESSAGE_BROTLI);
+        assertThatThrownBy(ArchiverDependencyChecker::checkBrotli)
+                .isInstanceOf(MissingArchiveDependencyException.class)
+                .hasMessage(EXPECTED_MESSAGE_BROTLI);
     }
 
     @Test
     void shouldCheckLZMA() {
-        var exception = assertThrows(MissingArchiveDependencyException.class, ArchiverDependencyChecker::checkLZMA);
-
-        assertThat(exception).hasMessage(EXPECTED_MESSAGE_LZMA);
+        assertThatThrownBy(ArchiverDependencyChecker::checkLZMA)
+                .isInstanceOf(MissingArchiveDependencyException.class)
+                .hasMessage(EXPECTED_MESSAGE_LZMA);
     }
 
     @Test
     void shouldCheckXZ() {
-        var exception = assertThrows(MissingArchiveDependencyException.class, ArchiverDependencyChecker::checkXZ);
-
-        assertThat(exception).hasMessage(EXPECTED_MESSAGE_XZ);
+        assertThatThrownBy(ArchiverDependencyChecker::checkXZ)
+                .isInstanceOf(MissingArchiveDependencyException.class)
+                .hasMessage(EXPECTED_MESSAGE_XZ);
     }
 
     @Test
     void shouldCheckZstd() {
-        var exception = assertThrows(MissingArchiveDependencyException.class, ArchiverDependencyChecker::checkZstd);
-
-        assertThat(exception).hasMessage(EXPECTED_MESSAGE_ZSTD);
+        assertThatThrownBy(ArchiverDependencyChecker::checkZstd)
+                .isInstanceOf(MissingArchiveDependencyException.class)
+                .hasMessage(EXPECTED_MESSAGE_ZSTD);
     }
 }

@@ -8,95 +8,34 @@ Compress4J is an up-to-date fork of https://github.com/thrau/jarchivelib[JArchiv
 
 It's a simple archiving and compression library for Java that provides a thin and easy-to-use API layer on top of the powerful and feature-rich http://commons.apache.org/proper/commons-compress[org.apache.commons.compress].
 
-== Usage
+Compress4J is a Java library dedicated to simplifying the handling of various data **compressors** formats. Its primary goal is to provide developers with a unified and straightforward API for compressing and decompressing files and data streams, regardless of the underlying algorithm being used.
 
-=== Using the ArchiverFactory
+Inspired by the need for a consistent way to interact with different compression techniques, Compress4J abstracts the specific implementations behind common interfaces, making it easier to incorporate compression into Java applications or to switch between compression formats.
 
-Create a new Archiver to handle zip archives
+=== Core Concepts
 
-[source,java]
-----
-Archiver archiver = ArchiverFactory.createArchiver(ArchiveFormat.ZIP);
-----
+The library's design centers around a few key components:
 
-Create a new Archiver to handle tar archives with gzip compression
+* **`Compressor` Interface:** Defines the contract for compressing an `OutputStream`. Implementations handle the specifics of a particular compression algorithm.
+* **`Uncompressor` Interface:** Defines the contract for decompressing an `InputStream`. Implementations handle the specifics of decompressing data from a particular format.
+* **`ArchiveCreator`:** A factory class used to obtain instances of `Compressor` for supported algorithms. This promotes loose coupling and simplifies the creation process.
+* **`ArchiveExtractor`:** A factory class used to obtain instances of `Uncompressor` for supported algorithms.
 
-[source,java]
-----
-Archiver archiver = ArchiverFactory.createArchiver(ArchiveFormat.TAR, CompressionType.GZIP);
-----
+By using these factories, developers can request a compressor or uncompressor for a desired algorithm (e.g., Gzip, Zstandard) without needing to know the specific implementation class names.
 
-Alternatively you can use string representations of the archive and compression types.
+=== Supported Formats
 
-[source,java]
-----
-Archiver archiver = ArchiverFactory.createArchiver("zip");
-----
+Compress4J supports a variety of common stream compression formats. The goal is to provide access to efficient and widely used algorithms, including (but not necessarily limited to):
 
-The ArchiveFactory can also detect archive types based on file extensions and hand you the correct Archiver.
-This example returns an Archiver instance that handles tar.gz files.
-(It would also recognize the `.tgz` extension)
+* Tar (`.tar`, `tar.bz2`, `tbz2`, `tar.gz`, `tgz`)
+* Gzip (`.gz`, `gzip`)
+* Bzip2 (`.bz2`)
 
-[source,java]
-----
-Archiver archiver = ArchiverFactory.createArchiver(new File("archive.tar.gz"));
-----
+The library often achieves this by integrating with robust, high-performance backend libraries (like `zstd-jni` for Zstandard) or by providing its own implementations.
 
-=== Using Archivers
+=== Key Goals
 
-==== Extract
-
-To extract the zip archive `/home/jack/archive.zip` to `/home/jack/archive`:
-
-[source,java]
-----
-File archive = new File("/home/jack/archive.zip");
-File destination = new File("/home/jack/archive");
-
-Archiver archiver = ArchiverFactory.createArchiver(ArchiveFormat.ZIP);
-archiver.extract(archive, destination);
-----
-
-==== Create
-
-To create a new tar archive with gzip compression `archive.tar.gz` in `/home/jack/` containing the entire directory `/home/jack/archive`
-
-[source,java]
-----
-String archiveName = "archive";
-File destination = new File("/home/jack");
-File source = new File("/home/jack/archive");
-
-Archiver archiver = ArchiverFactory.createArchiver(ArchiveFormat.TAR, CompressionType.GZIP);
-File archive = archiver.create(archiveName, destination, source);
-----
-
-notice that you can omit the filename extension in the archive name, as it will be appended by the archiver automatically if it is missing.
-
-==== Stream
-
-To access the contents of an archive as a Stream, rather than extracting them directly onto the filesystem
-
-[source,java]
-----
-ArchiveStream stream = archiver.stream(archive);
-ArchiveEntry entry;
-
-while((entry = stream.getNextEntry()) != null) {
-    // access each archive entry individually using the stream
-    // or extract it using entry.extract(destination)
-    // or fetch meta-data using entry.getName(), entry.isDirectory(), ...
-}
-stream.close();
-----
-
-== Compatibility
-
-* Java 11, 17, 21
-* Currently only tested for *nix file systems.
-
-== Known limitations
-
-* Permissions are not stored when creating archives
-* There is no support for Windows permissions
-* JAR files are treated like streamed zip files and can not restore permissions
+* **Simplicity:** Offer an easy-to-understand API for common compression/decompression tasks.
+* **Consistency:** Provide a uniform interaction model across different compression algorithms.
+* **Abstraction:** Hide the complexities of individual compression library APIs from the end-user.
+* **Extensibility:** Facilitate the addition of support for new compression formats in the future.
