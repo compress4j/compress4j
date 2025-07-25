@@ -88,6 +88,7 @@ dependencies {
 testing {
     suites {
         named("test", JvmTestSuite::class) {
+            useJUnitJupiter()
             dependencies {
                 implementation(platform(libs.junit.bom))
 
@@ -261,6 +262,10 @@ publishing {
                     developer {
                         id = "austek"
                         name = "Ali Ustek"
+                    }
+                    developer {
+                        id = "renasustek"
+                        name = "Renas Ustek"
                     }
                 }
             }
