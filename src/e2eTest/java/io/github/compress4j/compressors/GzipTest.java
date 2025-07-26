@@ -17,8 +17,7 @@ package io.github.compress4j.compressors;
 
 import static io.github.compress4j.assertion.Compress4JAssertions.assertThat;
 import static io.github.compress4j.test.util.io.TestFileUtils.createFile;
-import static org.junit.jupiter.api.Assertions.assertEquals; // todo change to assertj
-
+import org.assertj.core.api.Assertions;
 import io.github.compress4j.compressors.gzip.GzipCompressor;
 import io.github.compress4j.compressors.gzip.GzipDecompressor;
 import java.io.IOException;
@@ -58,10 +57,8 @@ class GzipTest {
         }
 
         assertThat(decompressPath).exists();
-
-        assertEquals(
-                FileUtils.readFileToString(sourcePath.toFile(), "UTF-8"),
-                FileUtils.readFileToString(decompressPath.toFile(), "UTF-8"));
+        Assertions.assertThat(FileUtils.readFileToString(sourcePath.toFile(), "UTF-8"))
+                .isEqualTo(FileUtils.readFileToString(decompressPath.toFile(), "UTF-8"));
     }
 
     @Test
@@ -87,8 +84,6 @@ class GzipTest {
         }
 
         assertThat(decompressPath).exists();
-        assertEquals(
-                FileUtils.readFileToString(sourcePath.toFile(), "UTF-8"),
-                FileUtils.readFileToString(decompressPath.toFile(), "UTF-8"));
-    }
+        Assertions.assertThat(FileUtils.readFileToString(sourcePath.toFile(), "UTF-8"))
+                .isEqualTo(FileUtils.readFileToString(decompressPath.toFile(), "UTF-8"));    }
 }
