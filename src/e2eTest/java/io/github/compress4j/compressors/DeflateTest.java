@@ -31,4 +31,9 @@ class DeflateTest extends AbstractTest {
     protected Decompressor<?> decompressorBuilder(Path compressPath) throws IOException {
         return new DeflateDecompressor.DeflateDecompressorBuilder(compressPath).build();
     }
+
+    @Override
+    protected String compressionExtension() {
+        return ".deflate";
+    }
 }

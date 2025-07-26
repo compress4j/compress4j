@@ -31,4 +31,9 @@ class GzipTest extends AbstractTest {
     protected Decompressor<?> decompressorBuilder(Path compressPath) throws IOException {
         return new GzipDecompressor.GzipDecompressorBuilder(compressPath).build();
     }
+
+    @Override
+    protected String compressionExtension() {
+        return ".gz";
+    }
 }

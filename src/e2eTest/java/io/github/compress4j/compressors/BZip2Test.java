@@ -31,4 +31,9 @@ class BZip2Test extends AbstractTest {
     protected Decompressor<?> decompressorBuilder(Path compressPath) throws IOException {
         return new BZip2Decompressor.BZip2DecompressorBuilder(compressPath).build();
     }
+
+    @Override
+    protected String compressionExtension() {
+        return ".bz";
+    }
 }

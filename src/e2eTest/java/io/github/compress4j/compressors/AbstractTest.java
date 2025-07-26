@@ -37,6 +37,8 @@ public abstract class AbstractTest {
 
     protected abstract Decompressor<?> decompressorBuilder(Path compressPath) throws IOException;
 
+    protected abstract String compressionExtension();
+
     @BeforeEach
     void setUp() throws IOException {
         sourcePath = createFile(tempDir, "sourceFile", "compressMe");
@@ -44,7 +46,7 @@ public abstract class AbstractTest {
 
     @Test
     void compressDecompressSameFile() throws Exception {
-        var compressPath = tempDir.resolve("compressTest.txt.bz");
+        var compressPath = tempDir.resolve("compressTest.txt" + compressionExtension());
         var decompressPath = tempDir.resolve("decompressedTest.txt");
 
         try (Compressor<?> compressor = compressorBuilder(compressPath)) {
