@@ -39,8 +39,8 @@ public abstract class AbstractDecompressorTest {
     @Test
     public void whenGivenPathShouldDecompress() throws IOException {
         var sourceFile = createFile(tempDir, "sourceFile", "content");
-        var compressed = createFile(tempDir, "compressed", "content");
-        Path targetFile = tempDir.resolve("targetFile");
+        var compressed = tempDir.resolve("compressed");
+        var targetFile = tempDir.resolve("targetFile");
 
         apacheCompressor(sourceFile, compressed);
 

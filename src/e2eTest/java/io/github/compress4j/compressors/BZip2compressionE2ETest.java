@@ -27,7 +27,6 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-@Disabled
 class BZip2compressionE2ETest {
 
     @TempDir

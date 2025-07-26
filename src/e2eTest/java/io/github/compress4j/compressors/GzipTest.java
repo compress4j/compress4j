@@ -16,46 +16,53 @@
 package io.github.compress4j.compressors;
 
 import static io.github.compress4j.assertion.Compress4JAssertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static io.github.compress4j.test.util.io.TestFileUtils.createFile;
+import static org.junit.jupiter.api.Assertions.assertEquals;//todo change to assertj
 
 import io.github.compress4j.compressors.gzip.GzipCompressor;
 import io.github.compress4j.compressors.gzip.GzipDecompressor;
+
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.apache.commons.io.FileUtils;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-@Disabled
-class GzipCompressionE2ETest {
+class GzipTest {
 
     @TempDir
     Path tempDir;
 
+    private Path sourcePath;
+
+    @BeforeEach
+    void setUp() throws IOException {
+        sourcePath = createFile(tempDir,"sourceFile", "compressMe");
+    }
+
     @Test
-    void whenCompressingDataThenDecompressed() throws Exception {
-        Path sourceFile = Paths.get("/home/renas/workspace/compress4j/src/e2e/resources/compression/compressTest.txt");
-        Path compressedTarget = tempDir.resolve("compressTest.txt.bz2");
+    void compressThenDecompressSameFile() throws Exception {
+        var compressPath = tempDir.resolve("compressTest.txt.gz");
+        var decompressPath = tempDir.resolve("decompressedTest.txt");
 
-        try (GzipCompressor gzipCompressor =
-                GzipCompressor.builder(compressedTarget).build()) {
-            gzipCompressor.write(sourceFile);
+        try (GzipCompressor gzipCompressor = GzipCompressor.builder(compressPath).build()) {
+            gzipCompressor.write(sourcePath);
         }
 
-        assertThat(compressedTarget).exists();
+        assertThat(compressPath).exists();
 
-        Path decompressedFileTarget = tempDir.resolve("decompressedTest.txt");
+        try (GzipDecompressor gZipDecompressor = GzipDecompressor.builder(compressPath).build()) {
+            gZipDecompressor.write(decompressPath);
 
-        try (GzipDecompressor gZipDecompressor =
-                GzipDecompressor.builder(compressedTarget).build()) {
-            gZipDecompressor.write(decompressedFileTarget);
         }
 
-        assertThat(decompressedFileTarget).exists();
+        assertThat(decompressPath).exists();
+
         assertEquals(
-                FileUtils.readFileToString(sourceFile.toFile(), "UTF-8"),
-                FileUtils.readFileToString(decompressedFileTarget.toFile(), "UTF-8"));
+                FileUtils.readFileToString(sourcePath.toFile(), "UTF-8"),
+                FileUtils.readFileToString(decompressPath.toFile(), "UTF-8"));
     }
 
     @Test
