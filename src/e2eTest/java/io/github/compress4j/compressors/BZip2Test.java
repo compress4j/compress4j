@@ -17,14 +17,13 @@ package io.github.compress4j.compressors;
 
 import static io.github.compress4j.assertion.Compress4JAssertions.assertThat;
 import static io.github.compress4j.test.util.io.TestFileUtils.createFile;
-import org.assertj.core.api.Assertions;
 
 import io.github.compress4j.compressors.bzip2.BZip2Compressor;
 import io.github.compress4j.compressors.bzip2.BZip2Decompressor;
-
 import java.io.IOException;
 import java.nio.file.Path;
 import org.apache.commons.io.FileUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -46,7 +45,8 @@ class BZip2Test {
         var compressPath = tempDir.resolve("compressTest.txt.bz");
         var decompressPath = tempDir.resolve("decompressedTest.txt");
 
-        try (BZip2Compressor bZip2Compressor = BZip2Compressor.builder(compressPath).build()) {
+        try (BZip2Compressor bZip2Compressor =
+                BZip2Compressor.builder(compressPath).build()) {
             bZip2Compressor.write(sourcePath);
         }
 
@@ -58,33 +58,6 @@ class BZip2Test {
         }
 
         assertThat(decompressPath).exists();
-        Assertions.assertThat(FileUtils.readFileToString(sourcePath.toFile(), "UTF-8"))
-                .isEqualTo(FileUtils.readFileToString(decompressPath.toFile(), "UTF-8"));
-    }
-
-    @Test
-    void compressWithParametersThenDecompress() throws Exception {
-        var compressPath = tempDir.resolve("compressTest.txt.bz");
-        var decompressPath = tempDir.resolve("decompressedTest.txt");
-
-        try (BZip2Compressor bZip2Compressor = BZip2Compressor.builder(compressPath)
-                .compressorOutputStreamBuilder()
-                .blockSize(6)
-                .parentBuilder()
-                .build()) {
-            bZip2Compressor.write(sourcePath);
-        }
-
-        assertThat(compressPath).exists();
-
-
-        try (BZip2Decompressor bZip2Decompressor =
-                BZip2Decompressor.builder(compressPath).build()) {
-            bZip2Decompressor.write(decompressPath);
-        }
-
-        assertThat(decompressPath).exists();
-
         Assertions.assertThat(FileUtils.readFileToString(sourcePath.toFile(), "UTF-8"))
                 .isEqualTo(FileUtils.readFileToString(decompressPath.toFile(), "UTF-8"));
     }

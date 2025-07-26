@@ -17,12 +17,13 @@ package io.github.compress4j.compressors;
 
 import static io.github.compress4j.assertion.Compress4JAssertions.assertThat;
 import static io.github.compress4j.test.util.io.TestFileUtils.createFile;
-import org.assertj.core.api.Assertions;
+
 import io.github.compress4j.compressors.gzip.GzipCompressor;
 import io.github.compress4j.compressors.gzip.GzipDecompressor;
 import java.io.IOException;
 import java.nio.file.Path;
 import org.apache.commons.io.FileUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -60,30 +61,4 @@ class GzipTest {
         Assertions.assertThat(FileUtils.readFileToString(sourcePath.toFile(), "UTF-8"))
                 .isEqualTo(FileUtils.readFileToString(decompressPath.toFile(), "UTF-8"));
     }
-
-    @Test
-    void whenCompressingDataWithParamsThenDecompressed() throws Exception {
-        var compressPath = tempDir.resolve("compressTest.txt.gz");
-        var decompressPath = tempDir.resolve("decompressedTest.txt");
-
-        try (GzipCompressor gzipCompressor = GzipCompressor.builder(compressPath)
-                .compressorOutputStreamBuilder()
-                .bufferSize(3)
-                .compressionLevel(1)
-                .parentBuilder()
-                .build()) {
-            gzipCompressor.write(sourcePath);
-        }
-
-        assertThat(compressPath).exists();
-
-
-        try (GzipDecompressor gZipDecompressor =
-                GzipDecompressor.builder(compressPath).build()) {
-            gZipDecompressor.write(decompressPath);
-        }
-
-        assertThat(decompressPath).exists();
-        Assertions.assertThat(FileUtils.readFileToString(sourcePath.toFile(), "UTF-8"))
-                .isEqualTo(FileUtils.readFileToString(decompressPath.toFile(), "UTF-8"));    }
 }

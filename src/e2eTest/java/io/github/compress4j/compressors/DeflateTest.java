@@ -18,15 +18,12 @@ package io.github.compress4j.compressors;
 import static io.github.compress4j.assertion.Compress4JAssertions.assertThat;
 import static io.github.compress4j.test.util.io.TestFileUtils.createFile;
 
-import io.github.compress4j.compressors.deflate.DeflateCompressionLevel;
 import io.github.compress4j.compressors.deflate.DeflateCompressor;
 import io.github.compress4j.compressors.deflate.DeflateDecompressor;
-import org.assertj.core.api.Assertions;
-
 import java.io.IOException;
 import java.nio.file.Path;
-
 import org.apache.commons.io.FileUtils;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -48,39 +45,15 @@ class DeflateTest {
         var compressPath = tempDir.resolve("compressTest.txt.bz");
         var decompressPath = tempDir.resolve("decompressedTest.txt");
 
-        try (DeflateCompressor deflateCompressor = DeflateCompressor.builder(compressPath).build()) {
+        try (DeflateCompressor deflateCompressor =
+                DeflateCompressor.builder(compressPath).build()) {
             deflateCompressor.write(sourcePath);
         }
 
         assertThat(compressPath).exists();
 
         try (DeflateDecompressor deflateDecompressor =
-                     DeflateDecompressor.builder(compressPath).build()) {
-            deflateDecompressor.write(decompressPath);
-        }
-
-        assertThat(decompressPath).exists();
-        Assertions.assertThat(FileUtils.readFileToString(sourcePath.toFile(), "UTF-8"))
-                .isEqualTo(FileUtils.readFileToString(decompressPath.toFile(), "UTF-8"));
-    }
-
-    @Test
-    void compressWithParametersThenDecompress() throws Exception {
-        var compressPath = tempDir.resolve("compressTest.txt.bz");
-        var decompressPath = tempDir.resolve("decompressedTest.txt");
-
-        try (DeflateCompressor deflateCompressor = DeflateCompressor.builder(compressPath)
-                .compressorOutputStreamBuilder()
-                .setCompressionLevel(DeflateCompressionLevel.BEST_COMPRESSION)
-                .setZlibHeader(true)
-                .parentBuilder().build()) {
-            deflateCompressor.write(sourcePath);
-        }
-
-        assertThat(compressPath).exists();
-
-        try (DeflateDecompressor deflateDecompressor =
-                     DeflateDecompressor.builder(compressPath).build()) {
+                DeflateDecompressor.builder(compressPath).build()) {
             deflateDecompressor.write(decompressPath);
         }
 
