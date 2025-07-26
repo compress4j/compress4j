@@ -51,7 +51,7 @@ public class GzipDecompressor extends Decompressor<GzipCompressorInputStream> {
     }
 
     public static GzipDecompressorBuilder builder(Path path) throws IOException {
-        return new GzipDecompressorBuilder(new GzipCompressorInputStream(Files.newInputStream(path)));
+        return new GzipDecompressorBuilder(Files.newInputStream(path));
     }
 
     public static GzipDecompressorBuilder builder(GzipCompressorInputStream inputStream) {
