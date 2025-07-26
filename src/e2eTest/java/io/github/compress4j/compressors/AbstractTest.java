@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import org.apache.commons.io.FileUtils;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -31,21 +30,17 @@ public abstract class AbstractTest {
     @TempDir
     protected Path tempDir;
 
-    protected Path sourcePath;
-
     protected abstract Compressor<?> compressorBuilder(Path compressPath) throws IOException;
 
     protected abstract Decompressor<?> decompressorBuilder(Path compressPath) throws IOException;
 
     protected abstract String compressionExtension();
 
-    @BeforeEach
-    void setUp() throws IOException {
-        sourcePath = createFile(tempDir, "sourceFile", "compressMe");
-    }
+    protected abstract Path osCompressedPath();
 
     @Test
     void compressDecompressSameFile() throws Exception {
+        var sourcePath = createFile(tempDir, "sourceFile", "compressMe");
         var compressPath = tempDir.resolve("compressTest.txt" + compressionExtension());
         var decompressPath = tempDir.resolve("decompressedTest.txt");
 
@@ -61,6 +56,21 @@ public abstract class AbstractTest {
 
         assertThat(decompressPath).exists();
         Assertions.assertThat(FileUtils.readFileToString(sourcePath.toFile(), "UTF-8"))
+                .isEqualTo(FileUtils.readFileToString(decompressPath.toFile(), "UTF-8"));
+    }
+
+    @Test
+    void shouldDecompressOsCompressedFile() throws Exception {
+        var compressedPath = osCompressedPath();
+        var preCompressedPath = createFile(tempDir, "normalFile.txt", "Hello, world!");
+        var decompressPath = tempDir.resolve("decompressedTest.txt");
+
+        try (Decompressor<?> decompressor = decompressorBuilder(compressedPath)) {
+            decompressor.write(decompressPath);
+        }
+
+        assertThat(decompressPath).exists();
+        Assertions.assertThat(FileUtils.readFileToString(preCompressedPath.toFile(), "UTF-8"))
                 .isEqualTo(FileUtils.readFileToString(decompressPath.toFile(), "UTF-8"));
     }
 }

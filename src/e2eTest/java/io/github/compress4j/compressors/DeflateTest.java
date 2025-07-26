@@ -36,4 +36,9 @@ class DeflateTest extends AbstractTest {
     protected String compressionExtension() {
         return ".deflate";
     }
+
+    @Override
+    protected Path osCompressedPath() {
+        return Path.of("/home/renas/workspace/compress4j/src/e2eTest/resources/compression/deflate");
+    }
 }

@@ -34,6 +34,11 @@ class BZip2Test extends AbstractTest {
 
     @Override
     protected String compressionExtension() {
-        return ".bz";
+        return ".bz2";
+    }
+
+    @Override
+    protected Path osCompressedPath() {
+        return Path.of("/home/renas/workspace/compress4j/src/e2eTest/resources/compression/bzip2.bz2");
     }
 }
