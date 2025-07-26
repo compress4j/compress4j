@@ -17,12 +17,10 @@ package io.github.compress4j.compressors;
 
 import io.github.compress4j.compressors.bzip2.BZip2Compressor;
 import io.github.compress4j.compressors.bzip2.BZip2Decompressor;
-
 import java.io.IOException;
 import java.nio.file.Path;
 
-class BZip2Test extends AbstractTest{
-
+class BZip2Test extends AbstractTest {
 
     @Override
     protected Compressor<?> compressorBuilder(Path compressPath) throws IOException {

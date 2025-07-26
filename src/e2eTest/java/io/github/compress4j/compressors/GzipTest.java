@@ -17,11 +17,10 @@ package io.github.compress4j.compressors;
 
 import io.github.compress4j.compressors.gzip.GzipCompressor;
 import io.github.compress4j.compressors.gzip.GzipDecompressor;
-
 import java.io.IOException;
 import java.nio.file.Path;
 
-class GzipTest extends AbstractTest{
+class GzipTest extends AbstractTest {
 
     @Override
     protected Compressor<?> compressorBuilder(Path compressPath) throws IOException {

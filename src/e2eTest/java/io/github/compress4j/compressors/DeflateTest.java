@@ -17,12 +17,10 @@ package io.github.compress4j.compressors;
 
 import io.github.compress4j.compressors.deflate.DeflateCompressor;
 import io.github.compress4j.compressors.deflate.DeflateDecompressor;
-
 import java.io.IOException;
 import java.nio.file.Path;
 
-class DeflateTest extends AbstractTest{
-
+class DeflateTest extends AbstractTest {
 
     @Override
     protected Compressor<?> compressorBuilder(Path compressPath) throws IOException {
