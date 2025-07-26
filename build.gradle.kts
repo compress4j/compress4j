@@ -42,6 +42,7 @@ tasks.withType<JavaCompile> {
 
 tasks.withType<Javadoc> {
     options.encoding = "UTF-8"
+    (options as StandardJavadocDocletOptions).addStringOption("Xdoclint:all","-private")
 }
 
 val mockitoAgent = configurations.create("mockitoAgent")
