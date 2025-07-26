@@ -15,50 +15,21 @@
  */
 package io.github.compress4j.compressors;
 
-import static io.github.compress4j.assertion.Compress4JAssertions.assertThat;
-import static io.github.compress4j.test.util.io.TestFileUtils.createFile;
-
 import io.github.compress4j.compressors.gzip.GzipCompressor;
 import io.github.compress4j.compressors.gzip.GzipDecompressor;
+
 import java.io.IOException;
 import java.nio.file.Path;
-import org.apache.commons.io.FileUtils;
-import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
-class GzipTest {
+class GzipTest extends AbstractTest{
 
-    @TempDir
-    Path tempDir;
-
-    private Path sourcePath;
-
-    @BeforeEach
-    void setUp() throws IOException {
-        sourcePath = createFile(tempDir, "sourceFile", "compressMe");
+    @Override
+    protected Compressor<?> compressorBuilder(Path compressPath) throws IOException {
+        return new GzipCompressor.GzipCompressorBuilder(compressPath).build();
     }
 
-    @Test
-    void compressThenDecompressSameFile() throws Exception {
-        var compressPath = tempDir.resolve("compressTest.txt.gz");
-        var decompressPath = tempDir.resolve("decompressedTest.txt");
-
-        try (GzipCompressor gzipCompressor =
-                GzipCompressor.builder(compressPath).build()) {
-            gzipCompressor.write(sourcePath);
-        }
-
-        assertThat(compressPath).exists();
-
-        try (GzipDecompressor gZipDecompressor =
-                GzipDecompressor.builder(compressPath).build()) {
-            gZipDecompressor.write(decompressPath);
-        }
-
-        assertThat(decompressPath).exists();
-        Assertions.assertThat(FileUtils.readFileToString(sourcePath.toFile(), "UTF-8"))
-                .isEqualTo(FileUtils.readFileToString(decompressPath.toFile(), "UTF-8"));
+    @Override
+    protected Decompressor<?> decompressorBuilder(Path compressPath) throws IOException {
+        return new GzipDecompressor.GzipDecompressorBuilder(compressPath).build();
     }
 }
