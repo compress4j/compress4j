@@ -1,12 +1,26 @@
+/*
+ * Copyright 2025 The Compress4J Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.github.compress4j.compressors.lzma;
 
 import io.github.compress4j.compressors.Compressor;
-import org.apache.commons.compress.compressors.lzma.LZMACompressorOutputStream;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import org.apache.commons.compress.compressors.lzma.LZMACompressorOutputStream;
 
 public class LZMACompressor extends Compressor<LZMACompressorOutputStream> {
 
@@ -14,11 +28,14 @@ public class LZMACompressor extends Compressor<LZMACompressorOutputStream> {
         super(compressorOutputStream);
     }
 
-    protected <B extends CompressorBuilder<LZMACompressorOutputStream, B, C>, C extends Compressor<LZMACompressorOutputStream>> LZMACompressor(B builder) throws IOException {
+    protected <
+                    B extends CompressorBuilder<LZMACompressorOutputStream, B, C>,
+                    C extends Compressor<LZMACompressorOutputStream>>
+            LZMACompressor(B builder) throws IOException {
         super(builder);
     }
 
-    public static class LZMACompressorOutputStreamBuilder<P>{
+    public static class LZMACompressorOutputStreamBuilder<P> {
         private final P parent;
         protected final OutputStream outputStream;
 
@@ -34,7 +51,6 @@ public class LZMACompressor extends Compressor<LZMACompressorOutputStream> {
         public P parentBuilder() {
             return parent;
         }
-
     }
 
     public static class LZMACompressionBuilder
@@ -46,9 +62,10 @@ public class LZMACompressor extends Compressor<LZMACompressorOutputStream> {
             this(Files.newOutputStream(path));
         }
 
-        public LZMACompressionBuilder(OutputStream outputStream){
+        public LZMACompressionBuilder(OutputStream outputStream) {
             super(outputStream);
-            this.compressorOutputStreamBuilder = new LZMACompressorOutputStreamBuilder<>(this, outputStream);;
+            this.compressorOutputStreamBuilder = new LZMACompressorOutputStreamBuilder<>(this, outputStream);
+            ;
         }
 
         public LZMACompressorOutputStreamBuilder<LZMACompressionBuilder> compressorOutputStreamBuilder() {
@@ -70,5 +87,4 @@ public class LZMACompressor extends Compressor<LZMACompressorOutputStream> {
             return new LZMACompressor(this);
         }
     }
-
 }
