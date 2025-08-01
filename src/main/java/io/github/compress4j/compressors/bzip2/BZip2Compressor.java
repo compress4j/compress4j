@@ -69,11 +69,24 @@ public class BZip2Compressor extends Compressor<BZip2CompressorOutputStream> {
         return new BZip2CompressorBuilder(outputStream);
     }
 
+    /**
+     * Builder class for creating a {@link BZip2CompressorOutputStream}.
+     *
+     * @param <P> The type of the parent builder.
+     */
     public static class BZip2CompressorOutputStreamBuilder<P> {
-        protected final OutputStream outputStream;
         private final P parent;
         private int blockSize = MAX_BLOCKSIZE;
 
+        /** The output stream to write to. */
+        protected final OutputStream outputStream;
+
+        /**
+         * Create a new {@link BZip2CompressorOutputStreamBuilder} with the given parent and output stream.
+         *
+         * @param parent the parent builder
+         * @param outputStream the output stream to write to
+         */
         public BZip2CompressorOutputStreamBuilder(P parent, OutputStream outputStream) {
             this.parent = parent;
             this.outputStream = outputStream;
@@ -96,15 +109,27 @@ public class BZip2Compressor extends Compressor<BZip2CompressorOutputStream> {
             return this;
         }
 
+        /**
+         * Builds the {@link BZip2CompressorOutputStream} with the configured parameters.
+         *
+         * @return the {@link BZip2CompressorOutputStream} instance
+         * @throws IOException if an I/O error occurred
+         */
         public BZip2CompressorOutputStream build() throws IOException {
             return new BZip2CompressorOutputStream(outputStream, blockSize);
         }
 
+        /**
+         * Returns the parent builder.
+         *
+         * @return the parent builder
+         */
         public P parentBuilder() {
             return parent;
         }
     }
 
+    /** Builder class for creating a {@link BZip2Compressor}. */
     public static class BZip2CompressorBuilder
             extends CompressorBuilder<BZip2CompressorOutputStream, BZip2CompressorBuilder, BZip2Compressor> {
 
@@ -130,20 +155,41 @@ public class BZip2Compressor extends Compressor<BZip2CompressorOutputStream> {
             this.compressorOutputStreamBuilder = new BZip2CompressorOutputStreamBuilder<>(this, outputStream);
         }
 
+        /**
+         * Returns the BZip2CompressorOutputStreamBuilder for this compressor.
+         *
+         * @return the BZip2CompressorOutputStreamBuilder
+         */
         public BZip2CompressorOutputStreamBuilder<BZip2CompressorBuilder> compressorOutputStreamBuilder() {
             return compressorOutputStreamBuilder;
         }
 
+        /**
+         * Sets the block size for the BZip2 compressor.
+         *
+         * @return this builder instance
+         */
         @Override
         public BZip2CompressorBuilder getThis() {
             return this;
         }
 
+        /**
+         * Sets the block size for the BZip2 compressor.
+         *
+         * @return this builder instance
+         */
         @Override
         public BZip2CompressorOutputStream buildCompressorOutputStream() throws IOException {
             return compressorOutputStreamBuilder.build();
         }
 
+        /**
+         * Builds the BZip2Compressor instance.
+         *
+         * @return a new BZip2Compressor instance
+         * @throws IOException if an I/O error occurred
+         */
         @Override
         public BZip2Compressor build() throws IOException {
             return new BZip2Compressor(this);

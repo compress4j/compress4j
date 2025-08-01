@@ -121,10 +121,28 @@ public abstract class BaseTarArchiveCreator extends ArchiveCreator<TarArchiveOut
     public abstract static class BaseTarArchiveCreatorBuilder<
                     B extends BaseTarArchiveCreatorBuilder<B, C>, C extends ArchiveCreator<TarArchiveOutputStream>>
             extends ArchiveCreatorBuilder<TarArchiveOutputStream, B, C> {
+
+        /** The block size to use for the tar archive. Must be a multiple of 512 bytes. */
         protected int blockSize = -511;
+
+        /** The encoding to use for file names. Default is UTF-8. */
         protected String encoding = UTF_8.name();
+
+        /**
+         * The long file mode. This can be LONGFILE_ERROR(0), LONGFILE_TRUNCATE(1), LONGFILE_GNU(2) or
+         * LONGFILE_POSIX(3). This specifies the treatment of long file names (names &gt;= TarConstants.NAMELEN).
+         * Default is LONGFILE_ERROR.
+         */
         protected int longFileMode = LONGFILE_ERROR;
+
+        /**
+         * The big number mode. This can be BIGNUMBER_ERROR(0), BIGNUMBER_STAR(1) or BIGNUMBER_POSIX(2). This specifies
+         * the treatment of big files (sizes &gt; TarConstants.MAXSIZE) and other numeric values too big to fit into a
+         * traditional tar header. Default is BIGNUMBER_ERROR.
+         */
         protected int bigNumberMode = BIGNUMBER_ERROR;
+
+        /** Whether to add a PAX extension header for non-ASCII file names. Default is false. */
         protected boolean addPaxHeadersForNonAsciiNames;
 
         /**

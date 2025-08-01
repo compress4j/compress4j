@@ -1,0 +1,17 @@
+= Deflate
+
+Here is a simple example of how to use deflate compression.
+
+== Example Usage
+
+.Deflate Compression
+[,java]
+----
+include::example$java/com/example/compressors/DeflateExamples.java[tag=deflate-compressor,indent=0]
+----
+
+.Deflate Decompression
+[,java]
+----
+include::example$java/com/example/compressors/DeflateExamples.java[tag=deflate-decompressor,indent=0]
+----

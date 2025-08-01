@@ -69,6 +69,11 @@ public class TarGzArchiveExtractor extends BaseTarArchiveExtractor {
         return new TarGzArchiveExtractorBuilder(inputStream);
     }
 
+    /**
+     * Builder for creating a {@link TarGzArchiveExtractor}.
+     *
+     * @since 2.2
+     */
     public static class TarGzArchiveExtractorBuilder
             extends BaseTarArchiveExtractorBuilder<TarGzArchiveExtractorBuilder, TarGzArchiveExtractor> {
 

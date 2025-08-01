@@ -70,9 +70,16 @@ public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
         return new GzipCompressorBuilder(outputStream);
     }
 
+    /**
+     * Builder for creating a {@link GzipCompressor}.
+     *
+     * @param <P> the type of the parent builder
+     */
     public static class GzipCompressorOutputStreamBuilder<P> {
-        private final P parent;
+        /** The output stream to write the compressed data to. */
         protected final OutputStream outputStream;
+
+        private final P parent;
         private int bufferSize = 512;
         private String comment;
         private int compressionLevel = Deflater.DEFAULT_COMPRESSION;
@@ -199,6 +206,12 @@ public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
             return this;
         }
 
+        /**
+         * Builds a new {@link GzipCompressorOutputStream} with the specified parameters.
+         *
+         * @return a new instance of {@link GzipCompressorOutputStream}
+         * @throws IOException if an I/O error occurs
+         */
         public GzipCompressorOutputStream build() throws IOException {
             GzipParameters parameters = new GzipParameters();
             parameters.setBufferSize(bufferSize);
@@ -211,11 +224,21 @@ public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
             return new GzipCompressorOutputStream(outputStream, parameters);
         }
 
+        /**
+         * Returns the parent builder that created this {@link GzipCompressorOutputStreamBuilder}.
+         *
+         * @return the parent builder
+         */
         public P parentBuilder() {
             return parent;
         }
     }
 
+    /**
+     * Builder for creating a {@link GzipCompressor}.
+     *
+     * @since 2.2
+     */
     public static class GzipCompressorBuilder
             extends CompressorBuilder<GzipCompressorOutputStream, GzipCompressorBuilder, GzipCompressor> {
 
@@ -241,6 +264,11 @@ public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
             this.compressorOutputStreamBuilder = new GzipCompressorOutputStreamBuilder<>(this, this.outputStream);
         }
 
+        /**
+         * Returns the Gzip compressor output stream builder.
+         *
+         * @return the Gzip compressor output stream builder
+         */
         public GzipCompressorOutputStreamBuilder<GzipCompressorBuilder> compressorOutputStreamBuilder() {
             return compressorOutputStreamBuilder;
         }

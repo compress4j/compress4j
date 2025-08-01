@@ -155,6 +155,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      *     {@link java.lang.SecurityManager#checkWrite(java.lang.String)} method does not permit the named directory and
      *     all necessary parent directories to be created
      */
+    @SuppressWarnings("removal")
     private static void makeDirectory(Path path) {
         //noinspection ResultOfMethodCallIgnored
         path.toFile().mkdirs();
@@ -487,11 +488,68 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         }
     }
 
+    /**
+     * Policy for handling symbolic links which point to outside of archive.
+     *
+     * <p>This is needed to prevent directory traversal attacks when extracting archives from untrusted sources.
+     *
+     * <p>For example, if an archive contains a symlink {@code foo -> /opt/foo} and the archive is extracted to
+     * {@code /foo/bar}, then the symlink should not point to {@code /opt/foo} but rather to {@code /foo/bar/opt/foo}.
+     *
+     * <p>Example: {@code foo -> /opt/foo}
+     *
+     * <p>or {@code foo -> ../foo}
+     */
+    public enum EscapingSymlinkPolicy {
+        /**
+         * Extract as is with no modification or check. Potentially can point to a completely different object if the
+         * archive is transferred from some other host.
+         */
+        ALLOW,
+
+        /** Check during extraction and throw exception. See {@link ArchiveExtractor#verifySymlinkTarget} */
+        DISALLOW,
+
+        /**
+         * Make absolute symbolic links relative from the extraction directory. For example, when archive contains link
+         * to {@code /opt/foo} and archive is extracted to {@code /foo/bar} then the resulting link will be
+         * {@code /foo/bar/opt/foo}
+         */
+        RELATIVIZE_ABSOLUTE
+    }
+
+    /** Specifies action to be taken from the {@code com.intellij.util.io.ArchiveExtractor#errorHandler} */
+    public enum ErrorHandlerChoice {
+        /** Extraction should be aborted and already extracted entities should be cleaned */
+        ABORT,
+
+        /** Do not handle error, just rethrow the exception */
+        BAIL_OUT,
+
+        /** Retry failed entry extraction */
+        RETRY,
+
+        /** Skip this entry from extraction */
+        SKIP,
+
+        /** Skip this entry for extraction and ignore any further IOExceptions during this archive extraction */
+        SKIP_ALL
+    }
+
+    /**
+     * Builder for creating an {@link ArchiveExtractor}.
+     *
+     * @param <A> The type of {@link ArchiveInputStream} to read entries from.
+     * @param <B> The type of the {@code ArchiveExtractorBuilder} to build from.
+     * @param <C> The type of the {@link ArchiveExtractor} to instantiate.
+     */
     public abstract static class ArchiveExtractorBuilder<
             A extends ArchiveInputStream<? extends ArchiveEntry>,
             B extends ArchiveExtractorBuilder<A, B, C>,
             C extends ArchiveExtractor<A>> {
+        /** Input stream to read from for extraction. */
         protected final InputStream inputStream;
+        /** Input stream to read from for extraction. */
         protected ArchiveExtractor.EscapingSymlinkPolicy escapingSymlinkPolicy = EscapingSymlinkPolicy.ALLOW;
 
         @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
@@ -610,54 +668,6 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
          * @throws IOException thrown by the underlying output stream for I/O errors
          */
         public abstract C build() throws IOException;
-    }
-
-    /**
-     * Policy for handling symbolic links which point to outside of archive.
-     *
-     * <p>This is needed to prevent directory traversal attacks when extracting archives from untrusted sources.
-     *
-     * <p>For example, if an archive contains a symlink {@code foo -> /opt/foo} and the archive is extracted to
-     * {@code /foo/bar}, then the symlink should not point to {@code /opt/foo} but rather to {@code /foo/bar/opt/foo}.
-     *
-     * <p>Example: {@code foo -> /opt/foo}
-     *
-     * <p>or {@code foo -> ../foo}
-     */
-    public enum EscapingSymlinkPolicy {
-        /**
-         * Extract as is with no modification or check. Potentially can point to a completely different object if the
-         * archive is transferred from some other host.
-         */
-        ALLOW,
-
-        /** Check during extraction and throw exception. See {@link ArchiveExtractor#verifySymlinkTarget} */
-        DISALLOW,
-
-        /**
-         * Make absolute symbolic links relative from the extraction directory. For example, when archive contains link
-         * to {@code /opt/foo} and archive is extracted to {@code /foo/bar} then the resulting link will be
-         * {@code /foo/bar/opt/foo}
-         */
-        RELATIVIZE_ABSOLUTE
-    }
-
-    /** Specifies action to be taken from the {@code com.intellij.util.io.ArchiveExtractor#errorHandler} */
-    public enum ErrorHandlerChoice {
-        /** Extraction should be aborted and already extracted entities should be cleaned */
-        ABORT,
-
-        /** Do not handle error, just rethrow the exception */
-        BAIL_OUT,
-
-        /** Retry failed entry extraction */
-        RETRY,
-
-        /** Skip this entry from extraction */
-        SKIP,
-
-        /** Skip this entry for extraction and ignore any further IOExceptions during this archive extraction */
-        SKIP_ALL
     }
 
     /**

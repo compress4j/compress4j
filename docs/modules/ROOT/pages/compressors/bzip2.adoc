@@ -1,4 +1,4 @@
-= bzip2
+= BZip2
 
 Here is a simple example of how to use bzip2 compression.
 

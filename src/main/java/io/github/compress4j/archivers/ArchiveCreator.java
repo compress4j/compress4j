@@ -613,6 +613,7 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
             A extends ArchiveOutputStream<? extends ArchiveEntry>,
             B extends ArchiveCreatorBuilder<A, B, C>,
             C extends ArchiveCreator<A>> {
+        /** Output stream to write the archive to. */
         protected final OutputStream outputStream;
 
         @SuppressWarnings("OptionalUsedAsFieldOrParameterType")

@@ -49,38 +49,85 @@ public class BZip2Decompressor extends Decompressor<BZip2CompressorInputStream> 
         super(builder);
     }
 
+    /**
+     * Creates a BZip2DecompressorBuilder using the provided InputStream.
+     *
+     * @param inputStream the InputStream to read from
+     * @return a new BZip2DecompressorBuilder
+     */
     public static BZip2DecompressorBuilder builder(InputStream inputStream) {
         return new BZip2DecompressorBuilder(inputStream);
     }
 
+    /**
+     * Creates a BZip2DecompressorBuilder using the provided Path.
+     *
+     * @param path the Path to read from
+     * @return a new BZip2DecompressorBuilder
+     * @throws IOException if an I/O error occurs while creating the input stream
+     */
     public static BZip2DecompressorBuilder builder(Path path) throws IOException {
         return new BZip2DecompressorBuilder(newInputStream(path));
     }
 
+    /**
+     * BZip2Decompressor Builder
+     *
+     * @since 2.2
+     */
     public static class BZip2DecompressorInputStreamBuilder<P> {
         private final P parent;
         private final InputStream inputStream;
         private boolean decompressConcatenated = false;
 
+        /**
+         * Constructor that takes a parent builder and an InputStream.
+         *
+         * @param parent the parent builder to return to after building the input stream.
+         * @param inputStream the InputStream to read from.
+         */
         public BZip2DecompressorInputStreamBuilder(P parent, InputStream inputStream) {
             this.parent = parent;
             this.inputStream = inputStream;
         }
 
+        /**
+         * Sets whether to decompress concatenated BZip2 streams.
+         *
+         * @param decompressConcatenated true if concatenated streams should be decompressed, false otherwise.
+         * @return this builder instance for method chaining.
+         */
+        @SuppressWarnings("UnusedReturnValue")
         public BZip2DecompressorInputStreamBuilder<P> setDecompressConcatenated(boolean decompressConcatenated) {
             this.decompressConcatenated = decompressConcatenated;
             return this;
         }
 
+        /**
+         * Builds the BZip2CompressorInputStream using the provided InputStream and options.
+         *
+         * @return a new BZip2CompressorInputStream.
+         * @throws IOException if an I/O error occurs while creating the input stream.
+         */
         public BZip2CompressorInputStream buildInputStream() throws IOException {
             return new BZip2CompressorInputStream(inputStream, decompressConcatenated);
         }
 
+        /**
+         * Returns the parent builder.
+         *
+         * @return the parent builder.
+         */
         public P parentBuilder() {
             return parent;
         }
     }
 
+    /**
+     * Builder for creating instances of {@link BZip2Decompressor}.
+     *
+     * @since 2.2
+     */
     public static class BZip2DecompressorBuilder
             extends Decompressor.DecompressorBuilder<
                     BZip2CompressorInputStream, BZip2Decompressor, BZip2DecompressorBuilder> {
@@ -96,28 +143,62 @@ public class BZip2Decompressor extends Decompressor<BZip2CompressorInputStream> 
             this.inputStreamBuilder = new BZip2DecompressorInputStreamBuilder<>(this, inputStream);
         }
 
+        /**
+         * Constructor that takes a Path.
+         *
+         * @param path the Path to read from.
+         * @throws IOException if an I/O error occurs while creating the input stream
+         */
         public BZip2DecompressorBuilder(Path path) throws IOException {
             this(newInputStream(path));
         }
 
+        /**
+         * Constructor that takes a File.
+         *
+         * @param file the File to read from.
+         * @throws IOException if an I/O error occurs while creating the input stream
+         */
         public BZip2DecompressorBuilder(File file) throws IOException {
             this(file.toPath());
         }
 
+        /**
+         * Returns the input stream builder for this decompressor.
+         *
+         * @return the BZip2DecompressorInputStreamBuilder instance
+         */
         public BZip2DecompressorInputStreamBuilder<BZip2DecompressorBuilder> inputStreamBuilder() {
             return inputStreamBuilder;
         }
 
+        /**
+         * Builds a BZip2CompressorInputStream using the current configuration.
+         *
+         * @return a new BZip2CompressorInputStream instance
+         * @throws IOException if an I/O error occurs while creating the input stream
+         */
         @Override
         public BZip2CompressorInputStream buildCompressorInputStream() throws IOException {
             return inputStreamBuilder.buildInputStream();
         }
 
+        /**
+         * Returns the current builder instance for method chaining.
+         *
+         * @return this builder instance
+         */
         @Override
         protected BZip2DecompressorBuilder getThis() {
             return this;
         }
 
+        /**
+         * Builds a BZip2Decompressor using the current configuration.
+         *
+         * @return a new BZip2Decompressor instance
+         * @throws IOException if an I/O error occurs while creating the decompressor
+         */
         @Override
         public BZip2Decompressor build() throws IOException {
             return new BZip2Decompressor(this);
