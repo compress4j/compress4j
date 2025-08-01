@@ -15,22 +15,21 @@
  */
 package io.github.compress4j.archivers.tar;
 
-import io.github.compress4j.archivers.ArchiveCreator;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
-import org.apache.commons.compress.archivers.tar.TarConstants;
-import org.apache.commons.io.IOUtils;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.BIGNUMBER_ERROR;
+import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.LONGFILE_ERROR;
 
+import io.github.compress4j.archivers.ArchiveCreator;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.util.Optional;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.BIGNUMBER_ERROR;
-import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.LONGFILE_ERROR;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.archivers.tar.TarConstants;
+import org.apache.commons.io.IOUtils;
 
 /**
  * Base class for tar/tar.gz compressors

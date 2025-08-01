@@ -15,14 +15,17 @@
  */
 package io.github.compress4j.archivers;
 
+import static io.github.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice.ABORT;
+import static io.github.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice.RETRY;
+import static io.github.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice.SKIP;
+import static io.github.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice.SKIP_ALL;
+import static io.github.compress4j.utils.FileUtils.DOS_HIDDEN;
+import static io.github.compress4j.utils.FileUtils.DOS_READ_ONLY;
+import static io.github.compress4j.utils.PosixFilePermissionsMapper.fromUnixMode;
+import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
+
 import io.github.compress4j.utils.StringUtil;
 import jakarta.annotation.Nullable;
-import org.apache.commons.compress.archivers.ArchiveEntry;
-import org.apache.commons.compress.archivers.ArchiveInputStream;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,15 +43,11 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-
-import static io.github.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice.ABORT;
-import static io.github.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice.RETRY;
-import static io.github.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice.SKIP;
-import static io.github.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice.SKIP_ALL;
-import static io.github.compress4j.utils.FileUtils.DOS_HIDDEN;
-import static io.github.compress4j.utils.FileUtils.DOS_READ_ONLY;
-import static io.github.compress4j.utils.PosixFilePermissionsMapper.fromUnixMode;
-import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This abstract class is the superclass of all classes providing de-compression. This class provides functionality to
