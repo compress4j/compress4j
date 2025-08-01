@@ -1,5 +1,5 @@
 [versions]
-apache-commons-compress = "1.27.1"
+apache-commons-compress = "1.28.0"
 assertJ = "3.27.3"
 jackson = "2.19.2"
 jakarta-annotation = "3.0.0"
