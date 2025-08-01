@@ -5,7 +5,7 @@ on:
       jdk_version:
         description: 'JDK version'
         required: true
-        default: 11
+        default: 17
 
 jobs:
   release:
