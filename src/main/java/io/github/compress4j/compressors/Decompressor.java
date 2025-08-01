@@ -99,16 +99,39 @@ public abstract class Decompressor<I extends CompressorInputStream> implements C
             D extends Decompressor<I>,
             B extends Decompressor.DecompressorBuilder<I, D, B>> {
 
+        /** Input stream to read from for decompression. */
         protected final InputStream inputStream;
 
+        /**
+         * Constructor that takes an input stream to read from.
+         *
+         * @param inputStream the input stream to read from
+         */
         protected DecompressorBuilder(InputStream inputStream) {
             this.inputStream = inputStream;
         }
 
+        /**
+         * Returns the input stream to be used for decompression.
+         *
+         * @return the input stream
+         * @throws IOException if an I/O error occurs while building the compressor input stream
+         */
         public abstract I buildCompressorInputStream() throws IOException;
 
+        /**
+         * Returns the input stream to be used for decompression.
+         *
+         * @return the input stream
+         */
         protected abstract B getThis();
 
+        /**
+         * Builds an instance of {@link Decompressor}.
+         *
+         * @return a new instance of {@link Decompressor}
+         * @throws IOException if an I/O error occurs
+         */
         public abstract D build() throws IOException;
     }
 }

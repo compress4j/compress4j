@@ -93,6 +93,7 @@ public abstract class Compressor<O extends CompressorOutputStream<? extends Outp
             O extends CompressorOutputStream<? extends OutputStream>,
             B extends Compressor.CompressorBuilder<O, B, C>,
             C extends Compressor<O>> {
+        /** Output stream to which the compressor will write. */
         protected final OutputStream outputStream;
 
         /**

@@ -6,24 +6,34 @@
   "branchPrefix": "renovate-",
   "dependencyDashboard": false,
   "extends": [
-    "config:recommended"
+    "config:base",
+    "config:semverAllMonthly",
+    ":automergeMinor"
   ],
-  "hashedBranchLength": 24,
   "labels": [
     "dependencies",
     "renovate"
   ],
   "packageRules": [
     {
-      "matchUpdateTypes": ["minor", "patch"],
-      "matchCurrentVersion": "!/^0/",
-      "automerge": true
+      "groupName": "Non-major dependency updates",
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ]
     },
     {
       "matchManagers": [
+        "github-actions",
         "gradle-wrapper"
       ],
-      "groupName": "Gradle Wrapper"
+      "groupName": "gradle and github actions"
+    },
+    {
+      "matchDepTypes": [
+        "plugin"
+      ],
+      "groupName": "gradle and github actions"
     }
   ]
 }

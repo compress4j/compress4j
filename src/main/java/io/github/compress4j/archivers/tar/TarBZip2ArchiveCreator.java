@@ -69,6 +69,11 @@ public class TarBZip2ArchiveCreator extends BaseTarArchiveCreator {
         return new TarBZip2ArchiveCreatorBuilder(outputStream);
     }
 
+    /**
+     * Builder for creating a {@link TarBZip2ArchiveCreator}.
+     *
+     * @since 2.2
+     */
     public static class TarBZip2ArchiveCreatorBuilder
             extends BaseTarArchiveCreatorBuilder<TarBZip2ArchiveCreatorBuilder, TarBZip2ArchiveCreator> {
 
@@ -106,6 +111,7 @@ public class TarBZip2ArchiveCreator extends BaseTarArchiveCreator {
             return super.buildTarArchiveOutputStream(compressorOutputStreamBuilder.build());
         }
 
+        /** {@inheritDoc} */
         public BZip2CompressorOutputStreamBuilder<TarBZip2ArchiveCreatorBuilder> compressorOutputStreamBuilder() {
             return compressorOutputStreamBuilder;
         }

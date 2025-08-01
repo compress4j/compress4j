@@ -50,39 +50,77 @@ public class GzipDecompressor extends Decompressor<GzipCompressorInputStream> {
         super(compressorInputStream);
     }
 
+    /**
+     * Creates a GzipDecompressorBuilder using the provided Path.
+     *
+     * @param path the Path to read from
+     * @return a new GzipDecompressorBuilder
+     * @throws IOException if an I/O error occurs while creating the input stream
+     */
     public static GzipDecompressorBuilder builder(Path path) throws IOException {
         return new GzipDecompressorBuilder(Files.newInputStream(path));
     }
 
+    /**
+     * Creates a GzipDecompressorBuilder using the provided File.
+     *
+     * @param inputStream GzipCompressorInputStream
+     * @return a new GzipDecompressorBuilder
+     */
     public static GzipDecompressorBuilder builder(GzipCompressorInputStream inputStream) {
         return new GzipDecompressorBuilder(inputStream);
     }
 
+    /** GzipDecompressorInputStream Builder */
     public static class GzipDecompressorInputStreamBuilder {
         private final GzipDecompressorBuilder parent;
         private final InputStream inputStream;
         private boolean decompressConcatenated = false;
 
+        /**
+         * Constructor that takes a parent GzipDecompressorBuilder and an InputStream.
+         *
+         * @param parent the parent GzipDecompressorBuilder
+         * @param inputStream the InputStream to read from
+         */
         public GzipDecompressorInputStreamBuilder(GzipDecompressorBuilder parent, InputStream inputStream) {
             this.parent = parent;
             this.inputStream = inputStream;
         }
 
+        /**
+         * Sets whether to decompress concatenated GZIP streams.
+         *
+         * @param decompressConcatenated true if concatenated streams should be decompressed, false otherwise
+         * @return this builder instance for method chaining
+         */
         @SuppressWarnings("UnusedReturnValue")
         public GzipDecompressorInputStreamBuilder setDecompressConcatenated(boolean decompressConcatenated) {
             this.decompressConcatenated = decompressConcatenated;
             return this;
         }
 
+        /**
+         * Builds a GzipCompressorInputStream using the provided InputStream and options.
+         *
+         * @return a new GzipCompressorInputStream
+         * @throws IOException if an I/O error occurs while creating the stream
+         */
         public GzipCompressorInputStream buildInputStream() throws IOException {
             return new GzipCompressorInputStream(inputStream, decompressConcatenated);
         }
 
+        /**
+         * Builds the GzipDecompressor using the parent builder.
+         *
+         * @return the parent GzipDecompressorBuilder
+         */
         public GzipDecompressorBuilder parentBuilder() {
             return parent;
         }
     }
 
+    /** Builder for creating instances of GzipDecompressor. */
     public static class GzipDecompressorBuilder
             extends Decompressor.DecompressorBuilder<
                     GzipCompressorInputStream, GzipDecompressor, GzipDecompressorBuilder> {
@@ -98,14 +136,31 @@ public class GzipDecompressor extends Decompressor<GzipCompressorInputStream> {
             this.inputStreamBuilder = new GzipDecompressorInputStreamBuilder(this, inputStream);
         }
 
+        /**
+         * Constructor that takes a Path to read from.
+         *
+         * @param path the Path to read from.
+         * @throws IOException if an I/O error occurs while creating the input stream
+         */
         public GzipDecompressorBuilder(Path path) throws IOException {
             this(newInputStream(path));
         }
 
+        /**
+         * Constructor that takes a File to read from.
+         *
+         * @param file the File to read from.
+         * @throws IOException if an I/O error occurs while creating the input stream
+         */
         public GzipDecompressorBuilder(File file) throws IOException {
             this(file.toPath());
         }
 
+        /**
+         * Constructor that takes a GzipCompressorInputStream.
+         *
+         * @return a new GzipDecompressorBuilder
+         */
         public GzipDecompressorInputStreamBuilder inputStreamBuilder() {
             return inputStreamBuilder;
         }

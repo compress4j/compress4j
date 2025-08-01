@@ -34,6 +34,7 @@ public class TarBZip2ArchiveExtractor extends BaseTarArchiveExtractor {
      *
      * @param tarArchiveInputStream the input Tar Archive Input Stream
      */
+    @SuppressWarnings("unused")
     public TarBZip2ArchiveExtractor(TarArchiveInputStream tarArchiveInputStream) {
         super(tarArchiveInputStream);
     }
@@ -69,6 +70,7 @@ public class TarBZip2ArchiveExtractor extends BaseTarArchiveExtractor {
         return new TarBZip2ArchiveExtractorBuilder(inputStream);
     }
 
+    /** Builder for creating instances of {@link TarBZip2ArchiveExtractor}. */
     public static class TarBZip2ArchiveExtractorBuilder
             extends BaseTarArchiveExtractorBuilder<TarBZip2ArchiveExtractorBuilder, TarBZip2ArchiveExtractor> {
 

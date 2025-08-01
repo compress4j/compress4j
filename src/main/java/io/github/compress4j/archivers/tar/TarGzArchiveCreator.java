@@ -69,6 +69,11 @@ public class TarGzArchiveCreator extends BaseTarArchiveCreator {
         return new TarGzArchiveCreatorBuilder(outputStream);
     }
 
+    /**
+     * Builder for creating a {@link TarGzArchiveCreator}.
+     *
+     * @since 2.2
+     */
     public static class TarGzArchiveCreatorBuilder
             extends BaseTarArchiveCreatorBuilder<TarGzArchiveCreatorBuilder, TarGzArchiveCreator> {
 
@@ -108,6 +113,11 @@ public class TarGzArchiveCreator extends BaseTarArchiveCreator {
             return super.buildTarArchiveOutputStream(compressorOutputStreamBuilder.build());
         }
 
+        /**
+         * Returns the Gzip compressor output stream builder.
+         *
+         * @return the Gzip compressor output stream builder
+         */
         public GzipCompressor.GzipCompressorOutputStreamBuilder<TarGzArchiveCreatorBuilder>
                 compressorOutputStreamBuilder() {
             return compressorOutputStreamBuilder;
