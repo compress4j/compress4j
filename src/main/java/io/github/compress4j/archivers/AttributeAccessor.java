@@ -61,20 +61,15 @@ abstract class AttributeAccessor<E extends ArchiveEntry> {
      */
     @SuppressWarnings("unchecked")
     public static <A extends ArchiveEntry, T extends AttributeAccessor<A>> T create(A entry) {
-        if (entry instanceof ArArchiveEntry) {
-            ArArchiveEntry arArchiveEntry = (ArArchiveEntry) entry;
+        if (entry instanceof ArArchiveEntry arArchiveEntry) {
             return (T) new ArAttributeAccessor(arArchiveEntry);
-        } else if (entry instanceof ArjArchiveEntry) {
-            ArjArchiveEntry arjArchiveEntry = (ArjArchiveEntry) entry;
+        } else if (entry instanceof ArjArchiveEntry arjArchiveEntry) {
             return (T) new ArjAttributeAccessor(arjArchiveEntry);
-        } else if (entry instanceof CpioArchiveEntry) {
-            CpioArchiveEntry cpioArchiveEntry = (CpioArchiveEntry) entry;
+        } else if (entry instanceof CpioArchiveEntry cpioArchiveEntry) {
             return (T) new CpioAttributeAccessor(cpioArchiveEntry);
-        } else if (entry instanceof TarArchiveEntry) {
-            TarArchiveEntry tarArchiveEntry = (TarArchiveEntry) entry;
+        } else if (entry instanceof TarArchiveEntry tarArchiveEntry) {
             return (T) new TarAttributeAccessor(tarArchiveEntry);
-        } else if (entry instanceof ZipArchiveEntry) {
-            ZipArchiveEntry zipArchiveEntry = (ZipArchiveEntry) entry;
+        } else if (entry instanceof ZipArchiveEntry zipArchiveEntry) {
             return (T) new ZipAttributeAccessor(zipArchiveEntry);
         }
 

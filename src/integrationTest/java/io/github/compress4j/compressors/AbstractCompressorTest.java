@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
@@ -76,7 +77,7 @@ public abstract class AbstractCompressorTest {
 
         boolean setReadable = nonReadableSourceFile.setReadable(false, false); // false for ownerOnly
 
-        org.assertj.core.api.Assertions.assertThat(setReadable).isTrue();
+        Assertions.assertThat(setReadable).isTrue();
         assertThatIOExceptionIsThrown(targetFilePath, nonReadableSourceFile);
     }
 
@@ -89,8 +90,8 @@ public abstract class AbstractCompressorTest {
         boolean makeDirectory = nonReadableDir.mkdir();
         boolean nonReadable = nonReadableDir.setReadable(false);
 
-        org.assertj.core.api.Assertions.assertThat(makeDirectory).isTrue();
-        org.assertj.core.api.Assertions.assertThat(nonReadable).isTrue();
+        Assertions.assertThat(makeDirectory).isTrue();
+        Assertions.assertThat(nonReadable).isTrue();
         assertThatIOExceptionIsThrown(targetFilePath, nonReadableDir);
     }
 
@@ -103,8 +104,8 @@ public abstract class AbstractCompressorTest {
         boolean makeDirectory = nonWritableDir.mkdir();
         boolean nonWritable = nonWritableDir.setWritable(false);
 
-        org.assertj.core.api.Assertions.assertThat(makeDirectory).isTrue();
-        org.assertj.core.api.Assertions.assertThat(nonWritable).isTrue();
+        Assertions.assertThat(makeDirectory).isTrue();
+        Assertions.assertThat(nonWritable).isTrue();
         assertThatIOExceptionIsThrown(targetFilePath, nonWritableDir);
     }
 
@@ -116,7 +117,7 @@ public abstract class AbstractCompressorTest {
                 createFile(tempDir, "TargetFile.txt", "nonReadable").toFile();
 
         boolean nonReadable = nonReadableTargetFile.setReadable(false);
-        org.assertj.core.api.Assertions.assertThat(nonReadable).isTrue();
+        Assertions.assertThat(nonReadable).isTrue();
 
         Path nonReadableTargetPath = nonReadableTargetFile.toPath();
 
@@ -130,7 +131,7 @@ public abstract class AbstractCompressorTest {
                 createFile(tempDir, "TargetFile.txt", "nonReadable").toFile();
 
         boolean nonWritable = nonWritableSourceFile.setWritable(false, false);
-        org.assertj.core.api.Assertions.assertThat(nonWritable).isTrue();
+        Assertions.assertThat(nonWritable).isTrue();
 
         Path nonWritableTargetPath = nonWritableSourceFile.toPath();
 
