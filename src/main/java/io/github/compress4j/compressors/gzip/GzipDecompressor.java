@@ -107,7 +107,10 @@ public class GzipDecompressor extends Decompressor<GzipCompressorInputStream> {
          * @throws IOException if an I/O error occurs while creating the stream
          */
         public GzipCompressorInputStream buildInputStream() throws IOException {
-            return new GzipCompressorInputStream(inputStream, decompressConcatenated);
+            return GzipCompressorInputStream.builder()
+                    .setInputStream(inputStream)
+                    .setDecompressConcatenated(decompressConcatenated)
+                    .get();
         }
 
         /**

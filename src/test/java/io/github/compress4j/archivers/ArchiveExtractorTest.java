@@ -72,7 +72,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -1644,6 +1643,6 @@ class ArchiveExtractorTest {
         String canonicalPath = Paths.get(workingDir.toString(), path).toFile().getCanonicalPath();
         return Arrays.stream(canonicalPath.replace(File.separatorChar, '/').split("/"))
                 .filter(s -> !s.isEmpty())
-                .collect(Collectors.toList());
+                .toList();
     }
 }

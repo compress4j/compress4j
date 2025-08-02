@@ -22,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
@@ -67,23 +68,22 @@ public abstract class AbstractDecompressorTest {
 
     @DisabledOnOs(OS.WINDOWS)
     @Test
-    void whenSourceFileNonReadableShouldThrowExepction() throws IOException {
+    void whenSourceFileNonReadableShouldThrowException() throws IOException {
         var originalUncompressedFile = createFile(tempDir, "dummy_original_non_readable_source.txt", "dummy content");
         Path compressedSourceFile = tempDir.resolve("non_readable_source.compressed");
         apacheCompressor(originalUncompressedFile, compressedSourceFile);
 
         File nonReadableCompressedSourceFile = compressedSourceFile.toFile();
         boolean setReadable = nonReadableCompressedSourceFile.setReadable(false, false); // false for ownerOnly
-        org.assertj.core.api.Assertions.assertThat(setReadable).isTrue();
+        Assertions.assertThat(setReadable).isTrue();
 
-        var targetFilePath = tempDir.resolve("decompressedActual.txt");
-
-        assertThatIOexpectionIsThrown(compressedSourceFile, targetFilePath.toFile());
+        //noinspection resource
+        assertThatThrownBy(() -> decompressorBuilder(compressedSourceFile)).isInstanceOf(IOException.class);
     }
 
     @DisabledOnOs(OS.WINDOWS)
     @Test
-    void whenSourceFileInNonReadableDirShouldThrowExepction() throws IOException {
+    void whenSourceFileInNonReadableDirShouldThrowException() throws IOException {
         var originalUncompressedFile = createFile(tempDir, "dummy_original_target_non_readable.txt", "dummy content");
         Path compressedSourceFile = tempDir.resolve("source_for_non_readable_target.compressed");
         apacheCompressor(originalUncompressedFile, compressedSourceFile);
@@ -91,15 +91,11 @@ public abstract class AbstractDecompressorTest {
         Path nonReadableTargetFile = createFile(tempDir, "nonReadableTarget.txt", "existing content");
         File nonReadableTargetFileAsFile = nonReadableTargetFile.toFile();
         boolean setReadable = nonReadableTargetFileAsFile.setReadable(false, false);
-        org.assertj.core.api.Assertions.assertThat(setReadable).isTrue();
+        Assertions.assertThat(setReadable).isTrue();
 
-        assertThatIOexpectionIsThrown(compressedSourceFile, nonReadableTargetFile.toFile());
-    }
-
-    private void assertThatIOexpectionIsThrown(Path targetPath, File sourcePath) {
-        assertThatThrownBy(() -> {
-                    decompressorBuilder(targetPath).write(sourcePath);
-                })
-                .isInstanceOf(IOException.class);
+        try (Decompressor<?> decompressor = decompressorBuilder(compressedSourceFile)) {
+            assertThatThrownBy(() -> decompressor.write(nonReadableTargetFile.toFile()))
+                    .isInstanceOf(IOException.class);
+        }
     }
 }

@@ -48,7 +48,7 @@ tasks.withType<Javadoc> {
     (options as StandardJavadocDocletOptions).addStringOption("Xdoclint:all")
 }
 
-val mockitoAgent = configurations.create("mockitoAgent")
+val mockitoAgent: Configuration = configurations.create("mockitoAgent")
 
 sourceSets {
     create("examples") {
