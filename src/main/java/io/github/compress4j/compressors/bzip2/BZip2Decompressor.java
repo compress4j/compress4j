@@ -168,7 +168,7 @@ public class BZip2Decompressor extends Decompressor<BZip2CompressorInputStream> 
          *
          * @return the BZip2DecompressorInputStreamBuilder instance
          */
-        public BZip2DecompressorInputStreamBuilder<BZip2DecompressorBuilder> inputStreamBuilder() {
+        public BZip2DecompressorInputStreamBuilder<BZip2DecompressorBuilder> compressorInputStreamBuilder() {
             return inputStreamBuilder;
         }
 

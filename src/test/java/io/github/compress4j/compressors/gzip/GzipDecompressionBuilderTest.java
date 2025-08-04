@@ -15,6 +15,7 @@
  */
 package io.github.compress4j.compressors.gzip;
 
+import static io.github.compress4j.test.util.GzipHelper.createGzipInputStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doReturn;
@@ -23,18 +24,25 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 
 import io.github.compress4j.compressors.gzip.GzipDecompressor.GzipDecompressorBuilder;
+import io.github.compress4j.compressors.gzip.GzipDecompressor.GzipDecompressorInputStreamBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.io.function.IOConsumer;
+import org.assertj.core.api.ObjectAssert;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
 
 class GzipDecompressionBuilderTest {
+
+    private static final IOConsumer<GzipCompressorInputStream> NO_OP_CONSUMER = inputStream -> {
+        // No operation consumer for testing purposes
+    };
 
     @Mock
     private GzipCompressorInputStream mockGzipCompressorInputStream;
@@ -104,8 +112,8 @@ class GzipDecompressionBuilderTest {
         // given
         GzipDecompressorBuilder parentBuilder = new GzipDecompressorBuilder(mockRawInputStream);
 
-        GzipDecompressor.GzipDecompressorInputStreamBuilder compressorInputStreamBuilder =
-                spy(new GzipDecompressor.GzipDecompressorInputStreamBuilder(parentBuilder, mockRawInputStream));
+        GzipDecompressorInputStreamBuilder compressorInputStreamBuilder =
+                spy(new GzipDecompressorInputStreamBuilder(parentBuilder, mockRawInputStream));
         //noinspection resource
         doReturn(mock(GzipCompressorInputStream.class))
                 .when(compressorInputStreamBuilder)
@@ -119,32 +127,25 @@ class GzipDecompressionBuilderTest {
     }
 
     @Test
-    void shouldBuildInputStreamWithDecompressConcatTrue()
-            throws IOException, NoSuchFieldException, IllegalAccessException {
+    void shouldBuildInputStreamWithParameters() throws IOException {
         // given
-        GzipDecompressorBuilder parentBuilder = new GzipDecompressorBuilder(mockRawInputStream);
-
-        GzipDecompressor.GzipDecompressorInputStreamBuilder compressorInputStreamBuilder =
-                spy(parentBuilder.inputStreamBuilder());
-
-        //noinspection resource
-        doReturn(mock(GzipCompressorInputStream.class))
-                .when(compressorInputStreamBuilder)
-                .buildInputStream();
-        compressorInputStreamBuilder.setDecompressConcatenated(true);
-
-        Field decompressConcatenatedField =
-                GzipDecompressor.GzipDecompressorInputStreamBuilder.class.getDeclaredField("decompressConcatenated");
-        decompressConcatenatedField.setAccessible(true);
-
-        boolean decompressConcatenatedValue = (boolean) decompressConcatenatedField.get(compressorInputStreamBuilder);
-
-        assertThat(decompressConcatenatedValue).isTrue();
+        var inputStream = createGzipInputStream("test content");
+        var builder = GzipDecompressor.builder(inputStream)
+                .compressorInputStreamBuilder()
+                .setFileNameCharset(StandardCharsets.UTF_8)
+                .setDecompressConcatenated(true)
+                .setOnMemberStart(NO_OP_CONSUMER)
+                .setOnMemberEnd(NO_OP_CONSUMER)
+                .parentBuilder();
 
         // when
-        try (GzipCompressorInputStream buildCompressorInputStream = compressorInputStreamBuilder.buildInputStream()) {
+        try (GzipCompressorInputStream in = builder.buildCompressorInputStream()) {
+
             // then
-            assertThat(buildCompressorInputStream).isInstanceOf(GzipCompressorInputStream.class);
+            ObjectAssert<GzipCompressorInputStream> streamAssert = new ObjectAssert<>(in);
+            streamAssert
+                    .extracting("fileNameCharset", "decompressConcatenated", "onMemberStart", "onMemberEnd")
+                    .containsExactly(StandardCharsets.UTF_8, true, NO_OP_CONSUMER, NO_OP_CONSUMER);
         }
     }
 }
