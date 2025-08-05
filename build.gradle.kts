@@ -32,7 +32,7 @@ repositories {
     mavenCentral()
 }
 
-val examples: SourceSet by sourceSets.creating {
+sourceSets.creating {
     java.srcDir(file("docs/modules/ROOT/examples/java"))
     resources.srcDir(file("docs/modules/ROOT/examples/resources"))
 }
@@ -43,10 +43,6 @@ java {
     }
     withJavadocJar()
     withSourcesJar()
-    registerFeature("examples") { usingSourceSet(examples)
-        withJavadocJar()
-        withSourcesJar()
-    }
 }
 
 val examplesImplementation: Configuration by configurations
@@ -176,15 +172,6 @@ tasks.check {
     dependsOn(tasks.buildHealth, tasks.testCodeCoverageReport)
 }
 
-tasks.withType<JavaCompile> {
-    options.encoding = "UTF-8"
-}
-
-tasks.withType<Javadoc> {
-    options.encoding = "UTF-8"
-    (options as StandardJavadocDocletOptions).addStringOption("Xdoclint:all")
-}
-
 sonar {
     properties {
         property("sonar.projectKey", "compress4j_compress4j")
@@ -251,10 +238,6 @@ publishing {
     publications {
         create<MavenPublication>("maven") {
             from(components["java"])
-            suppressPomMetadataWarningsFor("examplesApiElements")
-            suppressPomMetadataWarningsFor("examplesJavadocElements")
-            suppressPomMetadataWarningsFor("examplesRuntimeElements")
-            suppressPomMetadataWarningsFor("examplesSourcesElements")
             suppressPomMetadataWarningsFor("testFixturesApiElements")
             suppressPomMetadataWarningsFor("testFixturesRuntimeElements")
             pom {
