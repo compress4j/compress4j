@@ -51,9 +51,9 @@ val mockitoAgent: Configuration = configurations.create("mockitoAgent")
 
 dependencies {
     api(libs.commons.compress)
+    api(libs.commons.io)
     api(libs.jakarta.annotation.api)
 
-    implementation(libs.commons.io)
     implementation(libs.commons.lang3)
     implementation(libs.slf4j.api)
 
