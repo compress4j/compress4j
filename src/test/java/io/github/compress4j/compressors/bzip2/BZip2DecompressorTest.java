@@ -15,11 +15,11 @@
  */
 package io.github.compress4j.compressors.bzip2;
 
+import static io.github.compress4j.test.util.BZip2Helper.createBZip2InputStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -58,7 +58,7 @@ class BZip2DecompressorTest {
     @DisplayName("Should construct BZip2Decompressor with a BZip2DecompressorBuilder")
     void constructor_WithBuilder_SetsField() throws IOException {
         // given
-        BZip2DecompressorBuilder mockBuilder = mock(BZip2DecompressorBuilder.class);
+        BZip2DecompressorBuilder mockBuilder = new BZip2DecompressorBuilder(createBZip2InputStream("Test Data"));
 
         // when
         BZip2Decompressor decompressorFromBuilder = new BZip2Decompressor(mockBuilder);

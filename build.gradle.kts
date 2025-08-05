@@ -35,6 +35,8 @@ repositories {
 sourceSets.creating {
     java.srcDir(file("docs/modules/ROOT/examples/java"))
     resources.srcDir(file("docs/modules/ROOT/examples/resources"))
+    compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
+    runtimeClasspath += sourceSets.main.get().output + sourceSets.main.get().runtimeClasspath
 }
 
 java {
@@ -45,14 +47,13 @@ java {
     withSourcesJar()
 }
 
-val examplesImplementation: Configuration by configurations
 val mockitoAgent: Configuration = configurations.create("mockitoAgent")
 
 dependencies {
     api(libs.commons.compress)
+    api(libs.commons.io)
     api(libs.jakarta.annotation.api)
 
-    implementation(libs.commons.io)
     implementation(libs.commons.lang3)
     implementation(libs.slf4j.api)
 
@@ -69,9 +70,7 @@ dependencies {
     testFixturesImplementation(libs.jackson.annotations)
     testFixturesImplementation(libs.jackson.databind)
     testFixturesImplementation(libs.mockito.core)
-
-    examplesImplementation(project(path))
-
+    
     mockitoAgent(libs.mockito.core) { isTransitive = false }
 }
 

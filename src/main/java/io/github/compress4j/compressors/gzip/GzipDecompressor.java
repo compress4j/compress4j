@@ -21,9 +21,13 @@ import io.github.compress4j.compressors.Decompressor;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipParameters;
+import org.apache.commons.io.function.IOConsumer;
 
 /**
  * This class provides a GZip decompressor that reads from a GzipCompressorInputStream. It extends the Decompressor
@@ -64,10 +68,10 @@ public class GzipDecompressor extends Decompressor<GzipCompressorInputStream> {
     /**
      * Creates a GzipDecompressorBuilder using the provided File.
      *
-     * @param inputStream GzipCompressorInputStream
+     * @param inputStream InputStream
      * @return a new GzipDecompressorBuilder
      */
-    public static GzipDecompressorBuilder builder(GzipCompressorInputStream inputStream) {
+    public static GzipDecompressorBuilder builder(InputStream inputStream) {
         return new GzipDecompressorBuilder(inputStream);
     }
 
@@ -75,7 +79,15 @@ public class GzipDecompressor extends Decompressor<GzipCompressorInputStream> {
     public static class GzipDecompressorInputStreamBuilder {
         private final GzipDecompressorBuilder parent;
         private final InputStream inputStream;
-        private boolean decompressConcatenated = false;
+
+        /** True if decompressing multi-member streams. */
+        private boolean decompressConcatenated;
+
+        private Charset fileNameCharset = StandardCharsets.ISO_8859_1;
+
+        private IOConsumer<GzipCompressorInputStream> onMemberStart;
+
+        private IOConsumer<GzipCompressorInputStream> onMemberEnd;
 
         /**
          * Constructor that takes a parent GzipDecompressorBuilder and an InputStream.
@@ -92,11 +104,67 @@ public class GzipDecompressor extends Decompressor<GzipCompressorInputStream> {
          * Sets whether to decompress concatenated GZIP streams.
          *
          * @param decompressConcatenated true if concatenated streams should be decompressed, false otherwise
-         * @return this builder instance for method chaining
+         * @return this instance
          */
-        @SuppressWarnings("UnusedReturnValue")
         public GzipDecompressorInputStreamBuilder setDecompressConcatenated(boolean decompressConcatenated) {
             this.decompressConcatenated = decompressConcatenated;
+            return this;
+        }
+
+        /**
+         * Sets the Charset to use for writing file names and comments, where null maps to
+         * {@link StandardCharsets#ISO_8859_1}.
+         *
+         * <p><em>Setting a value other than {@link StandardCharsets#ISO_8859_1} is not compliant with the <a
+         * href="https://datatracker.ietf.org/doc/html/rfc1952">RFC 1952 GZIP File Format Specification</a></em>. Use at
+         * your own risk of interoperability issues.
+         *
+         * <p>The default value is {@link StandardCharsets#ISO_8859_1}.
+         *
+         * @param fileNameCharset the Charset to use for writing file names and comments, null maps to
+         *     {@link StandardCharsets#ISO_8859_1}.
+         * @return this instance.
+         */
+        public GzipDecompressorInputStreamBuilder setFileNameCharset(final Charset fileNameCharset) {
+            this.fileNameCharset = fileNameCharset;
+            return this;
+        }
+
+        /**
+         * Sets the consumer called when a member <em>trailer</em> is parsed.
+         *
+         * <p>When a member <em>header</em> is parsed, all {@link GzipParameters} values are initialized except
+         * {@code trailerCrc} and {@code trailerISize}.
+         *
+         * <p>When a member <em>trailer</em> is parsed, the {@link GzipParameters} values {@code trailerCrc} and
+         * {@code trailerISize} are set.
+         *
+         * @param onMemberEnd The consumer.
+         * @return this instance.
+         * @see GzipCompressorInputStream#getMetaData()
+         */
+        public GzipDecompressorInputStreamBuilder setOnMemberEnd(
+                final IOConsumer<GzipCompressorInputStream> onMemberEnd) {
+            this.onMemberEnd = onMemberEnd;
+            return this;
+        }
+
+        /**
+         * Sets the consumer called when a member <em>header</em> is parsed.
+         *
+         * <p>When a member <em>header</em> is parsed, all {@link GzipParameters} values are initialized except
+         * {@code trailerCrc} and {@code trailerISize}.
+         *
+         * <p>When a member <em>trailer</em> is parsed, the {@link GzipParameters} values {@code trailerCrc} and
+         * {@code trailerISize} are set.
+         *
+         * @param onMemberStart The consumer.
+         * @return this instance.
+         * @see GzipCompressorInputStream#getMetaData()
+         */
+        public GzipDecompressorInputStreamBuilder setOnMemberStart(
+                final IOConsumer<GzipCompressorInputStream> onMemberStart) {
+            this.onMemberStart = onMemberStart;
             return this;
         }
 
@@ -110,6 +178,9 @@ public class GzipDecompressor extends Decompressor<GzipCompressorInputStream> {
             return GzipCompressorInputStream.builder()
                     .setInputStream(inputStream)
                     .setDecompressConcatenated(decompressConcatenated)
+                    .setFileNameCharset(fileNameCharset)
+                    .setOnMemberStart(onMemberStart)
+                    .setOnMemberEnd(onMemberEnd)
                     .get();
         }
 
@@ -164,7 +235,7 @@ public class GzipDecompressor extends Decompressor<GzipCompressorInputStream> {
          *
          * @return a new GzipDecompressorBuilder
          */
-        public GzipDecompressorInputStreamBuilder inputStreamBuilder() {
+        public GzipDecompressorInputStreamBuilder compressorInputStreamBuilder() {
             return inputStreamBuilder;
         }
 

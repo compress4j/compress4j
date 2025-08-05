@@ -15,6 +15,7 @@
  */
 package io.github.compress4j.compressors.bzip2;
 
+import static io.github.compress4j.test.util.BZip2Helper.createBZip2InputStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.doReturn;
@@ -27,10 +28,10 @@ import io.github.compress4j.compressors.bzip2.BZip2Decompressor.BZip2Decompresso
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+import org.assertj.core.api.ObjectAssert;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -124,32 +125,20 @@ class BZip2DecompressorBuilderTest {
     }
 
     @Test
-    void shouldBuildInputStreamWithDecompressConcatTrue()
-            throws IOException, NoSuchFieldException, IllegalAccessException {
+    void shouldBuildInputStreamWithParameters() throws IOException {
         // given
-        BZip2DecompressorBuilder parentBuilder = new BZip2DecompressorBuilder(mockRawInputStream);
-
-        BZip2DecompressorInputStreamBuilder<BZip2DecompressorBuilder> compressorInputStreamBuilder =
-                spy(parentBuilder.inputStreamBuilder());
-
-        //noinspection resource
-        doReturn(mock(BZip2CompressorInputStream.class))
-                .when(compressorInputStreamBuilder)
-                .buildInputStream();
-        compressorInputStreamBuilder.setDecompressConcatenated(true);
-
-        Field decompressConcatenatedField =
-                BZip2DecompressorInputStreamBuilder.class.getDeclaredField("decompressConcatenated");
-        decompressConcatenatedField.setAccessible(true);
-
-        boolean decompressConcatenatedValue = (boolean) decompressConcatenatedField.get(compressorInputStreamBuilder);
-
-        assertThat(decompressConcatenatedValue).isTrue();
+        var inputStream = createBZip2InputStream("test content");
+        var builder = BZip2Decompressor.builder(inputStream)
+                .compressorInputStreamBuilder()
+                .setDecompressConcatenated(true)
+                .parentBuilder();
 
         // when
-        try (BZip2CompressorInputStream buildCompressorInputStream = compressorInputStreamBuilder.buildInputStream()) {
+        try (BZip2CompressorInputStream in = builder.buildCompressorInputStream()) {
+
             // then
-            assertThat(buildCompressorInputStream).isInstanceOf(BZip2CompressorInputStream.class);
+            ObjectAssert<BZip2CompressorInputStream> streamAssert = new ObjectAssert<>(in);
+            streamAssert.extracting("decompressConcatenated").isEqualTo(true);
         }
     }
 }

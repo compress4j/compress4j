@@ -15,15 +15,16 @@
  */
 package io.github.compress4j.compressors.gzip;
 
+import static io.github.compress4j.test.util.GzipHelper.createGzipInputStream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import io.github.compress4j.compressors.gzip.GzipDecompressor.GzipDecompressorBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,13 +41,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class GzipDecompressorTest {
+    @TempDir
+    Path tempDir;
+
     @Mock
     private GzipCompressorInputStream mockedGzipCompressorInputStream;
 
     private GzipDecompressor gZipDecompressor;
-
-    @TempDir
-    Path tempDir;
 
     @BeforeEach
     void setUp() {
@@ -56,32 +57,15 @@ class GzipDecompressorTest {
     @Test
     @DisplayName("Should construct a Gzip decompressor using Builder")
     void shouldConstructGzipDecompressorUsingBuilder() throws IOException {
+        // given
+        InputStream inputStream = createGzipInputStream("Test Gzip Content");
 
-        InputStream mockRawInputStream = mock(InputStream.class);
+        GzipDecompressorBuilder decompressorBuilder = new GzipDecompressorBuilder(inputStream);
 
-        when(mockRawInputStream.markSupported()).thenReturn(true);
+        // when
+        GzipDecompressor decompressorFromBuilder = new GzipDecompressor(decompressorBuilder);
 
-        // Stub the sequence of bytes that GzipCompressorInputStream's constructor expects
-        // for a valid GZIP header (RFC 1952). This includes 10 bytes:
-        // ID1, ID2, CM, FLG, MTIME(4 bytes), XFL, OS.
-        when(mockRawInputStream.read())
-                .thenReturn(31) // GZIP ID1 (0x1f)
-                .thenReturn(139) // GZIP ID2 (0x8b)
-                .thenReturn(8) // Compression Method (8 = Deflate)
-                .thenReturn(0) // Flags (0 means no optional header fields)
-                .thenReturn(0) // MTIME byte 1
-                .thenReturn(0) // MTIME byte 2
-                .thenReturn(0) // MTIME byte 3
-                .thenReturn(0) // MTIME byte 4
-                .thenReturn(0) // Extra flags (XFL)
-                .thenReturn(0) // Operating System (OS)
-                .thenReturn(-1); // After the 10 header bytes, signify End Of File.
-
-        GzipDecompressor.GzipDecompressorBuilder mockBuilder =
-                new GzipDecompressor.GzipDecompressorBuilder(mockRawInputStream);
-
-        GzipDecompressor decompressorFromBuilder = new GzipDecompressor(mockBuilder);
-
+        // then
         assertThat(decompressorFromBuilder).isNotNull();
     }
 

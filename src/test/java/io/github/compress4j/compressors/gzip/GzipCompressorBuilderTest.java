@@ -74,8 +74,8 @@ class GzipCompressorBuilderTest {
     @Test
     void shouldNotAllowIncorrectBufferSize() {
         // given
-        var outputStream = mock(OutputStream.class);
-        var builder = GzipCompressor.builder(outputStream).compressorOutputStreamBuilder();
+        var mockOutputStream = mock(OutputStream.class);
+        var builder = GzipCompressor.builder(mockOutputStream).compressorOutputStreamBuilder();
 
         // when & then
         assertThatThrownBy(() -> builder.bufferSize(0))
