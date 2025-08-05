@@ -113,16 +113,16 @@ public class GzipDecompressor extends Decompressor<GzipCompressorInputStream> {
 
         /**
          * Sets the Charset to use for writing file names and comments, where null maps to
-         * {@link StandardCharsets.ISO_8859_1}.
+         * {@link StandardCharsets#ISO_8859_1}.
          *
-         * <p><em>Setting a value other than {@link StandardCharsets.ISO_8859_1} is not compliant with the <a
+         * <p><em>Setting a value other than {@link StandardCharsets#ISO_8859_1} is not compliant with the <a
          * href="https://datatracker.ietf.org/doc/html/rfc1952">RFC 1952 GZIP File Format Specification</a></em>. Use at
          * your own risk of interoperability issues.
          *
-         * <p>The default value is {@link StandardCharsets.ISO_8859_1}.
+         * <p>The default value is {@link StandardCharsets#ISO_8859_1}.
          *
          * @param fileNameCharset the Charset to use for writing file names and comments, null maps to
-         *     {@link StandardCharsets.ISO_8859_1}.
+         *     {@link StandardCharsets#ISO_8859_1}.
          * @return this instance.
          */
         public GzipDecompressorInputStreamBuilder setFileNameCharset(final Charset fileNameCharset) {
