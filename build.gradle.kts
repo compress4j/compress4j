@@ -1,6 +1,7 @@
 @file:Suppress("UnstableApiUsage")
 
 import com.diffplug.spotless.FormatterFunc
+import org.gradle.kotlin.dsl.invoke
 import org.jreleaser.model.Active
 import java.io.Serializable
 
@@ -31,38 +32,25 @@ repositories {
     mavenCentral()
 }
 
+val examples: SourceSet by sourceSets.creating {
+    java.srcDir(file("docs/modules/ROOT/examples/java"))
+    resources.srcDir(file("docs/modules/ROOT/examples/resources"))
+}
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
     }
     withJavadocJar()
     withSourcesJar()
-}
-
-tasks.withType<JavaCompile> {
-    options.encoding = "UTF-8"
-}
-
-tasks.withType<Javadoc> {
-    options.encoding = "UTF-8"
-    (options as StandardJavadocDocletOptions).addStringOption("Xdoclint:all")
-}
-
-val mockitoAgent: Configuration = configurations.create("mockitoAgent")
-
-sourceSets {
-    create("examples") {
-        java {
-            srcDir(file("docs/modules/ROOT/examples/java"))
-        }
-        resources {
-            srcDir(file("docs/modules/ROOT/examples/resources"))
-        }
-
-        compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
-        runtimeClasspath += sourceSets.main.get().output + sourceSets.main.get().runtimeClasspath
+    registerFeature("examples") { usingSourceSet(examples)
+        withJavadocJar()
+        withSourcesJar()
     }
 }
+
+val examplesImplementation: Configuration by configurations
+val mockitoAgent: Configuration = configurations.create("mockitoAgent")
 
 dependencies {
     api(libs.commons.compress)
@@ -85,6 +73,8 @@ dependencies {
     testFixturesImplementation(libs.jackson.annotations)
     testFixturesImplementation(libs.jackson.databind)
     testFixturesImplementation(libs.mockito.core)
+
+    examplesImplementation(project(path))
 
     mockitoAgent(libs.mockito.core) { isTransitive = false }
 }
@@ -163,7 +153,16 @@ dependencyAnalysis {
     }
 }
 
- tasks.testCodeCoverageReport {
+tasks.withType<JavaCompile> {
+    options.encoding = "UTF-8"
+}
+
+tasks.withType<Javadoc> {
+    options.encoding = "UTF-8"
+    (options as StandardJavadocDocletOptions).addStringOption("Xdoclint:all")
+}
+
+tasks.testCodeCoverageReport {
     dependsOn(tasks.test, integrationTest, e2eTest)
      executionData(fileTree(layout.buildDirectory).include("jacoco/*.exec"))
     reports {
@@ -175,6 +174,15 @@ dependencyAnalysis {
 
 tasks.check {
     dependsOn(tasks.buildHealth, tasks.testCodeCoverageReport)
+}
+
+tasks.withType<JavaCompile> {
+    options.encoding = "UTF-8"
+}
+
+tasks.withType<Javadoc> {
+    options.encoding = "UTF-8"
+    (options as StandardJavadocDocletOptions).addStringOption("Xdoclint:all")
 }
 
 sonar {
@@ -243,9 +251,12 @@ publishing {
     publications {
         create<MavenPublication>("maven") {
             from(components["java"])
-            val javaComponent = components["java"] as AdhocComponentWithVariants
-            javaComponent.withVariantsFromConfiguration(configurations["testFixturesApiElements"]) { skip() }
-            javaComponent.withVariantsFromConfiguration(configurations["testFixturesRuntimeElements"]) { skip() }
+            suppressPomMetadataWarningsFor("examplesApiElements")
+            suppressPomMetadataWarningsFor("examplesJavadocElements")
+            suppressPomMetadataWarningsFor("examplesRuntimeElements")
+            suppressPomMetadataWarningsFor("examplesSourcesElements")
+            suppressPomMetadataWarningsFor("testFixturesApiElements")
+            suppressPomMetadataWarningsFor("testFixturesRuntimeElements")
             pom {
                 name = project.name
                 description = project.description
