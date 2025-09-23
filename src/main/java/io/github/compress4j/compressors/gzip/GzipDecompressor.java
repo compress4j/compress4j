@@ -26,56 +26,61 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.apache.commons.compress.compressors.gzip.GzipParameters;
 import org.apache.commons.io.function.IOConsumer;
 
 /**
- * This class provides a GZip decompressor that reads from a GzipCompressorInputStream. It extends the Decompressor
- * class and provides a builder for creating instances.
+ * Provides Gzip decompression functionality that reads from a {@link GzipCompressorInputStream}.
+ * This class extends the {@link Decompressor} base class and supports decompressing Gzip-compressed data
+ * with configurable options for character encoding and header processing.
+ *
+ * <p>Use the builder pattern to configure decompression options such as character encoding
+ * before creating instances.
+ *
+ * @since 2.2
  */
 public class GzipDecompressor extends Decompressor<GzipCompressorInputStream> {
 
     /**
-     * Constructor that takes a GzipDecompressorBuilder.
+     * Constructs a GzipDecompressor using the provided {@link GzipDecompressorBuilder}.
      *
-     * @param builder the GzipDecompressorBuilder to build from.
-     * @throws IOException thrown by the underlying output stream for I/O errors
+     * @param builder the builder to configure the decompressor
+     * @throws IOException if an I/O error occurs during stream creation
      */
     public GzipDecompressor(GzipDecompressorBuilder builder) throws IOException {
         super(builder);
     }
 
     /**
-     * Constructor that takes a GzipCompressorInputStream.
+     * Constructs a GzipDecompressor with the given {@link GzipCompressorInputStream}.
      *
-     * @param compressorInputStream the GzipCompressorInputStream to read from.
+     * @param compressorInputStream the input stream to read compressed data from
      */
     public GzipDecompressor(GzipCompressorInputStream compressorInputStream) {
         super(compressorInputStream);
     }
 
     /**
-     * Creates a GzipDecompressorBuilder using the provided Path.
+     * Creates a new {@link GzipDecompressorBuilder} for the given file {@link Path}.
      *
-     * @param path the Path to read from
-     * @return a new GzipDecompressorBuilder
-     * @throws IOException if an I/O error occurs while creating the input stream
+     * @param path the file path to read compressed data from
+     * @return a new builder instance
+     * @throws IOException if an I/O error occurs opening the file
      */
     public static GzipDecompressorBuilder builder(Path path) throws IOException {
         return new GzipDecompressorBuilder(Files.newInputStream(path));
     }
 
     /**
-     * Creates a GzipDecompressorBuilder using the provided File.
+     * Creates a new {@link GzipDecompressorBuilder} for the given {@link InputStream}.
      *
-     * @param inputStream InputStream
-     * @return a new GzipDecompressorBuilder
+     * @param inputStream the input stream to read compressed data from
+     * @return a new builder instance
      */
     public static GzipDecompressorBuilder builder(InputStream inputStream) {
         return new GzipDecompressorBuilder(inputStream);
     }
 
-    /** GzipDecompressorInputStream Builder */
+    /** Builder for configuring and creating a {@link GzipCompressorInputStream}. */
     public static class GzipDecompressorInputStreamBuilder {
         private final GzipDecompressorBuilder parent;
         private final InputStream inputStream;
@@ -90,10 +95,10 @@ public class GzipDecompressor extends Decompressor<GzipCompressorInputStream> {
         private IOConsumer<GzipCompressorInputStream> onMemberEnd;
 
         /**
-         * Constructor that takes a parent GzipDecompressorBuilder and an InputStream.
+         * Constructs a builder for a Gzip input stream.
          *
-         * @param parent the parent GzipDecompressorBuilder
-         * @param inputStream the InputStream to read from
+         * @param parent the parent builder
+         * @param inputStream the input stream to read compressed data from
          */
         public GzipDecompressorInputStreamBuilder(GzipDecompressorBuilder parent, InputStream inputStream) {
             this.parent = parent;
@@ -104,7 +109,7 @@ public class GzipDecompressor extends Decompressor<GzipCompressorInputStream> {
          * Sets whether to decompress concatenated GZIP streams.
          *
          * @param decompressConcatenated true if concatenated streams should be decompressed, false otherwise
-         * @return this instance
+         * @return this builder instance
          */
         public GzipDecompressorInputStreamBuilder setDecompressConcatenated(boolean decompressConcatenated) {
             this.decompressConcatenated = decompressConcatenated;
@@ -112,8 +117,7 @@ public class GzipDecompressor extends Decompressor<GzipCompressorInputStream> {
         }
 
         /**
-         * Sets the Charset to use for writing file names and comments, where null maps to
-         * {@link StandardCharsets#ISO_8859_1}.
+         * Sets the Charset to use for file names and comments.
          *
          * <p><em>Setting a value other than {@link StandardCharsets#ISO_8859_1} is not compliant with the <a
          * href="https://datatracker.ietf.org/doc/html/rfc1952">RFC 1952 GZIP File Format Specification</a></em>. Use at
@@ -121,9 +125,8 @@ public class GzipDecompressor extends Decompressor<GzipCompressorInputStream> {
          *
          * <p>The default value is {@link StandardCharsets#ISO_8859_1}.
          *
-         * @param fileNameCharset the Charset to use for writing file names and comments, null maps to
-         *     {@link StandardCharsets#ISO_8859_1}.
-         * @return this instance.
+         * @param fileNameCharset the Charset to use, null maps to {@link StandardCharsets#ISO_8859_1}
+         * @return this builder instance
          */
         public GzipDecompressorInputStreamBuilder setFileNameCharset(final Charset fileNameCharset) {
             this.fileNameCharset = fileNameCharset;
@@ -131,16 +134,10 @@ public class GzipDecompressor extends Decompressor<GzipCompressorInputStream> {
         }
 
         /**
-         * Sets the consumer called when a member <em>trailer</em> is parsed.
+         * Sets the consumer called when a member trailer is parsed.
          *
-         * <p>When a member <em>header</em> is parsed, all {@link GzipParameters} values are initialized except
-         * {@code trailerCrc} and {@code trailerISize}.
-         *
-         * <p>When a member <em>trailer</em> is parsed, the {@link GzipParameters} values {@code trailerCrc} and
-         * {@code trailerISize} are set.
-         *
-         * @param onMemberEnd The consumer.
-         * @return this instance.
+         * @param onMemberEnd the consumer to call on member end
+         * @return this builder instance
          * @see GzipCompressorInputStream#getMetaData()
          */
         public GzipDecompressorInputStreamBuilder setOnMemberEnd(
@@ -150,16 +147,10 @@ public class GzipDecompressor extends Decompressor<GzipCompressorInputStream> {
         }
 
         /**
-         * Sets the consumer called when a member <em>header</em> is parsed.
+         * Sets the consumer called when a member header is parsed.
          *
-         * <p>When a member <em>header</em> is parsed, all {@link GzipParameters} values are initialized except
-         * {@code trailerCrc} and {@code trailerISize}.
-         *
-         * <p>When a member <em>trailer</em> is parsed, the {@link GzipParameters} values {@code trailerCrc} and
-         * {@code trailerISize} are set.
-         *
-         * @param onMemberStart The consumer.
-         * @return this instance.
+         * @param onMemberStart the consumer to call on member start
+         * @return this builder instance
          * @see GzipCompressorInputStream#getMetaData()
          */
         public GzipDecompressorInputStreamBuilder setOnMemberStart(
@@ -169,10 +160,10 @@ public class GzipDecompressor extends Decompressor<GzipCompressorInputStream> {
         }
 
         /**
-         * Builds a GzipCompressorInputStream using the provided InputStream and options.
+         * Builds and returns a {@link GzipCompressorInputStream} with the current configuration.
          *
-         * @return a new GzipCompressorInputStream
-         * @throws IOException if an I/O error occurs while creating the stream
+         * @return a configured GzipCompressorInputStream
+         * @throws IOException if an I/O error occurs during stream creation
          */
         public GzipCompressorInputStream buildInputStream() throws IOException {
             return GzipCompressorInputStream.builder()
@@ -185,25 +176,29 @@ public class GzipDecompressor extends Decompressor<GzipCompressorInputStream> {
         }
 
         /**
-         * Builds the GzipDecompressor using the parent builder.
+         * Returns the parent builder for further configuration.
          *
-         * @return the parent GzipDecompressorBuilder
+         * @return the parent builder
          */
         public GzipDecompressorBuilder parentBuilder() {
             return parent;
         }
     }
 
-    /** Builder for creating instances of GzipDecompressor. */
+    /**
+     * Builder for configuring and creating a {@link GzipDecompressor}.
+     *
+     * @since 2.2
+     */
     public static class GzipDecompressorBuilder
             extends Decompressor.DecompressorBuilder<
                     GzipCompressorInputStream, GzipDecompressor, GzipDecompressorBuilder> {
 
         private final GzipDecompressorInputStreamBuilder inputStreamBuilder;
         /**
-         * Constructor that takes a GzipCompressorInputStream.
+         * Constructor that takes a {@link GzipCompressorInputStream}.
          *
-         * @param inputStream the GzipCompressorInputStream to read from.
+         * @param inputStream the {@link GzipCompressorInputStream} to read from.
          */
         public GzipDecompressorBuilder(InputStream inputStream) {
             super(inputStream);
@@ -231,24 +226,41 @@ public class GzipDecompressor extends Decompressor<GzipCompressorInputStream> {
         }
 
         /**
-         * Constructor that takes a GzipCompressorInputStream.
+         * Returns the input stream builder for further configuration.
          *
-         * @return a new GzipDecompressorBuilder
+         * @return the input stream builder
          */
         public GzipDecompressorInputStreamBuilder compressorInputStreamBuilder() {
             return inputStreamBuilder;
         }
 
+        /**
+         * Builds and returns a configured {@link GzipCompressorInputStream}.
+         *
+         * @return a configured GzipCompressorInputStream
+         * @throws IOException if an I/O error occurs during stream creation
+         */
         @Override
         public GzipCompressorInputStream buildCompressorInputStream() throws IOException {
             return inputStreamBuilder.buildInputStream();
         }
 
+        /**
+         * Returns this builder instance.
+         *
+         * @return this builder
+         */
         @Override
         protected GzipDecompressorBuilder getThis() {
             return this;
         }
 
+        /**
+         * Builds and returns a configured {@link GzipDecompressor}.
+         *
+         * @return a configured GzipDecompressor
+         * @throws IOException if an I/O error occurs during stream creation
+         */
         @Override
         public GzipDecompressor build() throws IOException {
 

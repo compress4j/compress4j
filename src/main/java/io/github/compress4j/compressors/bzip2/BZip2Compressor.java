@@ -25,8 +25,15 @@ import java.nio.file.Path;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 
 /**
- * This class provides a BZip2 compressor that writes to a BZip2CompressorOutputStream. It extends the Compressor class
- * and provides a builder for creating instances.
+ * Provides BZip2 compression functionality that writes to a {@link BZip2CompressorOutputStream}.
+ * This class extends the {@link Compressor} base class and supports configurable block sizes
+ * for optimal compression performance.
+ *
+ * <p>Use the builder pattern to configure compression options such as block size before creating instances.
+ * Block size affects both compression ratio and memory usage - larger blocks typically provide
+ * better compression but use more memory.
+ *
+ * @since 2.2
  */
 public class BZip2Compressor extends Compressor<BZip2CompressorOutputStream> {
     /**
