@@ -25,55 +25,55 @@ import org.apache.commons.compress.compressors.deflate.DeflateCompressorOutputSt
 import org.apache.commons.compress.compressors.deflate.DeflateParameters;
 
 /**
- * This class provides a Deflate compressor that writes to a DeflateCompressorOutputStream. It extends the Compressor
- * class and provides a builder for creating instances.
+ * Provides a Deflate compressor that writes to a {@link DeflateCompressorOutputStream}. Use the builder pattern to
+ * configure and create instances.
  *
  * @since 2.2
  */
 public class DeflateCompressor extends Compressor<DeflateCompressorOutputStream> {
 
     /**
-     * Constructor that initializes the DeflateCompressor with a DeflateCompressorOutputStream.
+     * Constructs a DeflateCompressor with the given {@link DeflateCompressorOutputStream}.
      *
-     * @param compressorOutputStream the DeflateCompressorOutputStream to write compressed data to
+     * @param compressorOutputStream the output stream to write compressed data to
      */
     public DeflateCompressor(DeflateCompressorOutputStream compressorOutputStream) {
         super(compressorOutputStream);
     }
 
     /**
-     * Constructor that initializes the DeflateCompressor with a DeflateCompressorBuilder.
+     * Constructs a DeflateCompressor using the provided {@link DeflateCompressorBuilder}.
      *
-     * @param builder the DeflateCompressorBuilder to build from
-     * @throws IOException if an I/O error occurs while creating the compressor output stream
+     * @param builder the builder to configure the compressor
+     * @throws IOException if an I/O error occurs during stream creation
      */
     public DeflateCompressor(DeflateCompressorBuilder builder) throws IOException {
         super(builder);
     }
 
     /**
-     * Creates a DeflateDecompressorBuilder using the provided OutputStream.
+     * Creates a new {@link DeflateCompressorBuilder} for the given {@link OutputStream}.
      *
-     * @param compressorOutputStream the OutputStream to write compressed data to
-     * @return a new DeflateCompressorBuilder
+     * @param compressorOutputStream the output stream to write compressed data to
+     * @return a new builder instance
      */
     public static DeflateCompressorBuilder builder(OutputStream compressorOutputStream) {
         return new DeflateCompressorBuilder(compressorOutputStream);
     }
 
     /**
-     * Creates a DeflateCompressorBuilder using the provided Path.
+     * Creates a new {@link DeflateCompressorBuilder} for the given file {@link Path}.
      *
-     * @param path the Path to write compressed data to
-     * @return a new DeflateCompressorBuilder
-     * @throws IOException if an I/O error occurs while creating the output stream
+     * @param path the file path to write compressed data to
+     * @return a new builder instance
+     * @throws IOException if an I/O error occurs opening the file
      */
     public static DeflateCompressorBuilder builder(Path path) throws IOException {
         return new DeflateCompressorBuilder(path);
     }
 
     /**
-     * Builder for creating a {@link DeflateCompressorOutputStream}.
+     * Builder for configuring and creating a {@link DeflateCompressorOutputStream}.
      *
      * @param <P> the type of the parent builder
      * @since 2.2
@@ -85,10 +85,10 @@ public class DeflateCompressor extends Compressor<DeflateCompressorOutputStream>
         private int compressionLevel = Deflater.DEFAULT_COMPRESSION;
 
         /**
-         * Constructor that initializes the DeflateOutputStreamBuilder with a parent builder and an OutputStream.
+         * Constructs a builder for a Deflate output stream.
          *
-         * @param parent the parent builder instance
-         * @param outputStream the OutputStream to write compressed data to
+         * @param parent the parent builder
+         * @param outputStream the output stream to write compressed data to
          */
         public DeflateOutputStreamBuilder(P parent, OutputStream outputStream) {
             this.parent = parent;
@@ -99,8 +99,8 @@ public class DeflateCompressor extends Compressor<DeflateCompressorOutputStream>
          * Sets the compression level for the Deflate output stream.
          *
          * @param compressionLevel the desired compression level (0-9)
-         * @return this builder instance for method chaining
-         * @throws IllegalArgumentException if the compression level is not between 0 and 9
+         * @return this builder instance
+         * @throws IllegalArgumentException if the compression level is invalid
          */
         public DeflateOutputStreamBuilder<P> setCompressionLevel(DeflateCompressionLevel compressionLevel) {
             if (compressionLevel.getValue() < 0 || compressionLevel.getValue() > 9) {
@@ -114,7 +114,7 @@ public class DeflateCompressor extends Compressor<DeflateCompressorOutputStream>
          * Sets whether to include the Zlib header in the output stream.
          *
          * @param zlibHeader true to include the Zlib header, false otherwise
-         * @return this builder instance for method chaining
+         * @return this builder instance
          */
         public DeflateOutputStreamBuilder<P> setZlibHeader(boolean zlibHeader) {
             this.zlibHeader = zlibHeader;
@@ -122,9 +122,9 @@ public class DeflateCompressor extends Compressor<DeflateCompressorOutputStream>
         }
 
         /**
-         * Builds a {@link DeflateCompressorOutputStream} with the current configuration.
+         * Builds and returns a {@link DeflateCompressorOutputStream} with the current configuration.
          *
-         * @return a new DeflateCompressorOutputStream instance
+         * @return a configured DeflateCompressorOutputStream
          */
         public DeflateCompressorOutputStream buildOutputStream() {
             DeflateParameters deflateParameters = new DeflateParameters();
@@ -136,9 +136,9 @@ public class DeflateCompressor extends Compressor<DeflateCompressorOutputStream>
         }
 
         /**
-         * Returns the parent builder.
+         * Returns the parent builder for further configuration.
          *
-         * @return the parent builder instance
+         * @return the parent builder
          */
         public P parentBuilder() {
             return parent;
@@ -146,7 +146,7 @@ public class DeflateCompressor extends Compressor<DeflateCompressorOutputStream>
     }
 
     /**
-     * Builder for creating a {@link DeflateCompressor}.
+     * Builder for configuring and creating a {@link DeflateCompressor}.
      *
      * @since 2.2
      */
@@ -155,19 +155,19 @@ public class DeflateCompressor extends Compressor<DeflateCompressorOutputStream>
         private final DeflateOutputStreamBuilder<DeflateCompressorBuilder> compressorOutputStreamBuilder;
 
         /**
-         * Constructor that initializes the DeflateCompressorBuilder with an OutputStream.
+         * Constructs a builder for a DeflateCompressor using a file {@link Path}.
          *
-         * @param path the path to write compressed data to
-         * @throws IOException if an I/O error occurs while creating the output stream
+         * @param path the file path to write compressed data to
+         * @throws IOException if an I/O error occurs opening the file
          */
         public DeflateCompressorBuilder(Path path) throws IOException {
             this(Files.newOutputStream(path));
         }
 
         /**
-         * Constructor that initializes the DeflateCompressorBuilder with an OutputStream.
+         * Constructs a builder for a DeflateCompressor using an {@link OutputStream}.
          *
-         * @param outputStream the OutputStream to write compressed data to
+         * @param outputStream the output stream to write compressed data to
          */
         public DeflateCompressorBuilder(OutputStream outputStream) {
             super(outputStream);
@@ -175,18 +175,18 @@ public class DeflateCompressor extends Compressor<DeflateCompressorOutputStream>
         }
 
         /**
-         * Returns the DeflateOutputStreamBuilder associated with this compressor builder.
+         * Returns the output stream builder for further configuration.
          *
-         * @return the DeflateOutputStreamBuilder instance
+         * @return the output stream builder
          */
         public DeflateOutputStreamBuilder<DeflateCompressorBuilder> compressorOutputStreamBuilder() {
             return compressorOutputStreamBuilder;
         }
 
         /**
-         * Sets the compression level for the Deflate compressor.
+         * Returns this builder instance.
          *
-         * @return this builder instance for method chaining
+         * @return this builder
          */
         @Override
         protected DeflateCompressorBuilder getThis() {
@@ -194,10 +194,10 @@ public class DeflateCompressor extends Compressor<DeflateCompressorOutputStream>
         }
 
         /**
-         * Builds a {@link DeflateCompressorOutputStream} using the current configuration.
+         * Builds and returns a configured {@link DeflateCompressorOutputStream}.
          *
-         * @return a new DeflateCompressorOutputStream instance
-         * @throws IOException if an I/O error occurs while creating the compressor output stream
+         * @return a configured DeflateCompressorOutputStream
+         * @throws IOException if an I/O error occurs during stream creation
          */
         @Override
         public DeflateCompressorOutputStream buildCompressorOutputStream() throws IOException {
@@ -205,10 +205,10 @@ public class DeflateCompressor extends Compressor<DeflateCompressorOutputStream>
         }
 
         /**
-         * Builds a {@link DeflateCompressor} using the current configuration.
+         * Builds and returns a configured {@link DeflateCompressor}.
          *
-         * @return a new DeflateCompressor instance
-         * @throws IOException if an I/O error occurs while creating the compressor output stream
+         * @return a configured DeflateCompressor
+         * @throws IOException if an I/O error occurs during stream creation
          */
         @Override
         public DeflateCompressor build() throws IOException {

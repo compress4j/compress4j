@@ -25,55 +25,58 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipParameters;
 
 /**
- * This class provides a Gzip compressor that writes to a GzipCompressorOutputStream. It extends the Compressor class
- * and provides a builder for creating instances.
+ * Provides a Gzip compressor that writes to a {@link GzipCompressorOutputStream}. Use the builder pattern to configure
+ * and create instances.
+ *
+ * @since 2.2
  */
 public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
 
     /**
-     * Constructor that takes a GzipCompressorOutputStream.
+     * Constructs a GzipCompressor with the given {@link GzipCompressorOutputStream}.
      *
-     * @param compressorOutputStream the GzipCompressorOutputStream to write to.
+     * @param compressorOutputStream the output stream to write compressed data to
      */
     public GzipCompressor(GzipCompressorOutputStream compressorOutputStream) {
         super(compressorOutputStream);
     }
 
     /**
-     * Constructor that takes a GzipCompressorBuilder.
+     * Constructs a GzipCompressor using the provided {@link GzipCompressorBuilder}.
      *
-     * @param builder the GzipCompressorBuilder to build from.
-     * @throws IOException if an I/O error occurred
+     * @param builder the builder to configure the compressor
+     * @throws IOException if an I/O error occurs during stream creation
      */
     public GzipCompressor(GzipCompressorBuilder builder) throws IOException {
         super(builder);
     }
 
     /**
-     * Helper static method to create an instance of the {@link GzipCompressorBuilder}
+     * Creates a new {@link GzipCompressorBuilder} for the given file {@link Path}.
      *
-     * @param path the path to write the compressor to
-     * @return An instance of the {@link GzipCompressorBuilder}
-     * @throws IOException if an I/O error occurred
+     * @param path the file path to write compressed data to
+     * @return a new builder instance
+     * @throws IOException if an I/O error occurs opening the file
      */
     public static GzipCompressorBuilder builder(Path path) throws IOException {
         return new GzipCompressorBuilder(path);
     }
 
     /**
-     * Helper static method to create an instance of the {@link GzipCompressorBuilder}
+     * Creates a new {@link GzipCompressorBuilder} for the given {@link OutputStream}.
      *
-     * @param outputStream the output stream
-     * @return An instance of the {@link GzipCompressorBuilder}
+     * @param outputStream the output stream to write compressed data to
+     * @return a new builder instance
      */
     public static GzipCompressorBuilder builder(OutputStream outputStream) {
         return new GzipCompressorBuilder(outputStream);
     }
 
     /**
-     * Builder for creating a {@link GzipCompressor}.
+     * Builder for configuring and creating a {@link GzipCompressorOutputStream}.
      *
      * @param <P> the type of the parent builder
+     * @since 2.2
      */
     public static class GzipCompressorOutputStreamBuilder<P> {
         /** The output stream to write the compressed data to. */
@@ -89,10 +92,10 @@ public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
         private int operatingSystem = 255; // Unknown OS by default
 
         /**
-         * Create a new {@link GzipCompressorBuilder} with the given output stream.
+         * Constructs a builder for a Gzip output stream.
          *
-         * @param parent parent builder calling this {@link GzipCompressorOutputStreamBuilder}
-         * @param outputStream the output stream
+         * @param parent the parent builder
+         * @param outputStream the output stream to write compressed data to
          */
         public GzipCompressorOutputStreamBuilder(P parent, OutputStream outputStream) {
             this.parent = parent;
@@ -100,11 +103,12 @@ public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
         }
 
         /**
-         * Sets size of the buffer used to retrieve compressed data from {@link Deflater} and write to underlying
+         * Sets the buffer size used to retrieve compressed data from {@link Deflater} and write to the underlying
          * {@link OutputStream}.
          *
-         * @param bufferSize the bufferSize to set. Must be a positive value.
-         * @return the instance of the {@link GzipCompressorOutputStreamBuilder}
+         * @param bufferSize the buffer size to set. Must be a positive value.
+         * @return this builder instance
+         * @throws IllegalArgumentException if the buffer size is not positive
          */
         public GzipCompressorOutputStreamBuilder<P> bufferSize(final int bufferSize) {
             if (bufferSize <= 0) {
@@ -115,10 +119,10 @@ public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
         }
 
         /**
-         * Adds comment to be added to the tar.gz file
+         * Adds a comment to be included in the gzip file.
          *
          * @param comment the comment to be added
-         * @return the instance of the {@link GzipCompressorOutputStreamBuilder}
+         * @return this builder instance
          */
         public GzipCompressorOutputStreamBuilder<P> comment(final String comment) {
             this.comment = comment;
@@ -133,7 +137,8 @@ public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
          * @see Deflater#BEST_SPEED
          * @see Deflater#DEFAULT_COMPRESSION
          * @see Deflater#BEST_COMPRESSION
-         * @return the instance of the {@link GzipCompressorOutputStreamBuilder}
+         * @return this builder instance
+         * @throws IllegalArgumentException if the compression level is invalid
          */
         public GzipCompressorOutputStreamBuilder<P> compressionLevel(final int compressionLevel) {
             if (compressionLevel < -1 || compressionLevel > 9) {
@@ -148,7 +153,7 @@ public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
          *
          * @param deflateStrategy the new compression strategy
          * @see Deflater#setStrategy(int)
-         * @return the instance of the {@link GzipCompressorOutputStreamBuilder}
+         * @return this builder instance
          */
         public GzipCompressorOutputStreamBuilder<P> deflateStrategy(final int deflateStrategy) {
             this.deflateStrategy = deflateStrategy;
@@ -159,7 +164,7 @@ public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
          * Sets the name of the compressed file.
          *
          * @param fileName the name of the file without the directory path
-         * @return the instance of the {@link GzipCompressorOutputStreamBuilder}
+         * @return this builder instance
          */
         public GzipCompressorOutputStreamBuilder<P> fileName(final String fileName) {
             this.fileName = fileName;
@@ -170,7 +175,7 @@ public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
          * Sets the modification time of the compressed file.
          *
          * @param modificationTime the modification time, in milliseconds
-         * @return the instance of the {@link GzipCompressorOutputStreamBuilder}
+         * @return this builder instance
          */
         public GzipCompressorOutputStreamBuilder<P> modificationTime(final long modificationTime) {
             this.modificationTime = modificationTime;
@@ -178,7 +183,7 @@ public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
         }
 
         /**
-         * Sets the operating system on which the compression took place. The defined values are:
+         * Sets the operating system on which the compression took place.
          *
          * <ul>
          *   <li>0: FAT file system (MS-DOS, OS/2, NT/Win32)
@@ -199,7 +204,7 @@ public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
          * </ul>
          *
          * @param operatingSystem the code of the operating system
-         * @return the instance of the {@link GzipCompressorOutputStreamBuilder}
+         * @return this builder instance
          */
         public GzipCompressorOutputStreamBuilder<P> operatingSystem(final int operatingSystem) {
             this.operatingSystem = operatingSystem;
@@ -207,10 +212,10 @@ public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
         }
 
         /**
-         * Builds a new {@link GzipCompressorOutputStream} with the specified parameters.
+         * Builds and returns a {@link GzipCompressorOutputStream} with the current configuration.
          *
-         * @return a new instance of {@link GzipCompressorOutputStream}
-         * @throws IOException if an I/O error occurs
+         * @return a configured GzipCompressorOutputStream
+         * @throws IOException if an I/O error occurs during stream creation
          */
         public GzipCompressorOutputStream build() throws IOException {
             GzipParameters parameters = new GzipParameters();
@@ -225,7 +230,7 @@ public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
         }
 
         /**
-         * Returns the parent builder that created this {@link GzipCompressorOutputStreamBuilder}.
+         * Returns the parent builder for further configuration.
          *
          * @return the parent builder
          */
@@ -235,7 +240,7 @@ public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
     }
 
     /**
-     * Builder for creating a {@link GzipCompressor}.
+     * Builder for configuring and creating a {@link GzipCompressor}.
      *
      * @since 2.2
      */
@@ -245,19 +250,19 @@ public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
         private final GzipCompressorOutputStreamBuilder<GzipCompressorBuilder> compressorOutputStreamBuilder;
 
         /**
-         * Create a new {@link GzipCompressorBuilder} with the given path.
+         * Constructs a builder for a GzipCompressor using a file {@link Path}.
          *
-         * @param path the path to write the compressor to
-         * @throws IOException if an I/O error occurred
+         * @param path the file path to write compressed data to
+         * @throws IOException if an I/O error occurs opening the file
          */
         public GzipCompressorBuilder(Path path) throws IOException {
             this(Files.newOutputStream(path));
         }
 
         /**
-         * Create a new {@link GzipCompressorBuilder} with the given output stream.
+         * Constructs a builder for a GzipCompressor using an {@link OutputStream}.
          *
-         * @param outputStream the output stream
+         * @param outputStream the output stream to write compressed data to
          */
         public GzipCompressorBuilder(OutputStream outputStream) {
             super(outputStream);
@@ -265,24 +270,41 @@ public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
         }
 
         /**
-         * Returns the Gzip compressor output stream builder.
+         * Returns the {@link GzipCompressorOutputStreamBuilder}.
          *
-         * @return the Gzip compressor output stream builder
+         * @return {@link GzipCompressorOutputStreamBuilder}
          */
         public GzipCompressorOutputStreamBuilder<GzipCompressorBuilder> compressorOutputStreamBuilder() {
             return compressorOutputStreamBuilder;
         }
 
+        /**
+         * Returns this builder instance.
+         *
+         * @return this builder
+         */
         @Override
         protected GzipCompressorBuilder getThis() {
             return this;
         }
 
+        /**
+         * Builds and returns a configured {@link GzipCompressorOutputStream}.
+         *
+         * @return a configured GzipCompressorOutputStream
+         * @throws IOException if an I/O error occurs during stream creation
+         */
         @Override
         public GzipCompressorOutputStream buildCompressorOutputStream() throws IOException {
             return compressorOutputStreamBuilder.build();
         }
 
+        /**
+         * Builds and returns a configured {@link GzipCompressor}.
+         *
+         * @return a configured GzipCompressor
+         * @throws IOException if an I/O error occurs during stream creation
+         */
         @Override
         public GzipCompressor build() throws IOException {
             return new GzipCompressor(this);

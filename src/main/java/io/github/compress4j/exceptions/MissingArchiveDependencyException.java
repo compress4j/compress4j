@@ -15,7 +15,11 @@
  */
 package io.github.compress4j.exceptions;
 
-/** Archive dependency Missing Exception */
+/**
+ * Exception thrown when a required archive dependency is missing from the classpath.
+ * This typically occurs when attempting to use archive formats that require additional
+ * libraries that are not present in the current runtime environment.
+ */
 public class MissingArchiveDependencyException extends RuntimeException {
 
     /**

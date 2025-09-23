@@ -18,7 +18,14 @@ package io.github.compress4j.compressors.deflate;
 import java.util.zip.Deflater;
 
 /**
- * Defines constants for Deflate compression levels and strategies. These values are standard for the deflate algorithm.
+ * Defines constants for Deflate compression levels and strategies. These values correspond to
+ * standard deflate algorithm settings and provide different trade-offs between compression speed,
+ * compression ratio, and memory usage.
+ *
+ * <p>Compression levels range from no compression (fastest) to best compression (slowest),
+ * while strategies optimize compression for different types of data patterns.
+ *
+ * @since 2.2
  */
 public enum DeflateCompressionLevel {
     /**
