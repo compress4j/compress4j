@@ -52,7 +52,7 @@ public class TarBZip2ArchiveExtractor extends BaseTarArchiveExtractor {
     /**
      * Helper static method to create an instance of the {@link TarBZip2ArchiveExtractorBuilder}
      *
-     * @param path the path to write the archive to
+     * @param path the path to the archive to extract
      * @return An instance of the {@link TarBZip2ArchiveExtractorBuilder}
      * @throws IOException if an I/O error occurred
      */
@@ -63,7 +63,7 @@ public class TarBZip2ArchiveExtractor extends BaseTarArchiveExtractor {
     /**
      * Helper static method to create an instance of the {@link TarBZip2ArchiveExtractorBuilder}
      *
-     * @param inputStream the input stream
+     * @param inputStream the input stream of the archive to extract
      * @return An instance of the {@link TarBZip2ArchiveExtractorBuilder}
      */
     public static TarBZip2ArchiveExtractorBuilder builder(InputStream inputStream) {
@@ -77,7 +77,7 @@ public class TarBZip2ArchiveExtractor extends BaseTarArchiveExtractor {
         /**
          * Create a new {@link TarBZip2ArchiveExtractorBuilder} with the given path.
          *
-         * @param path the path to write the archive to
+         * @param path the path to the archive to extract
          * @throws IOException if an I/O error occurred
          */
         public TarBZip2ArchiveExtractorBuilder(Path path) throws IOException {

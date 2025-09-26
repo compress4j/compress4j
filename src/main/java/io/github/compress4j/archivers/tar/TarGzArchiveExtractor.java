@@ -51,7 +51,7 @@ public class TarGzArchiveExtractor extends BaseTarArchiveExtractor {
     /**
      * Helper static method to create an instance of the {@link TarGzArchiveExtractorBuilder}
      *
-     * @param path the path to write the archive to
+     * @param path the path to the archive to extract
      * @return An instance of the {@link TarGzArchiveExtractorBuilder}
      * @throws IOException if an I/O error occurred
      */
@@ -62,7 +62,7 @@ public class TarGzArchiveExtractor extends BaseTarArchiveExtractor {
     /**
      * Helper static method to create an instance of the {@link TarGzArchiveExtractorBuilder}
      *
-     * @param inputStream the input stream
+     * @param inputStream the input stream of the archive to extract
      * @return An instance of the {@link TarGzArchiveExtractorBuilder}
      */
     public static TarGzArchiveExtractorBuilder builder(InputStream inputStream) {
@@ -80,7 +80,7 @@ public class TarGzArchiveExtractor extends BaseTarArchiveExtractor {
         /**
          * Create a new {@link TarGzArchiveExtractorBuilder} with the given path.
          *
-         * @param path the path to write the archive to
+         * @param path the path to the archive to extract
          * @throws IOException if an I/O error occurred
          */
         public TarGzArchiveExtractorBuilder(Path path) throws IOException {

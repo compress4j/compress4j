@@ -24,9 +24,10 @@ import java.nio.file.Path;
 import org.apache.commons.compress.compressors.CompressorOutputStream;
 
 /**
- * This abstract class is the superclass of all classes providing compression.
+ * This abstract class is the superclass of all classes providing data compression functionality. It provides core
+ * methods for compressing data to various output streams.
  *
- * @param <O> The type of {@link CompressorOutputStream} to write to.
+ * @param <O> The type of {@link CompressorOutputStream} to write compressed data to.
  * @since 2.2
  */
 public abstract class Compressor<O extends CompressorOutputStream<? extends OutputStream>> implements Closeable {

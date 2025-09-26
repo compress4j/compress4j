@@ -24,9 +24,10 @@ import java.nio.file.Path;
 import org.apache.commons.compress.compressors.CompressorInputStream;
 
 /**
- * This abstract class is the superclass of all classes providing decompression.
+ * This abstract class is the superclass of all classes providing data decompression functionality. It provides core
+ * methods for decompressing data from various input streams.
  *
- * @param <I> The type of {@link CompressorInputStream} to read from.
+ * @param <I> The type of {@link CompressorInputStream} to read compressed data from.
  * @since 2.2
  */
 public abstract class Decompressor<I extends CompressorInputStream> implements Closeable {

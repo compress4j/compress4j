@@ -15,7 +15,11 @@
  */
 package io.github.compress4j.utils;
 
-/** Utility class for string manipulation. */
+/**
+ * Utility class providing specialized string manipulation methods for the compression library. This class contains
+ * methods for trimming specific characters from the beginning or end of strings, which is particularly useful for path
+ * normalization in archive processing.
+ */
 public class StringUtil {
 
     private StringUtil() {}
