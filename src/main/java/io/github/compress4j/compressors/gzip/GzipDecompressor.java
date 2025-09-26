@@ -29,12 +29,11 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.io.function.IOConsumer;
 
 /**
- * Provides Gzip decompression functionality that reads from a {@link GzipCompressorInputStream}.
- * This class extends the {@link Decompressor} base class and supports decompressing Gzip-compressed data
- * with configurable options for character encoding and header processing.
+ * Provides Gzip decompression functionality that reads from a {@link GzipCompressorInputStream}. This class extends the
+ * {@link Decompressor} base class and supports decompressing Gzip-compressed data with configurable options for
+ * character encoding and header processing.
  *
- * <p>Use the builder pattern to configure decompression options such as character encoding
- * before creating instances.
+ * <p>Use the builder pattern to configure decompression options such as character encoding before creating instances.
  *
  * @since 2.2
  */

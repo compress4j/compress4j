@@ -22,12 +22,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Utility class that provides bidirectional mapping between Unix file modes and {@link PosixFilePermission} sets.
- * This mapper enables conversion between the numeric Unix permission representation (e.g., 0755)
- * and Java's strongly-typed PosixFilePermission enumeration.
+ * Utility class that provides bidirectional mapping between Unix file modes and {@link PosixFilePermission} sets. This
+ * mapper enables conversion between the numeric Unix permission representation (e.g., 0755) and Java's strongly-typed
+ * PosixFilePermission enumeration.
  *
- * <p>This is particularly useful when working with archive formats that store Unix-style permissions
- * and need to be applied to files on POSIX-compliant systems.
+ * <p>This is particularly useful when working with archive formats that store Unix-style permissions and need to be
+ * applied to files on POSIX-compliant systems.
  */
 @SuppressWarnings("OctalInteger")
 public class PosixFilePermissionsMapper {

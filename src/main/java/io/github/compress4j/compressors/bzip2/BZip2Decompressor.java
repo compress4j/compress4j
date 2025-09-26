@@ -25,9 +25,9 @@ import java.nio.file.Path;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 
 /**
- * Provides BZip2 decompression functionality that reads from a {@link BZip2CompressorInputStream}.
- * This class extends the {@link Decompressor} base class and supports decompressing BZip2-compressed data
- * with optional support for concatenated streams.
+ * Provides BZip2 decompression functionality that reads from a {@link BZip2CompressorInputStream}. This class extends
+ * the {@link Decompressor} base class and supports decompressing BZip2-compressed data with optional support for
+ * concatenated streams.
  *
  * <p>Use the builder pattern to configure and create instances with custom decompression options.
  *

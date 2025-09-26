@@ -27,12 +27,12 @@ import org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStr
 import org.apache.commons.compress.compressors.deflate.DeflateParameters;
 
 /**
- * Provides Deflate decompression functionality that reads from a {@link DeflateCompressorInputStream}.
- * This class extends the {@link Decompressor} base class and supports decompressing Deflate-compressed data
- * with configurable options for Zlib header handling.
+ * Provides Deflate decompression functionality that reads from a {@link DeflateCompressorInputStream}. This class
+ * extends the {@link Decompressor} base class and supports decompressing Deflate-compressed data with configurable
+ * options for Zlib header handling.
  *
- * <p>Use the builder pattern to configure decompression options such as whether to expect a Zlib header
- * in the input stream before creating instances.
+ * <p>Use the builder pattern to configure decompression options such as whether to expect a Zlib header in the input
+ * stream before creating instances.
  *
  * @since 2.2
  */
