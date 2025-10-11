@@ -1,6 +1,7 @@
 [versions]
 apache-commons-compress = "1.28.0"
 assertJ = "3.27.6"
+jackson-core = "2.20.0"
 jackson = "2.20"
 jakarta-annotation = "3.0.0"
 junit-bom = "6.0.0"
@@ -20,7 +21,7 @@ slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 # TEST dependencies
 assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertJ" }
 jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson" }
-jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
+jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson-core" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit-bom" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
