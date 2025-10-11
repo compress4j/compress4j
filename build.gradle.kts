@@ -71,7 +71,6 @@ dependencies {
     testFixturesApi(libs.commons.compress)
     testFixturesApi(libs.jackson.core)
     testFixturesApi(libs.jakarta.annotation.api)
-    testFixturesApi(libs.junit.jupiter.api)
     testFixturesApi(libs.logback.classic)
     testFixturesApi(libs.logback.core)
 
@@ -96,6 +95,7 @@ testing {
                 implementation(platform(libs.junit.bom))
 
                 implementation(libs.assertj.core)
+                implementation(libs.junit.jupiter.api)
                 implementation(libs.junit.jupiter.params)
                 implementation(libs.logback.classic)
                 implementation(libs.logback.core)
@@ -118,6 +118,7 @@ val xzSupportTest by testing.suites.registering(JvmTestSuite::class) {
         }
 
         implementation(libs.assertj.core)
+        implementation(libs.junit.jupiter.api)
         implementation(libs.mockito.core)
     }
 
@@ -127,10 +128,6 @@ val xzSupportTest by testing.suites.registering(JvmTestSuite::class) {
 }
 
 val integrationTest by testing.suites.registering(JvmTestSuite::class) {
-    sources {
-        // This can be removed when deprecated classes are deleted and resources are moved to IT
-        resources { setSrcDirs(listOf("src/integrationTest/resources", "src/test/resources")) }
-    }
     dependencies {
         implementation(platform(libs.junit.bom))
         implementation(project())
@@ -140,6 +137,8 @@ val integrationTest by testing.suites.registering(JvmTestSuite::class) {
                 requireCapability("${project.group}:${project.name}-xz-support")
             }
         }
+
+        implementation(libs.junit.jupiter.api)
 
         runtimeOnly(libs.asm)
     }
@@ -313,7 +312,10 @@ publishing {
 jreleaser {
     signing {
         active = Active.ALWAYS
-        armored = true
+        pgp {
+            active = Active.ALWAYS
+            armored = true
+        }
     }
     deploy {
         maven {
