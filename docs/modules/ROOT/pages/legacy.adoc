@@ -88,7 +88,7 @@ stream.close();
 
 == Compatibility
 
-* Java 17, 21
+* Java 17, 21, 25
 * Currently only tested for *nix file systems.
 
 == Known limitations
