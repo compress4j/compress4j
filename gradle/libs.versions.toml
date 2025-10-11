@@ -1,18 +1,19 @@
 [versions]
 apache-commons-compress = "1.28.0"
-assertJ = "3.27.3"
-jackson = "2.19.2"
+assertJ = "3.27.6"
+jackson-core = "2.20.0"
+jackson = "2.20"
 jakarta-annotation = "3.0.0"
 junit-bom = "6.0.0"
-logback = "1.5.18"
-mockito = "5.18.0"
+logback = "1.5.19"
+mockito = "5.20.0"
 slf4j = "2.0.17"
 tukaani-xz = "1.10"
 
 [libraries]
 commons-compress = { module = "org.apache.commons:commons-compress", version.ref = "apache-commons-compress" }
 commons-io = { module = "commons-io:commons-io", version = "2.20.0" }
-commons-lang3 = { module = "org.apache.commons:commons-lang3", version = "3.18.0" }
+commons-lang3 = { module = "org.apache.commons:commons-lang3", version = "3.19.0" }
 jakarta-annotation-api = { module = "jakarta.annotation:jakarta.annotation-api", version.ref = "jakarta-annotation" }
 org-tukaani-xz = { module = "org.tukaani:xz", version.ref = "tukaani-xz" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
@@ -20,7 +21,7 @@ slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 # TEST dependencies
 assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertJ" }
 jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson" }
-jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson" }
+jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson-core" }
 jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jackson" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit-bom" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api" }
