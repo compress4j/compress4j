@@ -20,13 +20,7 @@ import java.io.IOException;
 import java.nio.file.CopyOption;
 import java.util.Date;
 
-/**
- * The entry of an archive.
- *
- * <p>The life of an {@link ArchiveEntry} is dependent on the status of the {@link ArchiveStream} it came from. Once
- * retrieved via {@link ArchiveStream#getNextEntry()}, the entry can be used as long as the {@code ArchiveStream}
- * remains on this entry, i.e. {@code getNextEntry()} was not called, and the stream was not since closed.
- */
+/** The entry of an archive. */
 public interface ArchiveEntry {
 
     /** Special value indicating that the size is unknown */
