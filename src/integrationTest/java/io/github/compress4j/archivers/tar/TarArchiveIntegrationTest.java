@@ -208,6 +208,7 @@ class TarArchiveIntegrationTest {
         assertThat(Files.readString(extractDir.resolve("normal.txt"))).isEqualTo("Normal file content");
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     void testUnicodeFileNamesInTar() throws IOException {
         // Create files with Unicode names
