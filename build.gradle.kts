@@ -32,9 +32,10 @@ repositories {
     mavenCentral()
 }
 
-sourceSets.creating {
-    java.srcDir(file("docs/modules/ROOT/examples/java"))
-    resources.srcDir(file("docs/modules/ROOT/examples/resources"))
+val examples: SourceSet by sourceSets.creating {
+    val examplesDir = layout.projectDirectory.dir("docs/modules/ROOT/examples")
+    java.srcDir(examplesDir.file("java"))
+    resources.srcDir(examplesDir.file("resources"))
     compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
     runtimeClasspath += sourceSets.main.get().output + sourceSets.main.get().runtimeClasspath
 }
@@ -61,7 +62,6 @@ dependencies {
     testFixturesApi(libs.commons.compress)
     testFixturesApi(libs.jackson.core)
     testFixturesApi(libs.jakarta.annotation.api)
-    testFixturesApi(libs.junit.jupiter.api)
     testFixturesApi(libs.logback.classic)
     testFixturesApi(libs.logback.core)
 
