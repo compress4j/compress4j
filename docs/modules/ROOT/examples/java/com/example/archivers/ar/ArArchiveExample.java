@@ -17,7 +17,6 @@ package com.example.archivers.ar;
 
 import io.github.compress4j.archivers.ar.ArArchiveCreator;
 import io.github.compress4j.archivers.ar.ArArchiveExtractor;
-
 import java.io.IOException;
 import java.nio.file.Path;
 
@@ -30,7 +29,8 @@ public class ArArchiveExample {
 
     public static void arCreator() throws IOException {
         // tag::ar-creator[]
-        try (ArArchiveCreator arCreator = ArArchiveCreator.builder(Path.of("example.ar")).build()) {
+        try (ArArchiveCreator arCreator =
+                ArArchiveCreator.builder(Path.of("example.ar")).build()) {
             arCreator.addFile(Path.of("path/to/file.txt"));
         }
         // end::ar-creator[]
