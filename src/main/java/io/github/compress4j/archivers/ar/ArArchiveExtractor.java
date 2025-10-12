@@ -104,8 +104,7 @@ public class ArArchiveExtractor extends ArchiveExtractor<ArArchiveInputStream> {
 
     /** AR archive extractor builder */
     public static class ArArchiveExtractorBuilder
-            extends ArchiveExtractor.ArchiveExtractorBuilder<
-                    ArArchiveInputStream, ArArchiveExtractorBuilder, ArArchiveExtractor> {
+            extends ArchiveExtractorBuilder<ArArchiveInputStream, ArArchiveExtractorBuilder, ArArchiveExtractor> {
 
         /**
          * Create a new {@link ArArchiveExtractor} with the given path.
