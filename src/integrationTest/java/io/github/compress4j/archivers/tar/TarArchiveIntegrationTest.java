@@ -27,11 +27,6 @@ import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-/**
- * Integration tests for TAR archive functionality - testing interaction between creator and extractor components.
- *
- * @since 2.2
- */
 class TarArchiveIntegrationTest {
 
     @TempDir

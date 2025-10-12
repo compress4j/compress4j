@@ -25,11 +25,6 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-/**
- * Integration tests for TAR.BZ2 archive functionality - testing interaction between creator and extractor components.
- *
- * @since 2.2
- */
 class TarBZip2ArchiveIntegrationTest {
 
     @TempDir
