@@ -62,6 +62,7 @@ dependencies {
     testFixturesApi(libs.commons.compress)
     testFixturesApi(libs.jackson.core)
     testFixturesApi(libs.jakarta.annotation.api)
+    testFixturesApi(libs.junit.jupiter.api)
     testFixturesApi(libs.logback.classic)
     testFixturesApi(libs.logback.core)
 
