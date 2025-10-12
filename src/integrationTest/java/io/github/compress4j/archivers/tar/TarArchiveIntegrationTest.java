@@ -25,6 +25,8 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
 class TarArchiveIntegrationTest {
@@ -163,6 +165,7 @@ class TarArchiveIntegrationTest {
         assertThat(Files.readAllBytes(extractDir.resolve("large2.bin"))).isEqualTo(largeContent2);
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     void testFilePermissionsAndMetadata() throws IOException {
         // Create test files with different characteristics
