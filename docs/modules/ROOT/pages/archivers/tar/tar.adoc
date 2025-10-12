@@ -7,38 +7,38 @@ Here is a simple example of how to use Compress4J to create and extract tar file
 .Tar Creation
 [,java]
 ----
-include::example$java/com/example/archive/tar/TarExamples.java[tag=tar-creator,indent=0]
+include::example$java/com/example/archivers/tar/TarExamples.java[tag=tar-creator,indent=0]
 ----
 
 
 .Tar Extraction
 [,java]
 ----
-include::example$java/com/example/archive/tar/TarExamples.java[tag=tar-extractor,indent=0]
+include::example$java/com/example/archivers/tar/TarExamples.java[tag=tar-extractor,indent=0]
 ----
 
 .Tar Gzip Creation
 [,java]
 ----
-include::example$java/com/example/archive/tar/TarExamples.java[tag=tar-gz-creator,indent=0]
+include::example$java/com/example/archivers/tar/TarExamples.java[tag=tar-gz-creator,indent=0]
 ----
 
 
 .Tar Gzip Extraction
 [,java]
 ----
-include::example$java/com/example/archive/tar/TarExamples.java[tag=tar-gz-extractor,indent=0]
+include::example$java/com/example/archivers/tar/TarExamples.java[tag=tar-gz-extractor,indent=0]
 ----
 
 .Tar BZip2 Creation
 [,java]
 ----
-include::example$java/com/example/archive/tar/TarExamples.java[tag=tar-bzip2-creator,indent=0]
+include::example$java/com/example/archivers/tar/TarExamples.java[tag=tar-bzip2-creator,indent=0]
 ----
 
 
 .Tar Bzip2 Extraction
 [,java]
 ----
-include::example$java/com/example/archive/tar/TarExamples.java[tag=tar-bzip2-extractor,indent=0]
+include::example$java/com/example/archivers/tar/TarExamples.java[tag=tar-bzip2-extractor,indent=0]
 ----

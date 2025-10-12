@@ -1,0 +1,17 @@
+= ar
+
+Here is a simple example of how to use Compress4J to create and extract ar files:
+
+== Example Usage
+
+.Ar Creation
+[,java]
+----
+include::example$java/com/example/archivers/ar/ArArchiveExample.java[tag=ar-creator,indent=0]
+----
+
+.Ar Extraction
+[,java]
+----
+include::example$java/com/example/archivers/ar/ArArchiveExample.java[tag=ar-extractor,indent=0]
+----
