@@ -13,33 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.compress4j.compressors;
+package io.github.compress4j.compressors.gzip;
 
-import io.github.compress4j.compressors.bzip2.BZip2Decompressor;
+import io.github.compress4j.compressors.AbstractDecompressorTest;
+import io.github.compress4j.compressors.Decompressor;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 
-public class BZip2DecompressionTest extends AbstractDecompressorTest {
+public class GzipDecompressorTest extends AbstractDecompressorTest {
     @Override
-    protected Decompressor<BZip2CompressorInputStream> decompressorBuilder(Path sourceFile) throws IOException {
-        return new BZip2Decompressor.BZip2DecompressorBuilder(sourceFile).build();
+    protected Decompressor<GzipCompressorInputStream> decompressorBuilder(Path sourceFile) throws IOException {
+        return new GzipDecompressor.GzipDecompressorBuilder(sourceFile).build();
     }
 
     @Override
-    protected void apacheCompressor(Path sourceFile, Path compressedFile) throws IOException {
+    protected void apacheCompressor(Path sourceFile, Path compressedFilePath) throws IOException {
         try (InputStream in = new FileInputStream(sourceFile.toFile());
-                OutputStream out = new FileOutputStream(compressedFile.toFile());
-                BZip2CompressorOutputStream bzipOut = new BZip2CompressorOutputStream(out)) {
+                OutputStream out = new FileOutputStream(compressedFilePath.toFile());
+                GzipCompressorOutputStream gzipOut = new GzipCompressorOutputStream(out)) {
             byte[] buffer = new byte[4096];
             int bytesRead;
             while ((bytesRead = in.read(buffer)) != -1) {
-                bzipOut.write(buffer, 0, bytesRead);
+                gzipOut.write(buffer, 0, bytesRead);
             }
         }
     }

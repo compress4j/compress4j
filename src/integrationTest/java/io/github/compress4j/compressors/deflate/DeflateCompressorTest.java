@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.compress4j.compressors;
+package io.github.compress4j.compressors.deflate;
 
-import io.github.compress4j.compressors.deflate.DeflateCompressor;
+import io.github.compress4j.compressors.AbstractCompressorTest;
+import io.github.compress4j.compressors.Compressor;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
