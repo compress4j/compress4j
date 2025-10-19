@@ -52,7 +52,7 @@ class TarGzArchiveTest extends AbstractArchiverTest {
     @Override
     @DisabledOnOs(OS.WINDOWS)
     protected Path osArchivedPath() {
-        return Path.of("src/e2eTest/resources/archives/test.tar.gz");
+        return Path.of("src/e2eTest/resources/archives/archive.tar.gz");
     }
 
     @Test

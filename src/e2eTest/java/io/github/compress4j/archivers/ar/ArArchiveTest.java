@@ -40,6 +40,6 @@ class ArArchiveTest extends AbstractArchiverTest {
 
     @Override
     protected Path osArchivedPath() {
-        return Path.of("src/e2eTest/resources/archives/test.ar");
+        return Path.of("src/e2eTest/resources/archives/archive.ar");
     }
 }

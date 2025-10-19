@@ -1,3 +1,0 @@
-This is test file 2 for AR archive e2e testing.
-It has different content to verify proper extraction.
-

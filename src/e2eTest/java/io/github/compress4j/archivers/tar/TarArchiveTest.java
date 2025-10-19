@@ -53,7 +53,7 @@ class TarArchiveTest extends AbstractArchiverTest {
     @DisabledOnOs(OS.WINDOWS)
     protected Path osArchivedPath() {
         // Return path to a TAR archive created by the OS tools for compatibility testing
-        return Path.of("src/e2eTest/resources/archives/test.tar");
+        return Path.of("src/e2eTest/resources/archives/archive.tar");
     }
 
     @Test

@@ -9,6 +9,7 @@ plugins {
     `jacoco-report-aggregation`
     `java-library`
     `java-test-fixtures`
+    `jvm-test-suite`
     `maven-publish`
     jacoco
 

@@ -17,6 +17,7 @@ package io.github.compress4j.archivers;
 
 import static io.github.compress4j.assertion.Compress4JAssertions.assertThat;
 import static io.github.compress4j.test.util.io.TestFileUtils.createFile;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -136,18 +137,15 @@ public abstract class AbstractArchiverTest {
             try (ArchiveExtractor<?> extractor = archiveExtractorBuilder(osArchive)) {
                 extractor.extract(extractDir);
 
-                // Verify at least one file was extracted
                 try (var files = Files.list(extractDir)) {
                     List<Path> extractedFiles = files.toList();
                     Assertions.assertThat(extractedFiles).isNotEmpty();
                 }
             } catch (IOException e) {
-                // If the OS archive is invalid/corrupted, skip this test
-                // This is acceptable since not all test environments will have valid OS archives
-                System.out.println("Skipping OS archive test due to invalid archive: " + e.getMessage());
+                fail("Invalid archive", e);
             }
         } else {
-            System.out.println("Skipping OS archive test - test archive file not found: " + osArchive);
+            fail("Test archive file not found: " + osArchive);
         }
     }
 

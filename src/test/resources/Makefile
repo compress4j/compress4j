@@ -15,7 +15,7 @@ permissions:
 
 ## archives
 
-archives: c_tgz c_bz2 c_txz c_tar c_zip c_jar c_cpio c_7z
+archives: c_tgz c_bz2 c_txz c_tar c_zip c_jar c_cpio c_7z c_ar
 
 c_tgz:
 	cd $(AR);                \
@@ -48,6 +48,10 @@ c_cpio:
 c_7z:
 	cd $(AR);                          \
 	7z a -t7z ../$(AR).7z . > /dev/null;
+
+c_ar:
+	cd $(AR); \
+	ar cr ../$(AR).ar `find * -type f`;
 
 ## compress
 compress: $(CPF).gz $(CPF).lzma $(CPF).bz2 $(CPF).xz
