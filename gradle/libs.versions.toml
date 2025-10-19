@@ -1,13 +1,20 @@
 [versions]
 apache-commons-compress = "1.28.0"
 assertJ = "3.27.6"
-jackson-core = "2.20.0"
+build-health = "2.19.0"
+foojay = "1.0.0"
+git-version = "6.4.4"
+gradle-develocity = "4.2.2"
 jackson = "2.20"
+jackson-core = "2.20.0"
 jakarta-annotation = "3.0.0"
+jreleaser = "1.19.0"
 junit-bom = "6.0.0"
 logback = "1.5.19"
 mockito = "5.20.0"
 slf4j = "2.0.17"
+sonarqube = "6.2.0.5505"
+spotless = "7.2.1"
 tukaani-xz = "1.10"
 
 [libraries]
@@ -32,7 +39,10 @@ mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockito-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = "mockito" }
 
 [plugins]
-git-version = { id = "me.qoomon.git-versioning", version = "6.4.4" }
-jreleaser = { id = "org.jreleaser", version = "1.19.0" }
-sonarqube = { id = "org.sonarqube", version = "6.2.0.5505" }
-spotless = { id = "com.diffplug.spotless", version = "7.2.1" }
+build-health = { id = "com.autonomousapps.build-health", version.ref = "build-health" }
+foojay-resolver-convention = { id = "org.gradle.toolchains.foojay-resolver-convention", version.ref = "foojay" }
+git-version = { id = "me.qoomon.git-versioning", version.ref = "git-version" }
+gradle-develocity = { id = "com.gradle.develocity", version.ref = "gradle-develocity" }
+jreleaser = { id = "org.jreleaser", version.ref = "jreleaser" }
+sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

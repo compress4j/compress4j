@@ -1,10 +1,16 @@
+import org.gradle.api.internal.FeaturePreviews
+
 rootProject.name = "compress4j"
 
+pluginManagement { includeBuild("gradle/build-logic") { name = rootProject.name + "-build-logic" } }
+
 plugins {
-    id("com.gradle.develocity") version("4.1")
-    id("com.autonomousapps.build-health") version "2.19.0"
-    id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
+    id("build-health")
+    id("gradle-develocity")
+    id("foojay-resolver-convention")
 }
+
+enableFeaturePreview(FeaturePreviews.Feature.TYPESAFE_PROJECT_ACCESSORS.name)
 
 develocity {
     buildScan {
