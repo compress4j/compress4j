@@ -13,28 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.compress4j.archivers.ar;
+package io.github.compress4j.compressors;
 
-import io.github.compress4j.archivers.AbstractArchiverE2ETest;
-import io.github.compress4j.archivers.ArchiveCreator;
-import io.github.compress4j.archivers.ArchiveExtractor;
+import io.github.compress4j.compressors.gzip.GzipCompressor;
+import io.github.compress4j.compressors.gzip.GzipDecompressor;
 import java.io.IOException;
 import java.nio.file.Path;
 
-class ArArchiveE2ETest extends AbstractArchiverE2ETest {
+class GzipCompressorIntegrationTest extends AbstractCompressorIntegrationTest {
 
     @Override
-    protected ArchiveCreator<?> archiveCreatorBuilder(Path archivePath) throws IOException {
-        return ArArchiveCreator.builder(archivePath).build();
+    protected Compressor<?> compressorBuilder(Path compressPath) throws IOException {
+        return new GzipCompressor.GzipCompressorBuilder(compressPath).build();
     }
 
     @Override
-    protected ArchiveExtractor<?> archiveExtractorBuilder(Path archivePath) throws IOException {
-        return ArArchiveExtractor.builder(archivePath).build();
+    protected Decompressor<?> decompressorBuilder(Path compressPath) throws IOException {
+        return new GzipDecompressor.GzipDecompressorBuilder(compressPath).build();
     }
 
     @Override
-    protected String archiveExtension() {
-        return ".ar";
+    protected String compressionExtension() {
+        return ".gz";
     }
 }

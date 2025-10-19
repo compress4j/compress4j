@@ -20,7 +20,7 @@ import io.github.compress4j.compressors.deflate.DeflateDecompressor;
 import java.io.IOException;
 import java.nio.file.Path;
 
-class DeflateCompressorE2ETest extends AbstractCompressorE2ETest {
+class DeflateCompressorIntegrationTest extends AbstractCompressorIntegrationTest {
 
     @Override
     protected Compressor<?> compressorBuilder(Path compressPath) throws IOException {

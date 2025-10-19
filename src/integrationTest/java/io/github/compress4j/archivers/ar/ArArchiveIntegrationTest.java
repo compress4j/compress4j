@@ -13,27 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.compress4j.compressors;
+package io.github.compress4j.archivers.ar;
 
-import io.github.compress4j.compressors.bzip2.BZip2Compressor;
-import io.github.compress4j.compressors.bzip2.BZip2Decompressor;
+import io.github.compress4j.archivers.AbstractArchiverIntegrationTest;
+import io.github.compress4j.archivers.ArchiveCreator;
+import io.github.compress4j.archivers.ArchiveExtractor;
 import java.io.IOException;
 import java.nio.file.Path;
 
-class BZip2CompressorE2ETest extends AbstractCompressorE2ETest {
+class ArArchiveIntegrationTest extends AbstractArchiverIntegrationTest {
 
     @Override
-    protected Compressor<?> compressorBuilder(Path compressPath) throws IOException {
-        return new BZip2Compressor.BZip2CompressorBuilder(compressPath).build();
+    protected ArchiveCreator<?> archiveCreatorBuilder(Path archivePath) throws IOException {
+        return ArArchiveCreator.builder(archivePath).build();
     }
 
     @Override
-    protected Decompressor<?> decompressorBuilder(Path compressPath) throws IOException {
-        return new BZip2Decompressor.BZip2DecompressorBuilder(compressPath).build();
+    protected ArchiveExtractor<?> archiveExtractorBuilder(Path archivePath) throws IOException {
+        return ArArchiveExtractor.builder(archivePath).build();
     }
 
     @Override
-    protected String compressionExtension() {
-        return ".bz2";
+    protected String archiveExtension() {
+        return ".ar";
     }
 }

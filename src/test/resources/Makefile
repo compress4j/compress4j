@@ -15,35 +15,7 @@ permissions:
 
 ## archives
 
-archives: c_tgz c_bz2 c_txz c_tar c_zip c_jar c_cpio c_7z c_ar
-
-c_tgz:
-	cd $(AR);                \
-	tar czf ../$(AR).tar.gz *;
-
-c_bz2:
-	cd $(AR);                 \
-	tar cjf ../$(AR).tar.bz2 *;
-
-c_txz:
-	cd $(AR);               \
-	tar cJf ../$(AR).tar.xz *;
-
-c_tar:
-	cd $(AR);           \
-	tar cf ../$(AR).tar *;
-
-c_zip:
-	cd $(AR);           \
-	zip -q -r ../$(AR) .;
-
-c_jar:
-	cd $(AR);             \
-	jar cMf ../$(AR).jar .;
-
-c_cpio:
-	cd $(AR);                                                         \
-	find . -depth ! -path . -print | cpio --quiet -o > ../$(AR).cpio;
+archives: c_7z c_ar c_bz2 c_cpio c_jar c_tar c_tgz c_txz c_zip
 
 c_7z:
 	cd $(AR);                          \
@@ -53,14 +25,42 @@ c_ar:
 	cd $(AR); \
 	ar cr ../$(AR).ar `find * -type f`;
 
-## compress
-compress: $(CPF).gz $(CPF).lzma $(CPF).bz2 $(CPF).xz
+c_bz2:
+	cd $(AR);                 \
+	tar cjf ../$(AR).tar.bz2 *;
 
-$(CPF).gz:
-	gzip -c $(CPF) > $@
+c_cpio:
+	cd $(AR);                                                         \
+	find . -depth ! -path . -print | cpio --quiet -o > ../$(AR).cpio;
+
+c_jar:
+	cd $(AR);             \
+	jar cMf ../$(AR).jar .;
+
+c_tar:
+	cd $(AR);           \
+	tar cf ../$(AR).tar *;
+
+c_tgz:
+	cd $(AR);                \
+	tar czf ../$(AR).tar.gz *;
+
+c_txz:
+	cd $(AR);               \
+	tar cJf ../$(AR).tar.xz *;
+
+c_zip:
+	cd $(AR);           \
+	zip -q -r ../$(AR) .;
+
+## compress
+compress: $(CPF).bz2 $(CPF).gz $(CPF).lzma $(CPF).xz
 
 $(CPF).bz2:
 	bzip2 -c $(CPF) > $@
+
+$(CPF).gz:
+	gzip -c $(CPF) > $@
 
 $(CPF).lzma:
 	lzma -z -c $(CPF) > $@
@@ -69,10 +69,10 @@ $(CPF).xz:
 	xz -z -c $(CPF) > $@
 
 ## clean
-clean: clean-compress clean-archives
-
-clean-compress:
-	rm -f $(CPF).*
+clean: clean-archives clean-compress
 
 clean-archives:
 	rm -f $(AR).*
+
+clean-compress:
+	rm -f $(CPF).*

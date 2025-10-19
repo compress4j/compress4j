@@ -17,7 +17,7 @@ package io.github.compress4j.archivers.tar;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.github.compress4j.archivers.AbstractArchiverE2ETest;
+import io.github.compress4j.archivers.AbstractArchiverIntegrationTest;
 import io.github.compress4j.archivers.ArchiveCreator;
 import io.github.compress4j.archivers.ArchiveExtractor;
 import java.io.IOException;
@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test;
  *
  * @since 2.2
  */
-class TarGzArchiveE2ETest extends AbstractArchiverE2ETest {
+class TarGzArchiveIntegrationTest extends AbstractArchiverIntegrationTest {
 
     @Override
     protected ArchiveCreator<?> archiveCreatorBuilder(Path archivePath) throws IOException {

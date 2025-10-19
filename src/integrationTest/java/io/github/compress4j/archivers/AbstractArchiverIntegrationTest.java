@@ -29,7 +29,7 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-public abstract class AbstractArchiverE2ETest {
+public abstract class AbstractArchiverIntegrationTest {
 
     @TempDir
     protected Path tempDir;
