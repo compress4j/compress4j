@@ -170,7 +170,7 @@ tasks.testCodeCoverageReport {
 }
 
 tasks.check {
-    dependsOn(tasks.buildHealth, tasks.testCodeCoverageReport)
+    dependsOn(tasks.buildHealth, tasks.testCodeCoverageReport, tasks.test, integrationTest, e2eTest)
 }
 
 sonar {
