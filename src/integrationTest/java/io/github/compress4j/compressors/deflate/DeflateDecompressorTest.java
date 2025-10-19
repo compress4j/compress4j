@@ -13,33 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.compress4j.compressors;
+package io.github.compress4j.compressors.deflate;
 
-import io.github.compress4j.compressors.gzip.GzipDecompressor;
+import io.github.compress4j.compressors.AbstractDecompressorTest;
+import io.github.compress4j.compressors.Decompressor;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
+import org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStream;
+import org.apache.commons.compress.compressors.deflate.DeflateCompressorOutputStream;
 
-public class GzipDecompressorTest extends AbstractDecompressorTest {
+public class DeflateDecompressorTest extends AbstractDecompressorTest {
     @Override
-    protected Decompressor<GzipCompressorInputStream> decompressorBuilder(Path sourceFile) throws IOException {
-        return new GzipDecompressor.GzipDecompressorBuilder(sourceFile).build();
+    protected Decompressor<DeflateCompressorInputStream> decompressorBuilder(Path sourceFile) throws IOException {
+        return new DeflateDecompressor.DeflateDecompressorBuilder(sourceFile).build();
     }
 
     @Override
     protected void apacheCompressor(Path sourceFile, Path compressedFilePath) throws IOException {
         try (InputStream in = new FileInputStream(sourceFile.toFile());
                 OutputStream out = new FileOutputStream(compressedFilePath.toFile());
-                GzipCompressorOutputStream gzipOut = new GzipCompressorOutputStream(out)) {
+                DeflateCompressorOutputStream deflateOut = new DeflateCompressorOutputStream(out)) {
             byte[] buffer = new byte[4096];
             int bytesRead;
             while ((bytesRead = in.read(buffer)) != -1) {
-                gzipOut.write(buffer, 0, bytesRead);
+                deflateOut.write(buffer, 0, bytesRead);
             }
         }
     }

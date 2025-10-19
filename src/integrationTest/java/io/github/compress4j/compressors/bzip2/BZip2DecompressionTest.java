@@ -13,28 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.compress4j.compressors;
+package io.github.compress4j.compressors.bzip2;
 
-import io.github.compress4j.compressors.bzip2.BZip2Compressor;
+import io.github.compress4j.compressors.AbstractDecompressorTest;
+import io.github.compress4j.compressors.Decompressor;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 
-class BZip2CompressorTest extends AbstractCompressorTest {
-
+public class BZip2DecompressionTest extends AbstractDecompressorTest {
     @Override
-    protected Compressor<BZip2CompressorOutputStream> compressorBuilder(Path targetPath) throws IOException {
-        return new BZip2Compressor.BZip2CompressorBuilder(targetPath).build();
+    protected Decompressor<BZip2CompressorInputStream> decompressorBuilder(Path sourceFile) throws IOException {
+        return new BZip2Decompressor.BZip2DecompressorBuilder(sourceFile).build();
     }
 
     @Override
-    protected void apacheCompressor(Path sourceFile, Path expectedPath) throws IOException {
+    protected void apacheCompressor(Path sourceFile, Path compressedFile) throws IOException {
         try (InputStream in = new FileInputStream(sourceFile.toFile());
-                OutputStream out = new FileOutputStream(expectedPath.toFile());
+                OutputStream out = new FileOutputStream(compressedFile.toFile());
                 BZip2CompressorOutputStream bzipOut = new BZip2CompressorOutputStream(out)) {
             byte[] buffer = new byte[4096];
             int bytesRead;
