@@ -17,22 +17,20 @@ package io.github.compress4j.archivers.tar;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.github.compress4j.archivers.AbstractArchiverTest;
+import io.github.compress4j.archivers.AbstractArchiverE2ETest;
 import io.github.compress4j.archivers.ArchiveCreator;
 import io.github.compress4j.archivers.ArchiveExtractor;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
-import org.junit.jupiter.api.condition.OS;
 
 /**
  * End-to-end tests for TAR.BZ2 archive functionality.
  *
  * @since 2.2
  */
-class TarBZip2ArchiveTest extends AbstractArchiverTest {
+class TarBZip2ArchiveE2ETest extends AbstractArchiverE2ETest {
 
     @Override
     protected ArchiveCreator<?> archiveCreatorBuilder(Path archivePath) throws IOException {
@@ -49,12 +47,6 @@ class TarBZip2ArchiveTest extends AbstractArchiverTest {
     @Override
     protected String archiveExtension() {
         return ".tar.bz2";
-    }
-
-    @Override
-    @DisabledOnOs(OS.WINDOWS)
-    protected Path osArchivedPath() {
-        return Path.of("src/e2eTest/resources/archives/archive.tar.bz2");
     }
 
     @Test

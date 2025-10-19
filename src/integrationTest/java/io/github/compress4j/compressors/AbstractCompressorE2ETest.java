@@ -17,15 +17,18 @@ package io.github.compress4j.compressors;
 
 import static io.github.compress4j.assertion.Compress4JAssertions.assertThat;
 import static io.github.compress4j.test.util.io.TestFileUtils.createFile;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.util.Objects;
 import org.apache.commons.io.FileUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-public abstract class AbstractTest {
+public abstract class AbstractCompressorE2ETest {
 
     @TempDir
     protected Path tempDir;
@@ -36,7 +39,16 @@ public abstract class AbstractTest {
 
     protected abstract String compressionExtension();
 
-    protected abstract Path osCompressedPath();
+    protected Path osCompressedPath() {
+        try {
+            return Path.of(
+                    Objects.requireNonNull(getClass().getResource("/compression/compress" + compressionExtension()))
+                            .toURI());
+        } catch (URISyntaxException e) {
+            fail("Failed to load test resource", e);
+            return null;
+        }
+    }
 
     @Test
     void compressDecompressSameFile() throws Exception {

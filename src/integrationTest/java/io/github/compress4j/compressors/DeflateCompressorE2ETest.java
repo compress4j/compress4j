@@ -20,7 +20,7 @@ import io.github.compress4j.compressors.deflate.DeflateDecompressor;
 import java.io.IOException;
 import java.nio.file.Path;
 
-class DeflateTest extends AbstractTest {
+class DeflateCompressorE2ETest extends AbstractCompressorE2ETest {
 
     @Override
     protected Compressor<?> compressorBuilder(Path compressPath) throws IOException {
@@ -35,10 +35,5 @@ class DeflateTest extends AbstractTest {
     @Override
     protected String compressionExtension() {
         return ".deflate";
-    }
-
-    @Override
-    protected Path osCompressedPath() {
-        return Path.of("src/e2eTest/resources/compression/deflate");
     }
 }

@@ -20,14 +20,16 @@ import static io.github.compress4j.test.util.io.TestFileUtils.createFile;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Objects;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-public abstract class AbstractArchiverTest {
+public abstract class AbstractArchiverE2ETest {
 
     @TempDir
     protected Path tempDir;
@@ -38,7 +40,15 @@ public abstract class AbstractArchiverTest {
 
     protected abstract String archiveExtension();
 
-    protected abstract Path osArchivedPath();
+    protected Path osArchivedPath() {
+        try {
+            return Path.of(Objects.requireNonNull(getClass().getResource("/archives/archive" + archiveExtension()))
+                    .toURI());
+        } catch (URISyntaxException e) {
+            fail("Failed to load test resource", e);
+            return null;
+        }
+    }
 
     @Test
     void createExtractSameFiles() throws Exception {

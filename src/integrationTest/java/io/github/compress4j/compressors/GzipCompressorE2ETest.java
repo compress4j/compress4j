@@ -15,30 +15,25 @@
  */
 package io.github.compress4j.compressors;
 
-import io.github.compress4j.compressors.bzip2.BZip2Compressor;
-import io.github.compress4j.compressors.bzip2.BZip2Decompressor;
+import io.github.compress4j.compressors.gzip.GzipCompressor;
+import io.github.compress4j.compressors.gzip.GzipDecompressor;
 import java.io.IOException;
 import java.nio.file.Path;
 
-class BZip2Test extends AbstractTest {
+class GzipCompressorE2ETest extends AbstractCompressorE2ETest {
 
     @Override
     protected Compressor<?> compressorBuilder(Path compressPath) throws IOException {
-        return new BZip2Compressor.BZip2CompressorBuilder(compressPath).build();
+        return new GzipCompressor.GzipCompressorBuilder(compressPath).build();
     }
 
     @Override
     protected Decompressor<?> decompressorBuilder(Path compressPath) throws IOException {
-        return new BZip2Decompressor.BZip2DecompressorBuilder(compressPath).build();
+        return new GzipDecompressor.GzipDecompressorBuilder(compressPath).build();
     }
 
     @Override
     protected String compressionExtension() {
-        return ".bz2";
-    }
-
-    @Override
-    protected Path osCompressedPath() {
-        return Path.of("src/e2eTest/resources/compression/bzip2.bz2");
+        return ".gz";
     }
 }

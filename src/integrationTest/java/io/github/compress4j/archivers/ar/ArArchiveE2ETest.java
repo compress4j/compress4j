@@ -15,13 +15,13 @@
  */
 package io.github.compress4j.archivers.ar;
 
-import io.github.compress4j.archivers.AbstractArchiverTest;
+import io.github.compress4j.archivers.AbstractArchiverE2ETest;
 import io.github.compress4j.archivers.ArchiveCreator;
 import io.github.compress4j.archivers.ArchiveExtractor;
 import java.io.IOException;
 import java.nio.file.Path;
 
-class ArArchiveTest extends AbstractArchiverTest {
+class ArArchiveE2ETest extends AbstractArchiverE2ETest {
 
     @Override
     protected ArchiveCreator<?> archiveCreatorBuilder(Path archivePath) throws IOException {

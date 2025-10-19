@@ -108,31 +108,12 @@ val integrationTest by testing.suites.registering(JvmTestSuite::class) {
         implementation(platform(libs.junit.bom))
         implementation(project())
         implementation(testFixtures(project()))
-
-        implementation(libs.assertj.core)
         implementation(libs.junit.jupiter.api)
-
-        runtimeOnly(libs.org.tukaani.xz)
     }
 
     targets.all {
         testTask.configure {
             shouldRunAfter(tasks.test)
-        }
-    }
-}
-
-val e2eTest by testing.suites.registering(JvmTestSuite::class) {
-    dependencies {
-        implementation(platform(libs.junit.bom))
-        implementation(project())
-        implementation(testFixtures(project()))
-        implementation(libs.junit.jupiter.api)
-    }
-
-    targets.all {
-        testTask.configure {
-            shouldRunAfter(integrationTest)
         }
     }
 }
@@ -160,17 +141,17 @@ tasks.withType<Javadoc> {
 }
 
 tasks.testCodeCoverageReport {
-    dependsOn(tasks.test, integrationTest, e2eTest)
+    dependsOn(tasks.test, integrationTest)
      executionData(fileTree(layout.buildDirectory).include("jacoco/*.exec"))
     reports {
         xml.required = true
         html.required = true
     }
-    mustRunAfter(tasks.spotlessApply, tasks.javadoc)
+    mustRunAfter(tasks.spotlessCheck, tasks.javadoc)
 }
 
 tasks.check {
-    dependsOn(tasks.buildHealth, tasks.testCodeCoverageReport, tasks.test, integrationTest, e2eTest)
+    dependsOn(tasks.buildHealth, tasks.spotlessCheck, integrationTest, tasks.testCodeCoverageReport)
 }
 
 sonar {
