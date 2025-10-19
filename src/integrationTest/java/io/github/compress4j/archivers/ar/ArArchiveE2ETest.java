@@ -37,9 +37,4 @@ class ArArchiveE2ETest extends AbstractArchiverE2ETest {
     protected String archiveExtension() {
         return ".ar";
     }
-
-    @Override
-    protected Path osArchivedPath() {
-        return Path.of("src/e2eTest/resources/archives/archive.ar");
-    }
 }
