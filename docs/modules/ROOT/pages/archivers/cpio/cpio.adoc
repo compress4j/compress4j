@@ -1,0 +1,21 @@
+= CPIO
+
+CPIO (Copy In, Copy Out) is a file archiver utility and its associated file format. It is primarily used on Unix-like operating systems for creating archives of files and directories. The CPIO format supports various sub-formats including the new ASCII format, old ASCII format, and old binary format.
+
+Here is a comprehensive guide on how to use Compress4J to create and extract CPIO archives:
+
+== Basic Usage
+
+=== Creating CPIO Archives
+
+.CPIO Creation
+[,java]
+----
+include::example$java/com/example/archivers/cpio/CpioExamples.java[tag=cpio-creator,indent=0]
+----
+
+.CPIO Extraction
+[,java]
+----
+include::example$java/com/example/archivers/cpio/CpioExamples.java[tag=cpio-extractor,indent=0]
+----
