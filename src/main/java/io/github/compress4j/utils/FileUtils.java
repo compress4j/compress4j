@@ -37,13 +37,17 @@ public class FileUtils {
     public static final int NO_MODE = 0;
 
     /**
-     * Reads the full content of a file into a single string, removing all line endings.
+     * Reads the full content of a file into a single string, normalizing all line endings to a single newline character
+     * ('\n').
+     *
+     * <p>This method ensures that file content comparisons in tests will work consistently across different operating
+     * systems (like Windows and Linux) that use different line ending characters.
      *
      * @param path the path to the file to read.
-     * @return a string containing the file's content with no line endings.
+     * @return a string containing the file's content with normalized line endings.
      * @throws IOException if an I/O error occurs reading from the file.
      */
-    public static String readStringRemovingLineEndings(Path path) throws IOException {
-        return Files.readString(path, StandardCharsets.UTF_8).replaceAll("\\R", "");
+    public static String readStringNormalized(Path path) throws IOException {
+        return String.join("\n", Files.readAllLines(path, StandardCharsets.UTF_8));
     }
 }

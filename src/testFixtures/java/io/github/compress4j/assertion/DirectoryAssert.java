@@ -144,8 +144,8 @@ public class DirectoryAssert extends AbstractPathAssert<DirectoryAssert> {
                     final byte[] actualBytes = Files.readAllBytes(actualPath);
                     final byte[] expectedBytes = Files.readAllBytes(expectedPath);
                     if (!Arrays.equals(actualBytes, expectedBytes)) {
-                        final String actualContent = FileUtils.readStringRemovingLineEndings(actualPath);
-                        final String expectedContent = FileUtils.readStringRemovingLineEndings(expectedPath);
+                        final String actualContent = FileUtils.readStringNormalized(actualPath);
+                        final String expectedContent = FileUtils.readStringNormalized(expectedPath);
                         contentDifferences.put(
                                 relativePath,
                                 String.format(
