@@ -1,1 +1,1 @@
-executable_file.txt
+Content of archive/permissions/executable_file.txt

@@ -20,20 +20,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.io.File;
 import org.junit.jupiter.api.Test;
 
-class ArchiverTarGzTest extends AbstractArchiverTest {
+class ArchiverTarXzTest extends AbstractArchiverTest {
 
     @Override
     protected Archiver getArchiver() {
-        return ArchiverFactory.createArchiver(ArchiveFormat.TAR, CompressionType.GZIP);
+        return ArchiverFactory.createArchiver(ArchiveFormat.TAR, CompressionType.XZ);
     }
 
     @Override
     protected File getArchive() {
-        return new File(RESOURCES_DIR, "archives/archive.tar.gz");
+        return new File(AbstractResourceTest.RESOURCES_DIR, "archives/archive.tar.xz");
     }
 
     @Test
-    void getFilenameExtension_tar_gz_returnsCorrectFilenameExtension() {
-        assertThat(getArchiver().getFilenameExtension()).isEqualTo(".tar.gz");
+    void getFilenameExtension_tar_xz_returnsCorrectFilenameExtension() {
+        assertThat(getArchiver().getFilenameExtension()).isEqualTo(".tar.xz");
     }
 }

@@ -104,11 +104,16 @@ testing {
 }
 
 val integrationTest by testing.suites.registering(JvmTestSuite::class) {
+    sources {
+        resources { setSrcDirs(listOf("src/test/resources")) }
+    }
     dependencies {
         implementation(platform(libs.junit.bom))
         implementation(project())
         implementation(testFixtures(project()))
         implementation(libs.junit.jupiter.api)
+
+        runtimeOnly(libs.org.tukaani.xz)
     }
 
     targets.all {

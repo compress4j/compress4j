@@ -1,1 +1,1 @@
-private_file.txt
+Content of archive/permissions/private_folder/private_file.txt

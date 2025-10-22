@@ -30,7 +30,7 @@ class ArchiverZipTest extends AbstractArchiverTest {
      * <p>safe.txt is a safe file located at the root of the target directory and unsafe.txt that attempts to traverse
      * the tree all the way to / and down to tmp. This should be placed at target/tmp/unsafe.txt when extracted
      */
-    private static final String ZIP_TRAVERSAL_FILE_1 = "zip_traversal.zip";
+    private static final String ZIP_TRAVERSAL_FILE_1 = "archives/zip_traversal.zip";
 
     /**
      * Contains 2 files: 1- safe.txt 2- ../../../unsafe.txt
@@ -39,7 +39,7 @@ class ArchiverZipTest extends AbstractArchiverTest {
      * the tree outside the target directory but not high enough to make it to /. This should be placed at
      * target/unsafe.txt when extracted
      */
-    private static final String ZIP_TRAVERSAL_FILE_2 = "zip_traversal_2.zip";
+    private static final String ZIP_TRAVERSAL_FILE_2 = "archives/zip_traversal_2.zip";
 
     /**
      * Contains 2 files: 1- safe.txt 2- subDirectory/../../../../../../../../../../../../../../../../../../../../../
@@ -49,7 +49,7 @@ class ArchiverZipTest extends AbstractArchiverTest {
      * the tree all the way to / and down to tmp. This should be placed at target/tmp/unsafe.txt when extracted. The
      * difference between this file and ZIP_TRAVERSAL_FILE_1 is that the unsafe file relative path is not normalized.
      */
-    private static final String ZIP_TRAVERSAL_FILE_3 = "zip_traversal_3.zip";
+    private static final String ZIP_TRAVERSAL_FILE_3 = "archives/zip_traversal_3.zip";
 
     @Override
     protected Archiver getArchiver() {
@@ -58,7 +58,7 @@ class ArchiverZipTest extends AbstractArchiverTest {
 
     @Override
     protected File getArchive() {
-        return new File(RESOURCES_DIR, "archive.zip");
+        return new File(RESOURCES_DIR, "archives/archive.zip");
     }
 
     @Test

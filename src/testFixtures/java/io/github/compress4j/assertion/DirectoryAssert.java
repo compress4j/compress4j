@@ -22,9 +22,11 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -33,7 +35,6 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.io.IOUtils;
 import org.assertj.core.api.AbstractPathAssert;
 import org.assertj.core.api.Assertions;
-import org.assertj.core.api.SoftAssertions;
 
 public class DirectoryAssert extends AbstractPathAssert<DirectoryAssert> {
 
@@ -79,22 +80,111 @@ public class DirectoryAssert extends AbstractPathAssert<DirectoryAssert> {
         return this;
     }
 
+    /**
+     * Compares two directories and provides detailed information about differences. Reports missing paths, extra paths,
+     * and content differences for common paths.
+     *
+     * @param expected the expected directory to compare against
+     * @return this assertion object for method chaining
+     */
     @SuppressWarnings("UnusedReturnValue")
-    public DirectoryAssert containsSameContentAs(final Path expected) {
+    public DirectoryAssert hasSameStructureAndContentAs(final Path expected) {
         final Map<String, Path> actualContents = directoryContents(actual);
         final Map<String, Path> expectedContents = directoryContents(expected);
-        final Set<String> relativeFilePaths = expectedContents.keySet();
-        Assertions.assertThat(actualContents).containsOnlyKeys(relativeFilePaths);
 
-        final SoftAssertions assertions = new SoftAssertions();
-        relativeFilePaths.forEach(relativeFilePath -> {
-            final Path actualFilePath = actualContents.get(relativeFilePath);
-            final Path expectedFilePath = expectedContents.get(relativeFilePath);
-            if (!Files.isDirectory(actualFilePath) || !Files.isDirectory(expectedFilePath)) {
-                assertions.assertThat(actualFilePath).hasSameTextualContentAs(expectedFilePath);
+        final Set<String> actualPaths = actualContents.keySet();
+        final Set<String> expectedPaths = expectedContents.keySet();
+
+        // Find differences
+        final Set<String> missingPaths = new TreeSet<>(expectedPaths);
+        missingPaths.removeAll(actualPaths);
+
+        final Set<String> extraPaths = new TreeSet<>(actualPaths);
+        extraPaths.removeAll(expectedPaths);
+
+        final Set<String> commonPaths = new TreeSet<>(actualPaths);
+        commonPaths.retainAll(expectedPaths);
+
+        // Build detailed error message
+        final StringBuilder errorMessage = new StringBuilder();
+        boolean hasDifferences = false;
+
+        if (!missingPaths.isEmpty()) {
+            hasDifferences = true;
+            errorMessage.append("\n\nMissing paths in actual directory:\n");
+            missingPaths.forEach(
+                    path -> errorMessage.append("  - ").append(path).append("\n"));
+        }
+
+        if (!extraPaths.isEmpty()) {
+            hasDifferences = true;
+            errorMessage.append("\n\nExtra paths in actual directory:\n");
+            extraPaths.forEach(path -> errorMessage.append("  + ").append(path).append("\n"));
+        }
+
+        // Check content differences for common paths
+        final Map<String, String> contentDifferences = new TreeMap<>();
+        for (final String relativePath : commonPaths) {
+            final Path actualPath = actualContents.get(relativePath);
+            final Path expectedPath = expectedContents.get(relativePath);
+
+            final boolean actualIsDir = Files.isDirectory(actualPath);
+            final boolean expectedIsDir = Files.isDirectory(expectedPath);
+
+            if (actualIsDir != expectedIsDir) {
+                contentDifferences.put(
+                        relativePath,
+                        String.format(
+                                "type mismatch: actual is %s, expected is %s",
+                                actualIsDir ? "directory" : "file", expectedIsDir ? "directory" : "file"));
+            } else if (!actualIsDir) {
+                // Both are files, compare content
+                try {
+                    final byte[] actualBytes = Files.readAllBytes(actualPath);
+                    final byte[] expectedBytes = Files.readAllBytes(expectedPath);
+                    if (!Arrays.equals(actualBytes, expectedBytes)) {
+                        final String actualContent = Files.readString(actualPath, StandardCharsets.UTF_8);
+                        final String expectedContent = Files.readString(expectedPath, StandardCharsets.UTF_8);
+                        contentDifferences.put(
+                                relativePath,
+                                String.format(
+                                        "content differs%n      Actual:   %s%n      Expected: %s",
+                                        truncate(actualContent), truncate(expectedContent)));
+                    }
+                } catch (final IOException error) {
+                    contentDifferences.put(relativePath, "failed to compare content: " + error.getMessage());
+                }
             }
-        });
-        assertions.assertAll();
+        }
+
+        if (!contentDifferences.isEmpty()) {
+            hasDifferences = true;
+            errorMessage.append("\n\nContent differences:\n");
+            contentDifferences.forEach((path, diff) -> errorMessage
+                    .append("  ~ ")
+                    .append(path)
+                    .append(": ")
+                    .append(diff)
+                    .append("\n"));
+        }
+
+        if (hasDifferences) {
+            failWithMessage(
+                    "Directory comparison failed for:\n  Actual:   %s\n  Expected: %s%s",
+                    actual, expected, errorMessage);
+        }
+
         return this;
+    }
+
+    private static String truncate(final String text) {
+        if (text == null) {
+            return "null";
+        }
+        final String sanitized = text.replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t");
+        if (sanitized.length() <= 100) {
+            return sanitized;
+        }
+        return sanitized.substring(0, 100) + "... (truncated)";
     }
 }

@@ -1,1 +1,1 @@
-archive/folder/subfolder/subfolder_file.txt
+Content of archive/folder/subfolder/subfolder_file.txt

@@ -32,14 +32,14 @@ class ExtractWithOptionsTest extends AbstractResourceTest {
      *
      * <p>overwrite-test.txt is a file located at the root of the target directory with the content as "old content"
      */
-    private static final String ORIGINAL_ZIP_FILE = "extract_with_options_original.zip";
+    private static final String ORIGINAL_ZIP_FILE = "archives/extract_with_options_original.zip";
 
     /**
      * Contains 1 file: 1- overwrite-test.txt
      *
      * <p>overwrite-test.txt is a file located at the root of the target directory with the content as "new content"
      */
-    private static final String UPDATED_ZIP_FILE = "extract_with_options_updated.zip";
+    private static final String UPDATED_ZIP_FILE = "archives/extract_with_options_updated.zip";
 
     private static final String ZIP_FILE_NAME = "overwrite-test.txt";
 

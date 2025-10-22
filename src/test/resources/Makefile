@@ -1,7 +1,9 @@
 .PHONY = permissions archives compress clean
 
-CPF = compress.txt
 AR  = archive
+ARS = archives
+CPF = compress.txt
+COM = compression
 
 all: permissions archives compress
 
@@ -15,64 +17,72 @@ permissions:
 
 ## archives
 
-archives: c_7z c_ar c_bz2 c_cpio c_jar c_tar c_tgz c_txz c_zip
+archives: a_7z a_ar a_bz2 a_cpio a_jar a_tar a_tgz a_txz a_zip
 
-c_7z:
+a_7z:
 	cd $(AR);                          \
-	7z a -t7z ../$(AR).7z . > /dev/null;
+	7zz a -t7z ../$(ARS)/$(AR).7z . > /dev/null;
 
-c_ar:
+a_ar:
 	cd $(AR); \
-	ar cr ../$(AR).ar `find * -type f`;
+	ar cr ../$(ARS)/$(AR).ar `find * -type f`;
 
-c_bz2:
+a_bz2:
 	cd $(AR);                 \
-	tar cjf ../$(AR).tar.bz2 *;
+    COPYFILE_DISABLE=1; export COPYFILE_DISABLE; \
+	tar cjf ../$(ARS)/$(AR).tar.bz2 *;
 
-c_cpio:
+a_cpio:
 	cd $(AR);                                                         \
-	find . -depth ! -path . -print | cpio --quiet -o > ../$(AR).cpio;
+	find . -depth ! -path . -print | sed 's|^\./||' | cpio --quiet -o > ../$(ARS)/$(AR).cpio;
 
-c_jar:
+a_jar:
 	cd $(AR);             \
-	jar cMf ../$(AR).jar .;
+	jar cMf ../$(ARS)/$(AR).jar .;
 
-c_tar:
+a_tar:
 	cd $(AR);           \
-	tar cf ../$(AR).tar *;
+    COPYFILE_DISABLE=1; export COPYFILE_DISABLE; \
+	tar cf ../$(ARS)/$(AR).tar *;
 
-c_tgz:
+a_tgz:
 	cd $(AR);                \
-	tar czf ../$(AR).tar.gz *;
+    COPYFILE_DISABLE=1; export COPYFILE_DISABLE; \
+	tar czf ../$(ARS)/$(AR).tar.gz *;
 
-c_txz:
+a_txz:
 	cd $(AR);               \
-	tar cJf ../$(AR).tar.xz *;
+    COPYFILE_DISABLE=1; export COPYFILE_DISABLE; \
+	tar cJf ../$(ARS)/$(AR).tar.xz *;
 
-c_zip:
+a_zip:
 	cd $(AR);           \
-	zip -q -r ../$(AR) .;
+	zip -q -r ../$(ARS)/$(AR) .;
 
 ## compress
-compress: $(CPF).bz2 $(CPF).gz $(CPF).lzma $(CPF).xz
+compress: c_bz2 c_gz c_lzma c_xz
 
-$(CPF).bz2:
-	bzip2 -c $(CPF) > $@
+c_bz2:
+	bzip2 -k $(CPF); \
+    mv $(CPF).bz2 $(COM);
 
-$(CPF).gz:
-	gzip -c $(CPF) > $@
+c_gz:
+	gzip -k $(CPF) > $(COM)/$(CPF).gz; \
+    mv $(CPF).gz $(COM);
 
-$(CPF).lzma:
-	lzma -z -c $(CPF) > $@
+c_lzma:
+	lzma -z -k $(CPF) > $(COM)/$(CPF).lzma; \
+    mv $(CPF).lzma $(COM);
 
-$(CPF).xz:
-	xz -z -c $(CPF) > $@
+c_xz:
+	xz -z -k $(CPF) > $(COM)/$(CPF).xz; \
+    mv $(CPF).xz $(COM);
 
 ## clean
 clean: clean-archives clean-compress
 
 clean-archives:
-	rm -f $(AR).*
+	rm -f $(ARS)/(AR).*
 
 clean-compress:
-	rm -f $(CPF).*
+	rm -f $(COM)/$(CPF).*

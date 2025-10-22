@@ -21,8 +21,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Path;
-import java.util.Objects;
 import org.apache.commons.io.FileUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -41,9 +41,12 @@ public abstract class AbstractCompressorIntegrationTest {
 
     protected Path osCompressedPath() {
         try {
-            return Path.of(
-                    Objects.requireNonNull(getClass().getResource("/compression/compress" + compressionExtension()))
-                            .toURI());
+            String archivePathStr = "/compression/compress" + compressionExtension();
+            URL resource = getClass().getResource(archivePathStr);
+            Assertions.assertThat(resource)
+                    .as("Compression file not found: " + archivePathStr + " in resources")
+                    .isNotNull();
+            return Path.of(resource.toURI());
         } catch (URISyntaxException e) {
             fail("Failed to load test resource", e);
             return null;
