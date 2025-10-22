@@ -15,9 +15,17 @@
  */
 package io.github.compress4j.utils;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 /** Utility class for file operations. */
 public class FileUtils {
-    private FileUtils() {}
+    /** Private constructor to prevent instantiation. */
+    private FileUtils() {
+        // No-op
+    }
 
     /** DOS read-only attribute. */
     public static final int DOS_READ_ONLY = 0b01;
@@ -27,4 +35,15 @@ public class FileUtils {
 
     /** Signifies no mode set on file. */
     public static final int NO_MODE = 0;
+
+    /**
+     * Reads the full content of a file into a single string, removing all line endings.
+     *
+     * @param path the path to the file to read.
+     * @return a string containing the file's content with no line endings.
+     * @throws IOException if an I/O error occurs reading from the file.
+     */
+    public static String readStringRemovingLineEndings(Path path) throws IOException {
+        return Files.readString(path, StandardCharsets.UTF_8).replaceAll("\\R", "");
+    }
 }

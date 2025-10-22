@@ -54,20 +54,6 @@ public abstract class AbstractArchiverIntegrationTest {
         }
     }
 
-    protected Path getPathToArchive() {
-        try {
-            String pathToArchiveStr = "/archive";
-            URL resource = getClass().getResource(pathToArchiveStr);
-            Assertions.assertThat(resource)
-                    .as("Path to archive not found: " + pathToArchiveStr + " in resources")
-                    .isNotNull();
-            return Path.of(resource.toURI());
-        } catch (URISyntaxException e) {
-            fail("Failed to load test resource", e);
-            return null;
-        }
-    }
-
     @Test
     void createExtractSameFiles() throws Exception {
         // Create multiple source files

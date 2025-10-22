@@ -15,6 +15,7 @@
  */
 package io.github.compress4j.assertion;
 
+import io.github.compress4j.utils.FileUtils;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -65,7 +66,7 @@ public class DirectoryAssert extends AbstractPathAssert<DirectoryAssert> {
         }
     }
 
-    @SuppressWarnings("UnusedReturnValue")
+    @SuppressWarnings({"UnusedReturnValue", "unused"})
     public DirectoryAssert containsAllEntriesOf(Map<String, String> expected) throws IOException {
         try (InputStream fi = Files.newInputStream(actual);
                 InputStream bi = new BufferedInputStream(fi);
@@ -143,8 +144,8 @@ public class DirectoryAssert extends AbstractPathAssert<DirectoryAssert> {
                     final byte[] actualBytes = Files.readAllBytes(actualPath);
                     final byte[] expectedBytes = Files.readAllBytes(expectedPath);
                     if (!Arrays.equals(actualBytes, expectedBytes)) {
-                        final String actualContent = Files.readString(actualPath, StandardCharsets.UTF_8);
-                        final String expectedContent = Files.readString(expectedPath, StandardCharsets.UTF_8);
+                        final String actualContent = FileUtils.readStringRemovingLineEndings(actualPath);
+                        final String expectedContent = FileUtils.readStringRemovingLineEndings(expectedPath);
                         contentDifferences.put(
                                 relativePath,
                                 String.format(
