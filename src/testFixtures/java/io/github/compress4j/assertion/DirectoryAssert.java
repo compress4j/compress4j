@@ -23,7 +23,6 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -36,6 +35,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.io.IOUtils;
 import org.assertj.core.api.AbstractPathAssert;
 import org.assertj.core.api.Assertions;
+import org.assertj.core.api.SoftAssertions;
 
 public class DirectoryAssert extends AbstractPathAssert<DirectoryAssert> {
 
@@ -90,6 +90,7 @@ public class DirectoryAssert extends AbstractPathAssert<DirectoryAssert> {
      */
     @SuppressWarnings("UnusedReturnValue")
     public DirectoryAssert hasSameStructureAndContentAs(final Path expected) {
+        final SoftAssertions softly = new SoftAssertions();
         final Map<String, Path> actualContents = directoryContents(actual);
         final Map<String, Path> expectedContents = directoryContents(expected);
 
@@ -124,7 +125,6 @@ public class DirectoryAssert extends AbstractPathAssert<DirectoryAssert> {
         }
 
         // Check content differences for common paths
-        final Map<String, String> contentDifferences = new TreeMap<>();
         for (final String relativePath : commonPaths) {
             final Path actualPath = actualContents.get(relativePath);
             final Path expectedPath = expectedContents.get(relativePath);
@@ -133,40 +133,28 @@ public class DirectoryAssert extends AbstractPathAssert<DirectoryAssert> {
             final boolean expectedIsDir = Files.isDirectory(expectedPath);
 
             if (actualIsDir != expectedIsDir) {
-                contentDifferences.put(
-                        relativePath,
-                        String.format(
-                                "type mismatch: actual is %s, expected is %s",
-                                actualIsDir ? "directory" : "file", expectedIsDir ? "directory" : "file"));
+                softly.assertThat(actualPath)
+                        .as(String.format(
+                                "%s: type mismatch: actual is %s, expected is %s",
+                                relativePath, actualIsDir ? "directory" : "file", expectedIsDir ? "directory" : "file"))
+                        .isEqualTo(expectedPath);
             } else if (!actualIsDir) {
                 // Both are files, compare content
                 try {
-                    final byte[] actualBytes = Files.readAllBytes(actualPath);
-                    final byte[] expectedBytes = Files.readAllBytes(expectedPath);
-                    if (!Arrays.equals(actualBytes, expectedBytes)) {
-                        final String actualContent = FileUtils.readStringNormalized(actualPath);
-                        final String expectedContent = FileUtils.readStringNormalized(expectedPath);
-                        contentDifferences.put(
-                                relativePath,
-                                String.format(
-                                        "content differs%n      Actual:   %s%n      Expected: %s",
-                                        truncate(actualContent), truncate(expectedContent)));
-                    }
+                    final String actualContent = FileUtils.readStringNormalized(actualPath);
+                    final String expectedContent = FileUtils.readStringNormalized(expectedPath);
+                    softly.assertThat(actualContent).as(relativePath).isEqualTo(expectedContent);
                 } catch (final IOException error) {
-                    contentDifferences.put(relativePath, "failed to compare content: " + error.getMessage());
+                    softly.fail(relativePath + ": failed to compare content: " + error.getMessage());
                 }
             }
         }
 
-        if (!contentDifferences.isEmpty()) {
+        try {
+            softly.assertAll();
+        } catch (AssertionError e) {
+            errorMessage.append("\n\nContent differences:\n").append(e.getMessage());
             hasDifferences = true;
-            errorMessage.append("\n\nContent differences:\n");
-            contentDifferences.forEach((path, diff) -> errorMessage
-                    .append("  ~ ")
-                    .append(path)
-                    .append(": ")
-                    .append(diff)
-                    .append("\n"));
         }
 
         if (hasDifferences) {
@@ -176,16 +164,5 @@ public class DirectoryAssert extends AbstractPathAssert<DirectoryAssert> {
         }
 
         return this;
-    }
-
-    private static String truncate(final String text) {
-        if (text == null) {
-            return "null";
-        }
-        final String sanitized = text.replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t");
-        if (sanitized.length() <= 100) {
-            return sanitized;
-        }
-        return sanitized.substring(0, 100) + "... (truncated)";
     }
 }
