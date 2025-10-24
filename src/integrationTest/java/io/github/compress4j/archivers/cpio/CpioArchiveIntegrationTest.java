@@ -43,7 +43,7 @@ class CpioArchiveIntegrationTest extends AbstractArchiverIntegrationTest {
     }
 
     @Override
-    protected String archiveExtension() {
+    protected String getExtension() {
         return ".cpio";
     }
 

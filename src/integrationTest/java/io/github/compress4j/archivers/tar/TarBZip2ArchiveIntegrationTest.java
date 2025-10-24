@@ -45,7 +45,7 @@ class TarBZip2ArchiveIntegrationTest extends AbstractArchiverIntegrationTest {
     }
 
     @Override
-    protected String archiveExtension() {
+    protected String getExtension() {
         return ".tar.bz2";
     }
 

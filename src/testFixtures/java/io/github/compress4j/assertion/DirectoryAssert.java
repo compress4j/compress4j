@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -64,7 +65,7 @@ public class DirectoryAssert extends AbstractPathAssert<DirectoryAssert> {
         }
     }
 
-    @SuppressWarnings("UnusedReturnValue")
+    @SuppressWarnings({"UnusedReturnValue", "unused"})
     public DirectoryAssert containsAllEntriesOf(Map<String, String> expected) throws IOException {
         try (InputStream fi = Files.newInputStream(actual);
                 InputStream bi = new BufferedInputStream(fi);
@@ -79,22 +80,81 @@ public class DirectoryAssert extends AbstractPathAssert<DirectoryAssert> {
         return this;
     }
 
+    /**
+     * Compares two directories and provides detailed information about differences. Reports missing paths, extra paths,
+     * and content differences for common paths.
+     *
+     * @param expected the expected directory to compare against
+     * @return this assertion object for method chaining
+     */
     @SuppressWarnings("UnusedReturnValue")
-    public DirectoryAssert containsSameContentAs(final Path expected) {
+    public DirectoryAssert hasSameStructureAndContentAs(final Path expected) {
+        final SoftAssertions softly = new SoftAssertions();
         final Map<String, Path> actualContents = directoryContents(actual);
         final Map<String, Path> expectedContents = directoryContents(expected);
-        final Set<String> relativeFilePaths = expectedContents.keySet();
-        Assertions.assertThat(actualContents).containsOnlyKeys(relativeFilePaths);
 
-        final SoftAssertions assertions = new SoftAssertions();
-        relativeFilePaths.forEach(relativeFilePath -> {
-            final Path actualFilePath = actualContents.get(relativeFilePath);
-            final Path expectedFilePath = expectedContents.get(relativeFilePath);
-            if (!Files.isDirectory(actualFilePath) || !Files.isDirectory(expectedFilePath)) {
-                assertions.assertThat(actualFilePath).hasSameTextualContentAs(expectedFilePath);
+        final Set<String> actualPaths = actualContents.keySet();
+        final Set<String> expectedPaths = expectedContents.keySet();
+
+        // Find differences
+        final Set<String> missingPaths = new TreeSet<>(expectedPaths);
+        missingPaths.removeAll(actualPaths);
+
+        final Set<String> extraPaths = new TreeSet<>(actualPaths);
+        extraPaths.removeAll(expectedPaths);
+
+        final Set<String> commonPaths = new TreeSet<>(actualPaths);
+        commonPaths.retainAll(expectedPaths);
+
+        // Build detailed error message
+        final StringBuilder errorMessage = new StringBuilder();
+        boolean hasDifferences = false;
+
+        if (!missingPaths.isEmpty()) {
+            hasDifferences = true;
+            errorMessage.append("\n\nMissing paths in actual directory:\n");
+            missingPaths.forEach(
+                    path -> errorMessage.append("  - ").append(path).append("\n"));
+        }
+
+        if (!extraPaths.isEmpty()) {
+            hasDifferences = true;
+            errorMessage.append("\n\nExtra paths in actual directory:\n");
+            extraPaths.forEach(path -> errorMessage.append("  + ").append(path).append("\n"));
+        }
+
+        // Check content differences for common paths
+        for (final String relativePath : commonPaths) {
+            final Path actualPath = actualContents.get(relativePath);
+            final Path expectedPath = expectedContents.get(relativePath);
+
+            final boolean actualIsDir = Files.isDirectory(actualPath);
+            final boolean expectedIsDir = Files.isDirectory(expectedPath);
+
+            if (actualIsDir != expectedIsDir) {
+                softly.assertThat(actualPath)
+                        .as(String.format(
+                                "%s: type mismatch: actual is %s, expected is %s",
+                                relativePath, actualIsDir ? "directory" : "file", expectedIsDir ? "directory" : "file"))
+                        .isEqualTo(expectedPath);
+            } else if (!actualIsDir) {
+                softly.assertThat(actualPath).as(relativePath).hasSameTextualContentAs(expectedPath);
             }
-        });
-        assertions.assertAll();
+        }
+
+        try {
+            softly.assertAll();
+        } catch (AssertionError e) {
+            errorMessage.append("\n\nContent differences:\n").append(e.getMessage());
+            hasDifferences = true;
+        }
+
+        if (hasDifferences) {
+            failWithMessage(
+                    "Directory comparison failed for:\n  Actual:   %s\n  Expected: %s%s",
+                    actual, expected, errorMessage);
+        }
+
         return this;
     }
 }

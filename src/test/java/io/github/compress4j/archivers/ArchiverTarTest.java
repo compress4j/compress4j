@@ -29,7 +29,7 @@ class ArchiverTarTest extends AbstractArchiverTest {
 
     @Override
     protected File getArchive() {
-        return new File(RESOURCES_DIR, "archive.tar");
+        return new File(RESOURCES_DIR, "archives/archive.tar");
     }
 
     @Test

@@ -21,10 +21,10 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Objects;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -38,12 +38,16 @@ public abstract class AbstractArchiverIntegrationTest {
 
     protected abstract ArchiveExtractor<?> archiveExtractorBuilder(Path archivePath) throws IOException;
 
-    protected abstract String archiveExtension();
+    protected abstract String getExtension();
 
-    protected Path osArchivedPath() {
+    protected Path getArchive() {
         try {
-            return Path.of(Objects.requireNonNull(getClass().getResource("/archives/archive" + archiveExtension()))
-                    .toURI());
+            String archivePathStr = "/archives/archive" + getExtension();
+            URL resource = getClass().getResource(archivePathStr);
+            Assertions.assertThat(resource)
+                    .as("Archive file not found: " + archivePathStr + " in resources")
+                    .isNotNull();
+            return Path.of(resource.toURI());
         } catch (URISyntaxException e) {
             fail("Failed to load test resource", e);
             return null;
@@ -57,7 +61,7 @@ public abstract class AbstractArchiverIntegrationTest {
         var sourceFile2 = createFile(tempDir, "file2.txt", "Content of file 2");
         var sourceFile3 = createFile(tempDir, "data.bin", "Binary data content");
 
-        var archivePath = tempDir.resolve("test" + archiveExtension());
+        var archivePath = tempDir.resolve("test" + getExtension());
         var extractDir = tempDir.resolve("extracted");
         Files.createDirectories(extractDir);
 
@@ -87,7 +91,7 @@ public abstract class AbstractArchiverIntegrationTest {
         var sourceFile1 = createFile(tempDir, "original1.txt", "First file content");
         var sourceFile2 = createFile(tempDir, "original2.txt", "Second file content");
 
-        var archivePath = tempDir.resolve("custom" + archiveExtension());
+        var archivePath = tempDir.resolve("custom" + getExtension());
         var extractDir = tempDir.resolve("extracted");
         Files.createDirectories(extractDir);
 
@@ -111,7 +115,7 @@ public abstract class AbstractArchiverIntegrationTest {
 
     @Test
     void createArchiveFromByteArrays() throws Exception {
-        var archivePath = tempDir.resolve("bytes" + archiveExtension());
+        var archivePath = tempDir.resolve("bytes" + getExtension());
         var extractDir = tempDir.resolve("extracted");
         Files.createDirectories(extractDir);
 
@@ -139,7 +143,7 @@ public abstract class AbstractArchiverIntegrationTest {
     @Test
     void extractOsCreatedArchive() throws Exception {
         // This test validates that we can extract archives created by OS tools
-        var osArchive = osArchivedPath();
+        var osArchive = getArchive();
         if (Files.exists(osArchive)) {
             var extractDir = tempDir.resolve("os_extracted");
             Files.createDirectories(extractDir);
@@ -165,9 +169,9 @@ public abstract class AbstractArchiverIntegrationTest {
         var sourceFile1 = createFile(tempDir, "round1.txt", "Round trip test 1");
         var sourceFile2 = createFile(tempDir, "round2.txt", "Round trip test 2");
 
-        var archivePath1 = tempDir.resolve("round1" + archiveExtension());
+        var archivePath1 = tempDir.resolve("round1" + getExtension());
         var extractDir1 = tempDir.resolve("extract1");
-        var archivePath2 = tempDir.resolve("round2" + archiveExtension());
+        var archivePath2 = tempDir.resolve("round2" + getExtension());
         var extractDir2 = tempDir.resolve("extract2");
 
         Files.createDirectories(extractDir1);

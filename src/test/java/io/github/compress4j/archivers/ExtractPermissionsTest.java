@@ -34,7 +34,7 @@ public class ExtractPermissionsTest {
     class TarExtractPermissionsTest extends BaseArchivePermissionsTest {
         @Override
         protected String getArchiveFileName() {
-            return "archive.tar";
+            return "archives/archive.tar";
         }
 
         @Override
@@ -47,7 +47,7 @@ public class ExtractPermissionsTest {
     class ZipExtractPermissionsTest extends BaseArchivePermissionsTest {
         @Override
         protected String getArchiveFileName() {
-            return "archive.zip";
+            return "archives/archive.zip";
         }
 
         @Override

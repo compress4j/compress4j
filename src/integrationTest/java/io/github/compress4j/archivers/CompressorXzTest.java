@@ -15,25 +15,23 @@
  */
 package io.github.compress4j.archivers;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.io.File;
-import org.junit.jupiter.api.Test;
 
-class ArchiverTarGzTest extends AbstractArchiverTest {
+@SuppressWarnings("java:S2187")
+public class CompressorXzTest extends AbstractCompressorTest {
 
     @Override
-    protected Archiver getArchiver() {
-        return ArchiverFactory.createArchiver(ArchiveFormat.TAR, CompressionType.GZIP);
+    protected File getCompressedFile() {
+        return new File(AbstractResourceTest.RESOURCES_DIR, "compression/compress.txt.xz");
     }
 
     @Override
-    protected File getArchive() {
-        return new File(RESOURCES_DIR, "archives/archive.tar.gz");
+    protected CompressionType getCompressionType() {
+        return CompressionType.XZ;
     }
 
-    @Test
-    void getFilenameExtension_tar_gz_returnsCorrectFilenameExtension() {
-        assertThat(getArchiver().getFilenameExtension()).isEqualTo(".tar.gz");
+    @Override
+    protected Compressor getCompressor() {
+        return new CommonsCompressor(getCompressionType());
     }
 }

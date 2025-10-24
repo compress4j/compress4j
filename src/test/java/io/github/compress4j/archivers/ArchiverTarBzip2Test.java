@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Compress4J Project
+ * Copyright 2024-2025 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,6 @@ public class ArchiverTarBzip2Test extends AbstractArchiverTest {
 
     @Override
     protected File getArchive() {
-        return new File(RESOURCES_DIR, "archive.tar.bz2");
+        return new File(RESOURCES_DIR, "archives/archive.tar.bz2");
     }
 }

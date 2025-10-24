@@ -1,1 +1,1 @@
-archive/folder/folder_file.txt
+Content of archive/folder/folder_file.txt

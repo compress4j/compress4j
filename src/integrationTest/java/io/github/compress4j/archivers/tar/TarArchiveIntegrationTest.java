@@ -15,6 +15,7 @@
  */
 package io.github.compress4j.archivers.tar;
 
+import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.LONGFILE_GNU;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.compress4j.archivers.AbstractArchiverIntegrationTest;
@@ -43,7 +44,7 @@ class TarArchiveIntegrationTest extends AbstractArchiverIntegrationTest {
     }
 
     @Override
-    protected String archiveExtension() {
+    protected String getExtension() {
         return ".tar";
     }
 
@@ -59,7 +60,7 @@ class TarArchiveIntegrationTest extends AbstractArchiverIntegrationTest {
 
         // Create archive with TAR features
         try (var creator = TarArchiveCreator.builder(Files.newOutputStream(archivePath))
-                .longFileMode(org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.LONGFILE_GNU)
+                .longFileMode(LONGFILE_GNU)
                 .build()) {
             creator.addFile("executable.sh", sourceFile);
         }
