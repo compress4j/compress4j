@@ -40,6 +40,10 @@ val examples: SourceSet by sourceSets.creating {
     compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
     runtimeClasspath += sourceSets.main.get().output + sourceSets.main.get().runtimeClasspath
 }
+val xzSupport: SourceSet by sourceSets.creating {
+    compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
+    runtimeClasspath += sourceSets.main.get().output + sourceSets.main.get().runtimeClasspath
+}
 
 java {
     toolchain {
@@ -47,9 +51,14 @@ java {
     }
     withJavadocJar()
     withSourcesJar()
+    registerFeature("xzSupport") { usingSourceSet(xzSupport)
+        withJavadocJar()
+        withSourcesJar()
+    }
 }
 
 val mockitoAgent: Configuration = configurations.create("mockitoAgent")
+val xzSupportImplementation: Configuration by configurations
 
 dependencies {
     api(libs.commons.compress)
@@ -72,6 +81,8 @@ dependencies {
     testFixturesImplementation(libs.jackson.annotations)
     testFixturesImplementation(libs.jackson.databind)
     testFixturesImplementation(libs.mockito.core)
+
+    xzSupportImplementation(libs.org.tukaani.xz)
     
     mockitoAgent(libs.mockito.core) { isTransitive = false }
 }
@@ -132,6 +143,7 @@ dependencyAnalysis {
             onAny {
                 severity("fail")
             }
+            ignoreSourceSet("xzSupport")
         }
     }
 }
@@ -227,6 +239,10 @@ publishing {
             from(components["java"])
             suppressPomMetadataWarningsFor("testFixturesApiElements")
             suppressPomMetadataWarningsFor("testFixturesRuntimeElements")
+            suppressPomMetadataWarningsFor("xzSupportApiElements")
+            suppressPomMetadataWarningsFor("xzSupportJavadocElements")
+            suppressPomMetadataWarningsFor("xzSupportRuntimeElements")
+            suppressPomMetadataWarningsFor("xzSupportSourcesElements")
             pom {
                 name = project.name
                 description = project.description
