@@ -15,7 +15,6 @@
  */
 package io.github.compress4j.assertion;
 
-import io.github.compress4j.utils.FileUtils;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -139,14 +138,7 @@ public class DirectoryAssert extends AbstractPathAssert<DirectoryAssert> {
                                 relativePath, actualIsDir ? "directory" : "file", expectedIsDir ? "directory" : "file"))
                         .isEqualTo(expectedPath);
             } else if (!actualIsDir) {
-                // Both are files, compare content
-                try {
-                    final String actualContent = FileUtils.readStringNormalized(actualPath);
-                    final String expectedContent = FileUtils.readStringNormalized(expectedPath);
-                    softly.assertThat(actualContent).as(relativePath).isEqualTo(expectedContent);
-                } catch (final IOException error) {
-                    softly.fail(relativePath + ": failed to compare content: " + error.getMessage());
-                }
+                softly.assertThat(actualPath).as(relativePath).hasSameTextualContentAs(expectedPath);
             }
         }
 
