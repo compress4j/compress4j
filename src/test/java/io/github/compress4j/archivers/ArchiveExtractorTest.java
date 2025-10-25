@@ -483,7 +483,7 @@ class ArchiveExtractorTest {
         try (InMemoryArchiveExtractor inMemoryDecompressor = InMemoryArchiveExtractor.builder(
                         List.of(subdir, entry1, entry1a, entry2))
                 .build()) {
-            inMemoryDecompressor.setEntryFilter(entry -> !entry.name.contains("some"));
+            inMemoryDecompressor.setEntryFilter(entry -> !entry.name().contains("some"));
 
             // when
             inMemoryDecompressor.extract(tempDir);
@@ -1262,7 +1262,7 @@ class ArchiveExtractorTest {
                     .thenCallRealMethod();
 
             extractor.setErrorHandler((entry, ex) -> {
-                if (entry.name.equals("file_to_fail.txt") && ex == simulatedException) {
+                if (entry.name().equals("file_to_fail.txt") && ex == simulatedException) {
                     return RETRY;
                 }
                 return BAIL_OUT;
@@ -1301,7 +1301,7 @@ class ArchiveExtractorTest {
                     .thenThrow(simulatedException);
 
             extractor.setErrorHandler((entry, ex) -> {
-                if (entry.name.equals(entryToFail.getName()) && ex == simulatedException) {
+                if (entry.name().equals(entryToFail.getName()) && ex == simulatedException) {
                     return SKIP;
                 }
                 return BAIL_OUT;
@@ -1346,7 +1346,7 @@ class ArchiveExtractorTest {
                     .thenThrow(simulatedException);
 
             extractor.setErrorHandler((entry, ex) -> {
-                if (entry.name.equals(entryToFail.getName()) && ex == simulatedException) {
+                if (entry.name().equals(entryToFail.getName()) && ex == simulatedException) {
                     return SKIP_ALL;
                 }
                 return BAIL_OUT;
@@ -1539,12 +1539,12 @@ class ArchiveExtractorTest {
 
     @Test
     void entryConstructorShouldNormalizeAndTrimPaths() {
-        assertThat(new Entry(" /a/b/ ", FILE, 0, null, 0).name).isEqualTo("a/b");
-        assertThat(new Entry("\\a\\b\\", DIR, 0, null, 0).name).isEqualTo("a/b");
-        assertThat(new Entry("a/b/", FILE, 0, null, 0).name).isEqualTo("a/b");
-        assertThat(new Entry("a/b/", DIR, 0, null, 0).name).isEqualTo("a/b");
-        assertThat(new Entry("///", DIR, 0, null, 0).name).isEmpty();
-        assertThat(new Entry("", FILE, 0, null, 0).name).isEmpty();
+        assertThat(new Entry(" /a/b/ ", FILE, 0, null, 0).name()).isEqualTo("a/b");
+        assertThat(new Entry("\\a\\b\\", DIR, 0, null, 0).name()).isEqualTo("a/b");
+        assertThat(new Entry("a/b/", FILE, 0, null, 0).name()).isEqualTo("a/b");
+        assertThat(new Entry("a/b/", DIR, 0, null, 0).name()).isEqualTo("a/b");
+        assertThat(new Entry("///", DIR, 0, null, 0).name()).isEmpty();
+        assertThat(new Entry("", FILE, 0, null, 0).name()).isEmpty();
     }
 
     @EnabledOnOs(OS.WINDOWS)

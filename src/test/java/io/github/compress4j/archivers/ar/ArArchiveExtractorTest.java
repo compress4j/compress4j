@@ -25,6 +25,8 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import org.apache.commons.compress.archivers.ar.ArArchiveInputStream;
+import org.apache.commons.compress.archivers.ar.ArArchiveOutputStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -36,13 +38,15 @@ class ArArchiveExtractorTest {
         var outputStream = new ByteArrayOutputStream();
         var content = "Hello, AR Archive!";
 
-        try (var creator = ArArchiveCreator.builder(outputStream).build()) {
+        try (var archiveOutputStream = new ArArchiveOutputStream(outputStream);
+                var creator = new ArArchiveCreator(archiveOutputStream)) {
             creator.addFile("test.txt", content.getBytes(StandardCharsets.UTF_8));
         }
 
         // when
         var bais = new ByteArrayInputStream(outputStream.toByteArray());
-        try (var extractor = ArArchiveExtractor.builder(bais).build()) {
+        try (var archiveInputStream = new ArArchiveInputStream(bais);
+                var extractor = new ArArchiveExtractor(archiveInputStream)) {
             extractor.extract(tempDir);
         }
 
@@ -151,7 +155,7 @@ class ArArchiveExtractorTest {
         // when
         var bais = new ByteArrayInputStream(outputStream.toByteArray());
         try (var extractor = ArArchiveExtractor.builder(bais)
-                .filter(entry -> entry.name.startsWith("keep"))
+                .filter(entry -> entry.name().startsWith("keep"))
                 .build()) {
             extractor.extract(tempDir);
         }

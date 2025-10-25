@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
+import org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -51,7 +52,8 @@ class CpioArchiveExtractorTest {
 
         // when
         var archiveInput = new ByteArrayInputStream(sampleArchive);
-        try (var extractor = CpioArchiveExtractor.builder(archiveInput).build()) {
+        try (var archiveInputStream = new CpioArchiveInputStream(archiveInput);
+                var extractor = new CpioArchiveExtractor(archiveInputStream)) {
             extractor.extract(extractDir);
         }
 

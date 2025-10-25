@@ -54,11 +54,6 @@ public class InMemoryArchiveExtractor extends ArchiveExtractor<InMemoryArchiveIn
         return new InMemoryArchiveExtractorBuilder(InMemoryArchiveInputStream.toInputStream(entries));
     }
 
-    @Override
-    protected void closeEntryStream(InputStream stream) {
-        // do nothing
-    }
-
     @Nullable
     @Override
     protected Entry nextEntry() {

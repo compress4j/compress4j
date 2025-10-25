@@ -63,7 +63,7 @@ public class CpioExamples {
                 .blockSize(1024)
                 .encoding(UTF_8.name())
                 .and()
-                .filter(entry -> !entry.name.startsWith("temp"))
+                .filter(entry -> !entry.name().startsWith("temp"))
                 .errorHandler((entry, exception) -> RETRY)
                 .escapingSymlinkPolicy(ArchiveExtractor.EscapingSymlinkPolicy.DISALLOW)
                 .postProcessor((entry, exception) -> {

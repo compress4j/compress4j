@@ -38,7 +38,7 @@ class ArchiveExtractorBuilderTest {
     @Test
     void shouldBuildArchiveExtractor() throws IOException {
         // given
-        Predicate<Entry> filter = entry -> !entry.name.contains("some");
+        Predicate<Entry> filter = entry -> !entry.name().contains("some");
         BiFunction<Entry, IOException, ErrorHandlerChoice> errorHandler = (entry, exception) -> RETRY;
         AtomicInteger counter = new AtomicInteger();
         BiConsumer<Entry, Path> postProcessor = (entry, path) -> counter.incrementAndGet();

@@ -228,7 +228,6 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * @param outputDir the directory to extract the archive to
      * @throws IOException if an I/O error occurs
      */
-    @SuppressWarnings("java:S2259")
     public final void extract(Path outputDir) throws IOException {
         var decision = SKIP;
 
@@ -261,28 +260,25 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
             throws IOException {
         if (decision.equals(SKIP_ALL)) {
             LOGGER.debug("Skipped exception because {} was selected earlier", SKIP_ALL, ioException);
+            return SKIP_ALL;
         } else {
-            switch (errorHandler.apply(entry, ioException)) {
-                case ABORT:
-                    decision = ABORT;
-                    break;
-                case BAIL_OUT:
-                    throw ioException;
-                case RETRY:
+            return switch (errorHandler.apply(entry, ioException)) {
+                case ABORT -> ABORT;
+                case BAIL_OUT -> throw ioException;
+                case RETRY -> {
                     LOGGER.debug("Retying because of exception", ioException);
-                    decision = RETRY;
-                    break;
-                case SKIP:
-                    decision = SKIP;
+                    yield RETRY;
+                }
+                case SKIP -> {
                     LOGGER.debug("Skipped exception", ioException);
-                    break;
-                case SKIP_ALL:
-                    decision = SKIP_ALL;
+                    yield SKIP;
+                }
+                case SKIP_ALL -> {
                     LOGGER.debug("SKIP_ALL is selected", ioException);
-                    break;
-            }
+                    yield SKIP_ALL;
+                }
+            };
         }
-        return decision;
     }
 
     /** {@inheritDoc} */
@@ -361,7 +357,10 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * @param stream the InputStream for the current entry
      * @throws IOException if an I/O error occurs
      */
-    protected abstract void closeEntryStream(InputStream stream) throws IOException;
+    @SuppressWarnings("RedundantThrows")
+    protected void closeEntryStream(@SuppressWarnings("unused") InputStream stream) throws IOException {
+        // Default implementation does nothing
+    }
 
     /**
      * Retrieve the next entry from the archive.
@@ -432,19 +431,14 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         String target = entry.linkTarget;
 
         switch (escapingSymlinkPolicy) {
-            case DISALLOW: {
-                verifySymlinkTarget(entry.name, entry.linkTarget, outputDir, outputFile);
-                break;
-            }
-            case RELATIVIZE_ABSOLUTE: {
+            case DISALLOW -> verifySymlinkTarget(entry.name, entry.linkTarget, outputDir, outputFile);
+            case RELATIVIZE_ABSOLUTE -> {
                 if (Paths.get(target).isAbsolute()) {
                     target = Paths.get(outputDir.toString(), entry.linkTarget.substring(1))
                             .toString();
                 }
-                break;
             }
-            case ALLOW:
-                break;
+            case ALLOW -> LOGGER.debug("Skipping symlink entry: {} (already exists)", entry.name);
         }
 
         if (overwrite || !Files.exists(outputFile, LinkOption.NOFOLLOW_LINKS)) {
@@ -472,15 +466,9 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
 
         Path outputFile = entryFile(outputDir, entry.name);
         switch (entry.type) {
-            case DIR:
-                makeDirectory(outputFile);
-                break;
-            case FILE:
-                writeFile(entry, outputFile);
-                break;
-            case SYMLINK:
-                extractSymlink(outputDir, entry, outputFile);
-                break;
+            case DIR -> makeDirectory(outputFile);
+            case FILE -> writeFile(entry, outputFile);
+            case SYMLINK -> extractSymlink(outputDir, entry, outputFile);
         }
 
         if (postProcessor != null) {
@@ -674,23 +662,14 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * Represents an entry in the archive.
      *
      * <p>It is recommended to use {@link #name} as a key for the entry, as it is normalized and trimmed.
+     *
+     * @param name the name of the entry
+     * @param type the type of the entry
+     * @param mode the mode of the entry
+     * @param linkTarget the target of the symbolic link
+     * @param size the size of the entry
      */
-    public static final class Entry {
-        /** An entry name with separators converted to '/' and trimmed; handle with care */
-        public final String name;
-
-        /** Type of the entry */
-        public final Type type;
-
-        /** Depending on the source, could be POSIX permissions, DOS attributes, or just {@code 0} */
-        public final int mode;
-
-        /** Size of the entry */
-        public final long size;
-
-        /** Target of the symbolic link, or {@code null} if not a symbolic link */
-        public final @Nullable String linkTarget;
-
+    public record Entry(String name, Type type, int mode, @Nullable String linkTarget, long size) {
         /**
          * Creates a new entry with the specified name, type, mode, link target, and size.
          *
@@ -708,20 +687,20 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
          * @param name the name of the entry
          * @param type the type of the entry
          * @param mode the mode of the entry
-         * @param linkTarget the target of the symbolic link
          * @param size the size of the entry
          */
-        public Entry(String name, Type type, int mode, @Nullable String linkTarget, long size) {
+        public Entry(String name, Type type, int mode, long size) {
+            this(name, type, mode, null, size);
+        }
+
+        /** Normalizes the name of the entry by trimming whitespace and replacing backslashes with forward slashes. */
+        public Entry {
             name = name.trim().replace('\\', '/');
             int s = 0;
             int e = name.length() - 1;
             while (s < e && name.charAt(s) == '/') s++;
             while (e >= s && name.charAt(e) == '/') e--;
-            this.name = name.substring(s, e + 1);
-            this.type = type;
-            this.mode = mode;
-            this.linkTarget = linkTarget;
-            this.size = size;
+            name = name.substring(s, e + 1);
         }
 
         /** Type of the entry. */

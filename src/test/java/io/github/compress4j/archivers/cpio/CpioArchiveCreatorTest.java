@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream;
+import org.apache.commons.compress.archivers.cpio.CpioArchiveOutputStream;
 import org.apache.commons.compress.archivers.cpio.CpioConstants;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -44,8 +45,8 @@ class CpioArchiveCreatorTest {
 
         // when
         var archiveOutput = new ByteArrayOutputStream();
-        try (CpioArchiveCreator creator =
-                CpioArchiveCreator.builder(archiveOutput).build()) {
+        try (var archiveOutputStream = new CpioArchiveOutputStream(archiveOutput);
+                var creator = new CpioArchiveCreator(archiveOutputStream)) {
             creator.addFile("test1.txt", testFile1);
             creator.addFile("test2.txt", testFile2);
         }
@@ -53,8 +54,8 @@ class CpioArchiveCreatorTest {
         // then
         assertThat(archiveOutput.size()).isGreaterThan(0);
 
-        ByteArrayInputStream archiveInput = new ByteArrayInputStream(archiveOutput.toByteArray());
-        try (CpioArchiveInputStream cpioInput = new CpioArchiveInputStream(archiveInput)) {
+        var archiveInput = new ByteArrayInputStream(archiveOutput.toByteArray());
+        try (var cpioInput = new CpioArchiveInputStream(archiveInput)) {
             var entry1 = cpioInput.getNextEntry();
             assertThat(entry1).isNotNull();
             assertThat(entry1.getName()).isEqualTo("test1.txt");
@@ -80,8 +81,7 @@ class CpioArchiveCreatorTest {
 
         // when
         var archiveOutput = new ByteArrayOutputStream();
-        try (CpioArchiveCreator creator =
-                CpioArchiveCreator.builder(archiveOutput).build()) {
+        try (var creator = CpioArchiveCreator.builder(archiveOutput).build()) {
             creator.addDirectory("subdir/", FileTime.fromMillis(System.currentTimeMillis()));
             creator.addFile("subdir/nested.txt", testFile);
         }
@@ -89,8 +89,8 @@ class CpioArchiveCreatorTest {
         // then
         assertThat(archiveOutput.size()).isGreaterThan(0);
 
-        ByteArrayInputStream archiveInput = new ByteArrayInputStream(archiveOutput.toByteArray());
-        try (CpioArchiveInputStream cpioInput = new CpioArchiveInputStream(archiveInput)) {
+        var archiveInput = new ByteArrayInputStream(archiveOutput.toByteArray());
+        try (var cpioInput = new CpioArchiveInputStream(archiveInput)) {
             var dirEntry = cpioInput.getNextEntry();
             assertThat(dirEntry).isNotNull();
             assertThat(dirEntry.getName()).isEqualTo("subdir/");
@@ -109,7 +109,7 @@ class CpioArchiveCreatorTest {
         var archiveOutput = new ByteArrayOutputStream();
 
         // when
-        try (CpioArchiveCreator creator = CpioArchiveCreator.builder(archiveOutput)
+        try (var creator = CpioArchiveCreator.builder(archiveOutput)
                 .cpioOutputStream()
                 .format(CpioConstants.FORMAT_NEW)
                 .blockSize(512)
@@ -132,7 +132,7 @@ class CpioArchiveCreatorTest {
         var archiveOutput = new ByteArrayOutputStream();
 
         // when
-        try (CpioArchiveCreator creator = CpioArchiveCreator.builder(archiveOutput)
+        try (var creator = CpioArchiveCreator.builder(archiveOutput)
                 .cpioOutputStream()
                 .format(CpioConstants.FORMAT_OLD_ASCII)
                 .blockSize(1024)
@@ -157,8 +157,7 @@ class CpioArchiveCreatorTest {
         Files.write(testFile, "Test content".getBytes());
 
         // when
-        try (CpioArchiveCreator creator =
-                CpioArchiveCreator.builder(archivePath).build()) {
+        try (var creator = CpioArchiveCreator.builder(archivePath).build()) {
             creator.addFile("test.txt", testFile);
         }
 
@@ -175,16 +174,15 @@ class CpioArchiveCreatorTest {
 
         // when
         var archiveOutput = new ByteArrayOutputStream();
-        try (CpioArchiveCreator creator =
-                CpioArchiveCreator.builder(archiveOutput).build()) {
+        try (var creator = CpioArchiveCreator.builder(archiveOutput).build()) {
             creator.addFile("empty.txt", emptyFile);
         }
 
         // then
         assertThat(archiveOutput.size()).isGreaterThan(0);
 
-        ByteArrayInputStream archiveInput = new ByteArrayInputStream(archiveOutput.toByteArray());
-        try (CpioArchiveInputStream cpioInput = new CpioArchiveInputStream(archiveInput)) {
+        var archiveInput = new ByteArrayInputStream(archiveOutput.toByteArray());
+        try (var cpioInput = new CpioArchiveInputStream(archiveInput)) {
             var entry = cpioInput.getNextEntry();
             assertThat(entry).isNotNull();
             assertThat(entry.getName()).isEqualTo("empty.txt");
@@ -200,8 +198,7 @@ class CpioArchiveCreatorTest {
 
         // when
         var archiveOutput = new ByteArrayOutputStream();
-        try (CpioArchiveCreator creator =
-                CpioArchiveCreator.builder(archiveOutput).build()) {
+        try (var creator = CpioArchiveCreator.builder(archiveOutput).build()) {
             creator.addDirectory("dir1/", FileTime.fromMillis(System.currentTimeMillis()));
             creator.addDirectory("dir1/dir2/", FileTime.fromMillis(System.currentTimeMillis()));
         }
@@ -209,8 +206,8 @@ class CpioArchiveCreatorTest {
         // then
         assertThat(archiveOutput.size()).isGreaterThan(0);
 
-        ByteArrayInputStream archiveInput = new ByteArrayInputStream(archiveOutput.toByteArray());
-        try (CpioArchiveInputStream cpioInput = new CpioArchiveInputStream(archiveInput)) {
+        var archiveInput = new ByteArrayInputStream(archiveOutput.toByteArray());
+        try (var cpioInput = new CpioArchiveInputStream(archiveInput)) {
             var entry1 = cpioInput.getNextEntry();
             assertThat(entry1).isNotNull();
             assertThat(entry1.getName()).isEqualTo("dir1/");
@@ -240,7 +237,7 @@ class CpioArchiveCreatorTest {
 
         // when
         var archiveOutput = new ByteArrayOutputStream();
-        try (CpioArchiveCreator creator = CpioArchiveCreator.builder(archiveOutput)
+        try (var creator = CpioArchiveCreator.builder(archiveOutput)
                 .cpioOutputStream()
                 .encoding("UTF-8")
                 .and()
@@ -251,8 +248,8 @@ class CpioArchiveCreatorTest {
         // then
         assertThat(archiveOutput.size()).isGreaterThan(0);
 
-        ByteArrayInputStream archiveInput = new ByteArrayInputStream(archiveOutput.toByteArray());
-        try (CpioArchiveInputStream cpioInput = new CpioArchiveInputStream(archiveInput, 512, "UTF-8")) {
+        var archiveInput = new ByteArrayInputStream(archiveOutput.toByteArray());
+        try (var cpioInput = new CpioArchiveInputStream(archiveInput, 512, "UTF-8")) {
             var entry = cpioInput.getNextEntry();
             assertThat(entry).isNotNull();
             assertThat(entry.getName()).isEqualTo("special-chars äöü.txt");

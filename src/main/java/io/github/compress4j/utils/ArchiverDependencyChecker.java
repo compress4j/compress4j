@@ -73,21 +73,10 @@ public class ArchiverDependencyChecker {
      */
     public static void check(String name) {
         switch (name.toLowerCase()) {
-            case BROTLI:
-                checkBrotli();
-                break;
-            case LZMA:
-                checkLZMA();
-                break;
-            case XZ:
-                checkXZ();
-                break;
-            case ZSTANDARD:
-                checkZstd();
-                break;
-            default: {
-                // Do nothing for unmatched
-            }
+            case BROTLI -> checkBrotli();
+            case LZMA -> checkLZMA();
+            case XZ -> checkXZ();
+            case ZSTANDARD -> checkZstd();
         }
     }
 }

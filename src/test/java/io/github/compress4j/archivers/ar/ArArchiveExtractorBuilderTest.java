@@ -84,7 +84,8 @@ class ArArchiveExtractorBuilderTest {
         }
 
         var bais = new ByteArrayInputStream(outputStream.toByteArray());
-        var builder = ArArchiveExtractor.builder(bais).filter(entry -> entry.name.startsWith("include"));
+        var builder =
+                ArArchiveExtractor.builder(bais).filter(entry -> entry.name().startsWith("include"));
 
         // when
         try (var extractor = builder.build()) {
@@ -173,7 +174,7 @@ class ArArchiveExtractorBuilderTest {
         var bais = new ByteArrayInputStream(outputStream.toByteArray());
         var builder = ArArchiveExtractor.builder(bais).postProcessor((entry, path) -> processLog
                 .append("Processed: ")
-                .append(entry.name)
+                .append(entry.name())
                 .append(" at ")
                 .append(path)
                 .append("\n"));
@@ -199,10 +200,10 @@ class ArArchiveExtractorBuilderTest {
         var log = new StringBuilder();
         var bais = new ByteArrayInputStream(outputStream.toByteArray());
         var builder = ArArchiveExtractor.builder(bais)
-                .filter(entry -> entry.name.contains("chain"))
+                .filter(entry -> entry.name().contains("chain"))
                 .overwrite(true)
                 .postProcessor((entry, path) ->
-                        log.append("Processed: ").append(entry.name).append("\n"))
+                        log.append("Processed: ").append(entry.name()).append("\n"))
                 .errorHandler((entry, ex) -> ArArchiveExtractor.ErrorHandlerChoice.SKIP);
 
         // when
