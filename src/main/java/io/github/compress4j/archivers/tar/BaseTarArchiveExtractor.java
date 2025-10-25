@@ -51,18 +51,17 @@ public abstract class BaseTarArchiveExtractor extends ArchiveExtractor<TarArchiv
 
     /** {@inheritDoc} */
     @Override
-    protected void closeEntryStream(InputStream stream) {
-        // no-op
-    }
-
-    /** {@inheritDoc} */
-    @Override
     protected Entry nextEntry() throws IOException {
         TarArchiveEntry te = getNextTarArchiveEntry();
-        if (te == null) return null;
-        if (!isIsOsWindows()) return new Entry(te.getName(), type(te), te.getMode(), te.getLinkName(), te.getSize());
-        if (te.isSymbolicLink()) return new Entry(te.getName(), Entry.Type.SYMLINK, 0, te.getLinkName(), te.getSize());
-        return new Entry(te.getName(), te.isDirectory(), te.getSize());
+        if (te == null) {
+            return null;
+        } else if (!isIsOsWindows()) {
+            return new Entry(te.getName(), type(te), te.getMode(), te.getLinkName(), te.getSize());
+        } else if (te.isSymbolicLink()) {
+            return new Entry(te.getName(), Entry.Type.SYMLINK, 0, te.getLinkName(), te.getSize());
+        } else {
+            return new Entry(te.getName(), te.isDirectory(), te.getSize());
+        }
     }
 
     /** {@inheritDoc} */

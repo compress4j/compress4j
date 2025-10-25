@@ -33,33 +33,33 @@ public class DecompressorEntryAssert extends AbstractAssert<DecompressorEntryAss
     }
 
     public DecompressorEntryAssert hasName(String name) {
-        Assertions.assertThat(actual.name).isEqualTo(name);
+        Assertions.assertThat(actual.name()).isEqualTo(name);
         return this;
     }
 
     public DecompressorEntryAssert hasLinkName(String linkName) {
-        Assertions.assertThat(actual.linkTarget).isEqualTo(linkName);
+        Assertions.assertThat(actual.linkTarget()).isEqualTo(linkName);
         return this;
     }
 
     public DecompressorEntryAssert hasSize(long size) {
-        Assertions.assertThat(actual.size).isEqualTo(size);
+        Assertions.assertThat(actual.size()).isEqualTo(size);
         return this;
     }
 
     public DecompressorEntryAssert hasMode(long mod) {
-        Assertions.assertThat(actual.mode).isEqualTo(mod);
+        Assertions.assertThat(actual.mode()).isEqualTo(mod);
         return this;
     }
 
     public DecompressorEntryAssert hasMode(Set<PosixFilePermission> permissions) {
-        Set<PosixFilePermission> actualPermissions = PosixFilePermissionsMapper.fromUnixMode(actual.mode);
+        Set<PosixFilePermission> actualPermissions = PosixFilePermissionsMapper.fromUnixMode(actual.mode());
         Assertions.assertThat(actualPermissions).containsAll(permissions);
         return this;
     }
 
     public DecompressorEntryAssert hasType(Entry.Type type) {
-        Assertions.assertThat(actual.type).isEqualTo(type);
+        Assertions.assertThat(actual.type()).isEqualTo(type);
         return this;
     }
 }

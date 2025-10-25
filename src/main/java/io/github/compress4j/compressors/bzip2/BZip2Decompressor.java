@@ -78,6 +78,7 @@ public class BZip2Decompressor extends Decompressor<BZip2CompressorInputStream> 
     /**
      * BZip2Decompressor Builder
      *
+     * @param <P> the parent builder type
      * @since 2.2
      */
     public static class BZip2DecompressorInputStreamBuilder<P> {

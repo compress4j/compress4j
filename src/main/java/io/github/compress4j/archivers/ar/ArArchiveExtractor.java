@@ -72,12 +72,6 @@ public class ArArchiveExtractor extends ArchiveExtractor<ArArchiveInputStream> {
 
     /** {@inheritDoc} */
     @Override
-    protected void closeEntryStream(InputStream stream) {
-        // no-op
-    }
-
-    /** {@inheritDoc} */
-    @Override
     protected Entry nextEntry() throws IOException {
         ArArchiveEntry ae = getNextArArchiveEntry();
         if (ae == null) return null;

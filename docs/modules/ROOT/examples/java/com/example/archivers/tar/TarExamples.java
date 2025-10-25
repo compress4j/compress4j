@@ -60,7 +60,7 @@ public class TarExamples {
     public static void tarExtractor() throws IOException {
         // tag::tar-extractor[]
         try (TarArchiveExtractor tarExtractor = TarArchiveExtractor.builder(Path.of("example.tar"))
-                .filter(entry -> !entry.name.startsWith("bad"))
+                .filter(entry -> !entry.name().startsWith("bad"))
                 .errorHandler((entry, exception) -> RETRY)
                 .escapingSymlinkPolicy(ArchiveExtractor.EscapingSymlinkPolicy.DISALLOW)
                 .postProcessor((entry, exception) -> {})
@@ -98,7 +98,7 @@ public class TarExamples {
     public static void tarGzExtractor() throws IOException {
         // tag::tar-gz-extractor[]
         try (TarGzArchiveExtractor tarGzExtractor = TarGzArchiveExtractor.builder(Path.of("example.tar.gz"))
-                .filter(entry -> !entry.name.startsWith("bad"))
+                .filter(entry -> !entry.name().startsWith("bad"))
                 .errorHandler((entry, exception) -> RETRY)
                 .escapingSymlinkPolicy(ArchiveExtractor.EscapingSymlinkPolicy.DISALLOW)
                 .postProcessor((entry, exception) -> {})
@@ -132,7 +132,7 @@ public class TarExamples {
     public static void tarBzip2Extractor() throws IOException {
         // tag::tar-bzip2-extractor[]
         try (TarBZip2ArchiveExtractor tarBzip2Extractor = TarBZip2ArchiveExtractor.builder(Path.of("example.tar.bz2"))
-                .filter(entry -> !entry.name.startsWith("bad"))
+                .filter(entry -> !entry.name().startsWith("bad"))
                 .errorHandler((entry, exception) -> RETRY)
                 .escapingSymlinkPolicy(ArchiveExtractor.EscapingSymlinkPolicy.DISALLOW)
                 .postProcessor((entry, exception) -> {})

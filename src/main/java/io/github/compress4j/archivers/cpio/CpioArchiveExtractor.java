@@ -52,11 +52,6 @@ public class CpioArchiveExtractor extends ArchiveExtractor<CpioArchiveInputStrea
     }
 
     @Override
-    protected void closeEntryStream(InputStream entryStream) throws IOException {
-        // no-op - don't close the entry stream as it's the same as the archive input stream
-    }
-
-    @Override
     protected InputStream openEntryStream(Entry entry) {
         return archiveInputStream;
     }
@@ -64,16 +59,10 @@ public class CpioArchiveExtractor extends ArchiveExtractor<CpioArchiveInputStrea
     @Override
     protected @Nullable Entry nextEntry() throws IOException {
         CpioArchiveEntry cpioEntry = archiveInputStream.getNextEntry();
-        if (cpioEntry == null) {
+        if (cpioEntry == null || "TRAILER!!!".equals(cpioEntry.getName())) {
             return null;
         }
 
-        // Skip the TRAILER entry which marks the end of a CPIO archive
-        if ("TRAILER!!!".equals(cpioEntry.getName())) {
-            return null;
-        }
-
-        // Create Entry based on the type of the CPIO entry
         if (cpioEntry.isDirectory()) {
             return new Entry(cpioEntry.getName(), true, cpioEntry.getSize());
         } else {
