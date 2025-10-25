@@ -77,6 +77,9 @@ public class ArchiverDependencyChecker {
             case LZMA -> checkLZMA();
             case XZ -> checkXZ();
             case ZSTANDARD -> checkZstd();
+            default -> {
+                // No dependency check required
+            }
         }
     }
 }
