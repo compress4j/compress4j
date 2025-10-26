@@ -34,9 +34,6 @@ repositories {
 }
 
 val examples: SourceSet by sourceSets.creating {
-    val examplesDir = layout.projectDirectory.dir("docs/modules/ROOT/examples")
-    java.srcDir(examplesDir.file("java"))
-    resources.srcDir(examplesDir.file("resources"))
     compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
     runtimeClasspath += sourceSets.main.get().output + sourceSets.main.get().runtimeClasspath
 }
@@ -183,7 +180,7 @@ spotless {
     ratchetFrom("origin/main")
     java {
         toggleOffOn()
-        palantirJavaFormat("2.71.0").formatJavadoc(true)
+        palantirJavaFormat("2.81.0").formatJavadoc(true)
         licenseHeaderFile(rootProject.file(".config/spotless/copyright.java.txt"))
         removeUnusedImports()
         trimTrailingWhitespace()
