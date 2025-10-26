@@ -664,7 +664,8 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * @param mode the mode of the entry
      * @param linkTarget the target of the symbolic link
      */
-    public record Entry(String name, Type type, int mode, @Nullable String linkTarget) {
+    public record Entry(
+            String name, Type type, int mode, @Nullable String linkTarget) {
         /**
          * Creates a new entry with the specified name, type, mode, link target, and size.
          *

@@ -16,7 +16,6 @@
 package io.github.compress4j.archivers.cpio;
 
 import io.github.compress4j.archivers.ArchiveExtractor;
-import io.github.compress4j.archivers.ArchiveExtractor.ArchiveExtractorBuilder;
 import jakarta.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
