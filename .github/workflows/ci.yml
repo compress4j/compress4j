@@ -14,12 +14,48 @@ permissions:
   actions: write
 
 jobs:
-  ci:
-    name: Build
+  build-ubuntu:
+    name: Build (Ubuntu)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java-version: [ 21, 25 ]
+        operating-system: [ ubuntu-latest ]
+
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+
+      - name: 'Set up JDK ${{ matrix.java-version }}'
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ matrix.java-version }}
+          cache: 'gradle'
+
+      - name: Check Java version
+        run: java -version
+      - name: Build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+        run: ./gradlew build --continue --no-daemon --scan
+      - name: Upload Test reports
+        uses: actions/upload-artifact@v4
+        # This job only runs on ubuntu, so no 'if' condition is needed
+        with:
+          name: ${{ matrix.operating-system }}-jdk_${{ matrix.java-version }}-test-reports
+          path: |
+            build/test-results/**/*.xml
+            build/jacoco/
+
+  build-other-os:
+    name: Build (${{ matrix.operating-system }})
     runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
-        operating-system: [ ubuntu-latest, macos-latest, windows-latest ]
+        operating-system: [ macos-latest, windows-latest ]
         java-version: [ 21, 25 ]
 
     steps:
@@ -45,20 +81,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
         run: ./gradlew build --continue --no-daemon --scan
-      - name: Upload Test reports
-        uses: actions/upload-artifact@v4
-        if: ${{ matrix.operating-system == 'ubuntu-latest' }}
-        with:
-          name: ${{ matrix.operating-system }}-jdk_${{ matrix.java-version }}-test-reports
-          path: |
-            build/test-results/**/*.xml
-            build/jacoco/
+      # No artifact upload needed for these OS
 
   configure_sonar:
     runs-on: ubuntu-latest
+    if: matrix.java-version == 21
     needs:
-      - ci
-
+      - build-ubuntu
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -77,6 +106,7 @@ jobs:
             -f eventName=${{github.event_name}} \
             -f prNumber=${{ github.event.number }} \
             -f baseRef=${{github.base_ref}} \
-            -f headRef=${{github.head_ref}}
+            -f headRef=${{github.head_ref}} \
+            -f jdk_version=21
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

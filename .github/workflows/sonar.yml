@@ -18,6 +18,10 @@ on:
       headRef:
         description: 'Head git reference'
         required: false
+      jdk_version:
+        description: 'JDK version'
+        required: true
+        default: 21
 
 permissions:
   contents: read
@@ -27,9 +31,6 @@ jobs:
   sonar:
     name: Sonar
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        java-version: [ 21, 25 ]
 
     steps:
       - name: Checkout sources
@@ -37,25 +38,25 @@ jobs:
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
           ref: ${{github.event.workflow_run.head_sha}}
-      - name: 'Set up JDK ${{ matrix.java-version }}'
+      - name: "Set up JDK ${{ github.event.inputs.jdk_version }}"
         uses: actions/setup-java@v4
         with:
-          java-version: ${{ matrix.java-version }}
+          java-version: ${{ github.event.inputs.jdk_version }}
           distribution: 'temurin'
           cache: 'gradle'
-      - name: Download Test report
+      - name: "Download JDK ${{ github.event.inputs.jdk_version }} Test reports"
         uses: actions/download-artifact@v4
         with:
           path: reports
-          pattern: ubuntu-latest-jdk_${{ matrix.java-version }}-test-reports
+          pattern: "ubuntu-latest-jdk_${{ github.event.inputs.jdk_version }}-test-reports"
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.inputs.runId }}
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
         with:
           path: ~/.sonar/cache
-          key: ubuntu-latest-jdk_${{ matrix.java-version }}-sonar
-          restore-keys: ubuntu-latest-jdk_${{ matrix.java-version }}-sonar
+          key: "ubuntu-latest-jdk_${{ github.event.inputs.jdk_version }}-sonar"
+          restore-keys: "ubuntu-latest-jdk_${{ github.event.inputs.jdk_version }}-sonar"
       - name: Create coverage report and run Sonar analysis
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -63,6 +64,7 @@ jobs:
         run: |
           mkdir build
           cp -r reports/*-reports/* build/
+          
           if [ '${{github.event.inputs.eventName}}' == 'pull_request' ]; then
             ./gradlew jacocoTestReport sonar \
               -Dsonar.pullrequest.base=${{github.event.inputs.baseRef}} \
@@ -75,9 +77,11 @@ jobs:
           fi
         shell: bash
       - name: Trigger release when a tag is pushed
-        if: startsWith( github.ref, 'refs/tags' ) && matrix.java-version == 11
+        if: startsWith( github.ref, 'refs/tags' )
         run: |
           echo Trigger release on a tag
-          gh workflow run --ref ${{ github.ref_name }} Release -f jdk_version=${{ matrix.java-version }}
+          gh workflow run \
+            --ref ${{ github.ref_name }} release.yml \
+            -f jdk_version=${{ github.event.inputs.jdk_version }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
