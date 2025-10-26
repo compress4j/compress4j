@@ -1539,12 +1539,12 @@ class ArchiveExtractorTest {
 
     @Test
     void entryConstructorShouldNormalizeAndTrimPaths() {
-        assertThat(new Entry(" /a/b/ ", FILE, 0, null, 0).name()).isEqualTo("a/b");
-        assertThat(new Entry("\\a\\b\\", DIR, 0, null, 0).name()).isEqualTo("a/b");
-        assertThat(new Entry("a/b/", FILE, 0, null, 0).name()).isEqualTo("a/b");
-        assertThat(new Entry("a/b/", DIR, 0, null, 0).name()).isEqualTo("a/b");
-        assertThat(new Entry("///", DIR, 0, null, 0).name()).isEmpty();
-        assertThat(new Entry("", FILE, 0, null, 0).name()).isEmpty();
+        assertThat(new Entry(" /a/b/ ", FILE, 0, null).name()).isEqualTo("a/b");
+        assertThat(new Entry("\\a\\b\\", DIR, 0, null).name()).isEqualTo("a/b");
+        assertThat(new Entry("a/b/", FILE, 0, null).name()).isEqualTo("a/b");
+        assertThat(new Entry("a/b/", DIR, 0, null).name()).isEqualTo("a/b");
+        assertThat(new Entry("///", DIR, 0, null).name()).isEmpty();
+        assertThat(new Entry("", FILE, 0, null).name()).isEmpty();
     }
 
     @EnabledOnOs(OS.WINDOWS)

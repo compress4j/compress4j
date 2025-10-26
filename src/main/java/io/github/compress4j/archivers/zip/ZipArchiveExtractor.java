@@ -69,8 +69,7 @@ public class ZipArchiveExtractor extends ArchiveExtractor<ZipFileArchiveInputStr
         if (ze == null) {
             return null;
         } else {
-            return new Entry(
-                    ze.getName(), type(ze), ze.getUnixMode(), archiveInputStream.getUnixSymlink(ze), ze.getSize());
+            return new Entry(ze.getName(), type(ze), ze.getUnixMode(), archiveInputStream.getUnixSymlink(ze));
         }
     }
 

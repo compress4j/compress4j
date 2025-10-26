@@ -77,7 +77,7 @@ public class ArArchiveExtractor extends ArchiveExtractor<ArArchiveInputStream> {
         if (ae == null) return null;
 
         // AR format only supports regular files
-        return new Entry(ae.getName(), false, ae.getSize());
+        return new Entry(ae.getName(), false);
     }
 
     /** {@inheritDoc} */

@@ -65,9 +65,9 @@ public class CpioArchiveExtractor extends ArchiveExtractor<CpioArchiveInputStrea
         }
 
         if (cpioEntry.isDirectory()) {
-            return new Entry(cpioEntry.getName(), true, cpioEntry.getSize());
+            return new Entry(cpioEntry.getName(), true);
         } else {
-            return new Entry(cpioEntry.getName(), false, cpioEntry.getSize());
+            return new Entry(cpioEntry.getName(), false);
         }
     }
 

@@ -61,12 +61,7 @@ public class InMemoryArchiveExtractor extends ArchiveExtractor<InMemoryArchiveIn
         if (nextEntry == null) {
             return null;
         }
-        return new Entry(
-                nextEntry.getName(),
-                nextEntry.getType(),
-                nextEntry.getMode(),
-                nextEntry.getLinkName(),
-                nextEntry.getSize());
+        return new Entry(nextEntry.getName(), nextEntry.getType(), nextEntry.getMode(), nextEntry.getLinkName());
     }
 
     @Override

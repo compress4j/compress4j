@@ -60,7 +60,6 @@ class ZipArchiveExtractorTest {
             when(mockZipEntry.isDirectory()).thenReturn(false);
             when(mockZipEntry.isUnixSymlink()).thenReturn(false);
             when(mockZipEntry.getUnixMode()).thenReturn(0644);
-            when(mockZipEntry.getSize()).thenReturn(123L);
 
             when(mockInputStream.getNextEntry()).thenReturn(mockZipEntry);
 
@@ -72,7 +71,6 @@ class ZipArchiveExtractorTest {
             assertThat(entry.name()).isEqualTo("file.txt");
             assertThat(entry.type()).isEqualTo(ArchiveExtractor.Entry.Type.FILE);
             assertThat(entry.mode()).isEqualTo(0644);
-            assertThat(entry.size()).isEqualTo(123L);
             assertThat(entry.linkTarget()).isNull();
             verify(mockInputStream, times(1)).getUnixSymlink(mockZipEntry);
         }

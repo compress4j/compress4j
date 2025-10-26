@@ -386,7 +386,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
             return null;
         }
         String newName = String.join("/", ourPathSplit.subList(stripComponents, ourPathSplit.size()));
-        return new Entry(newName, e.type, e.mode, e.linkTarget, e.size);
+        return new Entry(newName, e.type, e.mode, e.linkTarget);
     }
 
     /**
@@ -663,18 +663,16 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * @param type the type of the entry
      * @param mode the mode of the entry
      * @param linkTarget the target of the symbolic link
-     * @param size the size of the entry
      */
-    public record Entry(String name, Type type, int mode, @Nullable String linkTarget, long size) {
+    public record Entry(String name, Type type, int mode, @Nullable String linkTarget) {
         /**
          * Creates a new entry with the specified name, type, mode, link target, and size.
          *
          * @param name the name of the entry
          * @param isDirectory whether the entry is a directory
-         * @param size the size of the entry
          */
-        public Entry(String name, boolean isDirectory, long size) {
-            this(name, isDirectory ? Type.DIR : Type.FILE, 0, null, size);
+        public Entry(String name, boolean isDirectory) {
+            this(name, isDirectory ? Type.DIR : Type.FILE, 0, null);
         }
 
         /**
@@ -683,10 +681,9 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
          * @param name the name of the entry
          * @param type the type of the entry
          * @param mode the mode of the entry
-         * @param size the size of the entry
          */
-        public Entry(String name, Type type, int mode, long size) {
-            this(name, type, mode, null, size);
+        public Entry(String name, Type type, int mode) {
+            this(name, type, mode, null);
         }
 
         /** Normalizes the name of the entry by trimming whitespace and replacing backslashes with forward slashes. */

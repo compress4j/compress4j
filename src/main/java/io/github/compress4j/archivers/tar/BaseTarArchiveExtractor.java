@@ -56,11 +56,11 @@ public abstract class BaseTarArchiveExtractor extends ArchiveExtractor<TarArchiv
         if (te == null) {
             return null;
         } else if (!isIsOsWindows()) {
-            return new Entry(te.getName(), type(te), te.getMode(), te.getLinkName(), te.getSize());
+            return new Entry(te.getName(), type(te), te.getMode(), te.getLinkName());
         } else if (te.isSymbolicLink()) {
-            return new Entry(te.getName(), Entry.Type.SYMLINK, 0, te.getLinkName(), te.getSize());
+            return new Entry(te.getName(), Entry.Type.SYMLINK, 0, te.getLinkName());
         } else {
-            return new Entry(te.getName(), te.isDirectory(), te.getSize());
+            return new Entry(te.getName(), te.isDirectory());
         }
     }
 
