@@ -18,8 +18,6 @@ package io.github.compress4j.archivers.tar;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.compress4j.archivers.AbstractArchiverIntegrationTest;
-import io.github.compress4j.archivers.ArchiveCreator;
-import io.github.compress4j.archivers.ArchiveExtractor;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,12 +31,12 @@ import org.junit.jupiter.api.Test;
 class TarGzArchiveIntegrationTest extends AbstractArchiverIntegrationTest {
 
     @Override
-    protected ArchiveCreator<?> archiveCreatorBuilder(Path archivePath) throws IOException {
+    protected TarGzArchiveCreator archiveCreatorBuilder(Path archivePath) throws IOException {
         return TarGzArchiveCreator.builder(Files.newOutputStream(archivePath)).build();
     }
 
     @Override
-    protected ArchiveExtractor<?> archiveExtractorBuilder(Path archivePath) throws IOException {
+    protected TarGzArchiveExtractor archiveExtractorBuilder(Path archivePath) throws IOException {
         return TarGzArchiveExtractor.builder(Files.newInputStream(archivePath)).build();
     }
 

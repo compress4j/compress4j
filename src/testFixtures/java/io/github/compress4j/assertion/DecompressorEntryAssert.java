@@ -42,11 +42,6 @@ public class DecompressorEntryAssert extends AbstractAssert<DecompressorEntryAss
         return this;
     }
 
-    public DecompressorEntryAssert hasSize(long size) {
-        Assertions.assertThat(actual.size()).isEqualTo(size);
-        return this;
-    }
-
     public DecompressorEntryAssert hasMode(long mod) {
         Assertions.assertThat(actual.mode()).isEqualTo(mod);
         return this;

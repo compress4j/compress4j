@@ -16,6 +16,7 @@
 package io.github.compress4j.archivers.cpio;
 
 import io.github.compress4j.archivers.ArchiveExtractor;
+import io.github.compress4j.archivers.ArchiveExtractor.ArchiveExtractorBuilder;
 import jakarta.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
@@ -64,9 +65,9 @@ public class CpioArchiveExtractor extends ArchiveExtractor<CpioArchiveInputStrea
         }
 
         if (cpioEntry.isDirectory()) {
-            return new Entry(cpioEntry.getName(), true, cpioEntry.getSize());
+            return new Entry(cpioEntry.getName(), true);
         } else {
-            return new Entry(cpioEntry.getName(), false, cpioEntry.getSize());
+            return new Entry(cpioEntry.getName(), false);
         }
     }
 
@@ -175,8 +176,7 @@ public class CpioArchiveExtractor extends ArchiveExtractor<CpioArchiveInputStrea
      * @since 2.2
      */
     public static class CpioArchiveExtractorBuilder
-            extends ArchiveExtractor.ArchiveExtractorBuilder<
-                    CpioArchiveInputStream, CpioArchiveExtractorBuilder, CpioArchiveExtractor> {
+            extends ArchiveExtractorBuilder<CpioArchiveInputStream, CpioArchiveExtractorBuilder, CpioArchiveExtractor> {
 
         private final CpioArchiveInputStreamBuilder<CpioArchiveExtractorBuilder> cpioInputStreamBuilder;
 
@@ -187,8 +187,7 @@ public class CpioArchiveExtractor extends ArchiveExtractor<CpioArchiveInputStrea
          * @throws IOException if an I/O error occurs opening the file
          */
         public CpioArchiveExtractorBuilder(Path path) throws IOException {
-            super(Files.newInputStream(path));
-            this.cpioInputStreamBuilder = new CpioArchiveInputStreamBuilder<>(this, inputStream);
+            this(Files.newInputStream(path));
         }
 
         /**
@@ -197,7 +196,6 @@ public class CpioArchiveExtractor extends ArchiveExtractor<CpioArchiveInputStrea
          * @param inputStream the input stream to read the archive from
          */
         public CpioArchiveExtractorBuilder(InputStream inputStream) {
-            super(inputStream);
             this.cpioInputStreamBuilder = new CpioArchiveInputStreamBuilder<>(this, inputStream);
         }
 

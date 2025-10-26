@@ -56,11 +56,11 @@ public abstract class BaseTarArchiveExtractor extends ArchiveExtractor<TarArchiv
         if (te == null) {
             return null;
         } else if (!isIsOsWindows()) {
-            return new Entry(te.getName(), type(te), te.getMode(), te.getLinkName(), te.getSize());
+            return new Entry(te.getName(), type(te), te.getMode(), te.getLinkName());
         } else if (te.isSymbolicLink()) {
-            return new Entry(te.getName(), Entry.Type.SYMLINK, 0, te.getLinkName(), te.getSize());
+            return new Entry(te.getName(), Entry.Type.SYMLINK, 0, te.getLinkName());
         } else {
-            return new Entry(te.getName(), te.isDirectory(), te.getSize());
+            return new Entry(te.getName(), te.isDirectory());
         }
     }
 
@@ -107,13 +107,17 @@ public abstract class BaseTarArchiveExtractor extends ArchiveExtractor<TarArchiv
     public abstract static class BaseTarArchiveExtractorBuilder<
                     B extends BaseTarArchiveExtractorBuilder<B, C>, C extends ArchiveExtractor<TarArchiveInputStream>>
             extends ArchiveExtractorBuilder<TarArchiveInputStream, B, C> {
+
+        /** Input stream to read from for extraction. */
+        protected final InputStream inputStream;
+
         /**
          * Create a new ArchiveExtractorBuilder.
          *
          * @param inputStream the input stream
          */
         protected BaseTarArchiveExtractorBuilder(InputStream inputStream) {
-            super(inputStream);
+            this.inputStream = inputStream;
         }
 
         /**

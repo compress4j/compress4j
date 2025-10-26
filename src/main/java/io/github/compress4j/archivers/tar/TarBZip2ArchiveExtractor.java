@@ -89,13 +89,13 @@ public class TarBZip2ArchiveExtractor extends BaseTarArchiveExtractor {
          *
          * @param inputStream the input stream
          */
-        protected TarBZip2ArchiveExtractorBuilder(InputStream inputStream) {
+        public TarBZip2ArchiveExtractorBuilder(InputStream inputStream) {
             super(inputStream);
         }
 
         /** {@inheritDoc} */
         @Override
-        protected TarBZip2ArchiveExtractorBuilder getThis() {
+        public TarBZip2ArchiveExtractorBuilder getThis() {
             return this;
         }
 

@@ -16,20 +16,18 @@
 package io.github.compress4j.archivers.ar;
 
 import io.github.compress4j.archivers.AbstractArchiverIntegrationTest;
-import io.github.compress4j.archivers.ArchiveCreator;
-import io.github.compress4j.archivers.ArchiveExtractor;
 import java.io.IOException;
 import java.nio.file.Path;
 
 class ArArchiveIntegrationTest extends AbstractArchiverIntegrationTest {
 
     @Override
-    protected ArchiveCreator<?> archiveCreatorBuilder(Path archivePath) throws IOException {
+    protected ArArchiveCreator archiveCreatorBuilder(Path archivePath) throws IOException {
         return ArArchiveCreator.builder(archivePath).build();
     }
 
     @Override
-    protected ArchiveExtractor<?> archiveExtractorBuilder(Path archivePath) throws IOException {
+    protected ArArchiveExtractor archiveExtractorBuilder(Path archivePath) throws IOException {
         return ArArchiveExtractor.builder(archivePath).build();
     }
 

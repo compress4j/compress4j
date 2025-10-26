@@ -77,7 +77,7 @@ public class ArArchiveExtractor extends ArchiveExtractor<ArArchiveInputStream> {
         if (ae == null) return null;
 
         // AR format only supports regular files
-        return new Entry(ae.getName(), false, ae.getSize());
+        return new Entry(ae.getName(), false);
     }
 
     /** {@inheritDoc} */
@@ -100,6 +100,9 @@ public class ArArchiveExtractor extends ArchiveExtractor<ArArchiveInputStream> {
     public static class ArArchiveExtractorBuilder
             extends ArchiveExtractorBuilder<ArArchiveInputStream, ArArchiveExtractorBuilder, ArArchiveExtractor> {
 
+        /** Input stream to read from for extraction. */
+        private final InputStream inputStream;
+
         /**
          * Create a new {@link ArArchiveExtractor} with the given path.
          *
@@ -116,7 +119,7 @@ public class ArArchiveExtractor extends ArchiveExtractor<ArArchiveInputStream> {
          * @param inputStream the input stream
          */
         public ArArchiveExtractorBuilder(InputStream inputStream) {
-            super(inputStream);
+            this.inputStream = inputStream;
         }
 
         /** {@inheritDoc} */

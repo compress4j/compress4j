@@ -67,8 +67,7 @@ class TarArchiveExtractorTest {
             Compress4JAssertions.assertThat(result)
                     .hasName("file.txt")
                     .hasType(ArchiveExtractor.Entry.Type.FILE)
-                    .hasMode(Set.of(OWNER_READ))
-                    .hasSize(10L);
+                    .hasMode(Set.of(OWNER_READ));
         }
     }
 
@@ -101,7 +100,6 @@ class TarArchiveExtractorTest {
             Compress4JAssertions.assertThat(result)
                     .hasName("file.txt")
                     .hasMode(Set.of(OWNER_READ, OWNER_WRITE, GROUP_READ, OTHERS_READ))
-                    .hasSize(10L)
                     .hasLinkName("target.txt")
                     .hasType(ArchiveExtractor.Entry.Type.SYMLINK);
         }
@@ -136,7 +134,6 @@ class TarArchiveExtractorTest {
             Compress4JAssertions.assertThat(result)
                     .hasName("file.txt")
                     .hasMode(Set.of(OWNER_READ))
-                    .hasSize(10L)
                     .hasType(ArchiveExtractor.Entry.Type.DIR);
         }
     }
@@ -166,8 +163,7 @@ class TarArchiveExtractorTest {
             Compress4JAssertions.assertThat(result)
                     .hasName("file.txt")
                     .hasType(ArchiveExtractor.Entry.Type.FILE)
-                    .hasMode(0)
-                    .hasSize(10L);
+                    .hasMode(0);
         }
     }
 
@@ -197,7 +193,6 @@ class TarArchiveExtractorTest {
             Compress4JAssertions.assertThat(result)
                     .hasName("file.txt")
                     .hasMode(Collections.emptySet())
-                    .hasSize(10L)
                     .hasLinkName("target.txt")
                     .hasType(ArchiveExtractor.Entry.Type.SYMLINK);
         }
@@ -229,7 +224,6 @@ class TarArchiveExtractorTest {
             Compress4JAssertions.assertThat(result)
                     .hasName("some-path")
                     .hasMode(Collections.emptySet())
-                    .hasSize(10L)
                     .hasType(ArchiveExtractor.Entry.Type.DIR);
         }
     }

@@ -386,7 +386,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
             return null;
         }
         String newName = String.join("/", ourPathSplit.subList(stripComponents, ourPathSplit.size()));
-        return new Entry(newName, e.type, e.mode, e.linkTarget, e.size);
+        return new Entry(newName, e.type, e.mode, e.linkTarget);
     }
 
     /**
@@ -536,8 +536,6 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
             B extends ArchiveExtractorBuilder<A, B, C>,
             C extends ArchiveExtractor<A>> {
         /** Input stream to read from for extraction. */
-        protected final InputStream inputStream;
-        /** Input stream to read from for extraction. */
         protected ArchiveExtractor.EscapingSymlinkPolicy escapingSymlinkPolicy = EscapingSymlinkPolicy.ALLOW;
 
         @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
@@ -550,12 +548,13 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         boolean overwrite = false;
 
         /**
-         * Create a new ArchiveExtractorBuilder.
+         * Default constructor for ArchiveExtractor.
          *
-         * @param inputStream the input stream
+         * <p><b>Warning:</b> Use of this constructor does not provide a comment or initialize required fields. It is
+         * recommended to use the builder or parameterized constructors instead.
          */
-        protected ArchiveExtractorBuilder(InputStream inputStream) {
-            this.inputStream = inputStream;
+        protected ArchiveExtractorBuilder() {
+            // Default constructor for subclassing or frameworks. Not recommended for direct use.
         }
 
         /**
@@ -635,9 +634,6 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
          * Build a {@code A} from the given {@code InputStream}. If you want to combine an archive format with a
          * compression format - like when reading a `tar.gz` file - you wrap the {@code ArchiveInputStream} around
          *
-         * <p>Use {@link #inputStream} as input output stream from to read the archive from.
-         * {@code CompressorInputStream} for example:
-         *
          * <pre>{@code
          * return new TarArchiveInputStream(new GzipCompressorInputStream(inputStream));
          * }</pre>
@@ -667,18 +663,16 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * @param type the type of the entry
      * @param mode the mode of the entry
      * @param linkTarget the target of the symbolic link
-     * @param size the size of the entry
      */
-    public record Entry(String name, Type type, int mode, @Nullable String linkTarget, long size) {
+    public record Entry(String name, Type type, int mode, @Nullable String linkTarget) {
         /**
          * Creates a new entry with the specified name, type, mode, link target, and size.
          *
          * @param name the name of the entry
          * @param isDirectory whether the entry is a directory
-         * @param size the size of the entry
          */
-        public Entry(String name, boolean isDirectory, long size) {
-            this(name, isDirectory ? Type.DIR : Type.FILE, 0, null, size);
+        public Entry(String name, boolean isDirectory) {
+            this(name, isDirectory ? Type.DIR : Type.FILE, 0, null);
         }
 
         /**
@@ -687,10 +681,9 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
          * @param name the name of the entry
          * @param type the type of the entry
          * @param mode the mode of the entry
-         * @param size the size of the entry
          */
-        public Entry(String name, Type type, int mode, long size) {
-            this(name, type, mode, null, size);
+        public Entry(String name, Type type, int mode) {
+            this(name, type, mode, null);
         }
 
         /** Normalizes the name of the entry by trimming whitespace and replacing backslashes with forward slashes. */
