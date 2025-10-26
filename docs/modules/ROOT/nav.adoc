@@ -3,6 +3,7 @@
 *** xref:archivers/ar/ar.adoc[]
 *** xref:archivers/cpio/cpio.adoc[]
 *** xref:archivers/tar/tar.adoc[]
+*** xref:archivers/zip/zip.adoc[]
 ** Compression
 *** xref:compressors/bzip2.adoc[]
 *** xref:compressors/deflate.adoc[]

@@ -107,13 +107,17 @@ public abstract class BaseTarArchiveExtractor extends ArchiveExtractor<TarArchiv
     public abstract static class BaseTarArchiveExtractorBuilder<
                     B extends BaseTarArchiveExtractorBuilder<B, C>, C extends ArchiveExtractor<TarArchiveInputStream>>
             extends ArchiveExtractorBuilder<TarArchiveInputStream, B, C> {
+
+        /** Input stream to read from for extraction. */
+        protected final InputStream inputStream;
+
         /**
          * Create a new ArchiveExtractorBuilder.
          *
          * @param inputStream the input stream
          */
         protected BaseTarArchiveExtractorBuilder(InputStream inputStream) {
-            super(inputStream);
+            this.inputStream = inputStream;
         }
 
         /**

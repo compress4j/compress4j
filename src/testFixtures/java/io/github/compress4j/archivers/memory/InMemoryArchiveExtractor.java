@@ -78,8 +78,10 @@ public class InMemoryArchiveExtractor extends ArchiveExtractor<InMemoryArchiveIn
             extends ArchiveExtractor.ArchiveExtractorBuilder<
                     InMemoryArchiveInputStream, InMemoryArchiveExtractorBuilder, InMemoryArchiveExtractor> {
 
+        private final InputStream inputStream;
+
         public InMemoryArchiveExtractorBuilder(InputStream inputStream) {
-            super(inputStream);
+            this.inputStream = inputStream;
         }
 
         @Override

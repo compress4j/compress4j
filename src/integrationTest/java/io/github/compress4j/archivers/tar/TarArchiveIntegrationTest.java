@@ -19,8 +19,6 @@ import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.L
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.compress4j.archivers.AbstractArchiverIntegrationTest;
-import io.github.compress4j.archivers.ArchiveCreator;
-import io.github.compress4j.archivers.ArchiveExtractor;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -34,12 +32,12 @@ import org.junit.jupiter.api.Test;
 class TarArchiveIntegrationTest extends AbstractArchiverIntegrationTest {
 
     @Override
-    protected ArchiveCreator<?> archiveCreatorBuilder(Path archivePath) throws IOException {
+    protected TarArchiveCreator archiveCreatorBuilder(Path archivePath) throws IOException {
         return TarArchiveCreator.builder(Files.newOutputStream(archivePath)).build();
     }
 
     @Override
-    protected ArchiveExtractor<?> archiveExtractorBuilder(Path archivePath) throws IOException {
+    protected TarArchiveExtractor archiveExtractorBuilder(Path archivePath) throws IOException {
         return TarArchiveExtractor.builder(Files.newInputStream(archivePath)).build();
     }
 

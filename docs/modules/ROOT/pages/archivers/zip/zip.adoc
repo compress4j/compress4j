@@ -1,0 +1,15 @@
+= zip
+
+Here is a simple example of how to use Compress4J to create and extract zip files:
+
+== Example Usage
+
+.Zip Creation
+[,java]
+
+include::example$java/com/example/archivers/zip/ZipExamples.java[tag=zip-creator,indent=0]
+
+.Zip Extraction
+[,java]
+
+include::example$java/com/example/archivers/zip/ZipExamples.java[tag=zip-extractor,indent=0]

@@ -15,14 +15,9 @@
  */
 package io.github.compress4j.archivers;
 
-import static org.apache.commons.io.IOUtils.closeQuietly;
-
-import jakarta.annotation.Nonnull;
+import io.github.compress4j.archivers.zip.ZipFileArchiveInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.Enumeration;
-import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
@@ -40,86 +35,5 @@ class ZipFileArchiver extends CommonsArchiver<ZipArchiveEntry> {
     @Override
     protected ArchiveInputStream<ZipArchiveEntry> createArchiveInputStream(File archive) throws IOException {
         return new ZipFileArchiveInputStream(ZipFile.builder().setFile(archive).get());
-    }
-
-    /** Wraps a ZipFile to make it usable as an ArchiveInputStream. */
-    static class ZipFileArchiveInputStream extends ArchiveInputStream<ZipArchiveEntry> {
-
-        private final ZipFile file;
-
-        private Enumeration<ZipArchiveEntry> entries;
-        private ZipArchiveEntry currentEntry;
-        private InputStream currentEntryStream;
-
-        public ZipFileArchiveInputStream(ZipFile file) {
-            this.file = file;
-        }
-
-        @Override
-        public ZipArchiveEntry getNextEntry() throws IOException {
-            Enumeration<ZipArchiveEntry> enumerationEntries = getEntries();
-
-            closeCurrentEntryStream();
-
-            currentEntry = (enumerationEntries.hasMoreElements()) ? enumerationEntries.nextElement() : null;
-            currentEntryStream = (currentEntry != null) ? file.getInputStream(currentEntry) : null;
-
-            return currentEntry;
-        }
-
-        @Override
-        public int read(@Nonnull byte[] b, int off, int len) throws IOException {
-            int read = getCurrentEntryStream().read(b, off, len);
-
-            if (read == -1) {
-                closeQuietly(getCurrentEntryStream());
-            }
-
-            count(read);
-
-            return read;
-        }
-
-        @Override
-        public boolean canReadEntryData(ArchiveEntry archiveEntry) {
-            return archiveEntry == getCurrentEntry();
-        }
-
-        public ZipArchiveEntry getCurrentEntry() {
-            return currentEntry;
-        }
-
-        public InputStream getCurrentEntryStream() {
-            return currentEntryStream;
-        }
-
-        private Enumeration<ZipArchiveEntry> getEntries() {
-            if (entries == null) {
-                entries = file.getEntriesInPhysicalOrder();
-            }
-            return entries;
-        }
-
-        private void closeCurrentEntryStream() {
-            closeQuietly(getCurrentEntryStream());
-
-            currentEntryStream = null;
-        }
-
-        private void closeFile() {
-            try {
-                file.close();
-            } catch (IOException e) {
-                // close quietly
-            }
-        }
-
-        @Override
-        public void close() throws IOException {
-            closeCurrentEntryStream();
-            closeFile();
-
-            super.close();
-        }
     }
 }
