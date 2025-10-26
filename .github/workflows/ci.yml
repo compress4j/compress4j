@@ -99,7 +99,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
         run: ./gradlew build --continue --no-daemon --scan
-      # No artifact upload needed for these OS
 
   configure_sonar:
     runs-on: ubuntu-latest
@@ -111,19 +110,22 @@ jobs:
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: Trigger Sonar
+        env:
+          GH_BASE_REF: ${{ github.base_ref }}
+          GH_HEAD_REF: ${{ github.head_ref }}
+          GH_REF_NAME: ${{ github.ref_name }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo Triggerring Sonar
-          GIT_REF=${{ github.ref_name }}
+          GH_REF=${GH_REF_NAME}
           if [ '${{github.event_name}}' == 'pull_request' ]; then
-            GIT_REF=${{ github.head_ref }}
+            GH_REF=${GH_HEAD_REF}
           fi
           
-          gh workflow run --ref $GIT_REF sonar.yml \
+          gh workflow run --ref $GH_REF sonar.yml \
             -f runId=${{ github.run_id }} \
             -f eventName=${{github.event_name}} \
             -f prNumber=${{ github.event.number }} \
-            -f baseRef=${{github.base_ref}} \
-            -f headRef=${{github.head_ref}} \
+            -f baseRef=${GH_BASE_REF} \
+            -f headRef=${GH_HEAD_REF} \
             -f jdk_version=21
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
