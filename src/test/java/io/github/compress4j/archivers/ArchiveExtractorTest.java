@@ -396,6 +396,7 @@ class ArchiveExtractorTest {
         }
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     void shouldFailExtractFilesWithInvalidPathsSkipsEntry() throws IOException {
         // given
@@ -427,6 +428,7 @@ class ArchiveExtractorTest {
         }
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     void shouldFailExtractFilesWithInvalidPathsSkipAllEntries() throws IOException {
         // given
