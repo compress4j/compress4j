@@ -1,9 +1,10 @@
 * xref:index.adoc[]
 ** Archive
-*** xref:archivers/ar/ar.adoc[]
-*** xref:archivers/cpio/cpio.adoc[]
-*** xref:archivers/tar/tar.adoc[]
-*** xref:archivers/zip/zip.adoc[]
+*** xref:archivers/ar.adoc[]
+*** xref:archivers/cpio.adoc[]
+*** xref:archivers/pack200.adoc[]
+*** xref:archivers/tar.adoc[]
+*** xref:archivers/zip.adoc[]
 ** Compression
 *** xref:compressors/bzip2.adoc[]
 *** xref:compressors/deflate.adoc[]

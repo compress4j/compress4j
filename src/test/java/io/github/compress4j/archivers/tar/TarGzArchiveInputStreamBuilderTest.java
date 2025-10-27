@@ -24,7 +24,6 @@ import io.github.compress4j.archivers.tar.TarGzArchiveExtractor.TarGzArchiveExtr
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.Deflater;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.junit.jupiter.api.Test;
 
 class TarGzArchiveInputStreamBuilderTest {
@@ -35,10 +34,10 @@ class TarGzArchiveInputStreamBuilderTest {
         var inputStream = mock(InputStream.class);
         given(inputStream.read()).willReturn(31, 139, Deflater.DEFLATED, 0);
         given(inputStream.markSupported()).willReturn(true);
-        TarGzArchiveExtractorBuilder builder = new TarGzArchiveExtractorBuilder(inputStream);
+        var builder = new TarGzArchiveExtractorBuilder(inputStream);
 
         // when
-        try (TarArchiveInputStream out = spy(builder.buildArchiveInputStream())) {
+        try (var out = spy(builder.buildArchiveInputStream())) {
 
             // then
             assertThat(out).isNotNull();

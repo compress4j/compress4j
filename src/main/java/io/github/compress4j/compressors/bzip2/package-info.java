@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 /**
- * Provides stream classes for compressing and decompressing streams using the GZip algorithm.
+ * Provides stream classes for compressing and decompressing streams using the BZip2 algorithm.
  *
  * <p>The classes in this package are wrappers around
- * {@link org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream} and
- * {@link org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream}.
+ * {@link org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream} and
+ * {@link org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream}.
  */
-package io.github.compress4j.compressors.gzip;
+package io.github.compress4j.compressors.bzip2;

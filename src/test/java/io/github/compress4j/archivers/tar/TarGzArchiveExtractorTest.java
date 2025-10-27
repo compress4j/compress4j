@@ -33,7 +33,7 @@ class TarGzArchiveExtractorTest {
         // given
         var mockInputStream = mock(TarArchiveInputStream.class);
 
-        try (TarGzArchiveExtractor tarGzDecompressor = new TarGzArchiveExtractor(mockInputStream)) {
+        try (var tarGzDecompressor = new TarGzArchiveExtractor(mockInputStream)) {
             // when
             var result = tarGzDecompressor.nextEntry();
 

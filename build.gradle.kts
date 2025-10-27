@@ -1,7 +1,6 @@
 @file:Suppress("UnstableApiUsage")
 
 import com.diffplug.spotless.FormatterFunc
-import org.gradle.kotlin.dsl.invoke
 import org.jreleaser.model.Active
 import java.io.Serializable
 
@@ -27,7 +26,6 @@ val snapshotVersion: String = "\${describe.tag.version.major}." +
 group = "io.github.compress4j"
 description = "A simple archiving and compression library for Java."
 version = "0.0.0-SNAPSHOT"
-
 
 repositories {
     mavenCentral()
@@ -111,6 +109,7 @@ val integrationTest by testing.suites.registering(JvmTestSuite::class) {
         implementation(libs.junit.jupiter.api)
 
         runtimeOnly(libs.org.tukaani.xz)
+        runtimeOnly(libs.asm)
     }
 
     targets.all {
@@ -162,10 +161,11 @@ sonar {
         property("sonar.projectKey", "compress4j_compress4j")
         property("sonar.organization", "compress4j")
         property("sonar.host.url", "https://sonarcloud.io")
+        property("sonar.gradle.scanAll", "true")
         property(
             "sonar.coverage.exclusions",
             listOf(
-                "docs/**/*",
+                "src/examples/java/**/*",
                 "**/*Exception.java"
             )
         )

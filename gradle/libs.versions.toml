@@ -1,5 +1,6 @@
 [versions]
 apache-commons-compress = "1.28.0"
+asm = "9.6"
 assertJ = "3.27.6"
 build-health = "2.19.0"
 foojay = "1.0.0"
@@ -14,7 +15,7 @@ logback = "1.5.20"
 mockito = "5.20.0"
 slf4j = "2.0.17"
 sonarqube = "7.0.1.6134"
-spotless = "8.0.0"
+spotless = "7.2.1"
 tukaani-xz = "1.10"
 
 [libraries]
@@ -26,6 +27,7 @@ org-tukaani-xz = { module = "org.tukaani:xz", version.ref = "tukaani-xz" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 
 # TEST dependencies
+asm = { module = "org.ow2.asm:asm", version.ref = "asm" }
 assertj-core = { module = "org.assertj:assertj-core", version.ref = "assertJ" }
 jackson-annotations = { module = "com.fasterxml.jackson.core:jackson-annotations", version.ref = "jackson" }
 jackson-core = { module = "com.fasterxml.jackson.core:jackson-core", version.ref = "jackson-core" }
