@@ -1,4 +1,4 @@
-= Pack200 Archiver
+= Pack200
 
 Pack200 is a compression scheme for JAR files, designed to significantly reduce the size of Java archives.
 It is useful for distributing Java applications and libraries more efficiently.
