@@ -21,6 +21,7 @@ import static io.github.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice
 import static io.github.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice.SKIP_ALL;
 import static io.github.compress4j.utils.FileUtils.DOS_HIDDEN;
 import static io.github.compress4j.utils.FileUtils.DOS_READ_ONLY;
+import static io.github.compress4j.utils.FileUtils.checkValidPath;
 import static io.github.compress4j.utils.PosixFilePermissionsMapper.fromUnixMode;
 import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 
@@ -107,41 +108,18 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
     }
 
     /**
-     * Normalizes the path and splits it into parts.
-     *
-     * @param path the path to normalize and split
-     * @return the normalized and split path
-     * @throws IOException if an I/O error occurs
-     */
-    public static List<String> normalizePathAndSplit(String path) throws IOException {
-        ensureValidPath(path);
-        String canonicalPath = Paths.get(path).toFile().getCanonicalPath();
-        return splitPath(canonicalPath);
-    }
-
-    /**
-     * Validates the path to prevent directory traversal attacks.
-     *
-     * @param entryName the path to validate
-     * @throws IOException if the path is invalid
-     */
-    private static void ensureValidPath(String entryName) throws IOException {
-        if (entryName.contains("..")) {
-            throw new IOException("Invalid entry name: " + entryName);
-        }
-    }
-
-    /**
-     * Validates entry and returns the path using the output directory.
+     * Validates entry and returns the path using the output directory. This method protects against path traversal
+     * vulnerabilities.
      *
      * @param outputDir the directory to extract the archive to
      * @param entryName the name of the entry
      * @return the path to the extracted entry
-     * @throws IOException if an I/O error occurs
+     * @throws IOException if an I/O error occurs or a path traversal vulnerability is detected
      */
     private static Path entryFile(Path outputDir, String entryName) throws IOException {
-        ensureValidPath(entryName);
-        return outputDir.resolve(StringUtil.trimLeading(entryName, '/'));
+        Path destinationFile = outputDir.resolve(StringUtil.trimLeading(entryName, '/'));
+        checkValidPath(destinationFile, outputDir);
+        return destinationFile;
     }
 
     /**
@@ -215,10 +193,14 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         if (outputTarget.isAbsolute()) {
             throw new IOException("Invalid symlink (absolute path): " + entryName + " -> " + linkTarget);
         }
-        Path linkTargetNormalized = outputFile.getParent().resolve(outputTarget).normalize();
-        if (!linkTargetNormalized.startsWith(outputDir.normalize())) {
+
+        Path linkTargetPath = outputFile.getParent().resolve(outputTarget);
+
+        try {
+            checkValidPath(linkTargetPath, outputDir);
+        } catch (IOException e) {
             throw new IOException(
-                    "Invalid symlink (points outside of output directory): " + entryName + " -> " + linkTarget);
+                    "Invalid symlink (points outside of output directory): " + entryName + " -> " + linkTarget, e);
         }
     }
 
@@ -229,22 +211,31 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * @throws IOException if an I/O error occurs
      */
     public final void extract(Path outputDir) throws IOException {
-        var decision = SKIP;
-
-        Entry entry = null;
-        while (!decision.equals(ABORT) && (decision.equals(RETRY) || (entry = nextEntry()) != null)) {
-            if (decision.equals(SKIP) && !entryFilter.orElse(e -> true).test(entry)) {
+        var errorHandlerChoice = SKIP;
+        Entry entry;
+        while ((entry = nextEntry()) != null) {
+            // Skip entry if filter does not match
+            if (!entryFilter.orElse(e -> true).test(entry)) {
                 continue;
             }
-            if (decision.equals(RETRY)) {
-                decision = SKIP;
-            }
-
-            try {
-                processEntry(outputDir, entry);
-            } catch (IOException ioException) {
-                decision = handleException(ioException, decision, entry);
-            }
+            boolean retry;
+            do {
+                retry = false;
+                try {
+                    processEntry(outputDir, entry);
+                } catch (IOException ioException) {
+                    // Only consult errorHandlerChoice on exception
+                    errorHandlerChoice = handleException(ioException, errorHandlerChoice, entry);
+                    if (errorHandlerChoice.equals(ABORT)) {
+                        return;
+                    } else if (errorHandlerChoice.equals(RETRY)) {
+                        retry = true;
+                    } else if (errorHandlerChoice.equals(SKIP_ALL)) {
+                        // Skip all remaining entries
+                        return;
+                    } // SKIP just skips this entry
+                }
+            } while (retry);
         }
     }
 
@@ -397,6 +388,10 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * @throws IOException if an I/O error occurs
      */
     private void writeFile(Entry entry, Path outputFile) throws IOException {
+        if (outputFile == null) {
+            LOGGER.warn("Output file is null for entry: {}. Skipping.", entry.name);
+            return;
+        }
         if (overwrite || !Files.exists(outputFile)) {
             InputStream inputStream = openEntryStream(entry);
             try {

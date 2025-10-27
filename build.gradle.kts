@@ -100,7 +100,7 @@ testing {
 
 val integrationTest by testing.suites.registering(JvmTestSuite::class) {
     sources {
-        resources { setSrcDirs(listOf("src/test/resources")) }
+        resources { setSrcDirs(listOf("src/integrationTest/resources", "src/test/resources")) }
     }
     dependencies {
         implementation(platform(libs.junit.bom))

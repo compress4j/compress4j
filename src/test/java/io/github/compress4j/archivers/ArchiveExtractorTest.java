@@ -28,7 +28,6 @@ import static io.github.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice
 import static io.github.compress4j.archivers.ArchiveExtractor.EscapingSymlinkPolicy.ALLOW;
 import static io.github.compress4j.archivers.ArchiveExtractor.EscapingSymlinkPolicy.DISALLOW;
 import static io.github.compress4j.archivers.ArchiveExtractor.EscapingSymlinkPolicy.RELATIVIZE_ABSOLUTE;
-import static io.github.compress4j.archivers.ArchiveExtractor.normalizePathAndSplit;
 import static io.github.compress4j.archivers.memory.InMemoryArchiveInputStream.toInputStream;
 import static io.github.compress4j.test.util.io.TestFileUtils.createFile;
 import static java.nio.file.attribute.PosixFilePermission.GROUP_READ;
@@ -51,22 +50,20 @@ import ch.qos.logback.classic.LoggerContext;
 import io.github.compress4j.archivers.ArchiveExtractor.Entry;
 import io.github.compress4j.archivers.memory.InMemoryArchiveEntry;
 import io.github.compress4j.archivers.memory.InMemoryArchiveExtractor;
+import io.github.compress4j.archivers.memory.InMemoryArchiveExtractor.InMemoryArchiveExtractorBuilder;
 import io.github.compress4j.archivers.memory.InMemoryArchiveInputStream;
 import io.github.compress4j.assertion.Compress4JAssertions;
 import io.github.compress4j.test.util.log.InMemoryLogAppender;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -95,7 +92,7 @@ class ArchiveExtractorTest {
 
     @BeforeEach
     void setup() {
-        Logger logger = (Logger) LoggerFactory.getLogger(LOGGER_NAME);
+        var logger = (Logger) LoggerFactory.getLogger(LOGGER_NAME);
         inMemoryLogAppender = new InMemoryLogAppender();
         inMemoryLogAppender.setContext((LoggerContext) LoggerFactory.getILoggerFactory());
         logger.setLevel(TRACE);
@@ -116,7 +113,7 @@ class ArchiveExtractorTest {
                 InMemoryArchiveEntry.builder().name("test1").content("content1").build();
         var entry2 =
                 InMemoryArchiveEntry.builder().name("test2").content("content2").build();
-        try (InMemoryArchiveExtractor inMemoryDecompressor =
+        try (var inMemoryDecompressor =
                 InMemoryArchiveExtractor.builder(List.of(entry1, entry2)).build()) {
             // when
             inMemoryDecompressor.extract(tempDir);
@@ -137,7 +134,7 @@ class ArchiveExtractorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryArchiveExtractor inMemoryDecompressor =
+        try (var inMemoryDecompressor =
                 InMemoryArchiveExtractor.builder(List.of(entry1, entry2)).build()) {
 
             // when
@@ -161,7 +158,7 @@ class ArchiveExtractorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryArchiveExtractor inMemoryDecompressor =
+        try (var inMemoryDecompressor =
                 InMemoryArchiveExtractor.builder(List.of(entry1, entry2)).build()) {
 
             // when
@@ -187,7 +184,7 @@ class ArchiveExtractorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryArchiveExtractor inMemoryDecompressor =
+        try (var inMemoryDecompressor =
                 InMemoryArchiveExtractor.builder(List.of(entry1, entry2)).build()) {
             inMemoryDecompressor.setOverwrite(true);
 
@@ -210,7 +207,7 @@ class ArchiveExtractorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryArchiveExtractor inMemoryDecompressor =
+        try (var inMemoryDecompressor =
                 InMemoryArchiveExtractor.builder(List.of(entry1, entry2)).build()) {
             inMemoryDecompressor.setStripComponents(0);
 
@@ -233,7 +230,7 @@ class ArchiveExtractorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryArchiveExtractor inMemoryDecompressor =
+        try (var inMemoryDecompressor =
                 InMemoryArchiveExtractor.builder(List.of(entry1, entry2)).build()) {
             inMemoryDecompressor.setStripComponents(1);
 
@@ -257,13 +254,13 @@ class ArchiveExtractorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryArchiveExtractor inMemoryDecompressor =
+        try (var inMemoryDecompressor =
                 InMemoryArchiveExtractor.builder(List.of(entry1, entry2)).build()) {
 
             // when && then
             assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir))
                     .isInstanceOf(IOException.class)
-                    .hasMessage("Invalid entry name: ../test1");
+                    .hasMessageStartingWith("Path traversal vulnerability detected!");
         }
     }
 
@@ -278,7 +275,7 @@ class ArchiveExtractorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        AtomicInteger retries = new AtomicInteger(3);
+        var retries = new AtomicInteger(3);
         BiFunction<ArchiveExtractor.Entry, IOException, ArchiveExtractor.ErrorHandlerChoice> errorHandler =
                 (entry, exception) -> {
                     if (retries.get() == 0) {
@@ -288,7 +285,7 @@ class ArchiveExtractorTest {
                     return RETRY;
                 };
 
-        try (InMemoryArchiveExtractor inMemoryDecompressor =
+        try (var inMemoryDecompressor =
                 InMemoryArchiveExtractor.builder(List.of(entry1, entry2)).build()) {
             inMemoryDecompressor.setErrorHandler(errorHandler);
 
@@ -312,7 +309,7 @@ class ArchiveExtractorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryArchiveExtractor inMemoryDecompressor =
+        try (var inMemoryDecompressor =
                 InMemoryArchiveExtractor.builder(List.of(entry1, entry2)).build()) {
             inMemoryDecompressor.setErrorHandler((entry, exception) -> ABORT);
 
@@ -335,7 +332,7 @@ class ArchiveExtractorTest {
                 .name("../test2")
                 .content("content2")
                 .build();
-        try (InMemoryArchiveExtractor inMemoryDecompressor =
+        try (var inMemoryDecompressor =
                 InMemoryArchiveExtractor.builder(List.of(entry1, entry2)).build()) {
             inMemoryDecompressor.setErrorHandler((entry, exception) -> ABORT);
 
@@ -359,14 +356,14 @@ class ArchiveExtractorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryArchiveExtractor inMemoryDecompressor =
+        try (var inMemoryDecompressor =
                 InMemoryArchiveExtractor.builder(List.of(entry1, entry2)).build()) {
             inMemoryDecompressor.setErrorHandler((entry, exception) -> BAIL_OUT);
 
             // when
             assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir))
                     .isInstanceOf(IOException.class)
-                    .hasMessage("Invalid entry name: ../test1");
+                    .hasMessageStartingWith("Path traversal vulnerability detected!");
 
             // then
             assertThat(tempDir).isEmptyDirectory();
@@ -384,14 +381,14 @@ class ArchiveExtractorTest {
                 .name("../test2")
                 .content("content2")
                 .build();
-        try (InMemoryArchiveExtractor inMemoryDecompressor =
+        try (var inMemoryDecompressor =
                 InMemoryArchiveExtractor.builder(List.of(entry1, entry2)).build()) {
             inMemoryDecompressor.setErrorHandler((entry, exception) -> BAIL_OUT);
 
             // when
             assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir))
                     .isInstanceOf(IOException.class)
-                    .hasMessage("Invalid entry name: ../test2");
+                    .hasMessageStartingWith("Path traversal vulnerability detected!");
 
             // then
             assertThat(tempDir).isDirectory();
@@ -414,8 +411,7 @@ class ArchiveExtractorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryArchiveExtractor inMemoryDecompressor = InMemoryArchiveExtractor.builder(
-                        List.of(entry1, entry1a, entry2))
+        try (var inMemoryDecompressor = InMemoryArchiveExtractor.builder(List.of(entry1, entry1a, entry2))
                 .build()) {
             inMemoryDecompressor.setErrorHandler((entry, exception) -> SKIP);
 
@@ -446,8 +442,7 @@ class ArchiveExtractorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (InMemoryArchiveExtractor inMemoryDecompressor = InMemoryArchiveExtractor.builder(
-                        List.of(entry1, entry1a, entry2))
+        try (var inMemoryDecompressor = InMemoryArchiveExtractor.builder(List.of(entry1, entry1a, entry2))
                 .build()) {
             inMemoryDecompressor.setErrorHandler((entry, exception) -> SKIP_ALL);
 
@@ -459,7 +454,7 @@ class ArchiveExtractorTest {
             assertThat(tempDir).isDirectory();
             assertThat(tempDir.resolve("test1")).doesNotExist();
             assertThat(tempDir.resolve("subdir/test1a")).doesNotExist();
-            assertThat(tempDir.resolve("subdir/test2")).hasContent("content2");
+            assertThat(tempDir.resolve("subdir/test2")).doesNotExist();
         }
     }
 
@@ -480,8 +475,7 @@ class ArchiveExtractorTest {
                 .content("content2")
                 .build();
 
-        try (InMemoryArchiveExtractor inMemoryDecompressor = InMemoryArchiveExtractor.builder(
-                        List.of(subdir, entry1, entry1a, entry2))
+        try (var inMemoryDecompressor = InMemoryArchiveExtractor.builder(List.of(subdir, entry1, entry1a, entry2))
                 .build()) {
             inMemoryDecompressor.setEntryFilter(entry -> !entry.name().contains("some"));
 
@@ -510,8 +504,7 @@ class ArchiveExtractorTest {
                 .linkName("subdir/test1")
                 .build();
 
-        try (InMemoryArchiveExtractor inMemoryDecompressor = InMemoryArchiveExtractor.builder(
-                        List.of(subdir, entry1, entry1a))
+        try (var inMemoryDecompressor = InMemoryArchiveExtractor.builder(List.of(subdir, entry1, entry1a))
                 .build()) {
 
             // when
@@ -540,8 +533,7 @@ class ArchiveExtractorTest {
                 .linkName("/subdir/test1")
                 .build();
 
-        try (InMemoryArchiveExtractor inMemoryDecompressor = InMemoryArchiveExtractor.builder(
-                        List.of(subdir, entry1, entry1a))
+        try (var inMemoryDecompressor = InMemoryArchiveExtractor.builder(List.of(subdir, entry1, entry1a))
                 .build()) {
             inMemoryDecompressor.setEscapingSymlinkPolicy(RELATIVIZE_ABSOLUTE);
 
@@ -571,8 +563,7 @@ class ArchiveExtractorTest {
                 .linkName("../subdir/test1")
                 .build();
 
-        try (InMemoryArchiveExtractor inMemoryDecompressor = InMemoryArchiveExtractor.builder(
-                        List.of(subdir, entry1, entry1a))
+        try (var inMemoryDecompressor = InMemoryArchiveExtractor.builder(List.of(subdir, entry1, entry1a))
                 .build()) {
             inMemoryDecompressor.setEscapingSymlinkPolicy(RELATIVIZE_ABSOLUTE);
 
@@ -602,8 +593,7 @@ class ArchiveExtractorTest {
                 .linkName("subdir/test1")
                 .build();
 
-        try (InMemoryArchiveExtractor inMemoryDecompressor = InMemoryArchiveExtractor.builder(
-                        List.of(subdir, entry1, entry1a))
+        try (var inMemoryDecompressor = InMemoryArchiveExtractor.builder(List.of(subdir, entry1, entry1a))
                 .build()) {
             inMemoryDecompressor.setEscapingSymlinkPolicy(DISALLOW);
 
@@ -633,8 +623,7 @@ class ArchiveExtractorTest {
                 .linkName("/subdir/test1")
                 .build();
 
-        try (InMemoryArchiveExtractor inMemoryDecompressor = InMemoryArchiveExtractor.builder(
-                        List.of(subdir, entry1, entry1a))
+        try (var inMemoryDecompressor = InMemoryArchiveExtractor.builder(List.of(subdir, entry1, entry1a))
                 .build()) {
             inMemoryDecompressor.setEscapingSymlinkPolicy(DISALLOW);
 
@@ -666,8 +655,7 @@ class ArchiveExtractorTest {
                 .linkName("../subdir2/test1")
                 .build();
 
-        try (InMemoryArchiveExtractor inMemoryDecompressor = InMemoryArchiveExtractor.builder(
-                        List.of(subdir, entry1, entry1a))
+        try (var inMemoryDecompressor = InMemoryArchiveExtractor.builder(List.of(subdir, entry1, entry1a))
                 .build()) {
             inMemoryDecompressor.setEscapingSymlinkPolicy(DISALLOW);
 
@@ -695,8 +683,7 @@ class ArchiveExtractorTest {
         var entry1a =
                 InMemoryArchiveEntry.builder().name("test1a").type(SYMLINK).build();
 
-        try (InMemoryArchiveExtractor inMemoryDecompressor = InMemoryArchiveExtractor.builder(
-                        List.of(subdir, entry1, entry1a))
+        try (var inMemoryDecompressor = InMemoryArchiveExtractor.builder(List.of(subdir, entry1, entry1a))
                 .build()) {
 
             // when
@@ -726,8 +713,7 @@ class ArchiveExtractorTest {
                 .linkName("")
                 .build();
 
-        try (InMemoryArchiveExtractor inMemoryDecompressor = InMemoryArchiveExtractor.builder(
-                        List.of(subdir, entry1, entry1a))
+        try (var inMemoryDecompressor = InMemoryArchiveExtractor.builder(List.of(subdir, entry1, entry1a))
                 .build()) {
 
             // when
@@ -759,8 +745,7 @@ class ArchiveExtractorTest {
                 .linkName("some")
                 .build();
 
-        try (InMemoryArchiveExtractor inMemoryDecompressor = InMemoryArchiveExtractor.builder(
-                        List.of(subdir, entry1, entry1a))
+        try (var inMemoryDecompressor = InMemoryArchiveExtractor.builder(List.of(subdir, entry1, entry1a))
                 .build()) {
 
             // when
@@ -792,8 +777,7 @@ class ArchiveExtractorTest {
                 .linkName("subdir/test1")
                 .build();
 
-        try (InMemoryArchiveExtractor inMemoryDecompressor = InMemoryArchiveExtractor.builder(
-                        List.of(subdir, entry1, entry1a))
+        try (var inMemoryDecompressor = InMemoryArchiveExtractor.builder(List.of(subdir, entry1, entry1a))
                 .build()) {
             inMemoryDecompressor.setOverwrite(true);
 
@@ -822,10 +806,9 @@ class ArchiveExtractorTest {
                 .linkName("subdir/test1")
                 .build();
 
-        try (InMemoryArchiveExtractor inMemoryDecompressor = InMemoryArchiveExtractor.builder(
-                        List.of(subdir, entry1, entry1a))
+        try (var inMemoryDecompressor = InMemoryArchiveExtractor.builder(List.of(subdir, entry1, entry1a))
                 .build()) {
-            AtomicInteger counter = new AtomicInteger();
+            var counter = new AtomicInteger();
             inMemoryDecompressor.setPostProcessor((entry, path) -> counter.incrementAndGet());
 
             // when
@@ -854,10 +837,9 @@ class ArchiveExtractorTest {
                 .linkName("subdir/test1")
                 .build();
 
-        try (InMemoryArchiveExtractor inMemoryDecompressor = InMemoryArchiveExtractor.builder(
-                        List.of(subdir, entry1, entry1a))
+        try (var inMemoryDecompressor = InMemoryArchiveExtractor.builder(List.of(subdir, entry1, entry1a))
                 .build()) {
-            AtomicInteger counter = new AtomicInteger();
+            var counter = new AtomicInteger();
             inMemoryDecompressor.setPostProcessor(path -> counter.incrementAndGet());
 
             // when
@@ -873,23 +855,11 @@ class ArchiveExtractorTest {
     }
 
     @Test
-    void shouldNormalizePathAndSplit() throws IOException {
-        // given
-        var path = "some/path";
-
-        // when
-        var result = normalizePathAndSplit(path);
-
-        // then
-        assertThat(result).isNotEmpty();
-    }
-
-    @Test
     void shouldSetAttributesOnNixFileSystem() throws IOException {
         // given
         var mockPath = mock(Path.class);
         @SuppressWarnings("OctalInteger")
-        int mode = 0644;
+        var mode = 0644;
 
         try (@SuppressWarnings("rawtypes")
                         MockedStatic<ArchiveExtractor> mockedCompressor =
@@ -915,7 +885,7 @@ class ArchiveExtractorTest {
         var mockPath = mock(Path.class);
         given(mockPath.toString()).willReturn("some/path");
         @SuppressWarnings("OctalInteger")
-        int mode = 0644;
+        var mode = 0644;
 
         try (@SuppressWarnings("rawtypes")
                         MockedStatic<ArchiveExtractor> mockedCompressor =
@@ -940,7 +910,7 @@ class ArchiveExtractorTest {
         // given
         var mockPath = mock(Path.class);
         @SuppressWarnings("OctalInteger")
-        int mode = 0003;
+        var mode = 0003;
 
         try (@SuppressWarnings("rawtypes")
                         MockedStatic<ArchiveExtractor> mockedCompressor =
@@ -966,7 +936,7 @@ class ArchiveExtractorTest {
         // given
         var mockPath = mock(Path.class);
         @SuppressWarnings("OctalInteger")
-        int mode = 0001;
+        var mode = 0001;
 
         try (@SuppressWarnings("rawtypes")
                         MockedStatic<ArchiveExtractor> mockedCompressor =
@@ -992,7 +962,7 @@ class ArchiveExtractorTest {
         // given
         var mockPath = mock(Path.class);
         @SuppressWarnings("OctalInteger")
-        int mode = 0002;
+        var mode = 0002;
 
         try (@SuppressWarnings("rawtypes")
                         MockedStatic<ArchiveExtractor> mockedCompressor =
@@ -1018,7 +988,7 @@ class ArchiveExtractorTest {
         // given
         var mockPath = mock(Path.class);
         @SuppressWarnings("OctalInteger")
-        int mode = 0000;
+        var mode = 0000;
 
         try (@SuppressWarnings("rawtypes")
                         MockedStatic<ArchiveExtractor> mockedCompressor =
@@ -1044,7 +1014,7 @@ class ArchiveExtractorTest {
         var mockPath = mock(Path.class);
         given(mockPath.toString()).willReturn("some/path");
         @SuppressWarnings("OctalInteger")
-        int mode = 0003;
+        var mode = 0003;
 
         try (@SuppressWarnings("rawtypes")
                         MockedStatic<ArchiveExtractor> mockedCompressor =
@@ -1067,7 +1037,7 @@ class ArchiveExtractorTest {
     @Test
     void shouldExtractEmptyArchiveWithoutErrors() throws IOException {
         // given
-        try (InMemoryArchiveExtractor extractor =
+        try (var extractor =
                 InMemoryArchiveExtractor.builder(Collections.emptyList()).build()) {
             // when
             extractor.extract(tempDir);
@@ -1086,7 +1056,7 @@ class ArchiveExtractorTest {
                 .name("parentDir/childDir/")
                 .type(DIR)
                 .build();
-        try (InMemoryArchiveExtractor extractor = InMemoryArchiveExtractor.builder(List.of(dirEntry, nestedDirEntry))
+        try (var extractor = InMemoryArchiveExtractor.builder(List.of(dirEntry, nestedDirEntry))
                 .build()) {
             // when
             extractor.extract(tempDir);
@@ -1103,8 +1073,7 @@ class ArchiveExtractorTest {
                 .name("a/b.txt")
                 .content("content")
                 .build();
-        try (InMemoryArchiveExtractor extractor =
-                InMemoryArchiveExtractor.builder(List.of(entry1)).build()) {
+        try (var extractor = InMemoryArchiveExtractor.builder(List.of(entry1)).build()) {
             extractor.setStripComponents(2);
             // when
             extractor.extract(tempDir);
@@ -1118,8 +1087,7 @@ class ArchiveExtractorTest {
     void shouldCorrectlyStripComponentsForDirectoryEntryMakingItTopLevel() throws IOException {
         // given
         var entry1 = InMemoryArchiveEntry.builder().name("a/b/").type(DIR).build();
-        try (InMemoryArchiveExtractor extractor =
-                InMemoryArchiveExtractor.builder(List.of(entry1)).build()) {
+        try (var extractor = InMemoryArchiveExtractor.builder(List.of(entry1)).build()) {
             extractor.setStripComponents(1);
             // when
             extractor.extract(tempDir);
@@ -1133,8 +1101,7 @@ class ArchiveExtractorTest {
         // given
         var entry =
                 InMemoryArchiveEntry.builder().name("a/b/c.txt").content("test").build();
-        try (InMemoryArchiveExtractor extractor =
-                InMemoryArchiveExtractor.builder(List.of(entry)).build()) {
+        try (var extractor = InMemoryArchiveExtractor.builder(List.of(entry)).build()) {
             extractor.setStripComponents(3);
             // when
             extractor.extract(tempDir);
@@ -1151,8 +1118,7 @@ class ArchiveExtractorTest {
                 .name("a/b.txt")
                 .content("content")
                 .build();
-        try (InMemoryArchiveExtractor extractor =
-                InMemoryArchiveExtractor.builder(List.of(entry1)).build()) {
+        try (var extractor = InMemoryArchiveExtractor.builder(List.of(entry1)).build()) {
             extractor.setStripComponents(3);
             // when
             extractor.extract(tempDir);
@@ -1165,15 +1131,14 @@ class ArchiveExtractorTest {
     @Test
     void shouldCreateOutputDirIfItDoesNotExist() throws IOException {
         // given
-        Path newOutputDir = tempDir.resolve("new_output_dir");
+        var newOutputDir = tempDir.resolve("new_output_dir");
         assertThat(newOutputDir).doesNotExist();
         var entry1 = InMemoryArchiveEntry.builder()
                 .name("file.txt")
                 .content("content")
                 .build();
 
-        try (InMemoryArchiveExtractor extractor =
-                InMemoryArchiveExtractor.builder(List.of(entry1)).build()) {
+        try (var extractor = InMemoryArchiveExtractor.builder(List.of(entry1)).build()) {
             // when
             extractor.extract(newOutputDir);
             // then
@@ -1185,15 +1150,14 @@ class ArchiveExtractorTest {
     @Test
     void shouldFailIfOutputDirIsAFile() throws IOException {
         // given
-        Path fileAsOutputDir = tempDir.resolve("iam_a_file.txt");
+        var fileAsOutputDir = tempDir.resolve("iam_a_file.txt");
         Files.createFile(fileAsOutputDir);
         var entry1 = InMemoryArchiveEntry.builder()
                 .name("file.txt")
                 .content("content")
                 .build();
 
-        try (InMemoryArchiveExtractor extractor =
-                InMemoryArchiveExtractor.builder(List.of(entry1)).build()) {
+        try (var extractor = InMemoryArchiveExtractor.builder(List.of(entry1)).build()) {
             // when & then
             assertThatThrownBy(() -> extractor.extract(fileAsOutputDir))
                     .isInstanceOf(IOException.class)
@@ -1208,26 +1172,25 @@ class ArchiveExtractorTest {
         List<InMemoryArchiveEntry> entries = new ArrayList<>();
         entries.add(entry1);
         var inputStream = toInputStream(entries);
-        InMemoryArchiveExtractor.InMemoryArchiveExtractorBuilder faultInjectingBuilder =
-                new InMemoryArchiveExtractor.InMemoryArchiveExtractorBuilder(inputStream) {
-                    private int callCount = 0;
+        var faultInjectingBuilder = new InMemoryArchiveExtractorBuilder(inputStream) {
+            private int callCount = 0;
 
+            @Override
+            public InMemoryArchiveInputStream buildArchiveInputStream() {
+                return new InMemoryArchiveInputStream(entries) {
                     @Override
-                    public InMemoryArchiveInputStream buildArchiveInputStream() {
-                        return new InMemoryArchiveInputStream(entries) {
-                            @Override
-                            public InMemoryArchiveEntry getNextEntry() {
-                                callCount++;
-                                if (callCount == 2) {
-                                    throw new RuntimeException("Simulated error reading next entry");
-                                }
-                                return super.getNextEntry();
-                            }
-                        };
+                    public InMemoryArchiveEntry getNextEntry() {
+                        callCount++;
+                        if (callCount == 2) {
+                            throw new RuntimeException("Simulated error reading next entry");
+                        }
+                        return super.getNextEntry();
                     }
                 };
+            }
+        };
 
-        try (InMemoryArchiveExtractor extractor = faultInjectingBuilder.build()) {
+        try (var extractor = faultInjectingBuilder.build()) {
             extractor.setErrorHandler((entry, ex) -> BAIL_OUT); // Default, but explicit
 
             // when & then
@@ -1249,10 +1212,10 @@ class ArchiveExtractorTest {
         var entry2 =
                 InMemoryArchiveEntry.builder().name("success.txt").content("ok").build();
 
-        IOException simulatedException = new IOException("Simulated disk full");
+        var simulatedException = new IOException("Simulated disk full");
 
         try (MockedStatic<Files> mockedFiles = mockStatic(Files.class, CALLS_REAL_METHODS);
-                InMemoryArchiveExtractor extractor = InMemoryArchiveExtractor.builder(List.of(entry1, entry2))
+                var extractor = InMemoryArchiveExtractor.builder(List.of(entry1, entry2))
                         .build()) {
 
             //noinspection resource
@@ -1289,11 +1252,10 @@ class ArchiveExtractorTest {
                 .build();
         var entryToSucceed =
                 InMemoryArchiveEntry.builder().name("success.txt").content("ok").build();
-        IOException simulatedException = new AccessDeniedException("Simulated permission error");
+        var simulatedException = new AccessDeniedException("Simulated permission error");
 
         try (MockedStatic<Files> mockedFiles = mockStatic(Files.class, CALLS_REAL_METHODS);
-                InMemoryArchiveExtractor extractor = InMemoryArchiveExtractor.builder(
-                                List.of(entryToFail, entryToSucceed))
+                var extractor = InMemoryArchiveExtractor.builder(List.of(entryToFail, entryToSucceed))
                         .build()) {
 
             mockedFiles
@@ -1334,11 +1296,10 @@ class ArchiveExtractorTest {
                 .name("third.txt")
                 .content("third")
                 .build();
-        IOException simulatedException = new IOException("Simulated disk full");
+        var simulatedException = new IOException("Simulated disk full");
 
         try (MockedStatic<Files> mockedFiles = mockStatic(Files.class, CALLS_REAL_METHODS);
-                InMemoryArchiveExtractor extractor = InMemoryArchiveExtractor.builder(
-                                List.of(entryToFail, anotherEntry, thirdEntry))
+                var extractor = InMemoryArchiveExtractor.builder(List.of(entryToFail, anotherEntry, thirdEntry))
                         .build()) {
 
             mockedFiles
@@ -1357,28 +1318,26 @@ class ArchiveExtractorTest {
 
             // then
             assertThat(tempDir.resolve(entryToFail.getName())).doesNotExist();
-            assertThat(tempDir.resolve(anotherEntry.getName())).exists();
-            assertThat(tempDir.resolve(thirdEntry.getName())).exists();
+            assertThat(tempDir.resolve(anotherEntry.getName())).doesNotExist();
+            assertThat(tempDir.resolve(thirdEntry.getName())).doesNotExist();
 
             Compress4JAssertions.assertThat(inMemoryLogAppender)
                     .contains("SKIP_ALL is selected", DEBUG, simulatedException);
             mockedFiles.verify(() -> Files.newOutputStream(eq(tempDir.resolve(entryToFail.getName()))));
-            mockedFiles.verify(() -> Files.newOutputStream(eq(tempDir.resolve(anotherEntry.getName()))));
-            mockedFiles.verify(() -> Files.newOutputStream(eq(tempDir.resolve(thirdEntry.getName()))));
         }
     }
 
     @Test
     void shouldNotOverwriteExistingDirectoryWithFileWhenOverwriteTrue() throws IOException {
         // given
-        Path existingDir = tempDir.resolve("entryName");
+        var existingDir = tempDir.resolve("entryName");
         Files.createDirectories(existingDir);
         var fileEntry = InMemoryArchiveEntry.builder()
                 .name("entryName")
                 .content("file content")
                 .build();
 
-        try (InMemoryArchiveExtractor extractor =
+        try (var extractor =
                 InMemoryArchiveExtractor.builder(List.of(fileEntry)).build()) {
             extractor.setOverwrite(true);
             // when
@@ -1392,14 +1351,14 @@ class ArchiveExtractorTest {
     @Test
     void shouldFailToOverwriteExistingDirectoryWithFileWhenOverwriteFalse() throws IOException {
         // given
-        Path existingDir = tempDir.resolve("entryName");
+        var existingDir = tempDir.resolve("entryName");
         Files.createDirectories(existingDir);
         var fileEntry = InMemoryArchiveEntry.builder()
                 .name("entryName")
                 .content("file content")
                 .build();
 
-        try (InMemoryArchiveExtractor extractor =
+        try (var extractor =
                 InMemoryArchiveExtractor.builder(List.of(fileEntry)).build()) {
             extractor.setOverwrite(false);
             // when
@@ -1415,13 +1374,12 @@ class ArchiveExtractorTest {
     @Test
     void shouldNotOverwriteExistingFileWithDirectoryWhenOverwriteTrue() throws IOException {
         // given
-        Path existingFile = tempDir.resolve("entryName");
+        var existingFile = tempDir.resolve("entryName");
         Files.writeString(existingFile, "i am a file");
         var dirEntry =
                 InMemoryArchiveEntry.builder().name("entryName").type(DIR).build();
 
-        try (InMemoryArchiveExtractor extractor =
-                InMemoryArchiveExtractor.builder(List.of(dirEntry)).build()) {
+        try (var extractor = InMemoryArchiveExtractor.builder(List.of(dirEntry)).build()) {
             extractor.setOverwrite(true);
             // when
             extractor.extract(tempDir);
@@ -1433,7 +1391,7 @@ class ArchiveExtractorTest {
     @Test
     void shouldAllowSymlinkToAbsoluteExternalPathWhenPolicyAllow() throws IOException {
         // given
-        Path externalTarget = tempDir.resolve("external_target.txt");
+        var externalTarget = tempDir.resolve("external_target.txt");
         Files.writeString(externalTarget, "external content");
         var symlinkEntry = InMemoryArchiveEntry.builder()
                 .name("myLink")
@@ -1441,13 +1399,13 @@ class ArchiveExtractorTest {
                 .linkName(externalTarget.toAbsolutePath().toString())
                 .build();
 
-        try (InMemoryArchiveExtractor extractor =
+        try (var extractor =
                 InMemoryArchiveExtractor.builder(List.of(symlinkEntry)).build()) {
             extractor.setEscapingSymlinkPolicy(ALLOW);
             // when
             extractor.extract(tempDir);
             // then
-            Path linkPath = tempDir.resolve("myLink");
+            var linkPath = tempDir.resolve("myLink");
             assertThat(linkPath).isSymbolicLink();
             assertThat(Files.readSymbolicLink(linkPath)).isEqualTo(externalTarget.toAbsolutePath());
             if (!OS.WINDOWS.isCurrentOs()) {
@@ -1469,18 +1427,18 @@ class ArchiveExtractorTest {
                 .linkName("actualDir")
                 .build();
 
-        try (InMemoryArchiveExtractor extractor = InMemoryArchiveExtractor.builder(List.of(dirToLinkTo, symlinkEntry))
+        try (var extractor = InMemoryArchiveExtractor.builder(List.of(dirToLinkTo, symlinkEntry))
                 .build()) {
             // when
             extractor.extract(tempDir);
             // then
-            Path linkPath = tempDir.resolve("linkToDir");
+            var linkPath = tempDir.resolve("linkToDir");
             assertThat(tempDir.resolve("actualDir")).isDirectory();
             assertThat(linkPath).isSymbolicLink();
             assertThat(Files.readSymbolicLink(linkPath).toString().replace('\\', '/'))
                     .isEqualTo("actualDir");
 
-            Path resolvedLinkPath = Files.readSymbolicLink(linkPath);
+            var resolvedLinkPath = Files.readSymbolicLink(linkPath);
             assertThat(tempDir.resolve(resolvedLinkPath)).isDirectory();
         }
     }
@@ -1494,46 +1452,17 @@ class ArchiveExtractorTest {
                 .linkName("non_existent_target")
                 .build();
 
-        try (InMemoryArchiveExtractor extractor =
+        try (var extractor =
                 InMemoryArchiveExtractor.builder(List.of(symlinkEntry)).build()) {
             // when
             extractor.extract(tempDir);
             // then
-            Path linkPath = tempDir.resolve("linkToNowhere");
+            var linkPath = tempDir.resolve("linkToNowhere");
             assertThat(linkPath).isSymbolicLink();
             assertThat(Files.readSymbolicLink(linkPath).toString().replace('\\', '/'))
                     .isEqualTo("non_existent_target");
             assertThat(Files.exists(linkPath, LinkOption.NOFOLLOW_LINKS)).isTrue();
             assertThat(Files.exists(linkPath)).isFalse();
-        }
-    }
-
-    @DisabledOnOs(OS.WINDOWS)
-    @Test
-    void normalizePathAndSplitShouldHandleVariousSlashPatterns() throws IOException {
-        assertThat(normalizePathAndSplit("/a/b/")).containsExactlyElementsOf(List.of("a", "b"));
-        assertThat(normalizePathAndSplit("a//b")).containsExactlyElementsOf(asListNormalized("a", "b"));
-        assertThat(normalizePathAndSplit("a/b///c/")).containsExactlyElementsOf(asListNormalized("a", "b", "c"));
-        assertThat(normalizePathAndSplit("a/./b")).containsExactlyElementsOf(asListNormalized("a", "b"));
-    }
-
-    @Test
-    void normalizePathAndSplitShouldThrowForParentTraversalOnlyPath() {
-        assertThatThrownBy(() -> normalizePathAndSplit(".."))
-                .isInstanceOf(IOException.class)
-                .hasMessageContaining("Invalid entry name");
-        assertThatThrownBy(() -> normalizePathAndSplit("../../a"))
-                .isInstanceOf(IOException.class)
-                .hasMessageContaining("Invalid entry name");
-    }
-
-    @Test
-    void normalizePathAndSplitShouldHandleEmptyStringAfterEnsureValidPath() {
-        try {
-            List<String> parts = normalizePathAndSplit("");
-            assertThat(parts).isNotEmpty();
-        } catch (IOException e) {
-            // This might happen if canonical path fails for some reason, less likely for "".
         }
     }
 
@@ -1551,7 +1480,7 @@ class ArchiveExtractorTest {
     @Test
     void setAttributesShouldSetAllRelevantDosAttributesOnWindows() throws IOException {
         var mockPath = mock(Path.class);
-        int mode = io.github.compress4j.utils.FileUtils.DOS_READ_ONLY | io.github.compress4j.utils.FileUtils.DOS_HIDDEN;
+        var mode = io.github.compress4j.utils.FileUtils.DOS_READ_ONLY | io.github.compress4j.utils.FileUtils.DOS_HIDDEN;
 
         //noinspection rawtypes
         try (MockedStatic<ArchiveExtractor> mockedExtractor = mockStatic(ArchiveExtractor.class, CALLS_REAL_METHODS);
@@ -1577,7 +1506,7 @@ class ArchiveExtractorTest {
         var mockPath = mock(Path.class);
         // rwxr-xr-x with setuid
         @SuppressWarnings("OctalInteger")
-        int mode = 04755; // setuid + rwxr-xr-x
+        var mode = 04755; // setuid + rwxr-xr-x
 
         //noinspection rawtypes
         try (MockedStatic<ArchiveExtractor> mockedExtractor = mockStatic(ArchiveExtractor.class, CALLS_REAL_METHODS);
@@ -1605,7 +1534,7 @@ class ArchiveExtractorTest {
         builder.filter(null);
 
         var entry1 = InMemoryArchiveEntry.builder().name("test1").content("c1").build();
-        try (InMemoryArchiveExtractor extractor =
+        try (var extractor =
                 InMemoryArchiveExtractor.builder(List.of(entry1)).filter(null).build()) {
             extractor.extract(tempDir);
             assertThat(tempDir.resolve("test1")).exists();
@@ -1624,7 +1553,7 @@ class ArchiveExtractorTest {
                 .linkName(tempDir.resolve("file.txt").toAbsolutePath().toString())
                 .build();
 
-        try (InMemoryArchiveExtractor extractor = InMemoryArchiveExtractor.builder(List.of(entry1, symlinkEntry))
+        try (var extractor = InMemoryArchiveExtractor.builder(List.of(entry1, symlinkEntry))
                 .escapingSymlinkPolicy(DISALLOW)
                 .build()) {
 
@@ -1637,12 +1566,133 @@ class ArchiveExtractorTest {
         }
     }
 
-    private List<String> asListNormalized(String... parts) throws IOException {
-        String path = String.join(File.separator, parts);
-        var workingDir = Paths.get(System.getProperty("user.dir"));
-        String canonicalPath = Paths.get(workingDir.toString(), path).toFile().getCanonicalPath();
-        return Arrays.stream(canonicalPath.replace(File.separatorChar, '/').split("/"))
-                .filter(s -> !s.isEmpty())
-                .toList();
+    @Test
+    void shouldExtractMixedEntriesWithAllTypesAndPolicies() throws IOException {
+        var tempDir = Files.createTempDirectory("test");
+        var dirEntry = InMemoryArchiveEntry.builder().name("adir").type(DIR).build();
+        var fileEntry = InMemoryArchiveEntry.builder()
+                .name("adir/file.txt")
+                .content("f")
+                .build();
+        var symlinkEntry = InMemoryArchiveEntry.builder()
+                .name("adir/link")
+                .type(SYMLINK)
+                .linkName("file.txt")
+                .build();
+        var absSymlink = InMemoryArchiveEntry.builder()
+                .name("absLink")
+                .type(SYMLINK)
+                .linkName(tempDir.resolve("adir/file.txt").toAbsolutePath().toString())
+                .build();
+
+        // ALLOW policy: absolute symlink is allowed
+        try (var extractor = InMemoryArchiveExtractor.builder(List.of(dirEntry, fileEntry, symlinkEntry, absSymlink))
+                .escapingSymlinkPolicy(ALLOW)
+                .build()) {
+            extractor.extract(tempDir);
+            assertThat(tempDir.resolve("adir")).isDirectory();
+            assertThat(tempDir.resolve("adir/file.txt")).hasContent("f");
+            assertThat(tempDir.resolve("adir/link")).isSymbolicLink();
+            assertThat(tempDir.resolve("absLink")).isSymbolicLink();
+        }
+
+        // DISALLOW policy: absolute symlink should fail
+        try (var extractor = InMemoryArchiveExtractor.builder(List.of(dirEntry, fileEntry, absSymlink))
+                .escapingSymlinkPolicy(DISALLOW)
+                .build()) {
+            assertThatThrownBy(() -> extractor.extract(tempDir))
+                    .isInstanceOf(IOException.class)
+                    .hasMessageContaining("Invalid symlink (absolute path)");
+        }
+    }
+
+    @Test
+    void shouldNotOverwriteSymlinkWithFileOrDirWhenOverwriteFalse() throws IOException {
+        var dirEntry = InMemoryArchiveEntry.builder().name("adir").type(DIR).build();
+        var fileEntry = InMemoryArchiveEntry.builder()
+                .name("adir/file.txt")
+                .content("f")
+                .build();
+        var symlinkEntry = InMemoryArchiveEntry.builder()
+                .name("adir/link")
+                .type(SYMLINK)
+                .linkName("file.txt")
+                .build();
+        try (var extractor = InMemoryArchiveExtractor.builder(List.of(dirEntry, fileEntry, symlinkEntry))
+                .build()) {
+            extractor.extract(tempDir);
+        }
+        var fileAtSymlink =
+                InMemoryArchiveEntry.builder().name("adir/link").content("new").build();
+        try (var extractor =
+                InMemoryArchiveExtractor.builder(List.of(fileAtSymlink)).build()) {
+            extractor.setOverwrite(false);
+            extractor.extract(tempDir);
+            assertThat(tempDir.resolve("adir/link")).isSymbolicLink();
+        }
+    }
+
+    @Test
+    void shouldOverwriteSymlinkWithFileWhenOverwriteTrue() throws IOException {
+        var dirEntry = InMemoryArchiveEntry.builder().name("adir").type(DIR).build();
+        var fileEntry = InMemoryArchiveEntry.builder()
+                .name("adir/file.txt")
+                .content("f")
+                .build();
+        var symlinkEntry = InMemoryArchiveEntry.builder()
+                .name("adir/link")
+                .type(SYMLINK)
+                .linkName("file.txt")
+                .build();
+        try (var extractor = InMemoryArchiveExtractor.builder(List.of(dirEntry, fileEntry, symlinkEntry))
+                .build()) {
+            extractor.extract(tempDir);
+        }
+        var fileAtSymlink =
+                InMemoryArchiveEntry.builder().name("adir/link").content("new").build();
+        try (var extractor =
+                InMemoryArchiveExtractor.builder(List.of(fileAtSymlink)).build()) {
+            extractor.setOverwrite(true);
+            extractor.extract(tempDir);
+            assertThat(tempDir.resolve("adir/link")).isRegularFile().hasContent("new");
+        }
+    }
+
+    @Test
+    void shouldHandleNullAndAlwaysFalseEntryFilter() throws IOException {
+        var entry1 = InMemoryArchiveEntry.builder().name("test1").content("c1").build();
+        var entry2 = InMemoryArchiveEntry.builder().name("test2").content("c2").build();
+        try (var extractor = InMemoryArchiveExtractor.builder(List.of(entry1, entry2))
+                .filter(null)
+                .build()) {
+            extractor.extract(tempDir);
+            assertThat(tempDir.resolve("test1")).hasContent("c1");
+            assertThat(tempDir.resolve("test2")).hasContent("c2");
+        }
+        var temp2 = Files.createTempDirectory("temp1");
+        try (var extractor = InMemoryArchiveExtractor.builder(List.of(entry1, entry2))
+                .filter(e -> false)
+                .build()) {
+            extractor.extract(temp2);
+            assertThat(temp2).isEmptyDirectory();
+        }
+    }
+
+    @Test
+    void shouldSetAttributesWithEdgeCaseModes() throws IOException {
+        var mockPath = mock(Path.class);
+        @SuppressWarnings("OctalInteger")
+        var mode = 07777;
+        try (var mockedExtractor = mockStatic(ArchiveExtractor.class, CALLS_REAL_METHODS);
+                MockedStatic<Files> mockedFiles = mockStatic(Files.class)) {
+            mockedExtractor.when(ArchiveExtractor::isIsOsWindows).thenReturn(false);
+            var mockAttributeView = mock(PosixFileAttributeView.class);
+            mockedFiles
+                    .when(() -> Files.getFileAttributeView(mockPath, PosixFileAttributeView.class))
+                    .thenReturn(mockAttributeView);
+            ArchiveExtractor.setAttributes(mode, mockPath);
+            verify(mockAttributeView)
+                    .setPermissions(io.github.compress4j.utils.PosixFilePermissionsMapper.fromUnixMode(mode));
+        }
     }
 }
