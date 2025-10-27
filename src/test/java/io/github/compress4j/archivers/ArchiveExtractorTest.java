@@ -1570,7 +1570,6 @@ class ArchiveExtractorTest {
 
     @Test
     void shouldExtractMixedEntriesWithAllTypesAndPolicies() throws IOException {
-        var tempDir = Files.createTempDirectory("test");
         var dirEntry = InMemoryArchiveEntry.builder().name("adir").type(DIR).build();
         var fileEntry = InMemoryArchiveEntry.builder()
                 .name("adir/file.txt")
