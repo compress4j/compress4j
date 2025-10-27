@@ -28,7 +28,6 @@ import static org.mockito.Mockito.spy;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.Instant;
-import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +42,7 @@ class TarGzArchiveCreatorBuilderTest {
                 .bigNumberMode(BIGNUMBER_POSIX));
 
         // when
-        try (TarArchiveOutputStream out = spy(builder.buildArchiveOutputStream())) {
+        try (var out = spy(builder.buildArchiveOutputStream())) {
 
             // then
             assertThat(out)
@@ -74,7 +73,7 @@ class TarGzArchiveCreatorBuilderTest {
                 .bigNumberMode(BIGNUMBER_POSIX));
 
         // when
-        try (TarArchiveOutputStream out = spy(builder.buildArchiveOutputStream())) {
+        try (var out = spy(builder.buildArchiveOutputStream())) {
 
             // then
             assertThat(out)

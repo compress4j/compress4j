@@ -36,7 +36,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
-import java.time.Instant;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.io.IOUtils;
@@ -56,11 +55,11 @@ class TarGzArchiveCreatorTest {
         // when
         var aOut = spy(TarGzArchiveCreator.builder(outputStream).buildArchiveOutputStream());
         try (MockedStatic<IOUtils> mockIOUtils = mockStatic(IOUtils.class, CALLS_REAL_METHODS);
-                TarGzArchiveCreator tarCompressor = new TarGzArchiveCreator(aOut)) {
+                var tarCompressor = new TarGzArchiveCreator(aOut)) {
 
-            FileTime modTime = FileTime.from(now());
+            var modTime = FileTime.from(now());
             @SuppressWarnings("OctalInteger")
-            int mod = 0400;
+            var mod = 0400;
             tarCompressor.writeFileEntry("test", inputStream, -1, modTime, mod, Optional.empty());
 
             // then
@@ -88,10 +87,10 @@ class TarGzArchiveCreatorTest {
                 .addPaxHeadersForNonAsciiNames(true)
                 .buildArchiveOutputStream());
         try (MockedStatic<IOUtils> mockIOUtils = mockStatic(IOUtils.class);
-                TarGzArchiveCreator tarCompressor = new TarGzArchiveCreator(aOut)) {
+                var tarCompressor = new TarGzArchiveCreator(aOut)) {
 
-            Instant now = now();
-            FileTime modTime = FileTime.from(now);
+            var now = now();
+            var modTime = FileTime.from(now);
             tarCompressor.writeFileEntry("test", inputStream, 0, modTime, 0, Optional.of(Path.of("target")));
 
             // then

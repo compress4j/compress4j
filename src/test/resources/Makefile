@@ -60,7 +60,7 @@ a_zip:
 	zip -q -r ../$(ARS)/$(AR) .;
 
 ## compress
-compress: c_bz2 c_gz c_lzma c_xz
+compress: c_bz2 c_gz c_lzma c_xz c_deflate
 
 c_bz2:
 	bzip2 -k $(CPF); \
@@ -77,6 +77,9 @@ c_lzma:
 c_xz:
 	xz -z -k $(CPF) > $(COM)/$(CPF).xz; \
     mv $(CPF).xz $(COM);
+
+c_deflate:
+	python3 -c "import zlib; data = open('$(CPF)', 'rb').read(); open('$(COM)/$(CPF).deflate', 'wb').write(zlib.compress(data, 9))"
 
 ## clean
 clean: clean-archives clean-compress

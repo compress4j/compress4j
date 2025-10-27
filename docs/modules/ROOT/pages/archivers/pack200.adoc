@@ -1,0 +1,36 @@
+= Pack200 Archiver
+
+Pack200 is a compression scheme for JAR files, designed to significantly reduce the size of Java archives.
+It is useful for distributing Java applications and libraries more efficiently.
+
+== Features
+
+- Compresses JAR files into `.pack` format
+- Decompresses `.pack` files back to JAR
+- Useful for reducing download sizes
+
+== Usage Example
+
+The following Java example demonstrates how to compress and decompress a JAR file using Pack200:
+
+.Pack200 Creation
+[,java]
+----
+include::example$java/com/example/archivers/pack200/Pack200Examples.java[tag=pack200-creator,indent=0]
+----
+
+.Pack200 Extraction
+[,java]
+----
+include::example$java/com/example/archivers/pack200/Pack200Examples.java[tag=pack200-extractor,indent=0]
+----
+
+[CAUTION]
+.Removal of Pack200 Tools and API
+====
+The Pack200 tools and API were deprecated in JDK 11 and have been removed in JDK 14.
+
+The pack200 and unpack200 tools, and Pack200 in java.util.jar.Pack200 package have been removed .
+
+See https://openjdk.java.net/jeps/367[JEP 367: Remove the Pack200 Tools and API].
+====

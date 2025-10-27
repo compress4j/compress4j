@@ -41,7 +41,7 @@ public abstract class AbstractCompressorIntegrationTest {
 
     protected Path osCompressedPath() {
         try {
-            String archivePathStr = "/compression/compress" + compressionExtension();
+            String archivePathStr = "/compression/compress.txt" + compressionExtension();
             URL resource = getClass().getResource(archivePathStr);
             Assertions.assertThat(resource)
                     .as("Compression file not found: " + archivePathStr + " in resources")
@@ -77,7 +77,7 @@ public abstract class AbstractCompressorIntegrationTest {
     @Test
     void shouldDecompressOsCompressedFile() throws Exception {
         var compressedPath = osCompressedPath();
-        var preCompressedPath = createFile(tempDir, "normalFile.txt", "Hello, world!");
+        var preCompressedPath = createFile(tempDir, "normalFile.txt", "this is the decompressed textfile\n");
         var decompressPath = tempDir.resolve("decompressedTest.txt");
 
         try (Decompressor<?> decompressor = decompressorBuilder(compressedPath)) {

@@ -19,9 +19,9 @@ The library's design centers around a few key components:
 * **`Compressor` Interface:** Defines the contract for compressing an `OutputStream`. Implementations handle the specifics of a particular compression algorithm.
 * **`Decompressor` Interface:** Defines the contract for decompressing an `InputStream`. Implementations handle the specifics of decompressing data from a particular format.
 * **`ArchiveCreator`:** A factory class used to obtain instances of `Compressor` for supported algorithms. This promotes loose coupling and simplifies the creation process.
-* **`ArchiveExtractor`:** A factory class used to obtain instances of `Uncompressor` for supported algorithms.
+* **`ArchiveExtractor`:** A factory class used to obtain instances of `Decompressor` for supported algorithms.
 
-By using these factories, developers can request a compressor or uncompressor for a desired algorithm (e.g., Gzip, Zstandard) without needing to know the specific implementation class names.
+By using these factories, developers can request a compressor or decompressor for a desired algorithm (e.g., Gzip, Zstandard) without needing to know the specific implementation class names.
 
 === Supported Formats
 
@@ -32,7 +32,9 @@ Compress4J supports a variety of common stream compression formats. The goal is 
 * Deflate (`.deflate`)
 * Bzip2 (`.bz2`)
 * Gzip (`.gz`, `gzip`)
+* Pack200 (`.pack`)
 * Tar (`.tar`, `tar.bz2`, `tbz2`, `tar.gz`, `tgz`)
+* Zip (`.zip`)
 
 The library often achieves this by integrating with robust, high-performance backend libraries (like `zstd-jni` for Zstandard) or by providing its own implementations.
 

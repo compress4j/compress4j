@@ -13,27 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.compress4j.compressors;
+package io.github.compress4j.compressors.gzip;
 
-import io.github.compress4j.compressors.deflate.DeflateCompressor;
-import io.github.compress4j.compressors.deflate.DeflateDecompressor;
+import io.github.compress4j.compressors.AbstractCompressorIntegrationTest;
 import java.io.IOException;
 import java.nio.file.Path;
 
-class DeflateCompressorIntegrationTest extends AbstractCompressorIntegrationTest {
+class GzipCompressorIntegrationTest extends AbstractCompressorIntegrationTest {
 
     @Override
-    protected Compressor<?> compressorBuilder(Path compressPath) throws IOException {
-        return new DeflateCompressor.DeflateCompressorBuilder(compressPath).build();
+    protected GzipCompressor compressorBuilder(Path compressPath) throws IOException {
+        return new GzipCompressor.GzipCompressorBuilder(compressPath).build();
     }
 
     @Override
-    protected Decompressor<?> decompressorBuilder(Path compressPath) throws IOException {
-        return new DeflateDecompressor.DeflateDecompressorBuilder(compressPath).build();
+    protected GzipDecompressor decompressorBuilder(Path compressPath) throws IOException {
+        return new GzipDecompressor.GzipDecompressorBuilder(compressPath).build();
     }
 
     @Override
     protected String compressionExtension() {
-        return ".deflate";
+        return ".gz";
     }
 }

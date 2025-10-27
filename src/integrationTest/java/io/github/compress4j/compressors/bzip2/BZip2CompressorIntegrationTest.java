@@ -13,22 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.compress4j.compressors;
+package io.github.compress4j.compressors.bzip2;
 
-import io.github.compress4j.compressors.bzip2.BZip2Compressor;
-import io.github.compress4j.compressors.bzip2.BZip2Decompressor;
+import io.github.compress4j.compressors.AbstractCompressorIntegrationTest;
 import java.io.IOException;
 import java.nio.file.Path;
 
 class BZip2CompressorIntegrationTest extends AbstractCompressorIntegrationTest {
 
     @Override
-    protected Compressor<?> compressorBuilder(Path compressPath) throws IOException {
+    protected BZip2Compressor compressorBuilder(Path compressPath) throws IOException {
         return new BZip2Compressor.BZip2CompressorBuilder(compressPath).build();
     }
 
     @Override
-    protected Decompressor<?> decompressorBuilder(Path compressPath) throws IOException {
+    protected BZip2Decompressor decompressorBuilder(Path compressPath) throws IOException {
         return new BZip2Decompressor.BZip2DecompressorBuilder(compressPath).build();
     }
 

@@ -278,10 +278,8 @@ public abstract class AbstractArchiverTest extends AbstractResourceTest {
             }
 
             ArchiveEntry finalEntry = entry;
-            assertThatThrownBy(() -> {
-                        Assertions.assertNotNull(finalEntry);
-                        finalEntry.extract(archiveExtractTmpDir);
-                    })
+            Assertions.assertNotNull(finalEntry);
+            assertThatThrownBy(() -> finalEntry.extract(archiveExtractTmpDir))
                     .isInstanceOf(IllegalStateException.class);
         }
     }
