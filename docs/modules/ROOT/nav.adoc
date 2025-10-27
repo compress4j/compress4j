@@ -2,11 +2,11 @@
 ** Archive
 *** xref:archivers/ar.adoc[]
 *** xref:archivers/cpio.adoc[]
-*** xref:archivers/pack200.adoc[]
 *** xref:archivers/tar.adoc[]
 *** xref:archivers/zip.adoc[]
 ** Compression
 *** xref:compressors/bzip2.adoc[]
 *** xref:compressors/deflate.adoc[]
 *** xref:compressors/gzip.adoc[]
+*** xref:compressors/pack200.adoc[]
 * xref:legacy.adoc[]
