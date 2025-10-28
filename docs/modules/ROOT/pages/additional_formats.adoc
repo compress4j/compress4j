@@ -1,0 +1,54 @@
+= Additional Formats
+
+Some formats may require additional support libraries to be included in your project. Below are some common formats and the corresponding libraries you may need:
+
+== XZ Support
+
+The XZ compression format support is provided through an additional module. Make sure to include it in your project to work with XZ compressed files.
+
+[tabs]
+====
+Maven::
++
+[source,xml]
+----
+<dependency>
+    <groupId>io.github.compress4j</groupId>
+    <artifactId>compress4j</artifactId>
+    <version>YOUR_VERSION</version>
+</dependency>
+<dependency>
+    <groupId>io.github.compress4j</groupId>
+    <artifactId>compress4j-xz-support</artifactId>
+    <version>YOUR_VERSION</version>
+</dependency>
+----
+
+Gradle Groovy::
++
+[source,groovy]
+----
+dependencies {
+    implementation('io.github.compress4j:compress4j:YOUR_VERSION')
+    implementation('io.github.compress4j:compress4j:YOUR_VERSION') {
+        capabilities {
+            requireCapability("io.github.compress4j:compress4j-xz-support")
+        }
+    }
+}
+----
+
+Gradle Kotlin::
++
+[source,kotlin]
+----
+dependencies {
+    implementation("io.github.compress4j:compress4j:YOUR_VERSION")
+    implementation("io.github.compress4j:compress4j:YOUR_VERSION") {
+        capabilities {
+            requireCapability("io.github.compress4j:compress4j-xz-support")
+        }
+    }
+}
+----
+====

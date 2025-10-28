@@ -9,4 +9,6 @@
 *** xref:compressors/deflate.adoc[]
 *** xref:compressors/gzip.adoc[]
 *** xref:compressors/pack200.adoc[]
+*** xref:compressors/xz.adoc[]
+** xref:additional_formats.adoc[]
 * xref:legacy.adoc[]

@@ -31,8 +31,13 @@ repositories {
     mavenCentral()
 }
 
+val xzSupport: SourceSet by sourceSets.creating {
+    compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
+    runtimeClasspath += sourceSets.main.get().output + sourceSets.main.get().runtimeClasspath
+}
 val examples: SourceSet by sourceSets.creating {
     compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
+    compileClasspath += xzSupport.output + sourceSets.main.get().compileClasspath
     runtimeClasspath += sourceSets.main.get().output + sourceSets.main.get().runtimeClasspath
 }
 
@@ -42,9 +47,17 @@ java {
     }
     withJavadocJar()
     withSourcesJar()
+    registerFeature("xzSupport") {
+        usingSourceSet(xzSupport)
+        capability("${project.group}", "${project.name}-xz-support", "${project.version}")
+        withJavadocJar()
+        withSourcesJar()
+    }
 }
 
+val examplesImplementation: Configuration by configurations
 val mockitoAgent: Configuration = configurations.create("mockitoAgent")
+val xzSupportApi: Configuration by configurations
 
 dependencies {
     api(libs.commons.compress)
@@ -67,7 +80,11 @@ dependencies {
     testFixturesImplementation(libs.jackson.annotations)
     testFixturesImplementation(libs.jackson.databind)
     testFixturesImplementation(libs.mockito.core)
-    
+
+    xzSupportApi(libs.org.tukaani.xz)
+
+    examplesImplementation(libs.org.tukaani.xz)
+
     mockitoAgent(libs.mockito.core) { isTransitive = false }
 }
 
@@ -79,7 +96,6 @@ testing {
                 implementation(platform(libs.junit.bom))
 
                 implementation(libs.assertj.core)
-                implementation(libs.junit.jupiter.api)
                 implementation(libs.junit.jupiter.params)
                 implementation(libs.logback.classic)
                 implementation(libs.logback.core)
@@ -92,31 +108,62 @@ testing {
                         "-javaagent:${mockitoAgent.asPath}",
                         "--add-opens=java.base/java.util.zip=ALL-UNNAMED"
                     )
-            } }
+            }}
+        }
+    }
+}
+
+val xzSupportTest by testing.suites.registering(JvmTestSuite::class) {
+    dependencies {
+        implementation(platform(libs.junit.bom))
+        implementation(project())
+        implementation(testFixtures(project()))
+        implementation(project()) {
+            capabilities {
+                requireCapability("${project.group}:${project.name}-xz-support")
+            }
         }
 
+        implementation(libs.assertj.core)
+        implementation(libs.mockito.core)
     }
+
+    targets.all { testTask.configure {
+        shouldRunAfter(tasks.test)
+        jvmArgs =
+            listOf(
+                "-javaagent:${mockitoAgent.asPath}",
+                "--add-opens=java.base/java.util.zip=ALL-UNNAMED"
+            )
+    }}
 }
 
 val integrationTest by testing.suites.registering(JvmTestSuite::class) {
     sources {
+        // This can be removed when deprecated classes are deleted and resources are moved to IT
         resources { setSrcDirs(listOf("src/integrationTest/resources", "src/test/resources")) }
     }
     dependencies {
         implementation(platform(libs.junit.bom))
         implementation(project())
         implementation(testFixtures(project()))
-        implementation(libs.junit.jupiter.api)
+        implementation(project()) {
+            capabilities {
+                requireCapability("${project.group}:${project.name}-xz-support")
+            }
+        }
 
-        runtimeOnly(libs.org.tukaani.xz)
         runtimeOnly(libs.asm)
     }
 
-    targets.all {
-        testTask.configure {
-            shouldRunAfter(tasks.test)
-        }
-    }
+    targets.all { testTask.configure {
+        shouldRunAfter(xzSupportTest)
+        jvmArgs =
+            listOf(
+                "-javaagent:${mockitoAgent.asPath}",
+                "--add-opens=java.base/java.util.zip=ALL-UNNAMED"
+            )
+    }}
 }
 
 dependencyAnalysis {
@@ -128,6 +175,7 @@ dependencyAnalysis {
             onAny {
                 severity("fail")
             }
+            ignoreSourceSet("xzSupport")
         }
     }
 }
@@ -143,8 +191,10 @@ tasks.withType<Javadoc> {
 }
 
 tasks.testCodeCoverageReport {
-    dependsOn(tasks.test, integrationTest)
-     executionData(fileTree(layout.buildDirectory).include("jacoco/*.exec"))
+    dependsOn(tasks.test, integrationTest, xzSupportTest)
+    executionData(
+        fileTree(layout.buildDirectory).include("jacoco/*.exec")
+    )
     reports {
         xml.required = true
         html.required = true
@@ -225,6 +275,10 @@ publishing {
             from(components["java"])
             suppressPomMetadataWarningsFor("testFixturesApiElements")
             suppressPomMetadataWarningsFor("testFixturesRuntimeElements")
+            suppressPomMetadataWarningsFor("xzSupportApiElements")
+            suppressPomMetadataWarningsFor("xzSupportJavadocElements")
+            suppressPomMetadataWarningsFor("xzSupportRuntimeElements")
+            suppressPomMetadataWarningsFor("xzSupportSourcesElements")
             pom {
                 name = project.name
                 description = project.description

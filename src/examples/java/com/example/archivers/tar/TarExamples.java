@@ -31,8 +31,11 @@ import io.github.compress4j.archivers.tar.TarBZip2ArchiveCreator;
 import io.github.compress4j.archivers.tar.TarBZip2ArchiveExtractor;
 import io.github.compress4j.archivers.tar.TarGzArchiveCreator;
 import io.github.compress4j.archivers.tar.TarGzArchiveExtractor;
+import io.github.compress4j.archivers.tar.TarXzArchiveCreator;
+import io.github.compress4j.archivers.tar.TarXzArchiveExtractor;
 import java.io.IOException;
 import java.nio.file.Path;
+import org.tukaani.xz.LZMA2Options;
 
 @SuppressWarnings({"java:S1192", "unused"})
 public class TarExamples {
@@ -142,5 +145,39 @@ public class TarExamples {
             tarBzip2Extractor.extract(Path.of("outputDir"));
         }
         // end::tar-bzip2-extractor[]
+    }
+
+    public static void tarXzCreator() throws IOException {
+        // tag::tar-xz-creator[]
+        try (TarXzArchiveCreator tarXzCreator = TarXzArchiveCreator.builder(Path.of("example.tar.xz"))
+                .compressorOutputStreamBuilder()
+                .lzma2Options(new LZMA2Options())
+                .parentBuilder()
+                .blockSize(1024)
+                .encoding(UTF_8.name())
+                .addPaxHeadersForNonAsciiNames(true)
+                .bigNumberMode(BIGNUMBER_ERROR)
+                .longFileMode(LONGFILE_GNU)
+                .filter((name, p) -> !name.endsWith("some_file.txt"))
+                .build()) {
+            tarXzCreator.addDirectoryRecursively(Path.of("exampleDir"));
+            tarXzCreator.addFile(Path.of("path/to/file.txt"));
+        }
+        // end::tar-xz-creator[]
+    }
+
+    public static void tarXzExtractor() throws IOException {
+        // tag::tar-xz-extractor[]
+        try (TarXzArchiveExtractor tarXzExtractor = TarXzArchiveExtractor.builder(Path.of("example.tar.xz"))
+                .filter(entry -> !entry.name().startsWith("bad"))
+                .errorHandler((entry, exception) -> RETRY)
+                .escapingSymlinkPolicy(ArchiveExtractor.EscapingSymlinkPolicy.DISALLOW)
+                .postProcessor((entry, exception) -> {})
+                .stripComponents(1)
+                .overwrite(true)
+                .build()) {
+            tarXzExtractor.extract(Path.of("outputDir"));
+        }
+        // end::tar-xz-extractor[]
     }
 }
