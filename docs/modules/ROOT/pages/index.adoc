@@ -12,6 +12,42 @@ Compress4J is a Java library dedicated to simplifying the handling of various da
 
 Inspired by the need for a consistent way to interact with different compression techniques, Compress4J abstracts the specific implementations behind common interfaces, making it easier to incorporate compression into Java applications or to switch between compression formats.
 
+=== Getting Started
+To use Compress4J in your Java project, you typically need to include it as a dependency in your build configuration.
+
+[tabs]
+====
+Maven::
++
+[source,xml]
+----
+<dependency>
+    <groupId>io.github.compress4j</groupId>
+    <artifactId>compress4j</artifactId>
+    <version>YOUR_VERSION</version>
+</dependency>
+----
+
+Gradle Groovy::
++
+[source,groovy]
+----
+dependencies {
+    implementation 'io.github.compress4j:compress4j:YOUR_VERSION'
+}
+----
+
+Gradle Kotlin::
++
+[source,kotlin]
+----
+dependencies {
+    implementation("io.github.compress4j:compress4j:YOUR_VERSION")
+}
+----
+====
+
+
 === Core Concepts
 
 The library's design centers around a few key components:
@@ -33,10 +69,14 @@ Compress4J supports a variety of common stream compression formats. The goal is 
 * Bzip2 (`.bz2`)
 * Gzip (`.gz`, `gzip`)
 * Pack200 (`.pack`)
-* Tar (`.tar`, `tar.bz2`, `tbz2`, `tar.gz`, `tgz`)
+* Tar (`.tar`, `tar.bz2`, `tbz2`, `tar.gz`, `tgz`, `tar.xz`, `txz`)
+* XZ (`.xz`)
+* Zip (`.zip`)
 * Zip (`.zip`)
 
 The library often achieves this by integrating with robust, high-performance backend libraries (like `zstd-jni` for Zstandard) or by providing its own implementations.
+
+IMPORTANT: Some compression formats may require additional support libraries to be included in your project. Please refer to the xref:additional_formats.adoc[Additional Formats] for details on any extra dependencies needed for specific formats.
 
 === Key Goals
 

@@ -1,0 +1,18 @@
+= XZ
+
+Here is a simple example of how to use xz compression.
+
+== Example Usage
+
+.XZ Compression
+[,java]
+----
+include::example$java/com/example/compressors/XZExamples.java[tag=xz-compressor,indent=0]
+----
+
+.XZ Decompression
+[,java]
+----
+include::example$java/com/example/compressors/XZExamples.java[tag=xz-decompressor,indent=0]
+----
+
