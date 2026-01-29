@@ -34,7 +34,7 @@ jobs:
 
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
           ref: ${{github.event.workflow_run.head_sha}}
@@ -45,14 +45,14 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
       - name: "Download JDK ${{ github.event.inputs.jdk_version }} Test reports"
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           path: reports
           pattern: "ubuntu-latest-jdk_${{ github.event.inputs.jdk_version }}-test-reports"
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.inputs.runId }}
       - name: Cache SonarCloud packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.sonar/cache
           key: "ubuntu-latest-jdk_${{ github.event.inputs.jdk_version }}-sonar"
