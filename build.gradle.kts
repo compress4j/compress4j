@@ -102,13 +102,6 @@ testing {
                 implementation(libs.mockito.core)
                 implementation(libs.mockito.jupiter)
             }
-            targets.all { testTask.configure {
-                jvmArgs =
-                    listOf(
-                        "-javaagent:${mockitoAgent.asPath}",
-                        "--add-opens=java.base/java.util.zip=ALL-UNNAMED"
-                    )
-            }}
         }
     }
 }
@@ -130,11 +123,6 @@ val xzSupportTest by testing.suites.registering(JvmTestSuite::class) {
 
     targets.all { testTask.configure {
         shouldRunAfter(tasks.test)
-        jvmArgs =
-            listOf(
-                "-javaagent:${mockitoAgent.asPath}",
-                "--add-opens=java.base/java.util.zip=ALL-UNNAMED"
-            )
     }}
 }
 
@@ -158,12 +146,16 @@ val integrationTest by testing.suites.registering(JvmTestSuite::class) {
 
     targets.all { testTask.configure {
         shouldRunAfter(xzSupportTest)
-        jvmArgs =
-            listOf(
-                "-javaagent:${mockitoAgent.asPath}",
-                "--add-opens=java.base/java.util.zip=ALL-UNNAMED"
-            )
     }}
+}
+
+tasks.withType<Test>().configureEach {
+    jvmArgumentProviders.add(CommandLineArgumentProvider {
+        listOf(
+            "-javaagent:${mockitoAgent.asPath}",
+            "--add-opens=java.base/java.util.zip=ALL-UNNAMED"
+        )
+    })
 }
 
 dependencyAnalysis {
