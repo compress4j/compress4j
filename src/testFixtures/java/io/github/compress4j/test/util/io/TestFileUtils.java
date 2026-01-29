@@ -24,7 +24,10 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Comparator;
+import java.util.Set;
 import java.util.stream.Stream;
 
 public class TestFileUtils {
@@ -47,9 +50,44 @@ public class TestFileUtils {
      * @throws IOException the file could not be created.
      */
     public static Path createFile(Path root, String filename, String content) throws IOException {
+        return createFile(root, filename, content, PosixFilePermissions.fromString("rw-r--r--"));
+    }
+
+    /**
+     * Create a file with the given content and POSIX permissions.
+     *
+     * @param root root directory to create the file in.
+     * @param filename name of the file to create.
+     * @param content content of the file.
+     * @param permissions POSIX permissions to set on the file.
+     * @return the path to the created file.
+     * @throws IOException the file could not be created.
+     */
+    public static Path createFile(Path root, String filename, String content, Set<PosixFilePermission> permissions) throws IOException {
         Path path = root.resolve(filename);
         write(path, content);
+        setPosixPermissions(path, permissions);
         return path;
+    }
+
+    /**
+     * Sets a file's POSIX permissions.
+     *
+     * @param path - The path to the file
+     * @param permissions - The new set of permissions
+     * @throws UnsupportedOperationException
+     *          if the associated file system does not support the {@code
+     *          PosixFileAttributeView}
+     * @throws  ClassCastException
+     *          if the sets contains elements that are not of type {@code
+     *          PosixFilePermission}
+     * @throws  IOException
+     *          if an I/O error occurs
+     */
+    public static void setPosixPermissions(Path path, Set<PosixFilePermission> permissions) throws IOException {
+        if (Files.getFileStore(path).supportsFileAttributeView("posix")) {
+            Files.setPosixFilePermissions(path, permissions);
+        }
     }
 
     /**
