@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 The Compress4J Project
+ * Copyright 2024-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,8 @@ public class TestFileUtils {
      * @return the path to the created file.
      * @throws IOException the file could not be created.
      */
-    public static Path createFile(Path root, String filename, String content, Set<PosixFilePermission> permissions) throws IOException {
+    public static Path createFile(Path root, String filename, String content, Set<PosixFilePermission> permissions)
+            throws IOException {
         Path path = root.resolve(filename);
         write(path, content);
         setPosixPermissions(path, permissions);
@@ -75,14 +76,10 @@ public class TestFileUtils {
      *
      * @param path - The path to the file
      * @param permissions - The new set of permissions
-     * @throws UnsupportedOperationException
-     *          if the associated file system does not support the {@code
-     *          PosixFileAttributeView}
-     * @throws  ClassCastException
-     *          if the sets contains elements that are not of type {@code
-     *          PosixFilePermission}
-     * @throws  IOException
-     *          if an I/O error occurs
+     * @throws UnsupportedOperationException if the associated file system does not support the
+     *     {@code PosixFileAttributeView}
+     * @throws ClassCastException if the sets contains elements that are not of type {@code PosixFilePermission}
+     * @throws IOException if an I/O error occurs
      */
     public static void setPosixPermissions(Path path, Set<PosixFilePermission> permissions) throws IOException {
         if (Files.getFileStore(path).supportsFileAttributeView("posix")) {
