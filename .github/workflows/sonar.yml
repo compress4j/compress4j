@@ -63,6 +63,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           ls -la
+          tree
           mkdir -p build
           if [ -d "reports/build" ]; then
             cp -r reports/build/* build/
