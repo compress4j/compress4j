@@ -62,8 +62,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
-          mkdir build
-          cp -r reports/*-reports/* build/
+          ls -la
+          mkdir -p build
+          if [ -d "reports/build" ]; then
+            cp -r reports/build/* build/
+          else
+            cp -r reports/* build/
+          fi
           
           if [ '${{github.event.inputs.eventName}}' == 'pull_request' ]; then
             ./gradlew jacocoTestReport sonar \
