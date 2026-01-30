@@ -102,13 +102,6 @@ testing {
                 implementation(libs.mockito.core)
                 implementation(libs.mockito.jupiter)
             }
-            targets.all { testTask.configure {
-                jvmArgs =
-                    listOf(
-                        "-javaagent:${mockitoAgent.asPath}",
-                        "--add-opens=java.base/java.util.zip=ALL-UNNAMED"
-                    )
-            }}
         }
     }
 }
@@ -130,11 +123,6 @@ val xzSupportTest by testing.suites.registering(JvmTestSuite::class) {
 
     targets.all { testTask.configure {
         shouldRunAfter(tasks.test)
-        jvmArgs =
-            listOf(
-                "-javaagent:${mockitoAgent.asPath}",
-                "--add-opens=java.base/java.util.zip=ALL-UNNAMED"
-            )
     }}
 }
 
@@ -158,12 +146,16 @@ val integrationTest by testing.suites.registering(JvmTestSuite::class) {
 
     targets.all { testTask.configure {
         shouldRunAfter(xzSupportTest)
-        jvmArgs =
-            listOf(
-                "-javaagent:${mockitoAgent.asPath}",
-                "--add-opens=java.base/java.util.zip=ALL-UNNAMED"
-            )
     }}
+}
+
+tasks.withType<Test>().configureEach {
+    jvmArgumentProviders.add(CommandLineArgumentProvider {
+        listOf(
+            "-javaagent:${mockitoAgent.asPath}",
+            "--add-opens=java.base/java.util.zip=ALL-UNNAMED"
+        )
+    })
 }
 
 dependencyAnalysis {
@@ -211,7 +203,9 @@ sonar {
         property("sonar.projectKey", "compress4j_compress4j")
         property("sonar.organization", "compress4j")
         property("sonar.host.url", "https://sonarcloud.io")
-        property("sonar.gradle.scanAll", "true")
+        property("sonar.sources", "src/main/java,src/xzSupport/java,src/examples/java")
+        property("sonar.tests", "src/test/java,src/xzSupportTest/java,src/integrationTest/java,src/testFixtures/java")
+        property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml")
         property(
             "sonar.coverage.exclusions",
             listOf(

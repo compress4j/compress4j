@@ -8,18 +8,18 @@ on:
   pull_request:
     branches:
       - main
-
-permissions:
-  contents: read
-  actions: write
+  workflow_dispatch:
 
 jobs:
   build-ubuntu-21:
+    permissions:
+      contents: read
+      actions: write
     name: Build (Ubuntu JDK 21)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
 
@@ -37,7 +37,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
         run: ./gradlew build --continue --no-daemon --scan
       - name: Upload Test reports
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: ubuntu-latest-jdk_21-test-reports # Specific artifact name for JDK 21
           path: |
@@ -45,11 +45,13 @@ jobs:
             build/jacoco/
 
   build-ubuntu-25:
+    permissions:
+      contents: read
     name: Build (Ubuntu JDK 25)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
 
@@ -69,6 +71,8 @@ jobs:
       # No artifact upload for this job as it's not needed for Sonar
 
   build-other-os:
+    permissions:
+      contents: read
     name: Build (${{ matrix.operating-system }} JDK ${{ matrix.java-version }})
     runs-on: ${{ matrix.operating-system }}
     strategy:
@@ -82,7 +86,7 @@ jobs:
         run: |
           git config --system core.longpaths true
       - name: Checkout sources
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
 
@@ -101,12 +105,15 @@ jobs:
         run: ./gradlew build --continue --no-daemon --scan
 
   configure_sonar:
+    permissions:
+      contents: read
+      actions: write
     runs-on: ubuntu-latest
     needs:
       - build-ubuntu-21
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: Trigger Sonar
