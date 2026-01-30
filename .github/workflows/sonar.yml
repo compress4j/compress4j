@@ -63,7 +63,6 @@ jobs:
         run: |
           mkdir build
           mv reports/* build/
-          tree
           
           if [ '${{github.event.inputs.eventName}}' == 'pull_request' ]; then
             ./gradlew jacocoTestReport sonar \
