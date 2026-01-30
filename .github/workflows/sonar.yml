@@ -23,12 +23,11 @@ on:
         required: true
         default: 21
 
-permissions:
-  contents: read
-  actions: write
-
 jobs:
   sonar:
+    permissions:
+      contents: read
+      actions: write
     name: Sonar
     runs-on: ubuntu-latest
 
