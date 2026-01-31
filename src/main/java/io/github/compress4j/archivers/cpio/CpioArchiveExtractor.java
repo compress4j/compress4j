@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,12 +52,12 @@ public class CpioArchiveExtractor extends ArchiveExtractor<CpioArchiveInputStrea
     }
 
     @Override
-    protected InputStream openEntryStream(Entry entry) {
+    public InputStream openEntryStream(Entry entry) {
         return archiveInputStream;
     }
 
     @Override
-    protected @Nullable Entry nextEntry() throws IOException {
+    public @Nullable Entry nextEntry() throws IOException {
         CpioArchiveEntry cpioEntry = archiveInputStream.getNextEntry();
         if (cpioEntry == null || "TRAILER!!!".equals(cpioEntry.getName())) {
             return null;

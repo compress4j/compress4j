@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 The Compress4J Project
+ * Copyright 2024-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ public abstract class BaseTarArchiveExtractor extends ArchiveExtractor<TarArchiv
 
     /** {@inheritDoc} */
     @Override
-    protected Entry nextEntry() throws IOException {
+    public Entry nextEntry() throws IOException {
         TarArchiveEntry te = getNextTarArchiveEntry();
         if (te == null) {
             return null;
@@ -66,7 +66,7 @@ public abstract class BaseTarArchiveExtractor extends ArchiveExtractor<TarArchiv
 
     /** {@inheritDoc} */
     @Override
-    protected InputStream openEntryStream(Entry entry) {
+    public InputStream openEntryStream(Entry entry) {
         return archiveInputStream;
     }
 
