@@ -47,57 +47,17 @@ dependencies {
 ----
 ====
 
-==== Quick Start Examples
-
-Extract an archive:
-[source,java]
-----
-// Auto-detects format from file extension
-Compress4J.extractAll(
-    Paths.get("archive.tar.gz"),
-    Paths.get("/output")
-);
-----
-
-List archive contents:
-[source,java]
-----
-try (var handle = Compress4J.open(Paths.get("archive.zip"))) {
-    handle.stream()
-        .forEach(entry -> System.out.println(entry.name()));
-}
-----
-
-Create an archive:
-[source,java]
-----
-try (var builder = Compress4J.create(Paths.get("output.tar.gz"), ArchiveFormat.TAR)
-        .withCompression(CompressionType.GZIP)) {
-    builder.add(Paths.get("file1.txt"))
-           .addDirectory(Paths.get("docs"))
-           .build();
-}
-----
-
-
 
 === Core Concepts
 
 The library's design centers around a few key components:
 
-* **`Compress4J`:** The main entry point providing simple static methods for common archiving and compression operations. Auto-detects formats from file extensions.
-* **`ArchiveHandle`:** Provides entry-by-entry access to archives with streaming, iteration, and selective extraction capabilities.
-* **`ArchiveBuilder`:** Fluent API for creating archives with optional compression.
-* **`ArchiveCreator` / `ArchiveExtractor`:** Lower-level builder-based classes for advanced use cases with fine-grained control.
-* **`Compressor` / `Decompressor`:** Standalone compression/decompression for individual files.
+* **`Compressor` Interface:** Defines the contract for compressing an `OutputStream`. Implementations handle the specifics of a particular compression algorithm.
+* **`Decompressor` Interface:** Defines the contract for decompressing an `InputStream`. Implementations handle the specifics of decompressing data from a particular format.
+* **`ArchiveCreator`:** A factory class used to obtain instances of `Compressor` for supported algorithms. This promotes loose coupling and simplifies the creation process.
+* **`ArchiveExtractor`:** A factory class used to obtain instances of `Decompressor` for supported algorithms.
 
-The library offers two API styles:
-
-1. **Simple Facade** (`Compress4J`): One-liner operations for common tasks
-2. **Builder Pattern** (`ArchiveCreator`, `ArchiveExtractor`): Advanced control with configuration options
-
-By providing both approaches, developers can choose between simplicity for quick tasks or power for complex scenarios.
-
+By using these factories, developers can request a compressor or decompressor for a desired algorithm (e.g., Gzip, Zstandard) without needing to know the specific implementation class names.
 
 === Supported Formats
 

@@ -26,6 +26,7 @@ import static io.github.compress4j.utils.PosixFilePermissionsMapper.fromUnixMode
 import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 
 import io.github.compress4j.utils.StringUtil;
+import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.io.Closeable;
 import java.io.IOException;
@@ -413,8 +414,9 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * @return an iterator over archive entries
      * @since 3.0
      */
-    public Iterator<Entry> iterator() {
-        return new Iterator<Entry>() {
+    @Override
+    public @Nonnull Iterator<Entry> iterator() {
+        return new Iterator<>() {
             Entry next;
             boolean nextFetched = false;
 
@@ -618,8 +620,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
          * recommended to use the builder or parameterized constructors instead.
          */
         protected ArchiveExtractorBuilder() {
-            // Default constructor for subclassing or frameworks. Not recommended for direct
-            // use.
+            // Default constructor for subclassing or frameworks. Not recommended for direct use.
         }
 
         /**

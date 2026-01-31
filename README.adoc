@@ -10,25 +10,6 @@ powerful and feature-rich http://commons.apache.org/proper/commons-compress/[org
 
 This project is a fork of https://github.com/thrau/jarchivelib[JArchiveLib].
 
-== Quick Example
-
-[source,java]
-----
-// Extract an archive (auto-detects format)
-Compress4J.extractAll(Paths.get("archive.tar.gz"), Paths.get("/output"));
-
-// List contents
-try (var handle = Compress4J.open(Paths.get("archive.zip"))) {
-    handle.stream().forEach(entry -> System.out.println(entry.name()));
-}
-
-// Create archive
-try (var builder = Compress4J.create(Paths.get("output.tar.gz"), ArchiveFormat.TAR)
-        .withCompression(CompressionType.GZIP)) {
-    builder.add(Paths.get("file.txt")).addDirectory(Paths.get("docs")).build();
-}
-----
-
 == Documentation
 
 Documentation for this is built using https://antora.org/[Antora], available at https://compress4j.github.io
@@ -36,4 +17,3 @@ Documentation for this is built using https://antora.org/[Antora], available at 
 === Basic Antora Setup
 
 * The documentation pages are stored in the `docs/modules/ROOT/pages` folder.
-
