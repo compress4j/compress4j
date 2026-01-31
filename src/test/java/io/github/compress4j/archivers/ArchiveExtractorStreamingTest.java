@@ -15,16 +15,16 @@
  */
 package io.github.compress4j.archivers;
 
-import static io.github.compress4j.archivers.ArchiveExtractor.Entry.Type.FILE;
-import static org.assertj.core.api.Assertions.assertThat;
-
 import io.github.compress4j.archivers.memory.InMemoryArchiveEntry;
 import io.github.compress4j.archivers.memory.InMemoryArchiveExtractor;
+import org.junit.jupiter.api.Test;
+
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
-import org.junit.jupiter.api.Test;
+
+import static io.github.compress4j.archivers.ArchiveExtractor.Entry.Type.FILE;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Tests for the streaming API added to {@link ArchiveExtractor}.
@@ -53,7 +53,7 @@ class ArchiveExtractorStreamingTest {
         try (var extractor = InMemoryArchiveExtractor.builder(entries).build()) {
             // When
             List<String> names =
-                    extractor.stream().map(ArchiveExtractor.Entry::name).collect(Collectors.toList());
+                    extractor.stream().map(ArchiveExtractor.Entry::name).toList();
 
             // Then
             assertThat(names).containsExactly("file1.txt", "file2.txt", "file3.txt");
