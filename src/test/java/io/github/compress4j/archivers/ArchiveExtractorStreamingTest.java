@@ -37,13 +37,23 @@ class ArchiveExtractorStreamingTest {
     void testStreamReturnsAllEntries() throws IOException {
         // Given
         var entries = List.of(
-                InMemoryArchiveEntry.builder().name("file1.txt").content("content1").build(),
-                InMemoryArchiveEntry.builder().name("file2.txt").content("content2").build(),
-                InMemoryArchiveEntry.builder().name("file3.txt").content("content3").build());
+                InMemoryArchiveEntry.builder()
+                        .name("file1.txt")
+                        .content("content1")
+                        .build(),
+                InMemoryArchiveEntry.builder()
+                        .name("file2.txt")
+                        .content("content2")
+                        .build(),
+                InMemoryArchiveEntry.builder()
+                        .name("file3.txt")
+                        .content("content3")
+                        .build());
 
         try (var extractor = InMemoryArchiveExtractor.builder(entries).build()) {
             // When
-            List<String> names = extractor.stream().map(ArchiveExtractor.Entry::name).collect(Collectors.toList());
+            List<String> names =
+                    extractor.stream().map(ArchiveExtractor.Entry::name).collect(Collectors.toList());
 
             // Then
             assertThat(names).containsExactly("file1.txt", "file2.txt", "file3.txt");
@@ -55,8 +65,14 @@ class ArchiveExtractorStreamingTest {
         // Given
         var entries = List.of(
                 InMemoryArchiveEntry.builder().name("doc.txt").content("text").build(),
-                InMemoryArchiveEntry.builder().name("image.png").content("binary").build(),
-                InMemoryArchiveEntry.builder().name("readme.txt").content("readme").build());
+                InMemoryArchiveEntry.builder()
+                        .name("image.png")
+                        .content("binary")
+                        .build(),
+                InMemoryArchiveEntry.builder()
+                        .name("readme.txt")
+                        .content("readme")
+                        .build());
 
         try (var extractor = InMemoryArchiveExtractor.builder(entries).build()) {
             // When
