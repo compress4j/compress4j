@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ public class InMemoryArchiveExtractor extends ArchiveExtractor<InMemoryArchiveIn
 
     @Nullable
     @Override
-    protected Entry nextEntry() {
+    public Entry nextEntry() {
         InMemoryArchiveEntry nextEntry = archiveInputStream.getNextEntry();
         if (nextEntry == null) {
             return null;
@@ -65,7 +65,7 @@ public class InMemoryArchiveExtractor extends ArchiveExtractor<InMemoryArchiveIn
     }
 
     @Override
-    protected InputStream openEntryStream(Entry entry) {
+    public InputStream openEntryStream(Entry entry) {
         return new ByteArrayInputStream(archiveInputStream.readString().getBytes(StandardCharsets.UTF_8));
     }
 

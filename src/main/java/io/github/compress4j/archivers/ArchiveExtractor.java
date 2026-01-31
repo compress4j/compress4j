@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 The Compress4J Project
+ * Copyright 2024-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -38,12 +39,18 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.lang3.StringUtils;
@@ -57,7 +64,8 @@ import org.slf4j.LoggerFactory;
  * @param <A> The type of {@link ArchiveInputStream} to read entries from.
  * @since 2.2
  */
-public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends ArchiveEntry>> implements Closeable {
+public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends ArchiveEntry>>
+        implements Closeable, Iterable<ArchiveExtractor.Entry> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ArchiveExtractor.class);
 
     /** Archive input stream to be used for extraction. */
@@ -135,7 +143,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      */
     @SuppressWarnings("removal")
     private static void makeDirectory(Path path) {
-        //noinspection ResultOfMethodCallIgnored
+        // noinspection ResultOfMethodCallIgnored
         path.toFile().mkdirs();
     }
 
@@ -358,8 +366,9 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      *
      * @return the next entry from the archive, or {@code null} if there are no more entries
      * @throws IOException if an I/O error occurs
+     * @since 3.0
      */
-    protected abstract @Nullable Entry nextEntry() throws IOException;
+    public abstract @Nullable Entry nextEntry() throws IOException;
 
     /**
      * Open the stream for the current entry. This method is called before the entry is processed and should open the
@@ -368,8 +377,68 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * @param entry the entry to open the stream for
      * @return the InputStream for the current entry
      * @throws IOException if an I/O error occurs
+     * @since 3.0
      */
-    protected abstract InputStream openEntryStream(Entry entry) throws IOException;
+    public abstract InputStream openEntryStream(Entry entry) throws IOException;
+
+    /**
+     * Creates a stream of entries from the archive. This allows functional-style operations on archive entries.
+     *
+     * <p>Example:
+     *
+     * <pre>{@code
+     * extractor.stream()
+     *         .filter(e -> e.name().endsWith(".txt"))
+     *         .forEach(e -> System.out.println(e.name()));
+     * }</pre>
+     *
+     * @return a stream of entries
+     * @since 3.0
+     */
+    public Stream<Entry> stream() {
+        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator(), Spliterator.ORDERED), false);
+    }
+
+    /**
+     * Returns an iterator over the entries in the archive. This allows traditional iteration patterns.
+     *
+     * <p>Example:
+     *
+     * <pre>{@code
+     * for (Entry entry : extractor) {
+     *     System.out.println(entry.name());
+     * }
+     * }</pre>
+     *
+     * @return an iterator over archive entries
+     * @since 3.0
+     */
+    public Iterator<Entry> iterator() {
+        return new Iterator<Entry>() {
+            Entry next;
+            boolean nextFetched = false;
+
+            @Override
+            public boolean hasNext() {
+                if (!nextFetched) {
+                    try {
+                        next = nextEntry();
+                        nextFetched = true;
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                }
+                return next != null;
+            }
+
+            @Override
+            public Entry next() {
+                if (!hasNext()) throw new NoSuchElementException();
+                nextFetched = false;
+                return next;
+            }
+        };
+    }
 
     private @Nullable Entry stripComponents(Entry e) {
         List<String> ourPathSplit = splitPath(e.name);
@@ -549,7 +618,8 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
          * recommended to use the builder or parameterized constructors instead.
          */
         protected ArchiveExtractorBuilder() {
-            // Default constructor for subclassing or frameworks. Not recommended for direct use.
+            // Default constructor for subclassing or frameworks. Not recommended for direct
+            // use.
         }
 
         /**
