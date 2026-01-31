@@ -1,0 +1,461 @@
+= Migrating to Compress4J v3
+
+== Overview
+
+Compress4J v3 is a major release that **removes the legacy API** and introduces a streamlined, modern interface.
+This guide will help you migrate from v2.x to v3.
+
+== Breaking Changes
+
+> [!WARNING]
+> **v3 is a breaking release**.
+The legacy API has been completely removed.
+
+=== Removed Classes
+
+The following classes have been removed in v3:
+
+- `Archiver` (interface)
+- `ArchiverFactory` (factory)
+- `CommonsArchiver` (implementation)
+- `ArchiverCompressorDecorator` (decorator)
+- `CommonsCompressor` (compressor)
+- Legacy `ArchiveStream` and `ArchiveEntry` (replaced by new implementations)
+
+=== What's Replaced Them
+
+|===
+| Removed | Replaced By
+| `ArchiverFactory.createArchiver()` | `Compress4J.open()` or `Compress4J.create()`
+| `Archiver` interface | `ArchiveHandle` interface
+| `archiver.stream()` | `handle.stream()` or `handle.iterator()`
+| Legacy `ArchiveEntry` | New `Entry` interface
+|===
+
+== Migration Path
+
+=== Step 1: Update Dependency
+
+Update your `build.gradle.kts` or `pom.xml`:
+
+[tabs]
+====
+Before (v2.x)::
++
+[source,kotlin]
+----
+dependencies {
+    implementation("io.github.compress4j:compress4j:2.x.x")
+}
+----
+
+After (v3.0)::
++
+[source,kotlin]
+----
+dependencies {
+    implementation("io.github.compress4j:compress4j:3.0.0")
+}
+----
+====
+
+=== Step 2: Replace API Calls
+
+Use the mapping tables below to update your code.
+
+== API Migration Guide
+
+=== Opening/Reading Archives
+
+==== V2 Legacy API → V3
+
+[tabs]
+====
+V2: Using ArchiverFactory::
++
+[source,java]
+----
+File archive = new File("archive.tar.gz");
+Archiver archiver = ArchiverFactory.createArchiver(archive);
+----
+
+V3: Using Compress4J::
++
+[source,java]
+----
+Path archive = Paths.get("archive.tar.gz");
+var handle = Compress4J.open(archive);
+----
+====
+
+==== V2 Builder API → V3 (Compatible)
+
+[tabs]
+====
+V2: Builder pattern (still works in v3!)::
++
+[source,java]
+----
+try (TarExtractor extractor = new TarExtractor.Builder(inputStream).build()) {
+    extractor.extract(outputDir);
+}
+----
+
+V3: Enhanced with streaming::
++
+[source,java]
+----
+try (TarExtractor extractor = new TarExtractor.Builder(inputStream).build()) {
+    extractor.stream().forEach(entry -> System.out.println(entry.name()));
+}
+----
+====
+
+=== Extracting Archives
+
+[tabs]
+====
+V2: Legacy::
++
+[source,java]
+----
+File archive = new File("archive.zip");
+File destination = new File("/output");
+Archiver archiver = ArchiverFactory.createArchiver(ArchiveFormat.ZIP);
+archiver.extract(archive, destination);
+----
+
+V3: Simple facade::
++
+[source,java]
+----
+Compress4J.extractAll(Paths.get("archive.zip"), Paths.get("/output"));
+
+// V3: With handle (for more control)
+try (var handle = Compress4J.open(Paths.get("archive.zip"))) {
+    handle.extractAll(Paths.get("/output"));
+}
+----
+====
+
+=== Creating Archives
+
+[tabs]
+====
+V2: Legacy::
++
+[source,java]
+----
+String archiveName = "output";
+File destination = new File("/archives");
+File source = new File("/data");
+Archiver archiver = ArchiverFactory.createArchiver(ArchiveFormat.TAR, CompressionType.GZIP);
+File created = archiver.create(archiveName, destination, source);
+----
+
+V3: Fluent builder::
++
+[source,java]
+----
+try (var builder = Compress4J.create(
+        Paths.get("/archives/output.tar.gz"), 
+        ArchiveFormat.TAR)
+        .withCompression(CompressionType.GZIP)) {
+    builder.addDirectory(Paths.get("/data"))
+           .build();
+}
+----
+====
+
+=== Streaming Entries
+
+[tabs]
+====
+V2: Legacy::
++
+[source,java]
+----
+Archiver archiver = ArchiverFactory.createArchiver(new File("archive.tar"));
+ArchiveStream stream = archiver.stream(new File("archive.tar"));
+ArchiveEntry entry;
+while ((entry = stream.getNextEntry()) != null) {
+    System.out.println(entry.getName());
+    if (!entry.isDirectory()) {
+        entry.extract(destination);
+    }
+}
+stream.close();
+----
+
+V3: Modern streaming::
++
+[source,java]
+----
+try (var handle = Compress4J.open(Paths.get("archive.tar"))) {
+    handle.stream()
+        .filter(entry -> !entry.isDirectory())
+        .forEach(entry -> {
+            System.out.println(entry.name());
+            // Can extract if needed
+        });
+}
+
+// V3: Traditional iteration
+try (var handle = Compress4J.open(Paths.get("archive.tar"))) {
+    for (Entry entry : handle) {
+        System.out.println(entry.name());
+    }
+}
+----
+====
+
+=== Format Detection
+
+[tabs]
+====
+V2: Legacy (auto-detect from file)::
++
+[source,java]
+----
+Archiver archiver = ArchiverFactory.createArchiver(new File("archive.tar.gz"));
+----
+
+V3: Auto-detect (simpler!)::
++
+[source,java]
+----
+var handle = Compress4J.open(Paths.get("archive.tar.gz"));
+----
+====
+
+=== String-Based Format Selection
+
+[tabs]
+====
+V2: Legacy::
++
+[source,java]
+----
+Archiver archiver = ArchiverFactory.createArchiver("tar", "gzip");
+----
+
+V3: Use enums (type-safe!)::
++
+[source,java]
+----
+var builder = Compress4J.create(path, ArchiveFormat.TAR)
+    .withCompression(CompressionType.GZIP);
+----
+====
+
+== Complete Migration Examples
+
+=== Example 1: Extract Archive
+
+[tabs]
+====
+Before (v2 Legacy)::
++
+[source,java]
+----
+import org.rauschig.jarchivelib.*;
+
+File archive = new File("/path/to/archive.tar.gz");
+File destination = new File("/path/to/output");
+
+Archiver archiver = ArchiverFactory.createArchiver(archive);
+archiver.extract(archive, destination);
+----
+
+After (v3)::
++
+[source,java]
+----
+import io.github.compress4j.*;
+import java.nio.file.*;
+
+Path archive = Paths.get("/path/to/archive.tar.gz");
+Path destination = Paths.get("/path/to/output");
+
+Compress4J.extractAll(archive, destination);
+----
+====
+
+=== Example 2: List Contents
+
+[tabs]
+====
+Before (v2 Legacy)::
++
+[source,java]
+----
+File archive = new File("data.zip");
+Archiver archiver = ArchiverFactory.createArchiver(archive);
+ArchiveStream stream = archiver.stream(archive);
+ArchiveEntry entry;
+
+while ((entry = stream.getNextEntry()) != null) {
+    System.out.println("Name: " + entry.getName());
+    System.out.println("Size: " + entry.getSize());
+    System.out.println("Dir: " + entry.isDirectory());
+}
+stream.close();
+----
+
+After (v3)::
++
+[source,java]
+----
+Path archive = Paths.get("data.zip");
+
+try (var handle = Compress4J.open(archive)) {
+    handle.stream().forEach(entry -> {
+        System.out.println("Name: " + entry.name());
+        System.out.println("Size: " + entry.size());
+        System.out.println("Dir: " + entry.isDirectory());
+    });
+}
+----
+====
+
+=== Example 3: Create Archive
+
+[tabs]
+====
+Before (v2 Legacy)::
++
+[source,java]
+----
+String archiveName = "backup";
+File destination = new File("/backups");
+File sourceDir = new File("/data");
+
+Archiver archiver = ArchiverFactory.createArchiver(
+    ArchiveFormat.TAR, 
+    CompressionType.GZIP
+);
+File archive = archiver.create(archiveName, destination, sourceDir);
+----
+
+After (v3)::
++
+[source,java]
+----
+Path outputPath = Paths.get("/backups/backup.tar.gz");
+Path sourceDir = Paths.get("/data");
+
+try (var builder = Compress4J.create(outputPath, ArchiveFormat.TAR)
+        .withCompression(CompressionType.GZIP)) {
+    builder.addDirectory(sourceDir).build();
+}
+----
+====
+
+=== Example 4: Selective Extraction
+
+[tabs]
+====
+Before (v2 Legacy)::
++
+[source,java]
+----
+File archive = new File("large.tar.gz");
+Archiver archiver = ArchiverFactory.createArchiver(archive);
+ArchiveStream stream = archiver.stream(archive);
+ArchiveEntry entry;
+
+while ((entry = stream.getNextEntry()) != null) {
+    if (entry.getName().endsWith(".log")) {
+        entry.extract(new File("/logs"));
+    }
+}
+stream.close();
+----
+
+After (v3)::
++
+[source,java]
+----
+Path archive = Paths.get("large.tar.gz");
+Path logsDir = Paths.get("/logs");
+
+try (var handle = Compress4J.open(archive)) {
+    handle.extract(
+        entry -> entry.name().endsWith(".log"),
+        logsDir
+    );
+}
+----
+====
+
+== Migration Checklist
+
+Use this checklist to ensure complete migration:
+
+- [ ] Update dependency to v3.0.0
+- [ ] Replace all `ArchiverFactory` calls with `Compress4J`
+- [ ] Update `Archiver` references to `ArchiveHandle`
+- [ ] Replace `ArchiveStream` iteration with `stream()` or `iterator()`
+- [ ] Update `ArchiveEntry` references to `Entry`
+- [ ] Replace `File` with `Path` (recommended but not required)
+- [ ] Update import statements
+- [ ] Test all archive operations
+- [ ] Test all supported formats
+- [ ] Verify exception handling
+
+== Benefits of v3
+
+After migration, you'll gain:
+
+- ✅ **Simpler API** - One-liners for common tasks
+- ✅ **Modern Java** - Stream API, Path support, var keyword
+- ✅ **Better streaming** - Native iteration support
+- ✅ **Selective operations** - Built-in filtering
+- ✅ **Type safety** - Enums instead of strings
+- ✅ **Auto-detection** - Format detection from file extensions
+- ✅ **Consistent API** - Unified interface across all formats
+
+== Need Help?
+
+If you encounter issues during migration:
+
+1. Check the [API Reference](v3_api_reference.md)
+2. Review the [Examples](../examples/)
+3. Open an issue on [GitHub](https://github.com/compress4j/compress4j/issues)
+
+== Builder API (Mostly Compatible)
+
+Good news!
+If you're using the v2 builder API (`ArchiveCreator`, `ArchiveExtractor`), your code will mostly work with minimal changes:
+
+[source,java]
+----
+// V2 and V3 (compatible!)
+try (TarCreator creator = new TarCreator.Builder(outputStream).build()) {
+    creator.addFile(Paths.get("file.txt"));
+    creator.addDirectoryRecursively(Paths.get("docs"));
+}
+----
+
+=== Enhancements in v3
+
+The builder API gains new streaming capabilities:
+
+[source,java]
+----
+// V3: New streaming support
+try (TarExtractor extractor = new TarExtractor.Builder(inputStream).build()) {
+    // Now you can stream!
+    extractor.stream()
+        .filter(e -> e.name().endsWith(".txt"))
+        .forEach(e -> System.out.println(e.name()));
+    
+    // Or iterate traditionally
+    Entry entry;
+    while ((entry = extractor.nextEntry()) != null) {
+        System.out.println(entry.name());
+    }
+}
+----
+
+This means you can migrate gradually, updating to v3 while keeping your existing builder-based code largely unchanged.
