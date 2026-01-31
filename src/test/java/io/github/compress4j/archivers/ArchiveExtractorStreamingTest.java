@@ -15,16 +15,15 @@
  */
 package io.github.compress4j.archivers;
 
+import static io.github.compress4j.archivers.ArchiveExtractor.Entry.Type.FILE;
+import static org.assertj.core.api.Assertions.assertThat;
+
 import io.github.compress4j.archivers.memory.InMemoryArchiveEntry;
 import io.github.compress4j.archivers.memory.InMemoryArchiveExtractor;
-import org.junit.jupiter.api.Test;
-
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
-
-import static io.github.compress4j.archivers.ArchiveExtractor.Entry.Type.FILE;
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for the streaming API added to {@link ArchiveExtractor}.
