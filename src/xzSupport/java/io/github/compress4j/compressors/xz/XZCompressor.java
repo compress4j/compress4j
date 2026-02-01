@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,6 +117,7 @@ public class XZCompressor extends Compressor<XZCompressorOutputStream> {
          * @param preset the LZMA2 preset level
          * @return this builder instance
          * @throws IllegalArgumentException if the preset is not supported
+         * @throws IOException if an I/O error occurred
          * @see LZMA2Options#PRESET_MIN
          * @see LZMA2Options#PRESET_MAX
          * @see LZMA2Options#PRESET_DEFAULT
