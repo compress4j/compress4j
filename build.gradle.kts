@@ -67,6 +67,7 @@ dependencies {
     implementation(libs.commons.lang3)
     implementation(libs.slf4j.api)
 
+    testFixturesApi(platform(libs.jackson.bom))
     testFixturesApi(libs.assertj.core)
     testFixturesApi(libs.commons.compress)
     testFixturesApi(libs.jackson.core)
@@ -75,7 +76,6 @@ dependencies {
     testFixturesApi(libs.logback.core)
 
     testFixturesImplementation(platform(libs.junit.bom))
-    testFixturesImplementation(platform(libs.jackson.bom))
     testFixturesImplementation(libs.commons.io)
     testFixturesImplementation(libs.jackson.annotations)
     testFixturesImplementation(libs.jackson.databind)
