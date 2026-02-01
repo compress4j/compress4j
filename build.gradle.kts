@@ -173,7 +173,7 @@ dependencyAnalysis {
 }
 
 tasks.withType<JavaCompile> {
-    options.compilerArgs.add("-Xlint:unchecked")
+    options.compilerArgs.addAll(listOf("-Xlint:all", "-Xlint:-serial"))
     options.encoding = "UTF-8"
 }
 

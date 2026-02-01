@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,7 +90,9 @@ class GzipCompressorTest {
             Path mockPath = mock(Path.class);
 
             // When
-            new GzipCompressor(mockGzipCompressorOutputStream).write(mockPath);
+            try (var compressor = new GzipCompressor(mockGzipCompressorOutputStream)) {
+                compressor.write(mockPath);
+            }
 
             // Then
             mockFiles.verify(() -> Files.copy(mockPath, mockGzipCompressorOutputStream));
@@ -106,7 +108,9 @@ class GzipCompressorTest {
             when(mockFile.toPath()).thenReturn(mockPath);
 
             // When
-            new GzipCompressor(mockGzipCompressorOutputStream).write(mockFile);
+            try (var compressor = new GzipCompressor(mockGzipCompressorOutputStream)) {
+                compressor.write(mockFile);
+            }
 
             // Then
             mockFiles.verify(() -> Files.copy(mockPath, mockGzipCompressorOutputStream));

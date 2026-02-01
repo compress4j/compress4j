@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.github.compress4j.compressors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -84,11 +85,14 @@ class DecompressorTest {
         // given
         File nonWritableFile = new File("/nonexistent/path/cannot_write.txt");
 
-        // when & then
-        InMemoryDecompressor decompressor = new InMemoryDecompressor(mockCompressorInputStream);
-        assertThatThrownBy(() -> decompressor.write(nonWritableFile))
-                .isInstanceOf(IOException.class)
-                .hasMessage(nonWritableFile.getPath());
+        try ( // when & then
+        InMemoryDecompressor decompressor = new InMemoryDecompressor(mockCompressorInputStream)) {
+            assertThatThrownBy(() -> decompressor.write(nonWritableFile))
+                    .isInstanceOf(IOException.class)
+                    .hasMessage(nonWritableFile.getPath());
+        } catch (IOException e) {
+            fail("Should throw IOException when writing to file fails");
+        }
     }
 
     @Test
@@ -97,11 +101,14 @@ class DecompressorTest {
         // given
         Path nonWritablePath = tempDir.resolve("non_existent_dir/output.txt");
 
-        // when & then
-        InMemoryDecompressor decompressor = new InMemoryDecompressor(mockCompressorInputStream);
-        assertThatThrownBy(() -> decompressor.write(nonWritablePath))
-                .isInstanceOf(IOException.class)
-                .hasMessage(nonWritablePath.toString());
+        try ( // when & then
+        InMemoryDecompressor decompressor = new InMemoryDecompressor(mockCompressorInputStream)) {
+            assertThatThrownBy(() -> decompressor.write(nonWritablePath))
+                    .isInstanceOf(IOException.class)
+                    .hasMessage(nonWritablePath.toString());
+        } catch (IOException e) {
+            fail("Should throw IOException when writing to path fails");
+        }
     }
 
     @Test

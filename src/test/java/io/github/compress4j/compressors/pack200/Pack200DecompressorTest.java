@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,7 +99,9 @@ class Pack200DecompressorTest {
             Path mockPath = mock(Path.class);
 
             // When
-            new Pack200Decompressor(mockPack200CompressorInputStream).write(mockPath);
+            try (var decompressor = new Pack200Decompressor(mockPack200CompressorInputStream)) {
+                decompressor.write(mockPath);
+            }
 
             // Then
             mockFiles.verify(() -> Files.copy(mockPack200CompressorInputStream, mockPath));
@@ -115,7 +117,9 @@ class Pack200DecompressorTest {
             when(mockFile.toPath()).thenReturn(mockPath);
 
             // When
-            new Pack200Decompressor(mockPack200CompressorInputStream).write(mockFile);
+            try (var decompressor = new Pack200Decompressor(mockPack200CompressorInputStream)) {
+                decompressor.write(mockFile);
+            }
 
             // Then
             mockFiles.verify(() -> Files.copy(mockPack200CompressorInputStream, mockPath));

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,6 @@ public class InMemoryArchiveOutputStream extends ArchiveOutputStream<InMemoryArc
         return someOption;
     }
 
-    @SuppressWarnings("unused") // used reflectively in tests
     public void setSomeOption(int someOption) {
         this.someOption = someOption;
     }

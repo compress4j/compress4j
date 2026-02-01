@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 The Compress4J Project
+ * Copyright 2024-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package io.github.compress4j.archivers.tar;
 
-import io.github.compress4j.compressors.gzip.GzipCompressor;
+import io.github.compress4j.compressors.gzip.GzipCompressor.GzipCompressorOutputStreamBuilder;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -77,8 +77,7 @@ public class TarGzArchiveCreator extends BaseTarArchiveCreator {
     public static class TarGzArchiveCreatorBuilder
             extends BaseTarArchiveCreatorBuilder<TarGzArchiveCreatorBuilder, TarGzArchiveCreator> {
 
-        private final GzipCompressor.GzipCompressorOutputStreamBuilder<TarGzArchiveCreatorBuilder>
-                compressorOutputStreamBuilder;
+        private final GzipCompressorOutputStreamBuilder<TarGzArchiveCreatorBuilder> compressorOutputStreamBuilder;
 
         /**
          * Create a new {@link TarGzArchiveCreatorBuilder} with the given path.
@@ -95,10 +94,10 @@ public class TarGzArchiveCreator extends BaseTarArchiveCreator {
          *
          * @param outputStream the output stream
          */
+        @SuppressWarnings("this-escape")
         protected TarGzArchiveCreatorBuilder(OutputStream outputStream) {
             super(outputStream);
-            this.compressorOutputStreamBuilder =
-                    new GzipCompressor.GzipCompressorOutputStreamBuilder<>(this, this.outputStream);
+            this.compressorOutputStreamBuilder = new GzipCompressorOutputStreamBuilder<>(this, this.outputStream);
         }
 
         /** {@inheritDoc} */
@@ -118,8 +117,7 @@ public class TarGzArchiveCreator extends BaseTarArchiveCreator {
          *
          * @return the Gzip compressor output stream builder
          */
-        public GzipCompressor.GzipCompressorOutputStreamBuilder<TarGzArchiveCreatorBuilder>
-                compressorOutputStreamBuilder() {
+        public GzipCompressorOutputStreamBuilder<TarGzArchiveCreatorBuilder> compressorOutputStreamBuilder() {
             return compressorOutputStreamBuilder;
         }
 
