@@ -7,10 +7,6 @@ repositories {
     gradlePluginPortal()
 }
 
-kotlin {
-    jvmToolchain(21)
-}
-
 dependencies {
     implementation(libs.plugins.build.health.asDependency())
     implementation(libs.plugins.foojay.resolver.convention.asDependency())

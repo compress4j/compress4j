@@ -7,7 +7,7 @@ pluginManagement { includeBuild("gradle/build-logic") { name = rootProject.name 
 plugins {
     id("build-health")
     id("gradle-develocity")
-    id("foojay-resolver-convention") version "0.8.0"
+    id("foojay-resolver-convention")
 }
 
 enableFeaturePreview(FeaturePreviews.Feature.TYPESAFE_PROJECT_ACCESSORS.name)
