@@ -1,0 +1,68 @@
+= Contributing to Compress4J
+
+First off, thank you for considering contributing to Compress4J! It's people like you that make this tool such a great resource.
+
+== Reporting Bugs
+
+We use GitHub issues to track public bugs. Report a bug by opening a new issue; it's that easy!
+
+When you open a bug report, you will be presented with a template to fill out. Please follow the instructions in the template to provide all necessary information.
+
+== Suggesting Enhancements
+
+We use GitHub issues to track feature requests.
+
+When you open a feature request, you will be presented with a template to fill out. Please follow the instructions in the template to provide all necessary information.
+
+== Pull Requests
+
+The process described here has several goals:
+
+* Maintain Compress4J's quality
+* Fix problems that are important to users
+* Engage the community in working toward the best possible Compress4J
+
+Please follow these steps to have your contribution considered by the maintainers:
+
+1.  Follow all instructions in the pull request template
+2.  Follow the style guides
+3.  After you submit your pull request, verify that all status checks are passing
+
+== Development Setup
+
+Compress4J uses Gradle for its build system.
+
+=== Prerequisites
+
+* JDK 11 or higher
+
+=== Building the Project
+
+To build the project, run:
+
+[source,bash]
+----
+./gradlew build
+----
+
+=== Running Tests
+
+To run the tests, execute:
+
+[source,bash]
+----
+./gradlew test
+----
+
+=== Releasing
+
+For instructions on how to perform a local deployment using JReleaser, please refer to link:docs/jreleaser-local-deployment.adoc[JReleaser Local Deployment].
+
+== Coding Style
+
+* Please follow the existing coding style in the project.
+* Ensure that your code is formatted correctly.
+
+== Documentation
+
+If you are changing the documentation, please note that it is built using Antora. The documentation pages are stored in the `docs/modules/ROOT/pages` folder.

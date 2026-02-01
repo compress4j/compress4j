@@ -11,6 +11,7 @@ dependencies {
     implementation(libs.plugins.build.health.asDependency())
     implementation(libs.plugins.foojay.resolver.convention.asDependency())
     implementation(libs.plugins.gradle.develocity.asDependency())
+    implementation(libs.plugins.jreleaser.asDependency())
 }
 
 // workaround for https://github.com/gradle/gradle/issues/17963

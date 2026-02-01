@@ -13,9 +13,9 @@ plugins {
     jacoco
 
     alias(libs.plugins.git.version)
-    alias(libs.plugins.jreleaser)
     alias(libs.plugins.sonarqube)
     alias(libs.plugins.spotless)
+    id("publishing-conventions")
 }
 
 val stagingDir: Provider<Directory> = layout.buildDirectory.dir("staging-deploy")
@@ -310,9 +310,8 @@ publishing {
     }
 }
 
-jreleaser {
+configure<org.jreleaser.gradle.plugin.JReleaserExtension> {
     signing {
-        active = Active.ALWAYS
         pgp {
             active = Active.ALWAYS
             armored = true

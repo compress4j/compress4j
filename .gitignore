@@ -1,8 +1,10 @@
+*.asc
 *.iml
 *.ipr
 *.iws
 *~
 .DS_Store
+
 .cache/
 .classpath
 .gradle/
@@ -10,9 +12,9 @@
 .local/
 .project
 .settings
+.vscode
 bin/
 build/
 htmlReport/
 out/
 target/
-.vscode

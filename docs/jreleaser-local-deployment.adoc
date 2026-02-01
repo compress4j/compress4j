@@ -1,0 +1,258 @@
+= Running jreleaserDeploy Locally
+
+This guide explains how to run `jreleaserDeploy` locally to test the Maven Central deployment process before running it in the GitHub Actions pipeline.
+
+== Prerequisites
+
+=== 1. Required Secrets/Environment Variables
+
+Based on the GitHub Actions workflow, you need the following environment variables set:
+
+[source,bash]
+----
+# Maven Central credentials
+export SONATYPE_USERNAME="your-maven-central-username"
+export SONATYPE_PASSWORD="your-maven-central-password"
+
+# GPG signing keys (same values for both jReleaser and GPG)
+export GPG_SECRET_KEY="your-gpg-private-key"
+export GPG_PASSPHRASE="your-gpg-passphrase"
+export GPG_PUBLIC_KEY="your-gpg-public-key"
+
+# GitHub Token
+export JRELEASER_GITHUB_TOKEN="your-github-token"
+
+# Sonar Token
+export SONAR_TOKEN="your-sonar-token"
+----
+
+=== 2. Getting Your GPG Keys
+
+If you don't have GPG keys set up yet:
+
+[source,bash]
+.Generate a new GPG key pair
+----
+gpg --full-generate-key
+----
+
+Choose:
+- RSA and RSA (default)
+- 4096 bits
+- Key does not expire (or set appropriate expiration)
+- Enter your name and email (should match your Maven Central account)
+
+==== Export your keys:
+
+[source,bash]
+.Get your key ID:
+----
+gpg --list-secret-keys --keyid-format=long
+----
+
+[source,bash]
+.Private Key (ASCII armored):
+----
+gpg --armor --export-secret-keys YOUR_KEY_ID > private-key.asc
+----
+
+[source,bash]
+.Public Key (ASCII armored):
+----
+gpg --armor --export YOUR_KEY_ID > public-key.asc
+----
+
+==== Upload public key to key servers:
+
+[source,bash]
+----
+gpg --keyserver keyserver.ubuntu.com --send-keys YOUR_KEY_ID
+gpg --keyserver keys.openpgp.org --send-keys YOUR_KEY_ID
+----
+
+=== 3. Setting Up
+
+Store secrets in https://jreleaser.org/guide/latest/reference/environment.html[~/.jreleaser/config.toml].
+The TOML format is chosen as it allows multiline strings which are required for defining both public and secret keys.
+You may opt instead to use the YAML format in which case be aware of indentation or use environment variables.
+
+[source,toml]
+.~/.jreleaser/config.toml
+----
+JRELEASER_MAVENCENTRAL_USERNAME = "<your-publisher-portal-username>"
+JRELEASER_MAVENCENTRAL_PASSWORD = "<your-publisher-portal-password>"
+JRELEASER_NEXUS2_USERNAME = "<your-sonatype-account-username>"
+JRELEASER_NEXUS2_PASSWORD = "<your-sonatype-account-password>"
+JRELEASER_GPG_PASSPHRASE = "<your-pgp-passphrase>"
+
+JRELEASER_GPG_PUBLIC_KEY="""-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+<contents-of-your-public-key>
+
+-----END PGP PUBLIC KEY BLOCK-----"""
+
+JRELEASER_GPG_SECRET_KEY="""-----BEGIN PGP PRIVATE KEY BLOCK-----
+
+<contents-of-your-private-key>
+
+-----END PGP PRIVATE KEY BLOCK-----"""
+----
+
+== Running the Deployment Locally
+
+=== Build and publish artifacts to local staging
+
+[source,bash]
+----
+./gradlew clean build publish
+----
+
+This will:
+- Build all modules
+- Run tests
+- Publish artifacts to `build/staging-deploy` directory
+
+=== Step 3: Verify the staged artifacts
+
+[source,bash]
+----
+ls -la build/staging-deploy/
+----
+
+You should see your artifacts organized by group/artifact/version.
+
+=== Step 4: Deploy to Maven Central (DRY RUN first)
+
+[source,bash]
+----
+./gradlew jreleaserConfig --dryrun
+----
+
+This will show you the configuration without actually deploying.
+
+=== Step 5: Deploy to Maven Central
+
+[source,bash]
+----
+./gradlew jreleaserDeploy
+----
+
+== Testing Snapshot vs Release Deployment
+
+This will deploy to Maven Central via the new Central Portal API.
+
+== Troubleshooting
+
+=== Issue: `org/eclipse/jgit/lib/GpgObjectSigner` error
+
+This is the classloader conflict we've been fixing. Make sure you have the latest changes with the `build-logic-jreleaser` separate build.
+
+*Solution:*
+
+[source,bash]
+----
+./gradlew --stop
+./gradlew clean jreleaserConfig
+----
+
+=== Issue: GPG signing fails
+
+*Check your GPG setup:*
+
+[source,bash]
+----
+gpg --list-secret-keys
+----
+
+*Test GPG signing manually:*
+
+[source,bash]
+----
+echo "test" | gpg --armor --sign
+----
+
+=== Issue: Authentication fails
+
+*Verify your credentials:*
+- For Maven Central Portal: Use your portal token (not your Sonatype OSSRH password)
+- Get token from: https://central.sonatype.com/account
+
+=== Issue: "Repository not found" or "Unauthorized"
+
+Make sure:
+1. You've verified your namespace on Maven Central Portal
+2. Your group ID matches your verified namespace (e.g., `io.taktx`)
+3. Your credentials are correct
+
+== Understanding the Deployment Process
+
+=== What happens during `jreleaserDeploy`:
+
+. *Signing Phase:*
+
+** jReleaser signs all artifacts (JARs, POMs, etc.) with your GPG key
+** Creates `.asc` signature files
+. *Deployment Phase:*
+
+** For RELEASE versions: Uploads to Maven Central Portal (https://central.sonatype.com)
+** For SNAPSHOT versions: Uploads to Nexus2 snapshot repository (https://s01.oss.sonatype.org)
+. *Verification Phase:*
+
+** Maven Central validates:
+*** All required files present (JAR, POM, sources, javadoc)
+*** All files are signed
+*** POM contains required metadata
+*** Signatures are valid
+
+== Useful Commands
+
+=== Check jReleaser configuration:
+
+[source,bash]
+----
+./gradlew jreleaserConfig
+----
+
+=== List all jReleaser tasks:
+
+[source,bash]
+----
+./gradlew tasks --group jreleaser
+----
+
+=== Run with debug output:
+
+[source,bash]
+----
+./gradlew jreleaserDeploy --info
+----
+
+=== Check what will be deployed:
+
+[source,bash]
+----
+./gradlew jreleaserConfig --dryrun
+----
+
+== Files Generated
+
+After running `jreleaserDeploy`, check these locations:
+
+* *Staged artifacts:* `build/staging-deploy/`
+* *jReleaser output:* `build/jreleaser/`
+* *Logs:* `build/jreleaser/trace.log`
+* *Deployment info:* `build/jreleaser/deploy/`
+
+== Security Best Practices
+
+. *Never commit secrets* - Use environment variables or a secrets file that's gitignored
+. *Use tokens instead of passwords* - Maven Central Portal provides API tokens
+. *Rotate credentials regularly* - Especially if they're exposed
+. *Test with dry-run first* - Always use `--dryrun` before actual deployment
+. *Keep GPG keys secure* - Store private keys in a secure location (e.g., password manager, encrypted volume)
+
+== References
+
+* https://jreleaser.org/[jReleaser Documentation]
+* https://central.sonatype.com/[Maven Central Portal]
+* https://central.sonatype.org/publish/requirements/gpg/[GPG Signing Guide]
