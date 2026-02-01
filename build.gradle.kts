@@ -75,6 +75,7 @@ dependencies {
     testFixturesApi(libs.logback.core)
 
     testFixturesImplementation(platform(libs.junit.bom))
+    testFixturesImplementation(platform(libs.jackson.bom))
     testFixturesImplementation(libs.commons.io)
     testFixturesImplementation(libs.jackson.annotations)
     testFixturesImplementation(libs.jackson.databind)
