@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.github.compress4j.compressors.deflate;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
@@ -83,13 +84,17 @@ class DeflateCompressorTest {
     }
 
     @Test
-    void shouldWritePathEntry() throws Exception {
+    void shouldWritePathEntry() {
         try (MockedStatic<Files> mockFiles = mockStatic(Files.class)) {
             // Given
             Path mockPath = mock(Path.class);
 
             // When
-            new DeflateCompressor(mockDeflateCompressorOutputStream).write(mockPath);
+            try (var decompressor = new DeflateCompressor(mockDeflateCompressorOutputStream)) {
+                decompressor.write(mockPath);
+            } catch (Exception e) {
+                fail("Should not throw exception");
+            }
 
             // Then
             mockFiles.verify(() -> Files.copy(mockPath, mockDeflateCompressorOutputStream));
@@ -97,7 +102,7 @@ class DeflateCompressorTest {
     }
 
     @Test
-    void shouldWriteFileEntry() throws Exception {
+    void shouldWriteFileEntry() {
         try (MockedStatic<Files> mockFiles = mockStatic(Files.class)) {
             // Given
             File mockFile = mock(File.class);
@@ -105,7 +110,11 @@ class DeflateCompressorTest {
             when(mockFile.toPath()).thenReturn(mockPath);
 
             // When
-            new DeflateCompressor(mockDeflateCompressorOutputStream).write(mockFile);
+            try (var decompressor = new DeflateCompressor(mockDeflateCompressorOutputStream)) {
+                decompressor.write(mockFile);
+            } catch (Exception e) {
+                fail("Should not throw exception");
+            }
 
             // Then
             mockFiles.verify(() -> Files.copy(mockPath, mockDeflateCompressorOutputStream));

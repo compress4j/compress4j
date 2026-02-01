@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,7 +87,7 @@ public class DirectoryAssert extends AbstractPathAssert<DirectoryAssert> {
      * @param expected the expected directory to compare against
      * @return this assertion object for method chaining
      */
-    @SuppressWarnings("UnusedReturnValue")
+    @SuppressWarnings({"UnusedReturnValue", "unused"})
     public DirectoryAssert hasSameStructureAndContentAs(final Path expected) {
         final SoftAssertions softly = new SoftAssertions();
         final Map<String, Path> actualContents = directoryContents(actual);

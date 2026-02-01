@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 class TarXzArchiveInputStreamBuilderTest {
 
     @Test
+    @SuppressWarnings("try")
     void shouldBuildArchiveInputStream() throws IOException {
         try (var mockInputStream = mock(InputStream.class);
                 var ignored = mockConstruction(XZCompressorInputStream.class, (mock, context) -> {

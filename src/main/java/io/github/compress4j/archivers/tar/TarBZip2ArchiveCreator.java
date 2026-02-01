@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,6 +94,7 @@ public class TarBZip2ArchiveCreator extends BaseTarArchiveCreator {
          *
          * @param outputStream the output stream
          */
+        @SuppressWarnings("this-escape")
         protected TarBZip2ArchiveCreatorBuilder(OutputStream outputStream) {
             super(outputStream);
             this.compressorOutputStreamBuilder = new BZip2CompressorOutputStreamBuilder<>(this, this.outputStream);
