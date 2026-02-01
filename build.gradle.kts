@@ -67,6 +67,7 @@ dependencies {
     implementation(libs.commons.lang3)
     implementation(libs.slf4j.api)
 
+    testFixturesApi(platform(libs.jackson.bom))
     testFixturesApi(libs.assertj.core)
     testFixturesApi(libs.commons.compress)
     testFixturesApi(libs.jackson.core)
