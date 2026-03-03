@@ -44,7 +44,7 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
       - name: "Download JDK ${{ github.event.inputs.jdk_version }} Test reports"
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           path: reports
           pattern: "ubuntu-latest-jdk_${{ github.event.inputs.jdk_version }}-test-reports"
