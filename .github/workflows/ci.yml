@@ -11,6 +11,29 @@ on:
   workflow_dispatch:
 
 jobs:
+  commit-messages:
+    permissions:
+      contents: read
+    name: Commit messages
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0  # The whole branch is validated, not just its head
+      - name: 'Set up JDK 21'
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: 21
+          cache: 'gradle'
+      - name: Check commit messages and pull request title
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          PR_TITLE: ${{ github.event.pull_request.title }}  # Squash merges turn the title into the commit subject
+        run: ./gradlew checkCommitMessages -Pcommits.base="origin/$BASE_REF" -Ppr.title="$PR_TITLE" --no-daemon
+
   build-ubuntu-21:
     permissions:
       contents: read
@@ -103,6 +126,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
         run: ./gradlew build --continue --no-daemon --scan
+
+  release:
+    name: Release
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs:
+      - build-ubuntu-21
+      - build-ubuntu-25
+      - build-other-os
+    permissions:
+      contents: write
+    uses: ./.github/workflows/release.yml
+    secrets: inherit
 
   configure_sonar:
     permissions:

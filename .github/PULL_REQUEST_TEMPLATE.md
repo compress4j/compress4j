@@ -1,6 +1,8 @@
 ## Description
 Please include a summary of the change and which issue is fixed. Please also include relevant motivation and context.
 
+> The title of this pull request must be a [Conventional Commit](https://www.conventionalcommits.org/) subject, e.g. `feat(zip): add streaming extraction`, because it becomes the commit subject on `main` and drives the released version.
+
 ## Type of change
 - [ ] Bug fix (non-breaking change which fixes an issue)
 - [ ] New feature (non-breaking change which adds functionality)

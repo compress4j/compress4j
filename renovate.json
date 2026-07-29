@@ -14,26 +14,58 @@
     "dependencies",
     "renovate"
   ],
+  "semanticCommits": "enabled",
+  "semanticCommitType": "chore",
+  "semanticCommitScope": "deps",
   "packageRules": [
     {
-      "groupName": "Non-major dependency updates",
-      "matchUpdateTypes": [
-        "minor",
-        "patch"
-      ]
-    },
-    {
+      "description": "The build tooling never reaches users, so its updates must not trigger a release",
       "matchManagers": [
         "github-actions",
         "gradle-wrapper"
       ],
-      "groupName": "gradle and github actions"
+      "groupName": "gradle and github actions",
+      "semanticCommitType": "chore"
     },
     {
       "matchDepTypes": [
         "plugin"
       ],
-      "groupName": "gradle and github actions"
+      "groupName": "gradle and github actions",
+      "semanticCommitType": "chore"
+    },
+    {
+      "description": "Test and build only libraries are not part of the published artifacts",
+      "matchPackageNames": [
+        "ch.qos.logback:logback-classic",
+        "ch.qos.logback:logback-core",
+        "com.fasterxml.jackson:jackson-bom",
+        "com.fasterxml.jackson.core:jackson-annotations",
+        "com.fasterxml.jackson.core:jackson-core",
+        "com.fasterxml.jackson.core:jackson-databind",
+        "org.assertj:assertj-core",
+        "org.junit:junit-bom",
+        "org.junit.jupiter:junit-jupiter-api",
+        "org.junit.jupiter:junit-jupiter-params",
+        "org.mockito:mockito-core",
+        "org.mockito:mockito-junit-jupiter",
+        "org.ow2.asm:asm"
+      ],
+      "groupName": "build and test dependencies",
+      "semanticCommitType": "chore"
+    },
+    {
+      "description": "Runtime libraries reach users, so their updates are released as a patch",
+      "matchPackageNames": [
+        "commons-io:commons-io",
+        "jakarta.annotation:jakarta.annotation-api",
+        "org.apache.commons:commons-compress",
+        "org.apache.commons:commons-lang3",
+        "org.slf4j:slf4j-api",
+        "org.tukaani:xz"
+      ],
+      "groupName": "runtime dependencies",
+      "semanticCommitType": "fix"
     }
   ]
 }

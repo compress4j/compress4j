@@ -6,6 +6,7 @@ pluginManagement { includeBuild("gradle/build-logic") { name = rootProject.name 
 
 plugins {
     id("build-health")
+    id("git-hooks")
     id("gradle-develocity")
     id("foojay-resolver-convention")
 }

@@ -26,7 +26,64 @@ Please follow these steps to have your contribution considered by the maintainer
 
 1.  Follow all instructions in the pull request template
 2.  Follow the style guides
-3.  After you submit your pull request, verify that all status checks are passing
+3.  Use a Conventional Commit subject as the pull request title
+4.  After you submit your pull request, verify that all status checks are passing
+
+Because pull requests can be squash merged, the pull request title becomes the commit subject on `main`, so CI validates the title as well as every commit of the branch.
+
+== Commit Messages
+
+Compress4J releases on every merge to `main`, and the version is derived from the commit messages, so they have to follow https://www.conventionalcommits.org/[Conventional Commits]:
+
+[source]
+----
+<type>[(<scope>)][!]: <description>
+----
+
+Allowed types are `fix`, `feat`, `build`, `chore`, `ci`, `docs`, `perf`, `refactor`, `revert`, `style` and `test`.
+
+[cols="1,1,3"]
+|===
+|Commit |Version bump |Example
+
+|`feat`
+|minor
+|`feat(zip): add streaming extraction`
+
+|`fix`, `perf`
+|patch
+|`fix(tar): close the stream on failure`
+
+|`!` suffix or a `BREAKING CHANGE:` footer
+|major
+|`feat(api)!: drop ArchiveFormat`
+
+|any other type
+|none, no release
+|`docs: describe the release process`
+|===
+
+A `commit-msg` hook enforces this locally. It is installed by any Gradle invocation, so it is in place after the first `./gradlew build`. In an emergency it can be skipped with `git commit --no-verify`, but CI checks the same rules.
+
+=== Version Bumps Are Validated Against the API
+
+Declaring the wrong type is caught by the build: `checkApiCompatibility` compares the jars against the last released version on Maven Central with https://github.com/melix/japicmp-gradle-plugin[Japicmp] and fails when the API changed more than the commits declare.
+
+[source,bash]
+----
+./gradlew checkApiCompatibility        # part of ./gradlew check
+./gradlew semverPlan                   # prints the version the current commits ask for
+----
+
+The required bump is derived from the public and protected API:
+
+* a source *or* binary incompatible change requires a major bump - for example removing or renaming a member, reducing its visibility, making a class final, or adding an abstract method to a public class or interface;
+* new public or protected API, and newly deprecated API, require at least a minor bump;
+* anything else is a patch.
+
+Adding a `default` method to an interface keeps it source compatible and therefore only needs a minor bump.
+
+When the check fails it lists the offending members; the detailed reports are in `build/reports/japicmp`. Use `-Papi.baseline=<version>` to compare against a specific release instead of the latest tag.
 
 == Development Setup
 
@@ -55,6 +112,10 @@ To run the tests, execute:
 ----
 
 === Releasing
+
+Releases are automatic. Once a merge to `main` passes CI, the `Release` workflow derives the next version from the commits since the last tag, pushes the `v<version>` tag, publishes to Maven Central and creates the GitHub release with a changelog built from the commit types. Merges that only contain non releasing types, such as `chore` or `docs`, publish nothing.
+
+The workflow can also be started manually; it defaults to a dry run that only reports the version it would release.
 
 For instructions on how to perform a local deployment using JReleaser, please refer to link:docs/jreleaser-local-deployment.adoc[JReleaser Local Deployment].
 

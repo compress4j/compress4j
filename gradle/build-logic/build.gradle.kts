@@ -10,7 +10,9 @@ repositories {
 dependencies {
     implementation(libs.plugins.build.health.asDependency())
     implementation(libs.plugins.foojay.resolver.convention.asDependency())
+    implementation(libs.plugins.git.hooks.asDependency())
     implementation(libs.plugins.gradle.develocity.asDependency())
+    implementation(libs.plugins.japicmp.asDependency())
     implementation(libs.plugins.jreleaser.asDependency())
 }
 

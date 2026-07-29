@@ -1,6 +1,8 @@
 @file:Suppress("UnstableApiUsage")
 
 import com.diffplug.spotless.FormatterFunc
+import io.github.compress4j.semver.CheckApiCompatibilityTask
+import me.champeau.gradle.japicmp.JapicmpTask
 import org.jreleaser.model.Active
 import java.io.Serializable
 
@@ -16,6 +18,7 @@ plugins {
     alias(libs.plugins.sonarqube)
     alias(libs.plugins.spotless)
     id("publishing-conventions")
+    id("semver-conventions")
 }
 
 val stagingDir: Provider<Directory> = layout.buildDirectory.dir("staging-deploy")
@@ -158,6 +161,53 @@ tasks.withType<Test>().configureEach {
     })
 }
 
+val apiBaselineVersion: String = providers.gradleProperty("api.baseline").orElse(semver.previousVersion).get()
+
+// A named configuration would resolve back to the project being built, a detached one honours the coordinates.
+fun baselineArtifacts(classifier: String?): FileCollection = when {
+    apiBaselineVersion.isEmpty() -> files()
+    else -> configurations.detachedConfiguration(
+        dependencies.create(
+            listOfNotNull("${project.group}", project.name, apiBaselineVersion, classifier).joinToString(":") + "@jar"
+        )
+    ).apply { isTransitive = false }
+}
+
+fun registerApiComparison(name: String, baseline: FileCollection, jarTask: TaskProvider<Jar>, classpath: FileCollection) =
+    tasks.register<JapicmpTask>(name) {
+        onlyIf { apiBaselineVersion.isNotEmpty() }
+        oldArchives.from(baseline)
+        newArchives.from(jarTask)
+        oldClasspath.from(classpath)
+        newClasspath.from(classpath)
+        accessModifier = "protected"
+        onlyModified = true
+        ignoreMissingClasses = true
+        xmlOutputFile = layout.buildDirectory.file("reports/japicmp/$name.xml")
+        htmlOutputFile = layout.buildDirectory.file("reports/japicmp/$name.html")
+    }
+
+val japicmpMain = registerApiComparison(
+    "japicmpMain",
+    baselineArtifacts(null),
+    tasks.jar,
+    sourceSets.main.get().compileClasspath
+)
+val japicmpXzSupport = registerApiComparison(
+    "japicmpXzSupport",
+    baselineArtifacts("xz-support"),
+    tasks.named<Jar>("xzSupportJar"),
+    xzSupport.compileClasspath
+)
+
+val checkApiCompatibility = tasks.register<CheckApiCompatibilityTask>("checkApiCompatibility") {
+    group = "verification"
+    description = "Fails when the API changes since the last release ask for a bigger version bump than the commits declare."
+    baselineVersion = apiBaselineVersion
+    declaredBump = semver.declaredBump
+    reports.from(japicmpMain.flatMap { it.xmlOutputFile }, japicmpXzSupport.flatMap { it.xmlOutputFile })
+}
+
 dependencyAnalysis {
     issues {
         all {
@@ -195,7 +245,13 @@ tasks.testCodeCoverageReport {
 }
 
 tasks.check {
-    dependsOn(tasks.buildHealth, tasks.spotlessCheck, integrationTest, tasks.testCodeCoverageReport)
+    dependsOn(
+        tasks.buildHealth,
+        tasks.spotlessCheck,
+        checkApiCompatibility,
+        integrationTest,
+        tasks.testCodeCoverageReport
+    )
 }
 
 sonar {
@@ -311,6 +367,16 @@ publishing {
 }
 
 configure<org.jreleaser.gradle.plugin.JReleaserExtension> {
+    release {
+        github {
+            skipTag = true // The release workflow creates and pushes the tag
+            changelog {
+                formatted = Active.ALWAYS
+                preset = "conventional-commits"
+                links = true
+            }
+        }
+    }
     signing {
         pgp {
             active = Active.ALWAYS
