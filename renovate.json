@@ -1,28 +1,57 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "baseBranches": [
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests",
+    ":configMigration",
+    ":separateMultipleMajorReleases"
+  ],
+  "baseBranchPatterns": [
     "main"
   ],
-  "branchPrefix": "renovate-",
-  "dependencyDashboard": false,
-  "extends": [
-    "config:base",
-    "config:semverAllMonthly",
-    ":automergeMinor"
+  "schedule": [
+    "before 5am on monday"
   ],
+  "automerge": false,
+  "dependencyDashboard": true,
   "labels": [
     "dependencies",
     "renovate"
   ],
+  "prConcurrentLimit": 3,
+  "prHourlyLimit": 2,
+  "minimumReleaseAge": "3 days",
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "description": "Renovate's defaults already bypass 'schedule' and 'minimumReleaseAge' here, so a CVE fix is not held back to Monday",
+    "labels": [
+      "dependencies",
+      "renovate",
+      "security"
+    ]
+  },
   "semanticCommits": "enabled",
   "semanticCommitType": "chore",
   "semanticCommitScope": "deps",
   "packageRules": [
     {
+      "description": "config:recommended maps depType 'dependencies' to 'fix', which every version catalog library gets. Releasing must be opt-in, so reset everything to 'chore' before the rules below re-enable it.",
+      "matchPackageNames": [
+        "*"
+      ],
+      "semanticCommitType": "chore"
+    },
+    {
       "description": "The build tooling never reaches users, so its updates must not trigger a release",
       "matchManagers": [
         "github-actions",
         "gradle-wrapper"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "digest",
+        "pin"
       ],
       "groupName": "gradle and github actions",
       "semanticCommitType": "chore"
@@ -31,31 +60,32 @@
       "matchDepTypes": [
         "plugin"
       ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
       "groupName": "gradle and github actions",
       "semanticCommitType": "chore"
     },
     {
       "description": "Test and build only libraries are not part of the published artifacts",
       "matchPackageNames": [
-        "ch.qos.logback:logback-classic",
-        "ch.qos.logback:logback-core",
-        "com.fasterxml.jackson:jackson-bom",
-        "com.fasterxml.jackson.core:jackson-annotations",
-        "com.fasterxml.jackson.core:jackson-core",
-        "com.fasterxml.jackson.core:jackson-databind",
-        "org.assertj:assertj-core",
-        "org.junit:junit-bom",
-        "org.junit.jupiter:junit-jupiter-api",
-        "org.junit.jupiter:junit-jupiter-params",
-        "org.mockito:mockito-core",
-        "org.mockito:mockito-junit-jupiter",
-        "org.ow2.asm:asm"
+        "/^ch\\.qos\\.logback:/",
+        "/^com\\.fasterxml\\.jackson(\\.core)?:/",
+        "/^org\\.assertj:/",
+        "/^org\\.junit(\\.jupiter|\\.platform)?:/",
+        "/^org\\.mockito:/",
+        "/^org\\.ow2\\.asm:/"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
       ],
       "groupName": "build and test dependencies",
       "semanticCommitType": "chore"
     },
     {
-      "description": "Runtime libraries reach users, so their updates are released as a patch",
+      "description": "Runtime libraries reach users, so their updates are released as a patch. Listed exactly, never by pattern: a stray match here publishes to Maven Central.",
       "matchPackageNames": [
         "commons-io:commons-io",
         "jakarta.annotation:jakarta.annotation-api",
@@ -64,8 +94,32 @@
         "org.slf4j:slf4j-api",
         "org.tukaani:xz"
       ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
       "groupName": "runtime dependencies",
       "semanticCommitType": "fix"
+    },
+    {
+      "description": "commons-compress, commons-io and jakarta.annotation-api are api() dependencies, so a major bump can break consumers without changing compress4j's own signatures, which is all japicmp compares. Merging publishes nothing; retitle to 'feat(deps)!: ...' if the public API breaks.",
+      "matchPackageNames": [
+        "commons-io:commons-io",
+        "jakarta.annotation:jakarta.annotation-api",
+        "org.apache.commons:commons-compress",
+        "org.apache.commons:commons-lang3",
+        "org.slf4j:slf4j-api",
+        "org.tukaani:xz"
+      ],
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "semanticCommitType": "chore",
+      "labels": [
+        "dependencies",
+        "renovate",
+        "api-review"
+      ]
     }
   ]
 }
