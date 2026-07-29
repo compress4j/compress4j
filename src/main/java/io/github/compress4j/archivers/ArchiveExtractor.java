@@ -107,9 +107,6 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
     /** Maximum number of bytes the whole archive may expand to, or {@link #UNLIMITED}. */
     private long maxTotalSize = UNLIMITED;
 
-    /** Entries extracted by the current {@link #extract(Path)} call. */
-    private long extractedEntries = 0;
-
     /** Bytes written by the current {@link #extract(Path)} call. */
     private long extractedBytes = 0;
 
@@ -243,8 +240,8 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * @throws ArchiveLimitExceededException if the archive breaches one of the configured extraction limits
      */
     public final void extract(Path outputDir) throws IOException {
-        extractedEntries = 0;
         extractedBytes = 0;
+        long entries = 0;
         boolean ignoreErrors = false;
         Entry entry;
         while ((entry = nextEntry()) != null) {
@@ -252,31 +249,45 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
             if (!entryFilter.orElse(e -> true).test(entry)) {
                 continue;
             }
-            if (maxEntries >= 0 && ++extractedEntries > maxEntries) {
+            if (maxEntries >= 0 && ++entries > maxEntries) {
                 throw new ArchiveLimitExceededException(
                         "Archive holds more than the maximum of " + maxEntries + " entries allowed");
             }
-            boolean retry;
-            do {
-                retry = false;
-                try {
-                    processEntry(outputDir, entry);
-                } catch (ArchiveLimitExceededException limitExceeded) {
-                    // A breached limit is not negotiable, the error handler does not get to keep the extraction going
-                    throw limitExceeded;
-                } catch (IOException ioException) {
-                    switch (handleException(ioException, ignoreErrors, entry)) {
-                        case ABORT -> {
-                            return;
-                        }
-                        case RETRY -> retry = true;
-                        case SKIP_ALL -> ignoreErrors = true;
-                        default -> {
-                            // SKIP just skips this entry
-                        }
-                    }
+            ErrorHandlerChoice choice = extractEntry(outputDir, entry, ignoreErrors);
+            if (choice == ABORT) {
+                return;
+            }
+            if (choice == SKIP_ALL) {
+                ignoreErrors = true;
+            }
+        }
+    }
+
+    /**
+     * Extracts a single entry, retrying for as long as the error handler asks for it.
+     *
+     * @param outputDir the directory to extract the archive to
+     * @param entry the entry to extract
+     * @param ignoreErrors whether {@link ErrorHandlerChoice#SKIP_ALL} was selected for an earlier entry
+     * @return the choice the error handler settled on, or {@code null} when the entry was extracted without error
+     * @throws IOException if an I/O error occurs and the error handler rethrows it
+     * @throws ArchiveLimitExceededException if the entry breaches one of the configured extraction limits
+     */
+    private @Nullable ErrorHandlerChoice extractEntry(Path outputDir, Entry entry, boolean ignoreErrors)
+            throws IOException {
+        while (true) {
+            try {
+                processEntry(outputDir, entry);
+                return null;
+            } catch (ArchiveLimitExceededException limitExceeded) {
+                // A breached limit is not negotiable, the error handler does not get to keep the extraction going
+                throw limitExceeded;
+            } catch (IOException ioException) {
+                ErrorHandlerChoice choice = handleException(ioException, ignoreErrors, entry);
+                if (choice != RETRY) {
+                    return choice;
                 }
-            } while (retry);
+            }
         }
     }
 

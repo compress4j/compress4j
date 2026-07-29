@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.example;
+
 import static io.github.compress4j.archivers.ArchiveExtractor.EscapingSymlinkPolicy.DISALLOW;
 
 import io.github.compress4j.archivers.tar.TarGzArchiveCreator;
@@ -21,7 +23,11 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 /** Keeps the snippets in README.adoc compiling; edit both together. */
+@SuppressWarnings({"unused"})
 public class ReadmeExamples {
+    private ReadmeExamples() {
+        // Usage example
+    }
 
     public static void create() throws IOException {
         // tag::readme-create[]
