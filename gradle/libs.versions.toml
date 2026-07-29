@@ -4,10 +4,12 @@ asm = "9.10.1"
 assertJ = "3.27.7"
 build-health = "3.16.0"
 foojay = "1.0.0"
+git-hooks = "2.1.21"
 git-version = "6.4.4"
 gradle-develocity = "4.5.0"
 jackson-bom = "2.22.0"
 jakarta-annotation = "3.0.0"
+japicmp = "0.4.6"
 jreleaser = "1.25.0"
 junit-bom = "6.1.1"
 logback = "1.5.37"
@@ -43,8 +45,10 @@ mockito-jupiter = { module = "org.mockito:mockito-junit-jupiter", version.ref = 
 [plugins]
 build-health = { id = "com.autonomousapps.build-health", version.ref = "build-health" }
 foojay-resolver-convention = { id = "org.gradle.toolchains.foojay-resolver-convention", version.ref = "foojay" }
+git-hooks = { id = "org.danilopianini.gradle-pre-commit-git-hooks", version.ref = "git-hooks" }
 git-version = { id = "me.qoomon.git-versioning", version.ref = "git-version" }
 gradle-develocity = { id = "com.gradle.develocity", version.ref = "gradle-develocity" }
+japicmp = { id = "me.champeau.gradle.japicmp", version.ref = "japicmp" }
 jreleaser = { id = "org.jreleaser", version.ref = "jreleaser" }
 sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
