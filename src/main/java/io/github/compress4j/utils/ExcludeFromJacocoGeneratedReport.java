@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Compress4J Project
+ * Copyright 2024-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/** Annotation to exclude methods from the Jacoco generated report. */
+/**
+ * Annotation to exclude methods from the Jacoco generated report.
+ *
+ * @deprecated unused since it was introduced; configure coverage exclusions in the build instead. Scheduled for removal
+ *     in the next major release.
+ */
+@Deprecated(since = "3.1", forRemoval = true)
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface ExcludeFromJacocoGeneratedReport {}

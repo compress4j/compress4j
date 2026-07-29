@@ -1,0 +1,30 @@
+# Matches what Spotless enforces: palantir-java-format, no wildcard imports, LF, trailing newline, no trailing space.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.java]
+max_line_length = 120
+ij_java_class_count_to_use_import_on_demand = 999
+ij_java_names_count_to_use_import_on_demand = 999
+
+[*.{kt,kts}]
+max_line_length = 120
+
+[*.{yml,yaml,json}]
+indent_size = 2
+
+[*.adoc]
+trim_trailing_whitespace = false
+
+[{Makefile,*.mk}]
+indent_style = tab
+
+[gradlew.bat]
+end_of_line = crlf

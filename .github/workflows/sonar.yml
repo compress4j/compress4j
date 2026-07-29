@@ -27,7 +27,7 @@ jobs:
   sonar:
     permissions:
       contents: read
-      actions: write
+      actions: read  # Reading the test report artifacts of the build run that triggered this one
     name: Sonar
     runs-on: ubuntu-latest
 
@@ -36,7 +36,6 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-          ref: ${{github.event.workflow_run.head_sha}}
       - name: "Set up JDK ${{ github.event.inputs.jdk_version }}"
         uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
         with:
@@ -46,7 +45,9 @@ jobs:
       - name: "Download JDK ${{ github.event.inputs.jdk_version }} Test reports"
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
-          path: reports
+          # Unpacked straight into build/ so the exec files land in build/jacoco/, where the coverage report reads them
+          path: build
+          merge-multiple: true
           pattern: "ubuntu-latest-jdk_${{ github.event.inputs.jdk_version }}-test-reports"
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.inputs.runId }}
@@ -60,27 +61,23 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          EVENT_NAME: ${{ github.event.inputs.eventName }}
+          BASE_REF: ${{ github.event.inputs.baseRef }}
+          HEAD_REF: ${{ github.event.inputs.headRef }}
+          PR_NUMBER: ${{ github.event.inputs.prNumber }}
         run: |
-          mkdir build
-          mv reports/* build/
-          
-          if [ '${{github.event.inputs.eventName}}' == 'pull_request' ]; then
-            ./gradlew jacocoTestReport sonar \
-              -Dsonar.pullrequest.base=${{github.event.inputs.baseRef}} \
-              -Dsonar.pullrequest.branch=${{github.event.inputs.headRef}} \
-              -Dsonar.pullrequest.key=${{github.event.inputs.prNumber}} \
-              -Dsonar.pullrequest.provider=GitHub \
-              -Dsonar.pullrequest.github.repository=${{github.repository}}
-          else
-            ./gradlew jacocoTestReport sonar --info
+          # The test tasks are excluded: their coverage data was downloaded from the build run that triggered this one
+          ARGS=(sonar --no-daemon -x test -x xzSupportTest -x integrationTest)
+
+          if [ "$EVENT_NAME" == 'pull_request' ]; then
+            ARGS+=(
+              "-Dsonar.pullrequest.base=$BASE_REF"
+              "-Dsonar.pullrequest.branch=$HEAD_REF"
+              "-Dsonar.pullrequest.key=$PR_NUMBER"
+              -Dsonar.pullrequest.provider=GitHub
+              "-Dsonar.pullrequest.github.repository=${{ github.repository }}"
+            )
           fi
+
+          ./gradlew "${ARGS[@]}"
         shell: bash
-      - name: Trigger release when a tag is pushed
-        if: startsWith( github.ref, 'refs/tags' )
-        run: |
-          echo Trigger release on a tag
-          gh workflow run \
-            --ref ${{ github.ref_name }} release.yml \
-            -f jdk_version=${{ github.event.inputs.jdk_version }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

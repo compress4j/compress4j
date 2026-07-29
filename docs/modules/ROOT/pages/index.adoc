@@ -78,6 +78,23 @@ The library often achieves this by integrating with robust, high-performance bac
 
 IMPORTANT: Some compression formats may require additional support libraries to be included in your project. Please refer to the xref:additional_formats.adoc[Additional Formats] for details on any extra dependencies needed for specific formats.
 
+=== Extracting Untrusted Archives
+
+Path traversal is always rejected: entry paths are resolved canonically against the output directory, so both `../`
+entries and writes that would follow a symlink out of the output directory fail with an `IOException`.
+
+Two things are **not** restricted by default, because they are legitimate in archives you produced yourself:
+
+* **Escaping symlinks.** Use `escapingSymlinkPolicy(DISALLOW)` to reject them, or `RELATIVIZE_ABSOLUTE` to rewrite
+  absolute targets so they stay inside the output directory.
+* **How far an archive may expand.** Use `maxEntries`, `maxEntrySize` and `maxTotalSize` to bound it. Breaching a limit
+  throws `ArchiveLimitExceededException`, which an error handler cannot suppress.
+
+[,java]
+----
+include::example$java/com/example/ReadmeExamples.java[tag=readme-extract-untrusted,indent=0]
+----
+
 === Key Goals
 
 * **Simplicity:** Offer an easy-to-understand API for common compression/decompression tasks.

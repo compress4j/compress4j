@@ -227,6 +227,22 @@ tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
 }
 
+// Consumers on the module path derive the module name from the manifest; without it the file name decides, and that
+// changes with the version.
+fun Jar.compress4jManifest(moduleName: String, title: String) = manifest {
+    attributes(
+        "Automatic-Module-Name" to moduleName,
+        "Implementation-Title" to title,
+        "Implementation-Version" to project.version,
+        "Implementation-Vendor" to "The Compress4J Project"
+    )
+}
+
+tasks.jar { compress4jManifest("io.github.compress4j", project.name) }
+tasks.named<Jar>("xzSupportJar") {
+    compress4jManifest("io.github.compress4j.xz", "${project.name}-xz-support")
+}
+
 tasks.withType<Javadoc> {
     options.encoding = "UTF-8"
     (options as StandardJavadocDocletOptions).addStringOption("Xdoclint:all")
@@ -250,7 +266,9 @@ tasks.check {
         tasks.spotlessCheck,
         checkApiCompatibility,
         integrationTest,
-        tasks.testCodeCoverageReport
+        tasks.testCodeCoverageReport,
+        // The build logic decides what gets published to Maven Central, so its tests run with everything else
+        gradle.includedBuild("${rootProject.name}-build-logic").task(":test")
     )
 }
 
@@ -272,8 +290,18 @@ sonar {
     }
 }
 
+// Sonar consumes the aggregated coverage report. CI restores the exec files the build jobs produced and runs this with
+// the test tasks excluded, so the classes it analyses have to be wired in explicitly rather than through `check`.
 tasks.sonar {
-    dependsOn(tasks.check)
+    dependsOn(
+        tasks.testCodeCoverageReport,
+        tasks.classes,
+        tasks.testClasses,
+        tasks.named("testFixturesClasses"),
+        tasks.named("xzSupportClasses"),
+        tasks.named("xzSupportTestClasses"),
+        tasks.named("integrationTestClasses")
+    )
 }
 
 spotless {

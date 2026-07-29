@@ -25,6 +25,7 @@ import static io.github.compress4j.utils.FileUtils.checkValidPath;
 import static io.github.compress4j.utils.PosixFilePermissionsMapper.fromUnixMode;
 import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 
+import io.github.compress4j.exceptions.ArchiveLimitExceededException;
 import io.github.compress4j.utils.StringUtil;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -69,6 +70,15 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         implements Closeable, Iterable<ArchiveExtractor.Entry> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ArchiveExtractor.class);
 
+    /**
+     * Value disabling an extraction limit.
+     *
+     * @since 3.1
+     */
+    public static final long UNLIMITED = -1L;
+
+    private static final int TRANSFER_BUFFER_SIZE = 8192;
+
     /** Archive input stream to be used for extraction. */
     protected A archiveInputStream;
     /** Escaping symlink policy for the extractor. */
@@ -88,6 +98,21 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
     /** Whether to overwrite existing files. */
     private boolean overwrite = false;
 
+    /** Maximum number of entries to extract, or {@link #UNLIMITED}. */
+    private long maxEntries = UNLIMITED;
+
+    /** Maximum number of bytes a single entry may expand to, or {@link #UNLIMITED}. */
+    private long maxEntrySize = UNLIMITED;
+
+    /** Maximum number of bytes the whole archive may expand to, or {@link #UNLIMITED}. */
+    private long maxTotalSize = UNLIMITED;
+
+    /** Entries extracted by the current {@link #extract(Path)} call. */
+    private long extractedEntries = 0;
+
+    /** Bytes written by the current {@link #extract(Path)} call. */
+    private long extractedBytes = 0;
+
     /**
      * Creates a new {@code ArchiveExtractor}.
      *
@@ -105,6 +130,9 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         this.stripComponents = builder.stripComponents;
         this.overwrite = builder.overwrite;
         this.escapingSymlinkPolicy = builder.escapingSymlinkPolicy;
+        this.maxEntries = builder.maxEntries;
+        this.maxEntrySize = builder.maxEntrySize;
+        this.maxTotalSize = builder.maxTotalSize;
     }
 
     /**
@@ -136,16 +164,10 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * if this operation fails it may have succeeded in creating some of the necessary parent directories.
      *
      * @param path the directory to be created
-     * @throws SecurityException If a security manager exists and its
-     *     {@link java.lang.SecurityManager#checkRead(java.lang.String)} method does not permit verification of the
-     *     existence of the named directory and all necessary parent directories; or if the
-     *     {@link java.lang.SecurityManager#checkWrite(java.lang.String)} method does not permit the named directory and
-     *     all necessary parent directories to be created
+     * @throws IOException if the directory, or one of its parents, could not be created
      */
-    @SuppressWarnings("removal")
-    private static void makeDirectory(Path path) {
-        // noinspection ResultOfMethodCallIgnored
-        path.toFile().mkdirs();
+    private static void makeDirectory(Path path) throws IOException {
+        Files.createDirectories(path);
     }
 
     private static List<String> splitPath(String canonicalPath) {
@@ -218,31 +240,41 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      *
      * @param outputDir the directory to extract the archive to
      * @throws IOException if an I/O error occurs
+     * @throws ArchiveLimitExceededException if the archive breaches one of the configured extraction limits
      */
     public final void extract(Path outputDir) throws IOException {
-        var errorHandlerChoice = SKIP;
+        extractedEntries = 0;
+        extractedBytes = 0;
+        boolean ignoreErrors = false;
         Entry entry;
         while ((entry = nextEntry()) != null) {
             // Skip entry if filter does not match
             if (!entryFilter.orElse(e -> true).test(entry)) {
                 continue;
             }
+            if (maxEntries >= 0 && ++extractedEntries > maxEntries) {
+                throw new ArchiveLimitExceededException(
+                        "Archive holds more than the maximum of " + maxEntries + " entries allowed");
+            }
             boolean retry;
             do {
                 retry = false;
                 try {
                     processEntry(outputDir, entry);
+                } catch (ArchiveLimitExceededException limitExceeded) {
+                    // A breached limit is not negotiable, the error handler does not get to keep the extraction going
+                    throw limitExceeded;
                 } catch (IOException ioException) {
-                    // Only consult errorHandlerChoice on exception
-                    errorHandlerChoice = handleException(ioException, errorHandlerChoice, entry);
-                    if (errorHandlerChoice.equals(ABORT)) {
-                        return;
-                    } else if (errorHandlerChoice.equals(RETRY)) {
-                        retry = true;
-                    } else if (errorHandlerChoice.equals(SKIP_ALL)) {
-                        // Skip all remaining entries
-                        return;
-                    } // SKIP just skips this entry
+                    switch (handleException(ioException, ignoreErrors, entry)) {
+                        case ABORT -> {
+                            return;
+                        }
+                        case RETRY -> retry = true;
+                        case SKIP_ALL -> ignoreErrors = true;
+                        default -> {
+                            // SKIP just skips this entry
+                        }
+                    }
                 }
             } while (retry);
         }
@@ -252,13 +284,14 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * Handles an {@link IOException} that occurred during extraction.
      *
      * @param ioException the exception that occurred
+     * @param ignoreErrors whether {@link ErrorHandlerChoice#SKIP_ALL} was selected for an earlier entry
      * @param entry the entry that caused the exception
      * @return ErrorHandlerChoice - the decision on how to handle the exception
      * @throws IOException if an I/O error occurs
      */
-    private ErrorHandlerChoice handleException(IOException ioException, ErrorHandlerChoice decision, Entry entry)
+    private ErrorHandlerChoice handleException(IOException ioException, boolean ignoreErrors, Entry entry)
             throws IOException {
-        if (decision.equals(SKIP_ALL)) {
+        if (ignoreErrors) {
             LOGGER.debug("Skipped exception because {} was selected earlier", SKIP_ALL, ioException);
             return SKIP_ALL;
         } else {
@@ -348,6 +381,36 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      */
     public void setOverwrite(boolean overwrite) {
         this.overwrite = overwrite;
+    }
+
+    /**
+     * Sets the maximum number of entries {@link #extract(Path)} will process before aborting.
+     *
+     * @param maxEntries the maximum number of entries, or {@link #UNLIMITED} to disable the limit
+     * @since 3.1
+     */
+    public void setMaxEntries(long maxEntries) {
+        this.maxEntries = maxEntries;
+    }
+
+    /**
+     * Sets the maximum number of bytes a single entry may expand to before {@link #extract(Path)} aborts.
+     *
+     * @param maxEntrySize the maximum size of a single entry in bytes, or {@link #UNLIMITED} to disable the limit
+     * @since 3.1
+     */
+    public void setMaxEntrySize(long maxEntrySize) {
+        this.maxEntrySize = maxEntrySize;
+    }
+
+    /**
+     * Sets the maximum number of bytes the whole archive may expand to before {@link #extract(Path)} aborts.
+     *
+     * @param maxTotalSize the maximum total extracted size in bytes, or {@link #UNLIMITED} to disable the limit
+     * @since 3.1
+     */
+    public void setMaxTotalSize(long maxTotalSize) {
+        this.maxTotalSize = maxTotalSize;
     }
 
     /**
@@ -468,7 +531,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
             try {
                 makeDirectory(outputFile.getParent());
                 try (OutputStream outputStream = Files.newOutputStream(outputFile)) {
-                    inputStream.transferTo(outputStream);
+                    transferEntry(entry, inputStream, outputStream);
                 }
                 if (entry.mode != 0) {
                     setAttributes(entry.mode, outputFile);
@@ -478,6 +541,39 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
             }
         } else {
             LOGGER.debug("Skipping file entry: {} (already exists)", entry.name);
+        }
+    }
+
+    /**
+     * Copies the content of an entry, enforcing {@link #setMaxEntrySize(long)} and {@link #setMaxTotalSize(long)} as
+     * the bytes go by rather than trusting the size the archive declares.
+     *
+     * @param entry the entry being written
+     * @param inputStream the stream to read the entry content from
+     * @param outputStream the stream to write the entry content to
+     * @throws IOException if an I/O error occurs
+     * @throws ArchiveLimitExceededException if the entry, or the archive as a whole, expands beyond its limit
+     */
+    private void transferEntry(Entry entry, InputStream inputStream, OutputStream outputStream) throws IOException {
+        if (maxEntrySize < 0 && maxTotalSize < 0) {
+            extractedBytes += inputStream.transferTo(outputStream);
+            return;
+        }
+        byte[] buffer = new byte[TRANSFER_BUFFER_SIZE];
+        long entryBytes = 0;
+        int read;
+        while ((read = inputStream.read(buffer)) >= 0) {
+            entryBytes += read;
+            extractedBytes += read;
+            if (maxEntrySize >= 0 && entryBytes > maxEntrySize) {
+                throw new ArchiveLimitExceededException("Entry '" + entry.name + "' expands beyond the maximum entry "
+                        + "size of " + maxEntrySize + " bytes");
+            }
+            if (maxTotalSize >= 0 && extractedBytes > maxTotalSize) {
+                throw new ArchiveLimitExceededException("Archive expands beyond the maximum total size of "
+                        + maxTotalSize + " bytes at entry '" + entry.name + "'");
+            }
+            outputStream.write(buffer, 0, read);
         }
     }
 
@@ -523,6 +619,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * @param outputDir the directory to extract the archive to
      * @param entry the entry to process
      * @throws IOException if an I/O error occurs
+     * @throws ArchiveLimitExceededException if the archive breaches one of the configured extraction limits
      */
     private void processEntry(Path outputDir, Entry entry) throws IOException {
         if (stripComponents > 0) {
@@ -532,7 +629,12 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
 
         Path outputFile = entryFile(outputDir, entry.name);
         switch (entry.type) {
-            case DIR -> makeDirectory(outputFile);
+            case DIR -> {
+                makeDirectory(outputFile);
+                if (entry.mode != 0) {
+                    setAttributes(entry.mode, outputFile);
+                }
+            }
             case FILE -> writeFile(entry, outputFile);
             case SYMLINK -> extractSymlink(outputDir, entry, outputFile);
         }
@@ -572,9 +674,12 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         RELATIVIZE_ABSOLUTE
     }
 
-    /** Specifies action to be taken from the {@code com.intellij.util.io.ArchiveExtractor#errorHandler} */
+    /** Specifies the action to be taken by the {@link ArchiveExtractor#setErrorHandler error handler}. */
     public enum ErrorHandlerChoice {
-        /** Extraction should be aborted and already extracted entities should be cleaned */
+        /**
+         * Stop the extraction and return normally. Entries extracted before the failure are left in place; the
+         * extractor never deletes anything it has already written.
+         */
         ABORT,
 
         /** Do not handle error, just rethrow the exception */
@@ -586,7 +691,10 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         /** Skip this entry from extraction */
         SKIP,
 
-        /** Skip this entry for extraction and ignore any further IOExceptions during this archive extraction */
+        /**
+         * Skip this entry and keep extracting the remaining ones, ignoring any further {@link IOException} without
+         * consulting the error handler again.
+         */
         SKIP_ALL
     }
 
@@ -612,6 +720,9 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         BiConsumer<Entry, ? super Path> postProcessor;
         int stripComponents = 0;
         boolean overwrite = false;
+        long maxEntries = UNLIMITED;
+        long maxEntrySize = UNLIMITED;
+        long maxTotalSize = UNLIMITED;
 
         /**
          * Default constructor for ArchiveExtractor.
@@ -686,6 +797,44 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
          */
         public B overwrite(boolean overwrite) {
             this.overwrite = overwrite;
+            return getThis();
+        }
+
+        /**
+         * Sets the maximum number of entries the extractor will process before aborting.
+         *
+         * @param maxEntries the maximum number of entries, or {@link ArchiveExtractor#UNLIMITED} to disable the limit
+         * @return the instance of the {@link ArchiveExtractor.ArchiveExtractorBuilder}
+         * @since 3.1
+         */
+        public B maxEntries(long maxEntries) {
+            this.maxEntries = maxEntries;
+            return getThis();
+        }
+
+        /**
+         * Sets the maximum number of bytes a single entry may expand to before the extractor aborts.
+         *
+         * @param maxEntrySize the maximum size of a single entry in bytes, or {@link ArchiveExtractor#UNLIMITED} to
+         *     disable the limit
+         * @return the instance of the {@link ArchiveExtractor.ArchiveExtractorBuilder}
+         * @since 3.1
+         */
+        public B maxEntrySize(long maxEntrySize) {
+            this.maxEntrySize = maxEntrySize;
+            return getThis();
+        }
+
+        /**
+         * Sets the maximum number of bytes the whole archive may expand to before the extractor aborts.
+         *
+         * @param maxTotalSize the maximum total extracted size in bytes, or {@link ArchiveExtractor#UNLIMITED} to
+         *     disable the limit
+         * @return the instance of the {@link ArchiveExtractor.ArchiveExtractorBuilder}
+         * @since 3.1
+         */
+        public B maxTotalSize(long maxTotalSize) {
+            this.maxTotalSize = maxTotalSize;
             return getThis();
         }
 

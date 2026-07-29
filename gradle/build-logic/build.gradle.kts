@@ -14,6 +14,17 @@ dependencies {
     implementation(libs.plugins.gradle.develocity.asDependency())
     implementation(libs.plugins.japicmp.asDependency())
     implementation(libs.plugins.jreleaser.asDependency())
+
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.assertj.core)
+    testImplementation(libs.junit.jupiter.api)
+    testImplementation(libs.junit.jupiter.params)
+    testRuntimeOnly(libs.junit.jupiter.engine)
+    testRuntimeOnly(libs.junit.platform.launcher)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 // workaround for https://github.com/gradle/gradle/issues/17963

@@ -10,12 +10,28 @@ on:
       - main
   workflow_dispatch:
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}  # Never cancel a run that may reach the release job
+
 jobs:
+  validate-wrapper:
+    permissions:
+      contents: read
+    name: Validate Gradle wrapper
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v7
+      - name: Validate the checksum of gradle-wrapper.jar
+        uses: gradle/actions/wrapper-validation@v6
+
   commit-messages:
     permissions:
       contents: read
     name: Commit messages
     if: github.event_name == 'pull_request'
+    needs: validate-wrapper
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -39,6 +55,7 @@ jobs:
       contents: read
       actions: write
     name: Build (Ubuntu JDK 21)
+    needs: validate-wrapper
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -71,6 +88,7 @@ jobs:
     permissions:
       contents: read
     name: Build (Ubuntu JDK 25)
+    needs: validate-wrapper
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources
@@ -97,6 +115,7 @@ jobs:
     permissions:
       contents: read
     name: Build (${{ matrix.operating-system }} JDK ${{ matrix.java-version }})
+    needs: validate-wrapper
     runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:

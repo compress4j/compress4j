@@ -79,7 +79,7 @@ jobs:
           JRELEASER_GPG_SECRET_KEY: ${{ secrets.GPG_SECRET_KEY }}
           JRELEASER_GPG_PUBLIC_KEY: ${{ secrets.GPG_PUBLIC_KEY }}
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./gradlew jreleaserFullRelease --stacktrace
+        run: ./gradlew jreleaserFullRelease --no-daemon --stacktrace
       # Persist logs
       - name: JReleaser release output
         if: always()
