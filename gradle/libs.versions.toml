@@ -2,7 +2,7 @@
 apache-commons-compress = "1.28.0"
 asm = "9.10.1"
 assertJ = "3.27.7"
-build-health = "3.16.0"
+build-health = "3.17.0"
 foojay = "1.0.0"
 git-hooks = "2.1.21"
 git-version = "6.4.4"
