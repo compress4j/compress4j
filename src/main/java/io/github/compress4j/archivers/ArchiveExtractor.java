@@ -77,7 +77,11 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      */
     public static final long UNLIMITED = -1L;
 
-    private static final int TRANSFER_BUFFER_SIZE = 8192;
+    /**
+     * Matches {@code InputStream.DEFAULT_BUFFER_SIZE}, so the counted copy reads in the same granularity as
+     * {@link InputStream#transferTo(OutputStream)} does on the unlimited path.
+     */
+    private static final int TRANSFER_BUFFER_SIZE = 16384;
 
     /** Archive input stream to be used for extraction. */
     protected A archiveInputStream;
