@@ -58,6 +58,7 @@ jobs:
           repository: ${{ steps.pr.outputs.head_repo }}
           ref: ${{ steps.pr.outputs.head_sha }}  # Pinned to the reviewed commit so a later push cannot slip in
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+          persist-credentials: false  # The fork's build scripts run below and could otherwise read the token from .git/config
 
       - name: 'Set up JDK 21'
         uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5
