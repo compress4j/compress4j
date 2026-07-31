@@ -1,0 +1,44 @@
+name: Mark stale issues
+
+on:
+  schedule:
+    # Daily at 06:00 UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@4391f3da665fdf50b6810c1a66712fb9ba21aa93 # v11
+        with:
+          # Only touch issues that have been parked pending a reproducer.
+          # Everything else (active bugs, feature requests, etc.) stays open
+          # until someone explicitly acts on it.
+          only-issue-labels: needs-reproducer
+          days-before-issue-stale: 30
+          days-before-issue-close: 14
+          # PRs are not subject to this workflow.
+          days-before-pr-stale: -1
+          days-before-pr-close: -1
+          stale-issue-label: stale
+          remove-stale-when-updated: true
+          close-issue-reason: not_planned
+          stale-issue-message: |
+            This issue has been waiting on a reproducer for 30 days with no activity, so it's been marked as `stale`.
+
+            If you can still reproduce it on the latest [release](https://github.com/compress4j/compress4j/releases/latest), please reply with:
+            - The Compress4J version, the JDK version and the OS
+            - A minimal reproducer — the few lines of code plus, if the archive matters, one that triggers it
+            - The full stack trace
+
+            …and the `stale` and `needs-reproducer` labels will be removed.
+
+            Otherwise this issue will close in 14 days. Closing isn't a verdict — it just means we don't have enough information to act on it.
+          close-issue-message: |
+            Closing as stale — no reproducer was received in 44 days.
+
+            If you hit this on a recent release, please open a fresh issue using the [bug report template](https://github.com/compress4j/compress4j/issues/new/choose), which collects the diagnostic info up-front. Thanks for the original report regardless.

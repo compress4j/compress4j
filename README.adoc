@@ -10,10 +10,74 @@ powerful and feature-rich http://commons.apache.org/proper/commons-compress/[org
 
 This project is a fork of https://github.com/thrau/jarchivelib[JArchiveLib].
 
+== Installation
+
+Requires Java 21 or later.
+
+[source,kotlin]
+----
+dependencies {
+    implementation("io.github.compress4j:compress4j:<version>")
+
+    // Only needed for the .xz and .tar.xz formats
+    implementation("io.github.compress4j:compress4j:<version>") {
+        capabilities { requireCapability("io.github.compress4j:compress4j-xz-support") }
+    }
+}
+----
+
+== Quick start
+
+Create an archive:
+
+[source,java]
+----
+try (TarGzArchiveCreator creator = TarGzArchiveCreator.builder(Path.of("example.tar.gz")).build()) {
+    creator.addDirectoryRecursively(Path.of("exampleDir"));
+    creator.addFile(Path.of("path/to/file.txt"));
+}
+----
+
+Extract one:
+
+[source,java]
+----
+try (TarGzArchiveExtractor extractor = TarGzArchiveExtractor.builder(Path.of("example.tar.gz")).build()) {
+    extractor.extract(Path.of("outputDir"));
+}
+----
+
+Extracting an archive you do not trust? Turn on the guards — see link:SECURITY.md[SECURITY.md]:
+
+[source,java]
+----
+try (TarGzArchiveExtractor extractor = TarGzArchiveExtractor.builder(Path.of("untrusted.tar.gz"))
+        .escapingSymlinkPolicy(EscapingSymlinkPolicy.DISALLOW)
+        .maxEntries(10_000)
+        .maxEntrySize(100L * 1024 * 1024)
+        .maxTotalSize(1024L * 1024 * 1024)
+        .build()) {
+    extractor.extract(Path.of("outputDir"));
+}
+----
+
+== Supported formats
+
+AR, CPIO, Deflate, BZip2, Gzip, Pack200, Tar (plain, `.tar.gz`, `.tar.bz2`, `.tar.xz`), XZ and Zip.
+
 == Documentation
 
-Documentation for this is built using https://antora.org/[Antora], available at https://compress4j.github.io
+Full documentation, with an example per format, is at https://compress4j.github.io.
 
-=== Basic Antora Setup
+It is built with https://antora.org/[Antora]; the pages live in `docs/modules/ROOT/pages` and the examples they include
+are compiled from `src/examples/java`.
 
-* The documentation pages are stored in the `docs/modules/ROOT/pages` folder.
+== Contributing
+
+See link:CONTRIBUTING.adoc[CONTRIBUTING.adoc]. Commit subjects and pull request titles follow
+https://www.conventionalcommits.org/[Conventional Commits] — they drive the released version, so `feat:` publishes a
+minor release, `fix:` a patch, and anything else publishes nothing.
+
+== License
+
+link:LICENSE[Apache License 2.0].

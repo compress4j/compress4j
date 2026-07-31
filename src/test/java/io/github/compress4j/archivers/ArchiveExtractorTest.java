@@ -53,9 +53,11 @@ import io.github.compress4j.archivers.memory.InMemoryArchiveExtractor;
 import io.github.compress4j.archivers.memory.InMemoryArchiveExtractor.InMemoryArchiveExtractorBuilder;
 import io.github.compress4j.archivers.memory.InMemoryArchiveInputStream;
 import io.github.compress4j.assertion.Compress4JAssertions;
+import io.github.compress4j.exceptions.ArchiveLimitExceededException;
 import io.github.compress4j.test.util.log.InMemoryLogAppender;
 import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -71,6 +73,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.EnabledOnOs;
@@ -447,17 +450,23 @@ class ArchiveExtractorTest {
                 .build();
         try (var inMemoryDecompressor = InMemoryArchiveExtractor.builder(List.of(entry1, entry1a, entry2))
                 .build()) {
-            inMemoryDecompressor.setErrorHandler((entry, exception) -> SKIP_ALL);
+            // BAIL_OUT after the first call: SKIP_ALL must stop the handler from being consulted again
+            var calls = new AtomicInteger();
+            inMemoryDecompressor.setErrorHandler(
+                    (entry, exception) -> calls.getAndIncrement() == 0 ? SKIP_ALL : BAIL_OUT);
 
             // when
             inMemoryDecompressor.extract(tempDir);
 
             // then
             Compress4JAssertions.assertThat(inMemoryLogAppender).contains("SKIP_ALL is selected", DEBUG);
+            Compress4JAssertions.assertThat(inMemoryLogAppender)
+                    .contains("Skipped exception because SKIP_ALL was selected earlier", DEBUG);
+            assertThat(calls).hasValue(1);
             assertThat(tempDir).isDirectory();
             assertThat(tempDir.resolve("test1")).doesNotExist();
             assertThat(tempDir.resolve("subdir/test1a")).doesNotExist();
-            assertThat(tempDir.resolve("subdir/test2")).doesNotExist();
+            assertThat(tempDir.resolve("subdir/test2")).hasContent("content2");
         }
     }
 
@@ -1321,8 +1330,8 @@ class ArchiveExtractorTest {
 
             // then
             assertThat(tempDir.resolve(entryToFail.getName())).doesNotExist();
-            assertThat(tempDir.resolve(anotherEntry.getName())).doesNotExist();
-            assertThat(tempDir.resolve(thirdEntry.getName())).doesNotExist();
+            assertThat(tempDir.resolve(anotherEntry.getName())).hasContent("another");
+            assertThat(tempDir.resolve(thirdEntry.getName())).hasContent("third");
 
             Compress4JAssertions.assertThat(inMemoryLogAppender)
                     .contains("SKIP_ALL is selected", DEBUG, simulatedException);
@@ -1375,7 +1384,7 @@ class ArchiveExtractorTest {
     }
 
     @Test
-    void shouldNotOverwriteExistingFileWithDirectoryWhenOverwriteTrue() throws IOException {
+    void shouldReportDirectoryEntryClashingWithExistingFile() throws IOException {
         // given
         var existingFile = tempDir.resolve("entryName");
         Files.writeString(existingFile, "i am a file");
@@ -1384,10 +1393,35 @@ class ArchiveExtractorTest {
 
         try (var extractor = InMemoryArchiveExtractor.builder(List.of(dirEntry)).build()) {
             extractor.setOverwrite(true);
+
             // when
-            extractor.extract(tempDir);
+            assertThatThrownBy(() -> extractor.extract(tempDir)).isInstanceOf(FileAlreadyExistsException.class);
+
             // then
             assertThat(tempDir.resolve("entryName")).isRegularFile();
+        }
+    }
+
+    @Test
+    void shouldSkipDirectoryEntryClashingWithExistingFileWhenHandlerSkips() throws IOException {
+        // given
+        var existingFile = tempDir.resolve("entryName");
+        Files.writeString(existingFile, "i am a file");
+        var dirEntry =
+                InMemoryArchiveEntry.builder().name("entryName").type(DIR).build();
+        var nextEntry =
+                InMemoryArchiveEntry.builder().name("next.txt").content("next").build();
+
+        try (var extractor =
+                InMemoryArchiveExtractor.builder(List.of(dirEntry, nextEntry)).build()) {
+            extractor.setErrorHandler((entry, exception) -> SKIP);
+
+            // when
+            extractor.extract(tempDir);
+
+            // then
+            assertThat(tempDir.resolve("entryName")).isRegularFile();
+            assertThat(tempDir.resolve("next.txt")).hasContent("next");
         }
     }
 
@@ -1695,6 +1729,163 @@ class ArchiveExtractorTest {
             ArchiveExtractor.setAttributes(mode, mockPath);
             verify(mockAttributeView)
                     .setPermissions(io.github.compress4j.utils.PosixFilePermissionsMapper.fromUnixMode(mode));
+        }
+    }
+
+    @DisabledOnOs(OS.WINDOWS)
+    @Test
+    void shouldApplyModeToExtractedDirectory() throws IOException {
+        // given
+        @SuppressWarnings("OctalInteger")
+        var mode = 0750;
+        var dirEntry = InMemoryArchiveEntry.builder()
+                .name("restricted")
+                .type(DIR)
+                .mode(mode)
+                .build();
+
+        try (var extractor = InMemoryArchiveExtractor.builder(List.of(dirEntry)).build()) {
+            // when
+            extractor.extract(tempDir);
+
+            // then
+            var extracted = tempDir.resolve("restricted");
+            assertThat(extracted).isDirectory();
+            assertThat(Files.getPosixFilePermissions(extracted))
+                    .isEqualTo(PosixFilePermissions.fromString("rwxr-x---"));
+        }
+    }
+
+    @Nested
+    class ExtractionLimitTests {
+
+        @Test
+        void shouldRejectArchiveWithTooManyEntries() throws IOException {
+            // given
+            var entries = List.of(
+                    InMemoryArchiveEntry.builder().name("a").content("a").build(),
+                    InMemoryArchiveEntry.builder().name("b").content("b").build(),
+                    InMemoryArchiveEntry.builder().name("c").content("c").build());
+
+            try (var extractor = InMemoryArchiveExtractor.builder(entries).build()) {
+                extractor.setMaxEntries(2);
+
+                // when
+                assertThatThrownBy(() -> extractor.extract(tempDir))
+                        .isInstanceOf(ArchiveLimitExceededException.class)
+                        .hasMessageContaining("maximum of 2 entries");
+
+                // then
+                assertThat(tempDir.resolve("a")).hasContent("a");
+                assertThat(tempDir.resolve("c")).doesNotExist();
+            }
+        }
+
+        @Test
+        void shouldRejectEntryLargerThanMaxEntrySize() throws IOException {
+            // given
+            var entry = InMemoryArchiveEntry.builder()
+                    .name("big.txt")
+                    .content("0123456789")
+                    .build();
+
+            try (var extractor =
+                    InMemoryArchiveExtractor.builder(List.of(entry)).build()) {
+                extractor.setMaxEntrySize(4);
+
+                // when / then
+                assertThatThrownBy(() -> extractor.extract(tempDir))
+                        .isInstanceOf(ArchiveLimitExceededException.class)
+                        .hasMessageContaining("big.txt")
+                        .hasMessageContaining("maximum entry size of 4 bytes");
+            }
+        }
+
+        @Test
+        void shouldRejectArchiveExceedingMaxTotalSize() throws IOException {
+            // given
+            var entries = List.of(
+                    InMemoryArchiveEntry.builder()
+                            .name("one.txt")
+                            .content("12345")
+                            .build(),
+                    InMemoryArchiveEntry.builder()
+                            .name("two.txt")
+                            .content("12345")
+                            .build());
+
+            try (var extractor = InMemoryArchiveExtractor.builder(entries).build()) {
+                extractor.setMaxTotalSize(8);
+
+                // when
+                assertThatThrownBy(() -> extractor.extract(tempDir))
+                        .isInstanceOf(ArchiveLimitExceededException.class)
+                        .hasMessageContaining("maximum total size of 8 bytes");
+
+                // then
+                assertThat(tempDir.resolve("one.txt")).hasContent("12345");
+            }
+        }
+
+        @Test
+        void shouldNotLetTheErrorHandlerOverrideABreachedLimit() throws IOException {
+            // given
+            var entries = List.of(
+                    InMemoryArchiveEntry.builder().name("a").content("a").build(),
+                    InMemoryArchiveEntry.builder().name("b").content("b").build());
+
+            try (var extractor = InMemoryArchiveExtractor.builder(entries).build()) {
+                extractor.setMaxEntries(1);
+                extractor.setErrorHandler((entry, exception) -> SKIP_ALL);
+
+                // when / then
+                assertThatThrownBy(() -> extractor.extract(tempDir)).isInstanceOf(ArchiveLimitExceededException.class);
+            }
+        }
+
+        @Test
+        void shouldExtractEverythingWhenLimitsAreUnlimited() throws IOException {
+            // given
+            var entries = List.of(
+                    InMemoryArchiveEntry.builder().name("a").content("a").build(),
+                    InMemoryArchiveEntry.builder().name("b").content("b").build());
+
+            try (var extractor = InMemoryArchiveExtractor.builder(entries)
+                    .maxEntries(ArchiveExtractor.UNLIMITED)
+                    .maxEntrySize(ArchiveExtractor.UNLIMITED)
+                    .maxTotalSize(ArchiveExtractor.UNLIMITED)
+                    .build()) {
+                // when
+                extractor.extract(tempDir);
+
+                // then
+                assertThat(tempDir.resolve("a")).hasContent("a");
+                assertThat(tempDir.resolve("b")).hasContent("b");
+            }
+        }
+
+        @Test
+        void shouldResetCountersBetweenExtractions() throws IOException {
+            // given
+            var entries = List.of(
+                    InMemoryArchiveEntry.builder().name("a").content("a").build(),
+                    InMemoryArchiveEntry.builder().name("b").content("b").build());
+            var secondDir = Files.createDirectory(tempDir.resolve("second"));
+
+            try (var extractor = InMemoryArchiveExtractor.builder(entries).build()) {
+                extractor.setMaxEntries(2);
+                extractor.extract(tempDir);
+            }
+
+            // when a fresh extractor runs again, the counters start from zero
+            try (var extractor = InMemoryArchiveExtractor.builder(entries).build()) {
+                extractor.setMaxEntries(2);
+                extractor.extract(secondDir);
+
+                // then
+                assertThat(secondDir.resolve("a")).hasContent("a");
+                assertThat(secondDir.resolve("b")).hasContent("b");
+            }
         }
     }
 }

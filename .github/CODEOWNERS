@@ -1,0 +1,8 @@
+# Default owners for everything in the repository.
+*                       @austek @renasustek
+
+# The release machinery decides what reaches Maven Central.
+/.github/workflows/     @austek
+/gradle/build-logic/    @austek
+/build.gradle.kts       @austek
+/renovate.json          @austek
