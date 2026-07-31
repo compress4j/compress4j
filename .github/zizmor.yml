@@ -1,0 +1,30 @@
+rules:
+  # Caches created by a pull request are not readable from main, so a pull request cannot poison the cache that the
+  # release job restores. Every setup-java and actions/cache step trips this, so the whole file is ignored.
+  cache-poisoning:
+    ignore:
+      - ci.yml
+
+  # Worth fixing, but narrowing this means declaring each secret in release.yml's workflow_call block too, and a mistake
+  # there only surfaces during a real release. Left for a change that can be verified on its own.
+  secrets-inherit:
+    ignore:
+      - ci.yml
+
+  # The digests do resolve to the commented major tag; zizmor wants the exact patch version, and Renovate owns these
+  # pins.
+  ref-version-mismatch:
+    ignore:
+      - ci.yml
+      - release.yml
+      - sonar-fork.yml
+
+  # The release job pushes the version tag over these credentials.
+  artipacked:
+    ignore:
+      - release.yml
+
+  # previousVersion is produced by an earlier step in the same workflow, not by anything a contributor controls.
+  template-injection:
+    ignore:
+      - release.yml
