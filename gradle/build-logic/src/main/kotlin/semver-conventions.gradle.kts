@@ -1,9 +1,11 @@
 import io.github.compress4j.semver.CheckCommitMessagesTask
 import io.github.compress4j.semver.ConventionalCommits
 import io.github.compress4j.semver.GitHistoryValueSource
+import io.github.compress4j.semver.ReleaseTagsValueSource
 import io.github.compress4j.semver.SemverExtension
 import io.github.compress4j.semver.SemverPlanTask
 import io.github.compress4j.semver.parseGitHistory
+import io.github.compress4j.semver.parseReleaseTags
 
 plugins { id("me.champeau.gradle.japicmp") }
 
@@ -20,6 +22,11 @@ val historySinceLastRelease = gitHistory(null).map { parseGitHistory(it) }
 
 semver.previousVersion.set(historySinceLastRelease.map { it.previousVersion.orEmpty() })
 semver.declaredBump.set(historySinceLastRelease.map { ConventionalCommits.declaredBump(it.commits) })
+semver.releaseVersions.set(
+    providers.of(ReleaseTagsValueSource::class) {
+        parameters { projectDir.set(layout.projectDirectory.asFile) }
+    }.map { parseReleaseTags(it) }
+)
 
 tasks.register<SemverPlanTask>("semverPlan") {
     group = "release"

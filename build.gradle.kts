@@ -164,18 +164,40 @@ tasks.withType<Test>().configureEach {
 val apiBaselineVersion: String = providers.gradleProperty("api.baseline").orElse(semver.previousVersion).get()
 
 // A named configuration would resolve back to the project being built, a detached one honours the coordinates.
-fun baselineArtifacts(classifier: String?): FileCollection = when {
-    apiBaselineVersion.isEmpty() -> files()
-    else -> configurations.detachedConfiguration(
-        dependencies.create(
-            listOfNotNull("${project.group}", project.name, apiBaselineVersion, classifier).joinToString(":") + "@jar"
-        )
-    ).apply { isTransitive = false }
+fun baselineConfiguration(version: String, classifier: String?): Configuration = configurations.detachedConfiguration(
+    dependencies.create(
+        listOfNotNull("${project.group}", project.name, version, classifier).joinToString(":") + "@jar"
+    )
+).apply { isTransitive = false }
+
+// A release can tag a version that never reached the repository, so the newest tag is not always downloadable.
+// Falling back to the newest one that is keeps the check running instead of failing every build until that release
+// is fixed.
+val publishedBaselineVersion: String by lazy {
+    val candidates = listOf(apiBaselineVersion).filter { it.isNotEmpty() }
+        .plus(semver.releaseVersions.get())
+        .distinct()
+    val published = candidates.firstOrNull {
+        baselineConfiguration(it, null).incoming.artifactView { lenient(true) }.artifacts.artifacts.isNotEmpty()
+    }
+    when {
+        published == null -> "".also {
+            logger.warn("None of the release tags $candidates is published, skipping the API compatibility check")
+        }
+        published != apiBaselineVersion -> published.also {
+            logger.warn("Release $apiBaselineVersion is tagged but not published, comparing the API against $it instead")
+        }
+        else -> published
+    }
 }
+
+fun baselineArtifacts(classifier: String?): FileCollection = files({
+    publishedBaselineVersion.takeIf { it.isNotEmpty() }?.let { baselineConfiguration(it, classifier) } ?: files()
+})
 
 fun registerApiComparison(name: String, baseline: FileCollection, jarTask: TaskProvider<Jar>, classpath: FileCollection) =
     tasks.register<JapicmpTask>(name) {
-        onlyIf { apiBaselineVersion.isNotEmpty() }
+        onlyIf { publishedBaselineVersion.isNotEmpty() }
         oldArchives.from(baseline)
         newArchives.from(jarTask)
         oldClasspath.from(classpath)
@@ -203,7 +225,7 @@ val japicmpXzSupport = registerApiComparison(
 val checkApiCompatibility = tasks.register<CheckApiCompatibilityTask>("checkApiCompatibility") {
     group = "verification"
     description = "Fails when the API changes since the last release ask for a bigger version bump than the commits declare."
-    baselineVersion = apiBaselineVersion
+    baselineVersion = provider { publishedBaselineVersion }
     declaredBump = semver.declaredBump
     reports.from(japicmpMain.flatMap { it.xmlOutputFile }, japicmpXzSupport.flatMap { it.xmlOutputFile })
 }
