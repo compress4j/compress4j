@@ -63,16 +63,31 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git tag -a "v$VERSION" -m "Release v$VERSION"
           git push origin "refs/tags/v$VERSION"
-          # The version comes from the checked out ref, building on the branch would produce a snapshot
-          git checkout "refs/tags/v$VERSION"
+
+      # git-versioning reads GITHUB_REF on Actions, so checking the tag out does not change the version. Naming the tag
+      # is what makes the steps below build the release version instead of a snapshot of the branch they run on.
+      - name: Verify the version resolves to v${{ steps.plan.outputs.nextVersion }}
+        if: steps.plan.outputs.release == 'true' && !inputs.dry_run
+        env:
+          VERSION: ${{ steps.plan.outputs.nextVersion }}
+          VERSIONING_GIT_TAG: v${{ steps.plan.outputs.nextVersion }}
+        run: |
+          resolved=$(./gradlew --quiet properties --property version --no-daemon | awk '$1 == "version:" { print $2 }')
+          if [ "$resolved" != "$VERSION" ]; then
+            echo "::error::Gradle resolved the version as '$resolved', the release plan asked for '$VERSION'"
+            exit 1
+          fi
 
       - name: Create a release
         if: steps.plan.outputs.release == 'true' && !inputs.dry_run
+        env:
+          VERSIONING_GIT_TAG: v${{ steps.plan.outputs.nextVersion }}
         run: ./gradlew publish --no-daemon
 
       - name: Release to Maven Central
         if: steps.plan.outputs.release == 'true' && !inputs.dry_run
         env:
+          VERSIONING_GIT_TAG: v${{ steps.plan.outputs.nextVersion }}
           JRELEASER_MAVENCENTRAL_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           JRELEASER_MAVENCENTRAL_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           JRELEASER_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
