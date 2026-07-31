@@ -53,10 +53,11 @@ jobs:
   build-ubuntu-21:
     permissions:
       contents: read
-      actions: write
     name: Build (Ubuntu JDK 21)
     needs: validate-wrapper
     runs-on: ubuntu-latest
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}  # Job-level so the analysis step can test it in an `if`
     steps:
       - name: Checkout sources
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -70,19 +71,26 @@ jobs:
           java-version: 21
           cache: 'gradle'
 
+      - name: Cache SonarCloud packages
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.sonar/cache
+          key: ubuntu-latest-jdk_21-sonar
+          restore-keys: ubuntu-latest-jdk_21-sonar
+
       - name: Check Java version
         run: java -version
       - name: Build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
         run: ./gradlew build --continue --no-daemon --scan
-      - name: Upload Test reports
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: ubuntu-latest-jdk_21-test-reports # Specific artifact name for JDK 21
-          path: |
-            build/test-results/**/*.xml
-            build/jacoco/
+      - name: Sonar analysis
+        # Fork pull requests are never given repository secrets, so the scan would fail with a red X the contributor
+        # cannot clear. The scanner reads the pull request context straight from the event it is running on.
+        if: env.SONAR_TOKEN != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./gradlew sonar --no-daemon --scan
 
   build-ubuntu-25:
     permissions:
@@ -109,7 +117,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
         run: ./gradlew build --continue --no-daemon --scan
-      # No artifact upload for this job as it's not needed for Sonar
 
   build-other-os:
     permissions:
@@ -146,6 +153,25 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
         run: ./gradlew build --continue --no-daemon --scan
 
+  # Stable check name for branch protection: the matrix reports as "Build (<os> JDK <version>)", so protecting the
+  # combinations directly silently stops covering them whenever the matrix changes.
+  build-matrix-result:
+    permissions:
+      contents: read
+    name: Build (all platforms)
+    runs-on: ubuntu-latest
+    needs: build-other-os
+    if: always()  # A skipped job never reports, so without this a failing matrix leaves the check pending forever
+    steps:
+      - name: Check matrix result
+        env:
+          MATRIX_RESULT: ${{ needs.build-other-os.result }}
+        run: |
+          if [ "$MATRIX_RESULT" != 'success' ]; then
+            echo "build-other-os concluded: $MATRIX_RESULT"
+            exit 1
+          fi
+
   release:
     name: Release
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -157,36 +183,3 @@ jobs:
       contents: write
     uses: ./.github/workflows/release.yml
     secrets: inherit
-
-  configure_sonar:
-    permissions:
-      contents: read
-      actions: write
-    runs-on: ubuntu-latest
-    needs:
-      - build-ubuntu-21
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - name: Trigger Sonar
-        env:
-          GH_BASE_REF: ${{ github.base_ref }}
-          GH_HEAD_REF: ${{ github.head_ref }}
-          GH_REF_NAME: ${{ github.ref_name }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo Triggerring Sonar
-          GH_REF=${GH_REF_NAME}
-          if [ '${{github.event_name}}' == 'pull_request' ]; then
-            GH_REF=${GH_HEAD_REF}
-          fi
-          
-          gh workflow run --ref $GH_REF sonar.yml \
-            -f runId=${{ github.run_id }} \
-            -f eventName=${{github.event_name}} \
-            -f prNumber=${{ github.event.number }} \
-            -f baseRef=${GH_BASE_REF} \
-            -f headRef=${GH_HEAD_REF} \
-            -f jdk_version=21

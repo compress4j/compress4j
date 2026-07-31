@@ -290,8 +290,8 @@ sonar {
     }
 }
 
-// Sonar consumes the aggregated coverage report. CI restores the exec files the build jobs produced and runs this with
-// the test tasks excluded, so the classes it analyses have to be wired in explicitly rather than through `check`.
+// Sonar needs the aggregated coverage report and the compiled classes of every analysed source set, but not the rest of
+// `check` — CI already ran that in the same job, so depending on it here would only re-report the same failures.
 tasks.sonar {
     dependsOn(
         tasks.testCodeCoverageReport,
