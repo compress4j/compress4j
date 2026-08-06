@@ -299,7 +299,7 @@ sonar {
         property("sonar.projectKey", "compress4j_compress4j")
         property("sonar.organization", "compress4j")
         property("sonar.host.url", "https://sonarcloud.io")
-        property("sonar.sources", "src/main/java,src/xzSupport/java,src/examples/java")
+        property("sonar.sources", "src/main/java,src/xzSupport/java,src/examples/java,.github/workflows")
         property("sonar.tests", "src/test/java,src/xzSupportTest/java,src/integrationTest/java,src/testFixtures/java")
         property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml")
         property(
