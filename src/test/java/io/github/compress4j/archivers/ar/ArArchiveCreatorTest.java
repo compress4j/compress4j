@@ -278,36 +278,28 @@ class ArArchiveCreatorTest {
         verifyArchiveContains(archiveBytes, "under_file.txt", content);
     }
 
-    @SuppressWarnings("java:S5783")
     @Test
-    void testAddNullFileName() {
+    void testAddNullFileName() throws IOException {
         // given
         var outputStream = new ByteArrayOutputStream();
+        byte[] content = "content".getBytes(StandardCharsets.UTF_8);
 
         // when & then
-        assertThatThrownBy(() -> {
-                    try (ArArchiveCreator creator =
-                            ArArchiveCreator.builder(outputStream).build()) {
-                        creator.addFile(null, "content".getBytes(StandardCharsets.UTF_8));
-                    }
-                })
-                .isInstanceOf(NullPointerException.class);
+        try (ArArchiveCreator creator = ArArchiveCreator.builder(outputStream).build()) {
+            assertThatThrownBy(() -> creator.addFile(null, content)).isInstanceOf(NullPointerException.class);
+        }
     }
 
-    @SuppressWarnings("java:S5783")
     @Test
-    void testAddNullContent() {
+    void testAddNullContent() throws IOException {
         // given
         var outputStream = new ByteArrayOutputStream();
 
         // when & then
-        assertThatThrownBy(() -> {
-                    try (ArArchiveCreator creator =
-                            ArArchiveCreator.builder(outputStream).build()) {
-                        creator.addFile("test.txt", (byte[]) null);
-                    }
-                })
-                .isInstanceOf(NullPointerException.class);
+        try (ArArchiveCreator creator = ArArchiveCreator.builder(outputStream).build()) {
+            assertThatThrownBy(() -> creator.addFile("test.txt", (byte[]) null))
+                    .isInstanceOf(NullPointerException.class);
+        }
     }
 
     private void verifyArchiveContains(byte[] archiveBytes, String fileName, String expectedContent)
