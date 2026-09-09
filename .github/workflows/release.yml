@@ -17,7 +17,7 @@ jobs:
     name: Plan
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     outputs:
       release: ${{ steps.plan.outputs.release }}
       nextVersion: ${{ steps.plan.outputs.nextVersion }}
@@ -50,16 +50,6 @@ jobs:
       - name: Nothing to release
         if: steps.plan.outputs.release != 'true'
         run: echo "No commit since v${{ steps.plan.outputs.previousVersion }} asks for a release."
-
-      - name: Tag v${{ steps.plan.outputs.nextVersion }}
-        if: steps.plan.outputs.release == 'true' && !inputs.dry_run
-        env:
-          VERSION: ${{ steps.plan.outputs.nextVersion }}
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git tag -a "v$VERSION" -m "Release v$VERSION"
-          git push origin "refs/tags/v$VERSION"
 
   # Gated by the `release` environment's required reviewers -- this job pauses here until
   # someone approves it, and everything after it only runs on approval.
@@ -94,6 +84,15 @@ jobs:
           java-version: 21
           distribution: 'temurin'
           cache: 'gradle'
+
+      - name: Tag v${{ needs.plan.outputs.nextVersion }}
+        env:
+          VERSION: ${{ needs.plan.outputs.nextVersion }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git tag -a "v$VERSION" -m "Release v$VERSION"
+          git push origin "refs/tags/v$VERSION"
 
       # git-versioning reads GITHUB_REF on Actions, so checking the tag out does not change the version. Naming the tag
       # is what makes the steps below build the release version instead of a snapshot of the branch they run on.
