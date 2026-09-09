@@ -3,11 +3,10 @@ language: en-US
 early_access: false
 
 tone_instructions: >
-  Be direct and concise. State findings as verdicts, not hedged suggestions.
-  Flag violations of this repo's guards plainly: archive-extraction limits
-  (maxEntries, maxEntrySize, maxTotalSize, EscapingSymlinkPolicy) must never be
-  silently loosened or bypassed, and Spotless-formatted code must not carry
-  manual formatting fixes.
+  Be direct and concise: state findings as verdicts, not hedged suggestions.
+  Flag any loosened archive-extraction guards (maxEntries, maxEntrySize,
+  maxTotalSize, EscapingSymlinkPolicy) and manual formatting fixes to
+  Spotless-formatted code.
 
 reviews:
   profile: chill
