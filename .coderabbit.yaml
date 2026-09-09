@@ -1,0 +1,102 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: en-US
+early_access: false
+
+tone_instructions: >
+  Be direct and concise: state findings as verdicts, not hedged suggestions.
+  Flag any loosened archive-extraction guards (maxEntries, maxEntrySize,
+  maxTotalSize, EscapingSymlinkPolicy) and manual formatting fixes to
+  Spotless-formatted code.
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  high_level_summary_placeholder: "@coderabbit summary"
+  auto_title_placeholder: "@coderabbit"
+  poem: false
+  review_status: true
+  collapse_walkthrough: true
+  sequence_diagrams: true
+  changed_files_summary: true
+  estimate_code_review_effort: true
+  labeling_instructions: []
+  path_filters:
+    - "!**/build/**"
+    - "!**/.gradle/**"
+    - "!**/gradle/wrapper/**"
+    - "!**/*.jar"
+    - "!**/*.asc"
+    - "!docs/build/**"
+  path_instructions:
+    - path: "src/main/java/**/*.java"
+      instructions: >
+        Public API surface for a library published to Maven Central: flag any
+        breaking signature or behavior change that isn't accompanied by a
+        semver-appropriate note. Enforce no nulls (Optional over null returns),
+        immutability by default, and try-with-resources for anything Closeable.
+        Any change touching archive extraction (entry count, entry size, total
+        size, symlink handling, path traversal) must preserve or tighten the
+        existing zip-slip / decompression-bomb guards documented in
+        SECURITY.md — never relax a limit without explicit justification in
+        the PR description.
+    - path: "src/test/java/**/*.java"
+      instructions: >
+        Tests should assert behavior, not implementation details. Flag tests
+        with no assertions, overly broad exception catching, or coverage of
+        only the happy path for security-relevant code (guard limits, symlink
+        policy, malformed archives).
+    - path: "src/integrationTest/java/**/*.java"
+      instructions: >
+        Integration tests exercise real archive formats end to end. Flag
+        missing cleanup of temp files/directories and tests that assume a
+        specific OS without a skip/guard for platform-specific behavior
+        (e.g., file permissions, symlinks on Windows).
+    - path: "src/xzSupport/java/**/*.java"
+      instructions: >
+        This is an optional capability module (xz/tar.xz support) — keep it
+        free of dependencies on the base module's internals beyond its public
+        API, and flag anything that would force xz-commons onto consumers who
+        did not request the capability.
+    - path: "build.gradle.kts"
+      instructions: >
+        Changes here affect publishing to Maven Central, Sonar analysis, and
+        release automation. Flag anything that weakens Spotless/Jacoco
+        enforcement, changes published artifact coordinates, or alters the
+        release/versioning logic without an obvious reason in the diff.
+    - path: ".github/workflows/**/*.yml"
+      instructions: >
+        Flag any workflow change that widens permissions, removes branch
+        protections, or changes what triggers publishing to Maven Central.
+        Pin third-party actions to a commit SHA, not a floating tag.
+    - path: "docs/**/*.adoc"
+      instructions: >
+        Documentation is built with Antora; check that code snippets referenced
+        via include directives point at real files under src/examples/java and
+        that new formats/APIs documented here match the current public API.
+  tools:
+    github-checks:
+      enabled: true
+    languagetool:
+      enabled: true
+    checkov:
+      enabled: true
+    gitleaks:
+      enabled: true
+    semgrep:
+      enabled: true
+    yamllint:
+      enabled: true
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  learnings:
+    scope: auto
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - "CONTRIBUTING.adoc"
+      - "SECURITY.md"
+      - ".editorconfig"

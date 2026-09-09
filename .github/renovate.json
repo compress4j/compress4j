@@ -1,46 +1,9 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended",
-    "helpers:pinGitHubActionDigests",
-    ":configMigration",
-    ":separateMultipleMajorReleases"
+    "github>austek/renovate-config"
   ],
-  "baseBranchPatterns": [
-    "main"
-  ],
-  "schedule": [
-    "before 5am on monday"
-  ],
-  "automerge": false,
-  "dependencyDashboard": true,
-  "labels": [
-    "dependencies",
-    "renovate"
-  ],
-  "prConcurrentLimit": 3,
-  "prHourlyLimit": 2,
-  "minimumReleaseAge": "3 days",
-  "osvVulnerabilityAlerts": true,
-  "vulnerabilityAlerts": {
-    "description": "Renovate's defaults already bypass 'schedule' and 'minimumReleaseAge' here, so a CVE fix is not held back to Monday",
-    "labels": [
-      "dependencies",
-      "renovate",
-      "security"
-    ]
-  },
-  "semanticCommits": "enabled",
-  "semanticCommitType": "chore",
-  "semanticCommitScope": "deps",
   "packageRules": [
-    {
-      "description": "config:recommended maps depType 'dependencies' to 'fix', which every version catalog library gets. Releasing must be opt-in, so reset everything to 'chore' before the rules below re-enable it.",
-      "matchPackageNames": [
-        "*"
-      ],
-      "semanticCommitType": "chore"
-    },
     {
       "description": "The build tooling never reaches users, so its updates must not trigger a release",
       "matchManagers": [
