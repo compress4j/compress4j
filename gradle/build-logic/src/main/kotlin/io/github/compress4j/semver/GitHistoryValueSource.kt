@@ -30,25 +30,40 @@ abstract class GitHistoryValueSource : ValueSource<String, GitHistoryValueSource
         val tag = previousReleaseTag()
         val base = parameters.base.orNull?.takeIf { it.isNotBlank() } ?: tag.takeIf { it.isNotEmpty() }
         val range = base?.let { listOf("$it..HEAD") } ?: emptyList()
-        return tag + "\n" + git(*(listOf("log", "--no-merges", LOG_FORMAT) + range).toTypedArray())
+        val log = git(*(listOf("log", "--no-merges", LOG_FORMAT) + range).toTypedArray(), failOnError = true)
+        return tag + "\n" + log
     }
 
     /** When the head itself is tagged the release it describes is the one being validated, not the baseline. */
     private fun previousReleaseTag(): String {
-        val head = if (git("describe", "--tags", "--match", "v*", "--exact-match", "HEAD").isNotBlank()) "HEAD^" else "HEAD"
+        val headIsTagged = git("describe", "--tags", "--match", "v*", "--exact-match", "HEAD").isNotBlank()
+        val head = if (headIsTagged) "HEAD^" else "HEAD"
         return git("describe", "--tags", "--match", "v*", "--abbrev=0", head).trim()
     }
 
-    private fun git(vararg args: String): String {
+    /**
+     * Runs `git`, tolerating a non-zero exit by returning an empty string - used for the `describe` probes above,
+     * where "no matching tag" is an expected outcome, not a failure. Pass [failOnError] for invocations (like `git
+     * log`) where an empty result must not be silently confused with "no commits".
+     */
+    private fun git(vararg args: String, failOnError: Boolean = false): String {
         val output = ByteArrayOutputStream()
+        val errorOutput = ByteArrayOutputStream()
         val result = execOperations.exec {
             commandLine(listOf("git") + args)
             workingDir = parameters.projectDir.get()
             standardOutput = output
-            errorOutput = ByteArrayOutputStream()
+            this.errorOutput = errorOutput
             isIgnoreExitValue = true
         }
-        return if (result.exitValue == 0) output.toString(Charsets.UTF_8.name()) else ""
+        if (result.exitValue != 0) {
+            check(!failOnError) {
+                "git ${args.joinToString(" ")} failed with exit code ${result.exitValue}: " +
+                    errorOutput.toString(Charsets.UTF_8.name())
+            }
+            return ""
+        }
+        return output.toString(Charsets.UTF_8.name())
     }
 }
 

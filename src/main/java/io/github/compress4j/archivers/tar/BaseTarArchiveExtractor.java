@@ -71,21 +71,22 @@ public abstract class BaseTarArchiveExtractor extends ArchiveExtractor<TarArchiv
     }
 
     /**
-     * Get the next {@code TarArchiveEntry} from the {@code TarArchiveInputStream}. Skip hardlinks, directories, and
-     * symbolic links.
+     * Get the next {@code TarArchiveEntry} from the {@code TarArchiveInputStream}. Skip hard links and any entry that
+     * is not a regular file, a directory, or a symbolic link.
      *
      * @return the next {@code TarArchiveEntry}
      * @throws IOException – if the next entry could not be read
      */
     private TarArchiveEntry getNextTarArchiveEntry() throws IOException {
         TarArchiveEntry te;
-        if ((te = archiveInputStream.getNextEntry()) != null
-                && !((te.isFile() && !te.isLink()) // ignore hardlink
-                        || te.isDirectory()
-                        || te.isSymbolicLink())) {
-            return getNextTarArchiveEntry();
+        while ((te = archiveInputStream.getNextEntry()) != null) {
+            if ((te.isFile() && !te.isLink()) // ignore hardlink
+                    || te.isDirectory()
+                    || te.isSymbolicLink()) {
+                return te;
+            }
         }
-        return te;
+        return null;
     }
 
     private static Entry.Type type(TarArchiveEntry te) {

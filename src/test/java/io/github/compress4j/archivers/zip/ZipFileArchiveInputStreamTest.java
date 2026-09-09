@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -193,14 +193,39 @@ class ZipFileArchiveInputStreamTest {
     class ReadTests {
 
         @Test
-        @DisplayName("Should throw NullPointerException if read is called before getNextEntry")
-        void testRead_BeforeNextEntry() {
+        @DisplayName("Should return -1 if read is called before getNextEntry")
+        void testRead_BeforeNextEntry() throws IOException {
             // Given
             byte[] buffer = new byte[1024];
 
+            // When
+            int read = inputStream.read(buffer, 0, buffer.length);
+
+            // Then
+            assertThat(read).isEqualTo(-1);
+        }
+
+        @Test
+        @DisplayName("Should return 0 for a zero-length read, even before getNextEntry")
+        void testRead_ZeroLength() throws IOException {
+            // Given
+            byte[] buffer = new byte[1024];
+
+            // When
+            int read = inputStream.read(buffer, 0, 0);
+
+            // Then
+            assertThat(read).isZero();
+        }
+
+        @Test
+        @DisplayName("Should throw IndexOutOfBoundsException for an invalid offset/length")
+        void testRead_InvalidRange() {
+            // Given
+            byte[] buffer = new byte[10];
+
             // When & Then
-            assertThatThrownBy(() -> inputStream.read(buffer, 0, buffer.length))
-                    .isInstanceOf(NullPointerException.class);
+            assertThatThrownBy(() -> inputStream.read(buffer, 0, 20)).isInstanceOf(IndexOutOfBoundsException.class);
         }
 
         @Test

@@ -24,7 +24,7 @@ If applicable, add screenshots to help explain your problem.
 
 **Environment (please complete the following information):**
  - OS: [e.g. Windows, Linux, macOS]
- - JDK Version: [e.g. 11, 17]
+ - JDK Version: [e.g. 21, 25]
  - Compress4J Version [e.g. 1.0.0]
 
 **Additional context**

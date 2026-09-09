@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package io.github.compress4j.compressors.deflate;
 
 import static java.util.zip.Deflater.DEFAULT_COMPRESSION;
 import static java.util.zip.Deflater.DEFAULT_STRATEGY;
-import static java.util.zip.Deflater.HUFFMAN_ONLY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
@@ -168,16 +167,16 @@ class DeflateCompressorBuilderTest {
     }
 
     @Test
-    @DisplayName("Should throw IllegalArgumentException for invalid compression level (less than 0)")
-    void setCompressionLevel_ThrowsIllegalArgumentException_WhenLessThanZero() {
+    @DisplayName("Should accept DEFAULT_COMPRESSION as a valid compression level")
+    void setCompressionLevel_AcceptsDefaultCompression() throws IOException {
         DeflateCompressor.DeflateOutputStreamBuilder<DeflateCompressor.DeflateCompressorBuilder>
                 compressorOutputStreamBuilder = builder.compressorOutputStreamBuilder();
 
-        DeflateCompressionLevel invalidLevel = DeflateCompressionLevel.DEFAULT_COMPRESSION;
-
-        assertThatThrownBy(() -> compressorOutputStreamBuilder.setCompressionLevel(invalidLevel))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Invalid Deflate compression level: " + invalidLevel);
+        try (DeflateCompressorOutputStream out = compressorOutputStreamBuilder
+                .setCompressionLevel(DeflateCompressionLevel.DEFAULT_COMPRESSION)
+                .buildOutputStream()) {
+            assertThat(out).extracting("deflater").extracting("level").isEqualTo(DEFAULT_COMPRESSION);
+        }
     }
 
     @Test
@@ -197,7 +196,7 @@ class DeflateCompressorBuilderTest {
     void shouldBuildOutputStreamWithDeflateParameters() throws IOException {
         var outputStream = mock(OutputStream.class);
 
-        DeflateCompressionLevel deflateCompressionLevel = DeflateCompressionLevel.HUFFMAN_ONLY;
+        DeflateCompressionLevel deflateCompressionLevel = DeflateCompressionLevel.BEST_COMPRESSION;
         boolean zLibCompress = true;
 
         var deflateCompressorBuilder = DeflateCompressor.builder(outputStream)
@@ -210,7 +209,7 @@ class DeflateCompressorBuilderTest {
                     .isNotNull()
                     .extracting("deflater")
                     .extracting("level", "strategy")
-                    .containsExactly(HUFFMAN_ONLY, DEFAULT_STRATEGY);
+                    .containsExactly(deflateCompressionLevel.getValue(), DEFAULT_STRATEGY);
         }
     }
 }

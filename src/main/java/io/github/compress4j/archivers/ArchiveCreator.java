@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 The Compress4J Project
+ * Copyright 2024-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -301,7 +302,11 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
             Path path,
             @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<FileTime> modTime)
             throws IOException {
-        addFile(entryName, path, Files.readAttributes(path, BasicFileAttributes.class), modTime);
+        addFile(
+                entryName,
+                path,
+                Files.readAttributes(path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS),
+                modTime);
     }
 
     /**
@@ -424,11 +429,17 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
             throws IOException {
         entryName = sanitiseName(entryName);
         if (accept(entryName, path)) {
-            try (InputStream source = Files.newInputStream(path)) {
-                FileTime fileTime = modTime.orElse(attrs.lastModifiedTime());
-                if (attrs.isSymbolicLink()) {
-                    writeFileEntry(entryName, source, attrs.size(), fileTime, mode(path), Files.readSymbolicLink(path));
-                } else {
+            FileTime fileTime = modTime.orElse(attrs.lastModifiedTime());
+            if (attrs.isSymbolicLink()) {
+                writeFileEntry(
+                        entryName,
+                        InputStream.nullInputStream(),
+                        attrs.size(),
+                        fileTime,
+                        mode(path),
+                        Files.readSymbolicLink(path));
+            } else {
+                try (InputStream source = Files.newInputStream(path)) {
                     writeFileEntry(entryName, source, attrs.size(), fileTime, mode(path));
                 }
             }
@@ -500,7 +511,8 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
      */
     protected static int mode(Path path) throws IOException {
         if (isIsOsWindows()) {
-            DosFileAttributeView attrs = Files.getFileAttributeView(path, DosFileAttributeView.class);
+            DosFileAttributeView attrs =
+                    Files.getFileAttributeView(path, DosFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
             if (attrs != null) {
                 DosFileAttributes dosAttrs = attrs.readAttributes();
                 int mode = NO_MODE;
@@ -511,7 +523,8 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
                 LOGGER.trace("Cannot get DOS file attributes for: {}", path);
             }
         } else {
-            PosixFileAttributeView attrs = Files.getFileAttributeView(path, PosixFileAttributeView.class);
+            PosixFileAttributeView attrs =
+                    Files.getFileAttributeView(path, PosixFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
             if (attrs != null) {
                 return PosixFilePermissionsMapper.toUnixMode(
                         attrs.readAttributes().permissions());

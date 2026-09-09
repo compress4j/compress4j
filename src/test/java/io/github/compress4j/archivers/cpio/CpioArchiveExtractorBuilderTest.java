@@ -400,7 +400,9 @@ class CpioArchiveExtractorBuilderTest {
                 .and();
 
         // then
-        assertThatThrownBy(builder::build).isInstanceOf(Exception.class);
+        assertThatThrownBy(builder::build)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("blockSize must be bigger than 0");
     }
 
     @Test

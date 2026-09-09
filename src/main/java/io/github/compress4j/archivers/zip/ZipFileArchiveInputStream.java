@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import jakarta.annotation.Nonnull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Enumeration;
+import java.util.Objects;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
@@ -74,13 +75,21 @@ public class ZipFileArchiveInputStream extends ArchiveInputStream<ZipArchiveEntr
     /** {@inheritDoc} */
     @Override
     public int read(@Nonnull byte[] b, int off, int len) throws IOException {
-        int read = getCurrentEntryStream().read(b, off, len);
-
-        if (read == -1) {
-            closeQuietly(getCurrentEntryStream());
+        Objects.checkFromIndexSize(off, len, b.length);
+        if (len == 0) {
+            return 0;
+        }
+        if (currentEntryStream == null) {
+            return -1;
         }
 
-        count(read);
+        int read = currentEntryStream.read(b, off, len);
+
+        if (read == -1) {
+            closeCurrentEntryStream();
+        } else {
+            count(read);
+        }
 
         return read;
     }

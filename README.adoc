@@ -47,7 +47,7 @@ try (TarGzArchiveExtractor extractor = TarGzArchiveExtractor.builder(Path.of("ex
 }
 ----
 
-Extracting an archive you do not trust? Turn on the guards — see link:SECURITY.md[SECURITY.md]:
+Extracting an archive you do not trust? Turn on the guards — see link:.github/SECURITY.md[SECURITY.md]:
 
 [source,java]
 ----
@@ -74,7 +74,7 @@ are compiled from `src/examples/java`.
 
 == Contributing
 
-See link:CONTRIBUTING.adoc[CONTRIBUTING.adoc]. Commit subjects and pull request titles follow
+See link:.github/CONTRIBUTING.adoc[CONTRIBUTING.adoc]. Commit subjects and pull request titles follow
 https://www.conventionalcommits.org/[Conventional Commits] — they drive the released version, so `feat:` publishes a
 minor release, `fix:` a patch, and anything else publishes nothing.
 

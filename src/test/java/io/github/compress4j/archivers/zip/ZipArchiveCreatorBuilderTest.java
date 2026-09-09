@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,6 +78,7 @@ class ZipArchiveCreatorBuilderTest {
         // When & Then
         assertThat(builder.compressionLevel(0)).isSameAs(builder);
         assertThat(builder.compressionLevel(9)).isSameAs(builder);
+        assertThat(builder.compressionLevel(DEFAULT_COMPRESSION)).isSameAs(builder);
     }
 
     @Test
@@ -89,15 +90,11 @@ class ZipArchiveCreatorBuilderTest {
         // When & Then
         assertThatThrownBy(() -> creatorBuilder.compressionLevel(-2))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Compression level must be between 0 and 9");
+                .hasMessage("Compression level must be between -1 and 9");
 
         assertThatThrownBy(() -> creatorBuilder.compressionLevel(10))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Compression level must be between 0 and 9");
-
-        assertThatThrownBy(() -> creatorBuilder.compressionLevel(DEFAULT_COMPRESSION))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Compression level must be between 0 and 9");
+                .hasMessage("Compression level must be between -1 and 9");
     }
 
     @Test

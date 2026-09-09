@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.github.compress4j.assertion;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import java.util.Objects;
 import org.assertj.core.api.AbstractAssert;
 import org.assertj.core.api.Assertions;
 
@@ -40,7 +41,8 @@ public class ListAppenderAssert extends AbstractAssert<ListAppenderAssert, ListA
 
     public ListAppenderAssert contains(String message, Level level, Exception exception) {
         Assertions.assertThat(actual.list)
-                .anyMatch(event -> event.getThrowableProxy().getMessage().equals(exception.getMessage())
+                .anyMatch(event -> event.getThrowableProxy() != null
+                        && Objects.equals(event.getThrowableProxy().getMessage(), exception.getMessage())
                         && event.toString().contains(message)
                         && event.getLevel().equals(level));
         return this;

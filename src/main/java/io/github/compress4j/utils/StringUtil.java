@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 The Compress4J Project
+ * Copyright 2024-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,11 @@ public class StringUtil {
      * @return the trimmed string
      */
     public static String trimTrailing(String s, char c) {
-        return s.replaceAll("(?!^)" + c + "+$", "");
+        int end = s.length();
+        while (end > 1 && s.charAt(end - 1) == c) {
+            end--;
+        }
+        return s.substring(0, end);
     }
 
     /**
@@ -43,6 +47,11 @@ public class StringUtil {
      * @return the trimmed string
      */
     public static String trimLeading(String s, char c) {
-        return s.replaceAll("^" + c + "+(?!$)", "");
+        int start = 0;
+        int last = s.length() - 1;
+        while (start < last && s.charAt(start) == c) {
+            start++;
+        }
+        return s.substring(start);
     }
 }

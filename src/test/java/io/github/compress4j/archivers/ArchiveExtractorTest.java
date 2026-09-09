@@ -1705,7 +1705,7 @@ class ArchiveExtractorTest {
             assertThat(tempDir.resolve("test1")).hasContent("c1");
             assertThat(tempDir.resolve("test2")).hasContent("c2");
         }
-        var temp2 = Files.createTempDirectory("temp1");
+        var temp2 = Files.createDirectory(tempDir.resolve("temp1"));
         try (var extractor = InMemoryArchiveExtractor.builder(List.of(entry1, entry2))
                 .filter(e -> false)
                 .build()) {

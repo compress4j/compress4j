@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,11 +105,12 @@ public class CpioArchiveCreator extends ArchiveCreator<CpioArchiveOutputStream> 
         entry.setTime(modTime.toMillis() / 1000L); // CPIO uses seconds since epoch
 
         // Handle symbolic links
+        byte[] linkTargetBytes = null;
         if (symlinkTarget.isPresent()) {
             entry.setMode(CpioConstants.C_ISLNK | 0644); // Symbolic link with read/write permissions
             // For symbolic links, the content is the target path
-            String linkTarget = symlinkTarget.get().toString();
-            entry.setSize(linkTarget.length());
+            linkTargetBytes = symlinkTarget.get().toString().getBytes(StandardCharsets.UTF_8);
+            entry.setSize(linkTargetBytes.length);
         } else {
             // Set appropriate file mode - use default file permissions if mode is 0 or invalid
             if (mode == 0) {
@@ -127,9 +128,9 @@ public class CpioArchiveCreator extends ArchiveCreator<CpioArchiveOutputStream> 
 
         archiveOutputStream.putArchiveEntry(entry);
 
-        if (symlinkTarget.isPresent()) {
+        if (linkTargetBytes != null) {
             // Write the symbolic link target as content
-            archiveOutputStream.write(symlinkTarget.get().toString().getBytes(StandardCharsets.UTF_8));
+            archiveOutputStream.write(linkTargetBytes);
         } else if (length > 0) {
             // Copy file content
             IOUtils.copy(source, archiveOutputStream);

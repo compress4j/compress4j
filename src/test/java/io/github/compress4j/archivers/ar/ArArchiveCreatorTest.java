@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -169,13 +169,8 @@ class ArArchiveCreatorTest {
 
         // then
         byte[] archiveBytes = outputStream.toByteArray();
-
-        if (archiveBytes.length > 8) {
-            verifyArchiveContains(archiveBytes, "f1.txt", "File 1");
-            verifyArchiveContains(archiveBytes, "f2.txt", "File 2");
-        } else {
-            assertThat(archiveBytes).hasSizeGreaterThanOrEqualTo(8);
-        }
+        verifyArchiveContains(archiveBytes, "f1.txt", "File 1");
+        verifyArchiveContains(archiveBytes, "f2.txt", "File 2");
     }
 
     @Test
@@ -283,36 +278,28 @@ class ArArchiveCreatorTest {
         verifyArchiveContains(archiveBytes, "under_file.txt", content);
     }
 
-    @SuppressWarnings("java:S5783")
     @Test
-    void testAddNullFileName() {
+    void testAddNullFileName() throws IOException {
         // given
         var outputStream = new ByteArrayOutputStream();
+        byte[] content = "content".getBytes(StandardCharsets.UTF_8);
 
         // when & then
-        assertThatThrownBy(() -> {
-                    try (ArArchiveCreator creator =
-                            ArArchiveCreator.builder(outputStream).build()) {
-                        creator.addFile(null, "content".getBytes(StandardCharsets.UTF_8));
-                    }
-                })
-                .isInstanceOf(Exception.class);
+        try (ArArchiveCreator creator = ArArchiveCreator.builder(outputStream).build()) {
+            assertThatThrownBy(() -> creator.addFile(null, content)).isInstanceOf(NullPointerException.class);
+        }
     }
 
-    @SuppressWarnings("java:S5783")
     @Test
-    void testAddNullContent() {
+    void testAddNullContent() throws IOException {
         // given
         var outputStream = new ByteArrayOutputStream();
 
         // when & then
-        assertThatThrownBy(() -> {
-                    try (ArArchiveCreator creator =
-                            ArArchiveCreator.builder(outputStream).build()) {
-                        creator.addFile("test.txt", (byte[]) null);
-                    }
-                })
-                .isInstanceOf(Exception.class);
+        try (ArArchiveCreator creator = ArArchiveCreator.builder(outputStream).build()) {
+            assertThatThrownBy(() -> creator.addFile("test.txt", (byte[]) null))
+                    .isInstanceOf(NullPointerException.class);
+        }
     }
 
     private void verifyArchiveContains(byte[] archiveBytes, String fileName, String expectedContent)

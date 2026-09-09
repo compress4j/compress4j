@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,11 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
+import org.apache.commons.compress.archivers.cpio.CpioArchiveEntry;
 import org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream;
 import org.apache.commons.compress.archivers.cpio.CpioConstants;
 import org.junit.jupiter.api.Test;
@@ -265,27 +268,37 @@ class CpioArchiveOutputStreamBuilderTest {
     @Test
     void testBuilderWithVariousEncodings() throws IOException {
         // given
-        String[] encodings = {"UTF-8", "ISO-8859-1", "US-ASCII", "UTF-16"};
+        // US-ASCII cannot represent the accented character, so it gets a plain-ASCII name; the other encodings are
+        // exercised with a name they can all represent.
+        Map<String, String> encodingToName =
+                Map.of("UTF-8", "café.txt", "ISO-8859-1", "café.txt", "US-ASCII", "cafe.txt", "UTF-16", "café.txt");
 
-        for (String encoding : encodings) {
+        for (var entry : encodingToName.entrySet()) {
+            String encoding = entry.getKey();
+            String entryName = entry.getValue();
+
             var outputStream = new ByteArrayOutputStream();
             var creatorBuilder = CpioArchiveCreator.builder(outputStream);
             var outputStreamBuilder = creatorBuilder.cpioOutputStream().encoding(encoding);
 
             // when
-            var cpioStream = outputStreamBuilder.build();
-
-            // then
-            assertThat(cpioStream).isNotNull();
-            cpioStream.close();
+            byte[] content = "content".getBytes(StandardCharsets.UTF_8);
+            try (var cpioStream = outputStreamBuilder.build()) {
+                assertThat(cpioStream).isNotNull();
+                var cpioEntry = new CpioArchiveEntry(entryName, content.length);
+                cpioStream.putArchiveEntry(cpioEntry);
+                cpioStream.write(content);
+                cpioStream.closeArchiveEntry();
+            }
             assertThat(outputStream.size()).isGreaterThan(0);
 
+            // then
             var inputStream = new ByteArrayInputStream(outputStream.toByteArray());
-            assertThatNoException().isThrownBy(() -> {
-                try (var cpioInput = new CpioArchiveInputStream(inputStream, 512, encoding)) {
-                    cpioInput.getNextEntry();
-                }
-            });
+            try (var cpioInput = new CpioArchiveInputStream(inputStream, 512, encoding)) {
+                var decodedEntry = cpioInput.getNextEntry();
+                assertThat(decodedEntry).isNotNull();
+                assertThat(decodedEntry.getName()).isEqualTo(entryName);
+            }
         }
     }
 

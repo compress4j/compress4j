@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,19 +95,24 @@ public abstract class BaseTarArchiveCreator extends ArchiveCreator<TarArchiveOut
             String name, InputStream source, long length, FileTime modTime, int mode, Optional<Path> symlinkTarget)
             throws IOException {
         TarArchiveEntry e = getArchiveEntry(name, symlinkTarget);
-        if (length < 0) {
-            length = source.available();
-        }
-        if (symlinkTarget.isEmpty()) {
-            e.setSize(length);
+        boolean hasContent = symlinkTarget.isEmpty();
+        byte[] content = hasContent && length < 0 ? IOUtils.toByteArray(source) : null;
+        if (hasContent) {
+            long entryLength = content != null ? content.length : length;
+            e.setSize(entryLength);
+            length = entryLength;
         }
         e.setModTime(modTime);
         if (mode != 0) {
             e.setMode(mode);
         }
         archiveOutputStream.putArchiveEntry(e);
-        if (length > 0) {
-            IOUtils.copy(source, archiveOutputStream);
+        if (hasContent) {
+            if (content != null) {
+                archiveOutputStream.write(content);
+            } else if (length > 0) {
+                IOUtils.copy(source, archiveOutputStream);
+            }
         }
         archiveOutputStream.closeArchiveEntry();
     }

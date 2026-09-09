@@ -18,6 +18,7 @@ package io.github.compress4j.archivers.cpio;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import io.github.compress4j.exceptions.ArchiveLimitExceededException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -27,6 +28,8 @@ import java.nio.file.attribute.FileTime;
 import org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
 class CpioArchiveExtractorTest {
@@ -60,6 +63,32 @@ class CpioArchiveExtractorTest {
         // then
         assertThat(extractDir.resolve("file1.txt")).exists().hasContent("Content 1");
         assertThat(extractDir.resolve("file2.txt")).exists().hasContent("Content 2");
+    }
+
+    @DisabledOnOs(OS.WINDOWS)
+    @Test
+    void testSymlinkTargetLargerThanMaxEntrySize_throwsArchiveLimitExceededException() throws IOException {
+        // given
+        Path symlink = tempDir.resolve("huge-link");
+        Files.createSymbolicLink(symlink, Path.of("a".repeat(200)));
+
+        ByteArrayOutputStream archiveOutput = new ByteArrayOutputStream();
+        try (CpioArchiveCreator creator =
+                CpioArchiveCreator.builder(archiveOutput).build()) {
+            creator.addFile("huge-link", symlink);
+        }
+
+        var extractDir = tempDir.resolve("extract-huge-link");
+        Files.createDirectories(extractDir);
+
+        // when & then
+        try (var extractor = CpioArchiveExtractor.builder(new ByteArrayInputStream(archiveOutput.toByteArray()))
+                .maxEntrySize(50)
+                .build()) {
+            assertThatThrownBy(() -> extractor.extract(extractDir))
+                    .isInstanceOf(ArchiveLimitExceededException.class)
+                    .hasMessageContaining("huge-link");
+        }
     }
 
     @Test

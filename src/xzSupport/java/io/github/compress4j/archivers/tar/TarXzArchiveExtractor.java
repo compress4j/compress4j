@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,12 @@
  */
 package io.github.compress4j.archivers.tar;
 
+import io.github.compress4j.compressors.xz.XZDecompressor.XZDecompressorInputStreamBuilder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
 
 /**
  * Tar XZ ArchiveExtractor
@@ -73,6 +73,8 @@ public class TarXzArchiveExtractor extends BaseTarArchiveExtractor {
     public static class TarXzArchiveExtractorBuilder
             extends BaseTarArchiveExtractorBuilder<TarXzArchiveExtractorBuilder, TarXzArchiveExtractor> {
 
+        private final XZDecompressorInputStreamBuilder<TarXzArchiveExtractorBuilder> xzInputStreamBuilder;
+
         /**
          * Create a new {@link TarXzArchiveExtractorBuilder} with the given path.
          *
@@ -90,6 +92,17 @@ public class TarXzArchiveExtractor extends BaseTarArchiveExtractor {
          */
         public TarXzArchiveExtractorBuilder(InputStream inputStream) {
             super(inputStream);
+            this.xzInputStreamBuilder = new XZDecompressorInputStreamBuilder<>(this, inputStream);
+        }
+
+        /**
+         * Access the XZ input stream builder for configuration, e.g. the memory limit or whether to decompress
+         * concatenated streams.
+         *
+         * @return the XZ input stream builder
+         */
+        public XZDecompressorInputStreamBuilder<TarXzArchiveExtractorBuilder> xzInputStream() {
+            return xzInputStreamBuilder;
         }
 
         /** {@inheritDoc} */
@@ -101,7 +114,7 @@ public class TarXzArchiveExtractor extends BaseTarArchiveExtractor {
         /** {@inheritDoc} */
         @Override
         public TarArchiveInputStream buildArchiveInputStream() throws IOException {
-            return super.buildTarArchiveInputStream(new XZCompressorInputStream(inputStream));
+            return super.buildTarArchiveInputStream(xzInputStreamBuilder.buildInputStream());
         }
 
         /** {@inheritDoc} */

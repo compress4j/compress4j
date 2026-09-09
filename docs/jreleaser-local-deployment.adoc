@@ -125,10 +125,11 @@ You should see your artifacts organized by group/artifact/version.
 
 [source,bash]
 ----
-./gradlew jreleaserConfig --dryrun
+./gradlew jreleaserDeploy --dryrun
 ----
 
-This will show you the configuration without actually deploying.
+This simulates the deployment without actually publishing anything. Use JReleaser's own `--dryrun` flag, not
+Gradle's `--dry-run` — the latter skips every task action instead of running them in simulated mode.
 
 === Step 5: Deploy to Maven Central
 
@@ -231,7 +232,7 @@ Make sure:
 
 [source,bash]
 ----
-./gradlew jreleaserConfig --dryrun
+./gradlew jreleaserConfig
 ----
 
 == Files Generated

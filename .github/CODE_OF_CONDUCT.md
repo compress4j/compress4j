@@ -45,8 +45,9 @@ the community in public spaces.
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the community leaders responsible
-for enforcement by opening an issue in this repository, or by contacting a maintainer directly. All complaints will be
-reviewed and investigated promptly and fairly.
+for enforcement through the same private channel used for security reports: see
+[SECURITY.md](SECURITY.md#reporting-a-vulnerability). All complaints will be reviewed and investigated promptly and
+fairly.
 
 All community leaders are obligated to respect the privacy and security of the reporter of any incident.
 

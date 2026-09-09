@@ -46,7 +46,8 @@ object JapicmpReport {
             element.getAttribute("sourceCompatible") == "false" ->
                 ApiChange(element.tagName, path, "source incompatible ($details)", SemverBump.MAJOR)
             status == "new" -> ApiChange(element.tagName, path, "new public API", SemverBump.MINOR)
-            incompatibilities.contains(DEPRECATION) -> ApiChange(element.tagName, path, "newly deprecated", SemverBump.MINOR)
+            incompatibilities.contains(DEPRECATION) ->
+                ApiChange(element.tagName, path, "newly deprecated", SemverBump.MINOR)
             status == "unchanged" -> null
             else -> ApiChange(element.tagName, path, status, SemverBump.PATCH)
         }
