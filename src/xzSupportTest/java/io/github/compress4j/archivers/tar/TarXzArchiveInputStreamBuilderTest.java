@@ -16,36 +16,67 @@
 package io.github.compress4j.archivers.tar;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockConstruction;
-import static org.mockito.Mockito.spy;
 
 import io.github.compress4j.archivers.tar.TarXzArchiveExtractor.TarXzArchiveExtractorBuilder;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import org.apache.commons.compress.compressors.xz.XZCompressorInputStream;
+import java.nio.charset.StandardCharsets;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.compressors.xz.XZCompressorOutputStream;
 import org.junit.jupiter.api.Test;
 
 class TarXzArchiveInputStreamBuilderTest {
 
+    private static final String ENTRY_NAME = "file.txt";
+    private static final String ENTRY_CONTENT = "Hello tar.xz world!";
+
+    private static byte[] buildTarXz() throws IOException {
+        var outputStream = new ByteArrayOutputStream();
+        try (var xzOut = new XZCompressorOutputStream(outputStream);
+                var tarOut = new TarArchiveOutputStream(xzOut)) {
+            byte[] content = ENTRY_CONTENT.getBytes(StandardCharsets.UTF_8);
+            TarArchiveEntry entry = new TarArchiveEntry(ENTRY_NAME);
+            entry.setSize(content.length);
+            tarOut.putArchiveEntry(entry);
+            tarOut.write(content);
+            tarOut.closeArchiveEntry();
+        }
+        return outputStream.toByteArray();
+    }
+
     @Test
-    @SuppressWarnings("try")
     void shouldBuildArchiveInputStream() throws IOException {
-        try (var mockInputStream = mock(InputStream.class);
-                var ignored = mockConstruction(XZCompressorInputStream.class, (mock, context) -> {
-                    assertThat(context.arguments()).hasSize(1);
-                    assertThat(context.arguments().getFirst()).isSameAs(mockInputStream);
-                })) {
+        // Given
+        var builder = new TarXzArchiveExtractorBuilder(new ByteArrayInputStream(buildTarXz()));
 
-            // Given
-            var builder = new TarXzArchiveExtractorBuilder(mockInputStream);
+        // When
+        try (var out = builder.buildArchiveInputStream()) {
 
-            // When
-            try (var out = spy(builder.buildArchiveInputStream())) {
+            // Then
+            assertThat(out).isNotNull();
+            TarArchiveEntry entry = out.getNextEntry();
+            assertThat(entry).isNotNull();
+            assertThat(entry.getName()).isEqualTo(ENTRY_NAME);
+            assertThat(out.readAllBytes()).asString(StandardCharsets.UTF_8).isEqualTo(ENTRY_CONTENT);
+        }
+    }
 
-                // then
-                assertThat(out).isNotNull();
-            }
+    @Test
+    void shouldBuildArchiveInputStreamWithXzOptions() throws IOException {
+        // Given
+        var builder = new TarXzArchiveExtractorBuilder(new ByteArrayInputStream(buildTarXz()));
+        builder.xzInputStream().setDecompressConcatenated(true).setMemoryLimitInKb(-1);
+
+        // When
+        try (var out = builder.buildArchiveInputStream()) {
+
+            // Then
+            assertThat(out).isNotNull();
+            TarArchiveEntry entry = out.getNextEntry();
+            assertThat(entry).isNotNull();
+            assertThat(entry.getName()).isEqualTo(ENTRY_NAME);
         }
     }
 }

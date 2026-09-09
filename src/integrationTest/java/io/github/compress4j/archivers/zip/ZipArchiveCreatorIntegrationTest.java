@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 The Compress4J Project
+ * Copyright 2024-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,10 @@ import io.github.compress4j.archivers.AbstractArchiverIntegrationTest;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 class ZipArchiveCreatorIntegrationTest extends AbstractArchiverIntegrationTest {
 
@@ -54,11 +55,10 @@ class ZipArchiveCreatorIntegrationTest extends AbstractArchiverIntegrationTest {
         var extractDir = tempDir.resolve("extracted");
         Files.createDirectories(extractDir);
 
-        try (var zipOut = new ZipArchiveOutputStream(archiveStoredPath)) {
-            zipOut.setMethod(STORED);
-            try (var creator = new ZipArchiveCreator(zipOut)) {
-                creator.addFile(sourceFile);
-            }
+        try (var creator = ZipArchiveCreator.builder(archiveStoredPath)
+                .compressionMethod(STORED)
+                .build()) {
+            creator.addFile(sourceFile);
         }
 
         try (var creator = ZipArchiveCreator.builder(archiveDeflatedPath)
@@ -90,6 +90,7 @@ class ZipArchiveCreatorIntegrationTest extends AbstractArchiverIntegrationTest {
         }
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
     void createArchiveWithDirectoryAndSymlink() throws Exception {
         var sourceFile = createFile(tempDir, "file.txt", "File content");
@@ -113,6 +114,8 @@ class ZipArchiveCreatorIntegrationTest extends AbstractArchiverIntegrationTest {
 
         assertThat(extractDir.resolve("file.txt")).exists().hasContent("File content");
 
-        assertThat(extractDir.resolve("link.txt")).exists().isRegularFile().hasContent("This is the target");
+        // ZIP has no native symlink type, so the entry is stored as a regular file whose content is the literal
+        // symlink target path, not the dereferenced target file's content.
+        assertThat(extractDir.resolve("link.txt")).exists().isRegularFile().hasContent("link_target.txt");
     }
 }

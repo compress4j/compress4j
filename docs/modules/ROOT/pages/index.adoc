@@ -54,10 +54,10 @@ The library's design centers around a few key components:
 
 * **`Compressor` Interface:** Defines the contract for compressing an `OutputStream`. Implementations handle the specifics of a particular compression algorithm.
 * **`Decompressor` Interface:** Defines the contract for decompressing an `InputStream`. Implementations handle the specifics of decompressing data from a particular format.
-* **`ArchiveCreator`:** A factory class used to obtain instances of `Compressor` for supported algorithms. This promotes loose coupling and simplifies the creation process.
-* **`ArchiveExtractor`:** A factory class used to obtain instances of `Decompressor` for supported algorithms.
+* **`ArchiveCreator`:** An abstract base class for writing archive entries (files, directories, symlinks) to an archive format such as Tar or Zip.
+* **`ArchiveExtractor`:** An abstract base class for reading and safely extracting entries from an archive format such as Tar or Zip.
 
-By using these factories, developers can request a compressor or decompressor for a desired algorithm (e.g., Gzip, Zstandard) without needing to know the specific implementation class names.
+Each supported archive or compression format has its own `ArchiveCreator`/`ArchiveExtractor` or `Compressor`/`Decompressor` implementation, so developers work with the concrete class for the format they need (e.g., `TarArchiveCreator`, `GzipDecompressor`).
 
 === Supported Formats
 
@@ -72,9 +72,8 @@ Compress4J supports a variety of common stream compression formats. The goal is 
 * Tar (`.tar`, `tar.bz2`, `tbz2`, `tar.gz`, `tgz`, `tar.xz`, `txz`)
 * XZ (`.xz`)
 * Zip (`.zip`)
-* Zip (`.zip`)
 
-The library often achieves this by integrating with robust, high-performance backend libraries (like `zstd-jni` for Zstandard) or by providing its own implementations.
+The library often achieves this by integrating with robust, high-performance backend libraries or by providing its own implementations.
 
 IMPORTANT: Some compression formats may require additional support libraries to be included in your project. Please refer to the xref:additional_formats.adoc[Additional Formats] for details on any extra dependencies needed for specific formats.
 

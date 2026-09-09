@@ -55,6 +55,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -593,6 +594,26 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
     }
 
     /**
+     * Reads exactly {@code declaredSize} bytes from {@code in}, enforcing {@link #setMaxEntrySize(long)} first. Lets a
+     * subclass safely read an entry's content into memory (e.g. a symlink target that has no dedicated header field)
+     * without letting a crafted archive force an oversized allocation via its own declared size.
+     *
+     * @param entryName the name of the entry being read, used in the exception message
+     * @param in the stream to read from
+     * @param declaredSize the number of bytes to read, as declared by the archive entry
+     * @return the bytes read
+     * @throws IOException if an I/O error occurs
+     * @throws ArchiveLimitExceededException if declaredSize exceeds the configured maximum entry size
+     */
+    protected byte[] readEntryContent(String entryName, InputStream in, long declaredSize) throws IOException {
+        if (maxEntrySize >= 0 && declaredSize > maxEntrySize) {
+            throw new ArchiveLimitExceededException(
+                    "Entry '" + entryName + "' expands beyond the maximum entry size of " + maxEntrySize + " bytes");
+        }
+        return IOUtils.toByteArray(in, declaredSize);
+    }
+
+    /**
      * Extracts the symlink to the output file.
      *
      * @param outputDir the directory to extract the archive to
@@ -615,7 +636,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
                             .toString();
                 }
             }
-            case ALLOW -> LOGGER.debug("Skipping symlink entry: {} (already exists)", entry.name);
+            case ALLOW -> LOGGER.debug("Extracting symlink entry as is: {} -> {}", entry.name, target);
         }
 
         if (overwrite || !Files.exists(outputFile, LinkOption.NOFOLLOW_LINKS)) {

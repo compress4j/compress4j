@@ -20,6 +20,7 @@ import jakarta.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.commons.compress.archivers.cpio.CpioArchiveEntry;
@@ -63,10 +64,16 @@ public class CpioArchiveExtractor extends ArchiveExtractor<CpioArchiveInputStrea
             return null;
         }
 
-        if (cpioEntry.isDirectory()) {
-            return new Entry(cpioEntry.getName(), true);
+        int mode = (int) cpioEntry.getMode();
+        if (cpioEntry.isSymbolicLink()) {
+            // CPIO has no dedicated link-name header field; the target path is the entry's content.
+            byte[] targetBytes = readEntryContent(cpioEntry.getName(), archiveInputStream, cpioEntry.getSize());
+            String target = new String(targetBytes, StandardCharsets.UTF_8);
+            return new Entry(cpioEntry.getName(), Entry.Type.SYMLINK, mode, target);
+        } else if (cpioEntry.isDirectory()) {
+            return new Entry(cpioEntry.getName(), Entry.Type.DIR, mode, null);
         } else {
-            return new Entry(cpioEntry.getName(), false);
+            return new Entry(cpioEntry.getName(), Entry.Type.FILE, mode, null);
         }
     }
 

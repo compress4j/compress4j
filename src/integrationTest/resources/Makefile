@@ -1,4 +1,4 @@
-.PHONY = permissions archives compress clean
+.PHONY: all permissions archives compress clean clean-archives clean-compress
 
 AR  = archive
 ARS = archives
@@ -85,7 +85,7 @@ c_deflate:
 clean: clean-archives clean-compress
 
 clean-archives:
-	rm -f $(ARS)/(AR).*
+	rm -f $(ARS)/$(AR).*
 
 clean-compress:
 	rm -f $(COM)/$(CPF).*

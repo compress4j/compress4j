@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ class TarGzArchiveCreatorTest {
             tarCompressor.writeFileEntry("test", inputStream, -1, modTime, mod, Optional.empty());
 
             // then
-            mockIOUtils.verify(() -> IOUtils.copy(any(InputStream.class), any(OutputStream.class)));
+            mockIOUtils.verify(() -> IOUtils.toByteArray(any(InputStream.class)));
             then(aOut).should().putArchiveEntry(assertArgs(e -> Compress4JAssertions.assertThat(e)
                     .hasName("test")
                     .hasLinkName("")

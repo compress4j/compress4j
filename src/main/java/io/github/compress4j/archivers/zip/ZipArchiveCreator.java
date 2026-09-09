@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 The Compress4J Project
+ * Copyright 2024-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import io.github.compress4j.archivers.ArchiveCreator;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.util.Optional;
@@ -83,19 +83,6 @@ public class ZipArchiveCreator extends ArchiveCreator<ZipArchiveOutputStream> {
         return new ZipArchiveCreatorBuilder(outputStream);
     }
 
-    private static ZipArchiveEntry getArchiveEntry(
-            String name, @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<Path> symlinkTarget) {
-        if (symlinkTarget.isPresent()) {
-            // ZIP doesn't support symbolic links in the same way as TAR
-            // We'll store symlinks as regular files containing the target path
-            var entry = new ZipArchiveEntry(name);
-            entry.setSize(symlinkTarget.get().toString().getBytes().length);
-            return entry;
-        } else {
-            return new ZipArchiveEntry(name);
-        }
-    }
-
     /** {@inheritDoc} */
     @Override
     protected void writeDirectoryEntry(String name, FileTime modTime) throws IOException {
@@ -110,9 +97,15 @@ public class ZipArchiveCreator extends ArchiveCreator<ZipArchiveOutputStream> {
     protected void writeFileEntry(
             String name, InputStream inputStream, long size, FileTime modTime, int mode, Optional<Path> symlinkTarget)
             throws IOException {
-        ZipArchiveEntry entry = getArchiveEntry(name, symlinkTarget);
+        // ZIP doesn't support symbolic links in the same way as TAR - store symlinks as regular files containing the
+        // target path.
+        byte[] symlinkBytes = symlinkTarget
+                .map(target -> target.toString().getBytes(StandardCharsets.UTF_8))
+                .orElse(null);
+
+        ZipArchiveEntry entry = new ZipArchiveEntry(name);
         entry.setTime(modTime);
-        entry.setSize(size);
+        entry.setSize(symlinkBytes != null ? symlinkBytes.length : size);
 
         // Set Unix permissions if available
         if (mode != NO_MODE) {
@@ -121,9 +114,9 @@ public class ZipArchiveCreator extends ArchiveCreator<ZipArchiveOutputStream> {
 
         archiveOutputStream.putArchiveEntry(entry);
 
-        if (symlinkTarget.isPresent()) {
+        if (symlinkBytes != null) {
             // Write symlink target as file content
-            archiveOutputStream.write(symlinkTarget.get().toString().getBytes());
+            archiveOutputStream.write(symlinkBytes);
         } else {
             IOUtils.copy(inputStream, archiveOutputStream);
         }
@@ -173,11 +166,15 @@ public class ZipArchiveCreator extends ArchiveCreator<ZipArchiveOutputStream> {
         /**
          * Create a new {@link ZipArchiveCreator} with the given path.
          *
+         * <p>Uses the seekable, file-backed {@link ZipArchiveOutputStream} constructor rather than wrapping a plain
+         * {@link OutputStream}, so a {@code STORED} entry's CRC/size can be patched into the header after the fact
+         * instead of having to be known upfront.
+         *
          * @param path the path to write the archive to
          * @throws IOException if an I/O error occurred
          */
         public ZipArchiveCreatorBuilder(Path path) throws IOException {
-            this(Files.newOutputStream(path));
+            this(new ZipArchiveOutputStream(path));
         }
 
         /**
@@ -197,12 +194,13 @@ public class ZipArchiveCreator extends ArchiveCreator<ZipArchiveOutputStream> {
         /**
          * Set the compression level for the ZIP archive.
          *
-         * @param compressionLevel the compression level (0-9, where 0 is no compression and 9 is maximum compression)
+         * @param compressionLevel the compression level (-1 to 9, where -1 is
+         *     {@link ZipArchiveOutputStream#DEFAULT_COMPRESSION}, 0 is no compression and 9 is maximum compression)
          * @return this builder
          */
         public ZipArchiveCreatorBuilder compressionLevel(int compressionLevel) {
-            if (compressionLevel < 0 || compressionLevel > 9) {
-                throw new IllegalArgumentException("Compression level must be between 0 and 9");
+            if (compressionLevel < DEFAULT_COMPRESSION || compressionLevel > 9) {
+                throw new IllegalArgumentException("Compression level must be between -1 and 9");
             }
             this.level = compressionLevel;
             return this;
@@ -334,7 +332,11 @@ public class ZipArchiveCreator extends ArchiveCreator<ZipArchiveOutputStream> {
          * @return the configured ZipArchiveOutputStream
          */
         public ZipArchiveOutputStream buildArchiveOutputStream() {
-            ZipArchiveOutputStream zipOut = new ZipArchiveOutputStream(outputStream);
+            // Already a seekable, file-backed stream (built from a Path) - configure it directly instead of
+            // wrapping it in another ZipArchiveOutputStream.
+            ZipArchiveOutputStream zipOut = outputStream instanceof ZipArchiveOutputStream seekable
+                    ? seekable
+                    : new ZipArchiveOutputStream(outputStream);
             zipOut.setLevel(level);
             zipOut.setMethod(method);
             zipOut.setComment(comment);

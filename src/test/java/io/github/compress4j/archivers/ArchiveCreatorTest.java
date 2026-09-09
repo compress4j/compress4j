@@ -84,6 +84,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -876,7 +877,8 @@ class ArchiveCreatorTest {
             var mockAttributeView = mock(PosixFileAttributeView.class);
             var mockedAttributes = mock(PosixFileAttributes.class);
             mockedFiles
-                    .when(() -> Files.getFileAttributeView(mockPath, PosixFileAttributeView.class))
+                    .when(() -> Files.getFileAttributeView(
+                            mockPath, PosixFileAttributeView.class, LinkOption.NOFOLLOW_LINKS))
                     .thenReturn(mockAttributeView);
             when(mockAttributeView.readAttributes()).thenReturn(mockedAttributes);
             when(mockedAttributes.permissions()).thenReturn(Set.of(OWNER_READ, OWNER_WRITE, GROUP_READ, OTHERS_READ));
@@ -927,7 +929,8 @@ class ArchiveCreatorTest {
             var mockAttributeView = mock(DosFileAttributeView.class);
             var mockedAttributes = mock(DosFileAttributes.class);
             mockedFiles
-                    .when(() -> Files.getFileAttributeView(mockPath, DosFileAttributeView.class))
+                    .when(() ->
+                            Files.getFileAttributeView(mockPath, DosFileAttributeView.class, LinkOption.NOFOLLOW_LINKS))
                     .thenReturn(mockAttributeView);
             when(mockAttributeView.readAttributes()).thenReturn(mockedAttributes);
             when(mockedAttributes.isReadOnly()).thenReturn(true);
@@ -956,7 +959,8 @@ class ArchiveCreatorTest {
             var mockAttributeView = mock(DosFileAttributeView.class);
             var mockedAttributes = mock(DosFileAttributes.class);
             mockedFiles
-                    .when(() -> Files.getFileAttributeView(mockPath, DosFileAttributeView.class))
+                    .when(() ->
+                            Files.getFileAttributeView(mockPath, DosFileAttributeView.class, LinkOption.NOFOLLOW_LINKS))
                     .thenReturn(mockAttributeView);
             when(mockAttributeView.readAttributes()).thenReturn(mockedAttributes);
             when(mockedAttributes.isReadOnly()).thenReturn(true);
@@ -985,7 +989,8 @@ class ArchiveCreatorTest {
             var mockAttributeView = mock(DosFileAttributeView.class);
             var mockedAttributes = mock(DosFileAttributes.class);
             mockedFiles
-                    .when(() -> Files.getFileAttributeView(mockPath, DosFileAttributeView.class))
+                    .when(() ->
+                            Files.getFileAttributeView(mockPath, DosFileAttributeView.class, LinkOption.NOFOLLOW_LINKS))
                     .thenReturn(mockAttributeView);
             when(mockAttributeView.readAttributes()).thenReturn(mockedAttributes);
             when(mockedAttributes.isReadOnly()).thenReturn(false);
@@ -1012,7 +1017,8 @@ class ArchiveCreatorTest {
             var mockAttributeView = mock(DosFileAttributeView.class);
             var mockedAttributes = mock(DosFileAttributes.class);
             mockedFiles
-                    .when(() -> Files.getFileAttributeView(mockPath, DosFileAttributeView.class))
+                    .when(() ->
+                            Files.getFileAttributeView(mockPath, DosFileAttributeView.class, LinkOption.NOFOLLOW_LINKS))
                     .thenReturn(mockAttributeView);
             when(mockAttributeView.readAttributes()).thenReturn(mockedAttributes);
             when(mockedAttributes.isReadOnly()).thenReturn(false);
@@ -1083,7 +1089,8 @@ class ArchiveCreatorTest {
                 InMemoryArchiveCreator archive = new InMemoryArchiveCreatorBuilder(out).build()) {
 
             mockedFiles
-                    .when(() -> Files.readAttributes(eq(unreadablePath), eq(BasicFileAttributes.class)))
+                    .when(() -> Files.readAttributes(
+                            eq(unreadablePath), eq(BasicFileAttributes.class), any(LinkOption.class)))
                     .thenReturn(mockAttrs);
             //noinspection resource
             mockedFiles
@@ -1216,15 +1223,8 @@ class ArchiveCreatorTest {
                             any(InputStream.class),
                             anyLong(),
                             any(FileTime.class),
-                            anyInt());
-            verify(archive)
-                    .writeFileEntry(
-                            eq("symlink_to_file.txt"),
-                            any(InputStream.class),
-                            anyLong(),
-                            any(FileTime.class),
                             anyInt(),
-                            eq(Optional.empty()));
+                            eq(Optional.of(actualFile.getFileName())));
         }
     }
 
@@ -1314,6 +1314,9 @@ class ArchiveCreatorTest {
             // Then
             verify(archive, never()).writeDirectoryEntry(anyString(), any(FileTime.class));
             verify(archive, never()).writeFileEntry(anyString(), any(), anyLong(), any(), anyInt(), any(Path.class));
+            verify(archive, never())
+                    .writeFileEntry(
+                            anyString(), any(), anyLong(), any(), anyInt(), ArgumentMatchers.<Optional<Path>>any());
             Compress4JAssertions.assertThat(inMemoryLogAppender)
                     .contains("dir=" + emptyBaseDir + " topLevelDir=", TRACE);
         }
@@ -1340,6 +1343,9 @@ class ArchiveCreatorTest {
                     .equals(expectedModTime.toInstant().truncatedTo(ChronoUnit.SECONDS))));
             verify(archive, times(1)).writeDirectoryEntry(anyString(), any(FileTime.class));
             verify(archive, never()).writeFileEntry(anyString(), any(), anyLong(), any(), anyInt(), any(Path.class));
+            verify(archive, never())
+                    .writeFileEntry(
+                            anyString(), any(), anyLong(), any(), anyInt(), ArgumentMatchers.<Optional<Path>>any());
         }
     }
 
@@ -1456,7 +1462,7 @@ class ArchiveCreatorTest {
 
     @DisabledOnOs(OS.WINDOWS)
     @Test
-    void mode_whenPathIsSymlink_returnsModeOfTargetNotLink_onNix() throws IOException {
+    void mode_whenPathIsSymlink_returnsModeOfLinkNotTarget_onNix() throws IOException {
         // Given
         Path targetFile = tempDir.resolve("target_for_mode_test.txt");
         Files.writeString(targetFile, "content");
@@ -1470,8 +1476,8 @@ class ArchiveCreatorTest {
         // When
         int actualMode = ArchiveCreator.mode(symlinkPath);
 
-        // Then
-        assertThat(actualMode).isEqualTo(expectedTargetMode);
+        // Then - the link's own mode (typically rwxrwxrwx) is read, not the target's
+        assertThat(actualMode).isNotEqualTo(expectedTargetMode);
     }
 
     @Test

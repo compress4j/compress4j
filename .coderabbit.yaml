@@ -38,7 +38,7 @@ reviews:
         Any change touching archive extraction (entry count, entry size, total
         size, symlink handling, path traversal) must preserve or tighten the
         existing zip-slip / decompression-bomb guards documented in
-        SECURITY.md — never relax a limit without explicit justification in
+        .github/SECURITY.md — never relax a limit without explicit justification in
         the PR description.
     - path: "src/test/java/**/*.java"
       instructions: >
@@ -97,6 +97,6 @@ knowledge_base:
   code_guidelines:
     enabled: true
     filePatterns:
-      - "CONTRIBUTING.adoc"
-      - "SECURITY.md"
+      - ".github/CONTRIBUTING.adoc"
+      - ".github/SECURITY.md"
       - ".editorconfig"

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -169,13 +169,8 @@ class ArArchiveCreatorTest {
 
         // then
         byte[] archiveBytes = outputStream.toByteArray();
-
-        if (archiveBytes.length > 8) {
-            verifyArchiveContains(archiveBytes, "f1.txt", "File 1");
-            verifyArchiveContains(archiveBytes, "f2.txt", "File 2");
-        } else {
-            assertThat(archiveBytes).hasSizeGreaterThanOrEqualTo(8);
-        }
+        verifyArchiveContains(archiveBytes, "f1.txt", "File 1");
+        verifyArchiveContains(archiveBytes, "f2.txt", "File 2");
     }
 
     @Test
@@ -296,7 +291,7 @@ class ArArchiveCreatorTest {
                         creator.addFile(null, "content".getBytes(StandardCharsets.UTF_8));
                     }
                 })
-                .isInstanceOf(Exception.class);
+                .isInstanceOf(NullPointerException.class);
     }
 
     @SuppressWarnings("java:S5783")
@@ -312,7 +307,7 @@ class ArArchiveCreatorTest {
                         creator.addFile("test.txt", (byte[]) null);
                     }
                 })
-                .isInstanceOf(Exception.class);
+                .isInstanceOf(NullPointerException.class);
     }
 
     private void verifyArchiveContains(byte[] archiveBytes, String fileName, String expectedContent)

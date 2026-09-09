@@ -91,7 +91,7 @@ Compress4J uses Gradle for its build system.
 
 === Prerequisites
 
-* JDK 11 or higher
+* JDK 21 or higher
 
 === Building the Project
 

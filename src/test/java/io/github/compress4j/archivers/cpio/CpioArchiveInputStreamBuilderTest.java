@@ -226,7 +226,9 @@ class CpioArchiveInputStreamBuilderTest {
         var inputStreamBuilder = extractorBuilder.cpioInputStream().blockSize(-1);
 
         // when & then
-        assertThatThrownBy(inputStreamBuilder::build).isInstanceOf(Exception.class);
+        assertThatThrownBy(inputStreamBuilder::build)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("blockSize must be bigger than 0");
     }
 
     @Test
@@ -237,7 +239,9 @@ class CpioArchiveInputStreamBuilderTest {
         var inputStreamBuilder = extractorBuilder.cpioInputStream().blockSize(0);
 
         // when & then
-        assertThatThrownBy(inputStreamBuilder::build).isInstanceOf(Exception.class);
+        assertThatThrownBy(inputStreamBuilder::build)
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("blockSize must be bigger than 0");
     }
 
     @Test
@@ -332,12 +336,9 @@ class CpioArchiveInputStreamBuilderTest {
         // then
         assertThat(cpioStream).isNotNull();
 
-        // Should be able to read, but get no entries (or just TRAILER)
+        // An archive with no entries hits EOF before any TRAILER!!! record is read
         var entry = cpioStream.getNextEntry();
-        // Entry might be null or the TRAILER entry
-        if (entry != null) {
-            assertThat(entry.getName()).isEqualTo("TRAILER!!!");
-        }
+        assertThat(entry).isNull();
 
         cpioStream.close();
     }

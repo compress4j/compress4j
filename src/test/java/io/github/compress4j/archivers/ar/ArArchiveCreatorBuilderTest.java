@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,13 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
 import org.apache.commons.compress.archivers.ar.ArArchiveInputStream;
 import org.apache.commons.compress.archivers.ar.ArArchiveOutputStream;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
 class ArArchiveCreatorBuilderTest {
@@ -87,14 +91,9 @@ class ArArchiveCreatorBuilderTest {
 
         // then
         byte[] archiveBytes = outputStream.toByteArray();
-
-        if (archiveBytes.length > 8) {
-            verifyArchiveContains(archiveBytes, "inc.txt", "Include this");
-            verifyArchiveContains(archiveBytes, "inc.log", "Include this too");
-            verifyArchiveDoesNotContain(archiveBytes, "exc.txt");
-        } else {
-            assertThat(archiveBytes).isEmpty();
-        }
+        verifyArchiveContains(archiveBytes, "inc.txt", "Include this");
+        verifyArchiveContains(archiveBytes, "inc.log", "Include this too");
+        verifyArchiveDoesNotContain(archiveBytes, "exc.txt");
     }
 
     @Test
@@ -182,13 +181,22 @@ class ArArchiveCreatorBuilderTest {
         verifyArchiveContains(archiveBytes, "new-content.txt", "New content");
     }
 
+    @DisabledOnOs(OS.WINDOWS)
     @Test
-    void testBuilderWithUnwritablePath() {
+    void testBuilderWithUnwritablePath(@TempDir Path tempDir) throws IOException {
         // given
-        var unwritablePath = Path.of("/root/unwritable.ar");
+        Assumptions.assumeFalse("root".equals(System.getProperty("user.name")), "root ignores POSIX permissions");
+        var readOnlyDir = tempDir.resolve("readonly");
+        Files.createDirectory(readOnlyDir);
+        Files.setPosixFilePermissions(readOnlyDir, PosixFilePermissions.fromString("r-xr-xr-x"));
+        var unwritablePath = readOnlyDir.resolve("unwritable.ar");
 
-        // when & then
-        assertThatThrownBy(() -> ArArchiveCreator.builder(unwritablePath)).isInstanceOf(IOException.class);
+        try {
+            // when & then
+            assertThatThrownBy(() -> ArArchiveCreator.builder(unwritablePath)).isInstanceOf(IOException.class);
+        } finally {
+            Files.setPosixFilePermissions(readOnlyDir, PosixFilePermissions.fromString("rwxrwxrwx"));
+        }
     }
 
     @SuppressWarnings("java:S5778")

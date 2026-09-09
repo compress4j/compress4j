@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,12 +98,13 @@ public class DeflateCompressor extends Compressor<DeflateCompressorOutputStream>
         /**
          * Sets the compression level for the Deflate output stream.
          *
-         * @param compressionLevel the desired compression level (0-9)
+         * @param compressionLevel the desired compression level (-1 to 9, where -1 is
+         *     {@link Deflater#DEFAULT_COMPRESSION})
          * @return this builder instance
          * @throws IllegalArgumentException if the compression level is invalid
          */
         public DeflateOutputStreamBuilder<P> setCompressionLevel(DeflateCompressionLevel compressionLevel) {
-            if (compressionLevel.getValue() < 0 || compressionLevel.getValue() > 9) {
+            if (compressionLevel.getValue() < -1 || compressionLevel.getValue() > 9) {
                 throw new IllegalArgumentException("Invalid Deflate compression level: " + compressionLevel);
             }
             this.compressionLevel = compressionLevel.getValue();

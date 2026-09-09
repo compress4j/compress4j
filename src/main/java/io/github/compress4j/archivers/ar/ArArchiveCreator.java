@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,14 +94,15 @@ public class ArArchiveCreator extends ArchiveCreator<ArArchiveOutputStream> {
             return;
         }
 
-        if (length < 0) {
-            length = source.available();
-        }
+        byte[] content = length < 0 ? IOUtils.toByteArray(source) : null;
+        long entryLength = content != null ? content.length : length;
 
-        ArArchiveEntry entry = new ArArchiveEntry(name, length, 0, 0, mode, modTime.toMillis() / 1000);
+        ArArchiveEntry entry = new ArArchiveEntry(name, entryLength, 0, 0, mode, modTime.toMillis() / 1000);
         archiveOutputStream.putArchiveEntry(entry);
 
-        if (length > 0) {
+        if (content != null) {
+            archiveOutputStream.write(content);
+        } else if (entryLength > 0) {
             IOUtils.copy(source, archiveOutputStream);
         }
 
