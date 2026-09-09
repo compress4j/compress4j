@@ -5,12 +5,6 @@ rules:
     ignore:
       - ci.yml
 
-  # Worth fixing, but narrowing this means declaring each secret in release.yml's workflow_call block too, and a mistake
-  # there only surfaces during a real release. Left for a change that can be verified on its own.
-  secrets-inherit:
-    ignore:
-      - ci.yml
-
   # The digests do resolve to the commented major tag; zizmor wants the exact patch version, and Renovate owns these
   # pins.
   ref-version-mismatch:

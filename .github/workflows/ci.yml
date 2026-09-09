@@ -12,7 +12,7 @@ on:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}  # Never cancel a run that may reach the release job
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   validate-wrapper:
@@ -194,15 +194,3 @@ jobs:
             echo "build-other-os concluded: $MATRIX_RESULT"
             exit 1
           fi
-
-  release:
-    name: Release
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs:
-      - build-ubuntu-21
-      - build-ubuntu-25
-      - build-other-os
-    permissions:
-      contents: write
-    uses: ./.github/workflows/release.yml
-    secrets: inherit
