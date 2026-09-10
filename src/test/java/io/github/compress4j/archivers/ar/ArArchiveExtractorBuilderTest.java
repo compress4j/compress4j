@@ -306,7 +306,6 @@ class ArArchiveExtractorBuilderTest {
         assertThat(tempDir.resolve("policy-test.txt")).exists();
     }
 
-    @SuppressWarnings("java:S5778")
     @Test
     void testBuilderWithEscapingSymlinkPolicyRejectsEscapingTarget(@TempDir Path tempDir) throws IOException {
         // given
@@ -323,18 +322,16 @@ class ArArchiveExtractorBuilderTest {
 
         // when
         var bais = new ByteArrayInputStream(outputStream.toByteArray());
-        var builder = ArArchiveExtractor.builder(bais)
-                .escapingSymlinkPolicy(ArArchiveExtractor.EscapingSymlinkPolicy.DISALLOW);
+        try (var extractor = ArArchiveExtractor.builder(bais)
+                .escapingSymlinkPolicy(ArArchiveExtractor.EscapingSymlinkPolicy.DISALLOW)
+                .build()) {
 
-        // then
-        assertThatThrownBy(() -> {
-                    try (var extractor = builder.build()) {
-                        extractor.extract(tempDir);
-                    }
-                })
-                .isInstanceOf(IOException.class)
-                .hasMessageContaining("Invalid symlink (points outside of output directory): escape-link");
+            // then
+            assertThatThrownBy(() -> extractor.extract(tempDir))
+                    .isInstanceOf(IOException.class)
+                    .hasMessageContaining("Invalid symlink (points outside of output directory): escape-link");
 
-        assertThat(tempDir.resolve("escape-link")).doesNotExist();
+            assertThat(tempDir.resolve("escape-link")).doesNotExist();
+        }
     }
 }
