@@ -18,6 +18,7 @@ package io.github.compress4j.archivers.ar;
 import io.github.compress4j.archivers.ArchiveExtractor;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.commons.compress.archivers.ar.ArArchiveEntry;
@@ -76,8 +77,14 @@ public class ArArchiveExtractor extends ArchiveExtractor<ArArchiveInputStream> {
         ArArchiveEntry ae = getNextArArchiveEntry();
         if (ae == null) return null;
 
-        // AR format only supports regular files
-        return new Entry(ae.getName(), false);
+        int mode = ae.getMode();
+        if ((mode & ArArchiveCreator.S_IFMT) == ArArchiveCreator.S_IFLNK) {
+            // See ArArchiveCreator.S_IFLNK: the target path is stored as the entry's content.
+            byte[] targetBytes = readEntryContent(ae.getName(), archiveInputStream, ae.getSize());
+            String target = new String(targetBytes, StandardCharsets.UTF_8);
+            return new Entry(ae.getName(), Entry.Type.SYMLINK, mode, target);
+        }
+        return new Entry(ae.getName(), Entry.Type.FILE, mode);
     }
 
     /** {@inheritDoc} */
