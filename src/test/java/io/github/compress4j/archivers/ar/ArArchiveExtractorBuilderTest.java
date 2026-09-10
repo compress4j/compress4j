@@ -306,6 +306,7 @@ class ArArchiveExtractorBuilderTest {
         assertThat(tempDir.resolve("policy-test.txt")).exists();
     }
 
+    @SuppressWarnings("java:S5778")
     @Test
     void testBuilderWithEscapingSymlinkPolicyRejectsEscapingTarget(@TempDir Path tempDir) throws IOException {
         // given
