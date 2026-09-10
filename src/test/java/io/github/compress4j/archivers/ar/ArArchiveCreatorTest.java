@@ -21,11 +21,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
+import java.util.Optional;
 import org.apache.commons.compress.archivers.ar.ArArchiveEntry;
 import org.apache.commons.compress.archivers.ar.ArArchiveInputStream;
 import org.junit.jupiter.api.Test;
@@ -299,6 +301,28 @@ class ArArchiveCreatorTest {
         try (ArArchiveCreator creator = ArArchiveCreator.builder(outputStream).build()) {
             assertThatThrownBy(() -> creator.addFile("test.txt", (byte[]) null))
                     .isInstanceOf(NullPointerException.class);
+        }
+    }
+
+    @Test
+    void testWriteFileEntryWithSymlink() throws IOException {
+        // given
+        var outputStream = new ByteArrayOutputStream();
+        var modTime = FileTime.from(Instant.parse("2023-01-01T00:00:00Z"));
+
+        // when
+        try (ArArchiveCreator creator = ArArchiveCreator.builder(outputStream).build()) {
+            creator.writeFileEntry(
+                    "link", InputStream.nullInputStream(), 0, modTime, 0, Optional.of(Path.of("target.txt")));
+        }
+
+        // then
+        try (var ais = new ArArchiveInputStream(new ByteArrayInputStream(outputStream.toByteArray()))) {
+            ArArchiveEntry entry = ais.getNextEntry();
+            assertThat(entry).isNotNull();
+            assertThat(entry.getName()).isEqualTo("link");
+            assertThat(entry.getMode() & ArArchiveCreator.S_IFMT).isEqualTo(ArArchiveCreator.S_IFLNK);
+            assertThat(new String(ais.readAllBytes(), StandardCharsets.UTF_8)).isEqualTo("target.txt");
         }
     }
 

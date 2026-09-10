@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,9 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
+import java.time.Instant;
+import java.util.Optional;
 import org.apache.commons.compress.archivers.ar.ArArchiveInputStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -301,5 +304,36 @@ class ArArchiveExtractorBuilderTest {
 
         // then
         assertThat(tempDir.resolve("policy-test.txt")).exists();
+    }
+
+    @Test
+    void testBuilderWithEscapingSymlinkPolicyRejectsEscapingTarget(@TempDir Path tempDir) throws IOException {
+        // given
+        var outputStream = new ByteArrayOutputStream();
+        try (var creator = ArArchiveCreator.builder(outputStream).build()) {
+            creator.writeFileEntry(
+                    "escape-link",
+                    InputStream.nullInputStream(),
+                    0,
+                    FileTime.from(Instant.now()),
+                    0,
+                    Optional.of(Path.of("../../etc/passwd")));
+        }
+
+        // when
+        var bais = new ByteArrayInputStream(outputStream.toByteArray());
+        var builder = ArArchiveExtractor.builder(bais)
+                .escapingSymlinkPolicy(ArArchiveExtractor.EscapingSymlinkPolicy.DISALLOW);
+
+        // then
+        assertThatThrownBy(() -> {
+                    try (var extractor = builder.build()) {
+                        extractor.extract(tempDir);
+                    }
+                })
+                .isInstanceOf(IOException.class)
+                .hasMessageContaining("Invalid symlink (points outside of output directory): escape-link");
+
+        assertThat(tempDir.resolve("escape-link")).doesNotExist();
     }
 }

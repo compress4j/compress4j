@@ -19,6 +19,7 @@ import io.github.compress4j.archivers.ArchiveCreator;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
@@ -33,6 +34,20 @@ import org.apache.commons.io.IOUtils;
  * @since 2.2
  */
 public class ArArchiveCreator extends ArchiveCreator<ArArchiveOutputStream> {
+
+    /**
+     * Unix {@code S_IFLNK} file-type bits (octal {@code 0120000}). Classic AR's mode field carries permission bits
+     * only, with no type-bit concept, so compress4j marks a symlink entry by setting these bits in it and writes the
+     * target path as the entry's content — similar in spirit to how {@code CpioArchiveCreator} encodes symlinks via
+     * mode-field type bits, though CPIO's format defines those bits natively while AR's does not. Third-party AR
+     * archives don't set this bit in practice, so reading them is unaffected.
+     */
+    @SuppressWarnings("OctalInteger")
+    static final int S_IFLNK = 0120000;
+
+    /** Mask isolating the Unix file-type bits within a mode value. */
+    @SuppressWarnings("OctalInteger")
+    static final int S_IFMT = 0170000;
 
     /**
      * Create a new ArArchiveCreator with the given output stream.
@@ -86,18 +101,23 @@ public class ArArchiveCreator extends ArchiveCreator<ArArchiveOutputStream> {
 
     /** {@inheritDoc} */
     @Override
+    @SuppressWarnings("OctalInteger")
     protected void writeFileEntry(
             String name, InputStream source, long length, FileTime modTime, int mode, Optional<Path> symlinkTarget)
             throws IOException {
 
+        byte[] content;
+        int entryMode;
         if (symlinkTarget.isPresent()) {
-            return;
+            content = symlinkTarget.get().toString().getBytes(StandardCharsets.UTF_8);
+            entryMode = S_IFLNK | (mode & 0777);
+        } else {
+            content = length < 0 ? IOUtils.toByteArray(source) : null;
+            entryMode = mode;
         }
-
-        byte[] content = length < 0 ? IOUtils.toByteArray(source) : null;
         long entryLength = content != null ? content.length : length;
 
-        ArArchiveEntry entry = new ArArchiveEntry(name, entryLength, 0, 0, mode, modTime.toMillis() / 1000);
+        ArArchiveEntry entry = new ArArchiveEntry(name, entryLength, 0, 0, entryMode, modTime.toMillis() / 1000);
         archiveOutputStream.putArchiveEntry(entry);
 
         if (content != null) {
