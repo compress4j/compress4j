@@ -56,6 +56,7 @@ import io.github.compress4j.assertion.Compress4JAssertions;
 import io.github.compress4j.exceptions.ArchiveLimitExceededException;
 import io.github.compress4j.test.util.log.InMemoryLogAppender;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileSystemException;
@@ -1811,6 +1812,75 @@ class ArchiveExtractorTest {
                         .isInstanceOf(ArchiveLimitExceededException.class)
                         .hasMessageContaining("big.txt")
                         .hasMessageContaining("maximum entry size of 4 bytes");
+            }
+        }
+
+        @Test
+        void shouldReleaseEntryStreamAfterSuccessfulWrite() throws IOException {
+            // given
+            var entry = InMemoryArchiveEntry.builder().name("a").content("a").build();
+            var released = new AtomicInteger();
+
+            try (var extractor = new InMemoryArchiveExtractor(InMemoryArchiveExtractor.builder(List.of(entry))) {
+                @Override
+                protected void closeEntryStream(InputStream stream) {
+                    released.incrementAndGet();
+                }
+            }) {
+                // when
+                extractor.extract(tempDir);
+
+                // then
+                assertThat(released).hasValue(1);
+            }
+        }
+
+        @Test
+        void shouldReleaseEntryStreamWhenWriteFails() throws IOException {
+            // given
+            var entry = InMemoryArchiveEntry.builder()
+                    .name("big.txt")
+                    .content("0123456789")
+                    .build();
+            var released = new AtomicInteger();
+
+            try (var extractor = new InMemoryArchiveExtractor(InMemoryArchiveExtractor.builder(List.of(entry))) {
+                @Override
+                protected void closeEntryStream(InputStream stream) {
+                    released.incrementAndGet();
+                }
+            }) {
+                extractor.setMaxEntrySize(4);
+
+                // when
+                assertThatThrownBy(() -> extractor.extract(tempDir)).isInstanceOf(ArchiveLimitExceededException.class);
+
+                // then
+                assertThat(released).hasValue(1);
+            }
+        }
+
+        @Test
+        void shouldKeepWriteFailureAsPrimaryWhenReleasingEntryStreamAlsoFails() throws IOException {
+            // given
+            var entry = InMemoryArchiveEntry.builder()
+                    .name("big.txt")
+                    .content("0123456789")
+                    .build();
+            var releaseFailure = new IOException("release failed");
+
+            try (var extractor = new InMemoryArchiveExtractor(InMemoryArchiveExtractor.builder(List.of(entry))) {
+                @Override
+                protected void closeEntryStream(InputStream stream) throws IOException {
+                    throw releaseFailure;
+                }
+            }) {
+                extractor.setMaxEntrySize(4);
+
+                // when / then
+                assertThatThrownBy(() -> extractor.extract(tempDir))
+                        .isInstanceOf(ArchiveLimitExceededException.class)
+                        .hasSuppressedException(releaseFailure);
             }
         }
 

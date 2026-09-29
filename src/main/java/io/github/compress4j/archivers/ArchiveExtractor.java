@@ -556,6 +556,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * @param outputFile the file to write the entry to
      * @throws IOException if an I/O error occurs
      */
+    @SuppressWarnings("try")
     private void writeFile(Entry entry, Path outputFile) throws IOException {
         if (outputFile == null) {
             LOGGER.warn("Output file is null for entry: {}. Skipping.", entry.name);
@@ -563,7 +564,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         }
         if (overwrite || !Files.exists(outputFile)) {
             InputStream inputStream = openEntryStream(entry);
-            try {
+            try (Closeable release = () -> closeEntryStream(inputStream)) {
                 makeDirectory(outputFile.getParent());
                 try (OutputStream outputStream = Files.newOutputStream(outputFile)) {
                     transferEntry(entry, inputStream, outputStream);
@@ -571,8 +572,6 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
                 if (entry.mode != 0) {
                     setAttributes(entry.mode, outputFile);
                 }
-            } finally {
-                closeEntryStream(inputStream);
             }
         } else {
             LOGGER.debug("Skipping file entry: {} (already exists)", entry.name);
