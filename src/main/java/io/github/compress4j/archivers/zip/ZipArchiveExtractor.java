@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 The Compress4J Project
+ * Copyright 2024-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
+import java.util.Optional;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.compressors.zstandard.ZstdCompressorInputStream;
@@ -64,13 +65,12 @@ public class ZipArchiveExtractor extends ArchiveExtractor<ZipFileArchiveInputStr
 
     /** {@inheritDoc} */
     @Override
-    public Entry nextEntry() throws IOException {
+    public Optional<Entry> nextEntry() throws IOException {
         ZipArchiveEntry ze = archiveInputStream.getNextEntry();
         if (ze == null) {
-            return null;
-        } else {
-            return new Entry(ze.getName(), type(ze), ze.getUnixMode(), archiveInputStream.getUnixSymlink(ze));
+            return Optional.empty();
         }
+        return Optional.of(new Entry(ze.getName(), type(ze), ze.getUnixMode(), archiveInputStream.getUnixSymlink(ze)));
     }
 
     private static Entry.Type type(ZipArchiveEntry ze) {

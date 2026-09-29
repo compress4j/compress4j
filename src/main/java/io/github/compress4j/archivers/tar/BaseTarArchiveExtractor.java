@@ -18,6 +18,7 @@ package io.github.compress4j.archivers.tar;
 import io.github.compress4j.archivers.ArchiveExtractor;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Optional;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 
@@ -51,11 +52,12 @@ public abstract class BaseTarArchiveExtractor extends ArchiveExtractor<TarArchiv
 
     /** {@inheritDoc} */
     @Override
-    public Entry nextEntry() throws IOException {
-        TarArchiveEntry te = getNextTarArchiveEntry();
-        if (te == null) {
-            return null;
-        } else if (!isIsOsWindows()) {
+    public Optional<Entry> nextEntry() throws IOException {
+        return getNextTarArchiveEntry().map(BaseTarArchiveExtractor::toEntry);
+    }
+
+    private static Entry toEntry(TarArchiveEntry te) {
+        if (!isIsOsWindows()) {
             return new Entry(te.getName(), type(te), te.getMode(), te.getLinkName());
         } else if (te.isSymbolicLink()) {
             return new Entry(te.getName(), Entry.Type.SYMLINK, 0, te.getLinkName());
@@ -74,19 +76,19 @@ public abstract class BaseTarArchiveExtractor extends ArchiveExtractor<TarArchiv
      * Get the next {@code TarArchiveEntry} from the {@code TarArchiveInputStream}. Skip hard links and any entry that
      * is not a regular file, a directory, or a symbolic link.
      *
-     * @return the next {@code TarArchiveEntry}
+     * @return the next {@code TarArchiveEntry}, or empty at the end of the archive
      * @throws IOException – if the next entry could not be read
      */
-    private TarArchiveEntry getNextTarArchiveEntry() throws IOException {
+    private Optional<TarArchiveEntry> getNextTarArchiveEntry() throws IOException {
         TarArchiveEntry te;
         while ((te = archiveInputStream.getNextEntry()) != null) {
             if ((te.isFile() && !te.isLink()) // ignore hardlink
                     || te.isDirectory()
                     || te.isSymbolicLink()) {
-                return te;
+                return Optional.of(te);
             }
         }
-        return null;
+        return Optional.empty();
     }
 
     private static Entry.Type type(TarArchiveEntry te) {
