@@ -1715,6 +1715,19 @@ class ArchiveExtractorTest {
     }
 
     @Test
+    void setEntryFilterNullShouldExtractEverything() throws IOException {
+        var entry1 = InMemoryArchiveEntry.builder().name("test1").content("c1").build();
+        try (var extractor = InMemoryArchiveExtractor.builder(List.of(entry1)).build()) {
+            extractor.setEntryFilter(entry -> false);
+            extractor.setEntryFilter(null);
+
+            extractor.extract(tempDir);
+
+            assertThat(tempDir.resolve("test1")).hasContent("c1");
+        }
+    }
+
+    @Test
     void shouldSetAttributesWithEdgeCaseModes() throws IOException {
         var mockPath = mock(Path.class);
         @SuppressWarnings("OctalInteger")

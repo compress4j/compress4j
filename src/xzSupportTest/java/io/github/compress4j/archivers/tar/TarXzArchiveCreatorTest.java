@@ -36,7 +36,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
-import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.file.attribute.FileTimes;
@@ -60,7 +59,7 @@ class TarXzArchiveCreatorTest {
             var modTime = FileTime.from(now());
             @SuppressWarnings("OctalInteger")
             var mod = 0400;
-            tarCompressor.writeFileEntry("test", inputStream, -1, modTime, mod, Optional.empty());
+            tarCompressor.writeFileEntry("test", inputStream, -1, modTime, mod);
 
             // then
             mockIOUtils.verify(() -> IOUtils.toByteArray(any(InputStream.class)));
@@ -91,7 +90,7 @@ class TarXzArchiveCreatorTest {
 
             var now = now();
             var modTime = FileTime.from(now);
-            tarCompressor.writeFileEntry("test", inputStream, 0, modTime, 0, Optional.of(Path.of("target")));
+            tarCompressor.writeFileEntry("test", inputStream, 0, modTime, 0, Path.of("target"));
 
             // then
             mockIOUtils.verifyNoInteractions();

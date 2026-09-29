@@ -28,7 +28,6 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
-import java.util.Optional;
 import org.apache.commons.compress.archivers.zip.Zip64Mode;
 import org.apache.commons.compress.archivers.zip.Zip64RequiredException;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
@@ -94,34 +93,34 @@ public class ZipArchiveCreator extends ArchiveCreator<ZipArchiveOutputStream> {
 
     /** {@inheritDoc} */
     @Override
+    protected void writeFileEntry(String name, InputStream inputStream, long size, FileTime modTime, int mode)
+            throws IOException {
+        archiveOutputStream.putArchiveEntry(newEntry(name, size, modTime, mode));
+        IOUtils.copy(inputStream, archiveOutputStream);
+        archiveOutputStream.closeArchiveEntry();
+    }
+
+    /** {@inheritDoc} */
+    @Override
     protected void writeFileEntry(
-            String name, InputStream inputStream, long size, FileTime modTime, int mode, Optional<Path> symlinkTarget)
+            String name, InputStream inputStream, long size, FileTime modTime, int mode, Path symlinkTarget)
             throws IOException {
         // ZIP doesn't support symbolic links in the same way as TAR - store symlinks as regular files containing the
         // target path.
-        byte[] symlinkBytes = symlinkTarget
-                .map(target -> target.toString().getBytes(StandardCharsets.UTF_8))
-                .orElse(null);
+        byte[] target = symlinkTarget.toString().getBytes(StandardCharsets.UTF_8);
+        archiveOutputStream.putArchiveEntry(newEntry(name, target.length, modTime, mode));
+        archiveOutputStream.write(target);
+        archiveOutputStream.closeArchiveEntry();
+    }
 
+    private static ZipArchiveEntry newEntry(String name, long size, FileTime modTime, int mode) {
         ZipArchiveEntry entry = new ZipArchiveEntry(name);
         entry.setTime(modTime);
-        entry.setSize(symlinkBytes != null ? symlinkBytes.length : size);
-
-        // Set Unix permissions if available
+        entry.setSize(size);
         if (mode != NO_MODE) {
             entry.setUnixMode(mode);
         }
-
-        archiveOutputStream.putArchiveEntry(entry);
-
-        if (symlinkBytes != null) {
-            // Write symlink target as file content
-            archiveOutputStream.write(symlinkBytes);
-        } else {
-            IOUtils.copy(inputStream, archiveOutputStream);
-        }
-
-        archiveOutputStream.closeArchiveEntry();
+        return entry;
     }
 
     /** {@inheritDoc} */

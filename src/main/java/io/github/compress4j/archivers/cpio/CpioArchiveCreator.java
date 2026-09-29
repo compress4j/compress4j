@@ -23,7 +23,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
-import java.util.Optional;
 import org.apache.commons.compress.archivers.cpio.CpioArchiveEntry;
 import org.apache.commons.compress.archivers.cpio.CpioArchiveOutputStream;
 import org.apache.commons.compress.archivers.cpio.CpioConstants;
@@ -83,60 +82,52 @@ public class CpioArchiveCreator extends ArchiveCreator<CpioArchiveOutputStream> 
     }
 
     @Override
-    protected void writeFileEntry(
-            String name, InputStream source, long length, FileTime modTime, int mode, Optional<Path> symlinkTarget)
+    protected void writeFileEntry(String name, InputStream source, long length, FileTime modTime, int mode)
             throws IOException {
-
-        if (length < 0) {
-            length = source.available();
+        long entryLength = length < 0 ? source.available() : length;
+        CpioArchiveEntry entry = newEntry(name, entryLength, modTime);
+        setRegularMode(entry, mode);
+        archiveOutputStream.putArchiveEntry(entry);
+        if (entryLength > 0) {
+            IOUtils.copy(source, archiveOutputStream);
         }
+        archiveOutputStream.closeArchiveEntry();
+    }
 
-        // Create entry with the format that matches the output stream
+    @Override
+    protected void writeFileEntry(
+            String name, InputStream source, long length, FileTime modTime, int mode, Path symlinkTarget)
+            throws IOException {
+        byte[] target = symlinkTarget.toString().getBytes(StandardCharsets.UTF_8);
+        CpioArchiveEntry entry = newEntry(name, target.length, modTime);
+        entry.setMode(CpioConstants.C_ISLNK | 0644);
+        archiveOutputStream.putArchiveEntry(entry);
+        archiveOutputStream.write(target);
+        archiveOutputStream.closeArchiveEntry();
+    }
+
+    private CpioArchiveEntry newEntry(String name, long length, FileTime modTime) {
         CpioArchiveEntry entry;
         if (format != CpioConstants.FORMAT_NEW) {
-            // Use explicit format for non-default formats
             entry = new CpioArchiveEntry(format, name, length);
         } else {
-            // Use default constructor for FORMAT_NEW to maintain compatibility
             entry = new CpioArchiveEntry(name);
             entry.setSize(length);
         }
+        entry.setTime(modTime.toMillis() / 1000L);
+        return entry;
+    }
 
-        entry.setTime(modTime.toMillis() / 1000L); // CPIO uses seconds since epoch
-
-        // Handle symbolic links
-        byte[] linkTargetBytes = null;
-        if (symlinkTarget.isPresent()) {
-            entry.setMode(CpioConstants.C_ISLNK | 0644); // Symbolic link with read/write permissions
-            // For symbolic links, the content is the target path
-            linkTargetBytes = symlinkTarget.get().toString().getBytes(StandardCharsets.UTF_8);
-            entry.setSize(linkTargetBytes.length);
-        } else {
-            // Set appropriate file mode - use default file permissions if mode is 0 or invalid
-            if (mode == 0) {
-                entry.setMode(CpioConstants.C_ISREG | 0644); // Regular file with read/write permissions
-            } else {
-                // Try to use the provided mode, but ensure it's a valid CPIO mode
-                try {
-                    entry.setMode(CpioConstants.C_ISREG | (mode & 0777)); // Mask to only permission bits
-                } catch (IllegalArgumentException e) {
-                    // Fallback to default permissions if mode is invalid
-                    entry.setMode(CpioConstants.C_ISREG | 0644);
-                }
-            }
+    private static void setRegularMode(CpioArchiveEntry entry, int mode) {
+        if (mode == 0) {
+            entry.setMode(CpioConstants.C_ISREG | 0644);
+            return;
         }
-
-        archiveOutputStream.putArchiveEntry(entry);
-
-        if (linkTargetBytes != null) {
-            // Write the symbolic link target as content
-            archiveOutputStream.write(linkTargetBytes);
-        } else if (length > 0) {
-            // Copy file content
-            IOUtils.copy(source, archiveOutputStream);
+        try {
+            entry.setMode(CpioConstants.C_ISREG | (mode & 0777));
+        } catch (IllegalArgumentException e) {
+            entry.setMode(CpioConstants.C_ISREG | 0644);
         }
-
-        archiveOutputStream.closeArchiveEntry();
     }
 
     /**

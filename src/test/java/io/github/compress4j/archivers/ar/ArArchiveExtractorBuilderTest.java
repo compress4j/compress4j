@@ -27,7 +27,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
-import java.util.Optional;
 import org.apache.commons.compress.archivers.ar.ArArchiveInputStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -317,7 +316,7 @@ class ArArchiveExtractorBuilderTest {
                     0,
                     FileTime.from(Instant.now()),
                     0,
-                    Optional.of(Path.of("../../etc/passwd")));
+                    Path.of("../../etc/passwd"));
         }
 
         // when

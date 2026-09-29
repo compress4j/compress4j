@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
-import java.util.Optional;
 
 public class InMemoryArchiveCreator extends ArchiveCreator<InMemoryArchiveOutputStream> {
 
@@ -46,17 +45,26 @@ public class InMemoryArchiveCreator extends ArchiveCreator<InMemoryArchiveOutput
     }
 
     @Override
-    public void writeFileEntry(
-            String name, InputStream source, long length, FileTime modTime, int mode, Optional<Path> symlinkTarget)
+    public void writeFileEntry(String name, InputStream source, long length, FileTime modTime, int mode)
             throws IOException {
-        InMemoryArchiveEntry.Builder builder =
-                InMemoryArchiveEntry.builder().name(name).lastModifiedDate(modTime);
-        if (symlinkTarget.isPresent()) {
-            builder.type(SYMLINK).linkName(symlinkTarget.get().toString());
-        } else {
-            builder.type(FILE).content(new String(source.readAllBytes()));
-        }
-        archiveOutputStream.putArchiveEntry(builder.build());
+        archiveOutputStream.putArchiveEntry(InMemoryArchiveEntry.builder()
+                .name(name)
+                .lastModifiedDate(modTime)
+                .type(FILE)
+                .content(new String(source.readAllBytes()))
+                .build());
+    }
+
+    @Override
+    public void writeFileEntry(
+            String name, InputStream source, long length, FileTime modTime, int mode, Path symlinkTarget)
+            throws IOException {
+        archiveOutputStream.putArchiveEntry(InMemoryArchiveEntry.builder()
+                .name(name)
+                .lastModifiedDate(modTime)
+                .type(SYMLINK)
+                .linkName(symlinkTarget.toString())
+                .build());
     }
 
     public static class InMemoryArchiveCreatorBuilder

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
-import java.util.Optional;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.junit.jupiter.api.BeforeEach;
@@ -124,7 +123,7 @@ class ZipArchiveCreatorTest {
             var mode = 0644;
 
             // When
-            creator.writeFileEntry("testFile.txt", dataStream, size, testTime, mode, Optional.empty());
+            creator.writeFileEntry("testFile.txt", dataStream, size, testTime, mode);
 
             // Then
             var inOrder = inOrder(mockZipStream);
@@ -160,7 +159,7 @@ class ZipArchiveCreatorTest {
             var size = data.length;
 
             // When
-            creator.writeFileEntry("testFile.txt", dataStream, size, testTime, NO_MODE, Optional.empty());
+            creator.writeFileEntry("testFile.txt", dataStream, size, testTime, NO_MODE);
 
             // Then
             verify(mockZipStream).putArchiveEntry(entryCaptor.capture());
@@ -182,7 +181,7 @@ class ZipArchiveCreatorTest {
             var dataStream = new ByteArrayInputStream(new byte[0]);
 
             // When
-            creator.writeFileEntry("testLink.lnk", dataStream, size, testTime, mode, Optional.of(targetPath));
+            creator.writeFileEntry("testLink.lnk", dataStream, size, testTime, mode, targetPath);
 
             // Then
             var inOrder = inOrder(mockZipStream);

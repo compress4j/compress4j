@@ -44,7 +44,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.BiConsumer;
@@ -84,13 +83,14 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      */
     private static final int TRANSFER_BUFFER_SIZE = 16384;
 
+    private static final Predicate<Entry> ACCEPT_ALL = entry -> true;
+
     /** Archive input stream to be used for extraction. */
     protected A archiveInputStream;
     /** Escaping symlink policy for the extractor. */
     protected ArchiveExtractor.EscapingSymlinkPolicy escapingSymlinkPolicy = EscapingSymlinkPolicy.ALLOW;
     /** Filter for the extractor. */
-    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    private Optional<Predicate<Entry>> entryFilter = Optional.empty();
+    private Predicate<Entry> entryFilter = ACCEPT_ALL;
     /** Error handler for the extractor. */
     private BiFunction<Entry, ? super IOException, ErrorHandlerChoice> errorHandler =
             (x, y) -> ErrorHandlerChoice.BAIL_OUT;
@@ -251,7 +251,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         Entry entry;
         while ((entry = nextEntry()) != null) {
             // Skip entry if filter does not match
-            if (!entryFilter.orElse(e -> true).test(entry)) {
+            if (!entryFilter.test(entry)) {
                 continue;
             }
             if (maxEntries >= 0 && ++entries > maxEntries) {
@@ -360,7 +360,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * @param filter Predicate to be used when entries are being extracted
      */
     public void setEntryFilter(@Nullable Predicate<Entry> filter) {
-        this.entryFilter = Optional.ofNullable(filter);
+        this.entryFilter = filter != null ? filter : ACCEPT_ALL;
     }
 
     /**
@@ -748,8 +748,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         /** Input stream to read from for extraction. */
         protected ArchiveExtractor.EscapingSymlinkPolicy escapingSymlinkPolicy = EscapingSymlinkPolicy.ALLOW;
 
-        @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-        Optional<Predicate<Entry>> entryFilter = Optional.empty();
+        Predicate<Entry> entryFilter = ACCEPT_ALL;
 
         BiFunction<Entry, ? super IOException, ErrorHandlerChoice> errorHandlerFunction =
                 (x, y) -> ErrorHandlerChoice.BAIL_OUT;
@@ -777,7 +776,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
          * @return the instance of the {@link ArchiveExtractor.ArchiveExtractorBuilder}
          */
         public B filter(@Nullable Predicate<Entry> entryPredicate) {
-            this.entryFilter = Optional.ofNullable(entryPredicate);
+            this.entryFilter = entryPredicate != null ? entryPredicate : ACCEPT_ALL;
             return getThis();
         }
 

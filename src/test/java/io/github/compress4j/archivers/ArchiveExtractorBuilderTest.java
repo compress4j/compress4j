@@ -21,19 +21,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.compress4j.archivers.ArchiveExtractor.Entry;
 import io.github.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice;
+import io.github.compress4j.archivers.memory.InMemoryArchiveEntry;
 import io.github.compress4j.archivers.memory.InMemoryArchiveExtractor;
 import io.github.compress4j.archivers.memory.InMemoryArchiveExtractor.InMemoryArchiveExtractorBuilder;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class ArchiveExtractorBuilderTest {
+
+    @TempDir
+    private Path tempDir;
 
     @Test
     void shouldBuildArchiveExtractor() throws IOException {
@@ -61,7 +65,26 @@ class ArchiveExtractorBuilderTest {
                             "escapingSymlinkPolicy",
                             "stripComponents",
                             "postProcessor")
-                    .containsExactly(Optional.of(filter), errorHandler, true, DISALLOW, 5, postProcessor);
+                    .containsExactly(filter, errorHandler, true, DISALLOW, 5, postProcessor);
         }
+    }
+
+    @Test
+    void filterShouldControlWhichEntriesAreExtracted() throws IOException {
+        // given
+        var kept = InMemoryArchiveEntry.builder().name("kept").content("k").build();
+        var skipped =
+                InMemoryArchiveEntry.builder().name("some-skipped").content("s").build();
+
+        // when
+        try (InMemoryArchiveExtractor extractor = InMemoryArchiveExtractor.builder(List.of(kept, skipped))
+                .filter(entry -> !entry.name().contains("some"))
+                .build()) {
+            extractor.extract(tempDir);
+        }
+
+        // then
+        assertThat(tempDir.resolve("kept")).hasContent("k");
+        assertThat(tempDir.resolve("some-skipped")).doesNotExist();
     }
 }

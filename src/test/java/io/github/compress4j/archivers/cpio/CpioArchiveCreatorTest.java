@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
+import java.time.Instant;
+import org.apache.commons.compress.archivers.cpio.CpioArchiveEntry;
 import org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream;
 import org.apache.commons.compress.archivers.cpio.CpioArchiveOutputStream;
 import org.apache.commons.compress.archivers.cpio.CpioConstants;
@@ -253,6 +257,27 @@ class CpioArchiveCreatorTest {
             var entry = cpioInput.getNextEntry();
             assertThat(entry).isNotNull();
             assertThat(entry.getName()).isEqualTo("special-chars äöü.txt");
+        }
+    }
+
+    @Test
+    void writeFileEntryShouldStoreSymlinkTargetAsContent() throws IOException {
+        // given
+        var outputStream = new ByteArrayOutputStream();
+        var modTime = FileTime.from(Instant.parse("2023-01-01T00:00:00Z"));
+
+        // when
+        try (CpioArchiveCreator creator =
+                CpioArchiveCreator.builder(outputStream).build()) {
+            creator.writeFileEntry("link", InputStream.nullInputStream(), 0, modTime, 0, Path.of("target.txt"));
+        }
+
+        // then
+        try (var cis = new CpioArchiveInputStream(new ByteArrayInputStream(outputStream.toByteArray()))) {
+            CpioArchiveEntry entry = cis.getNextEntry();
+            assertThat(entry.getName()).isEqualTo("link");
+            assertThat(entry.isSymbolicLink()).isTrue();
+            assertThat(new String(cis.readAllBytes(), StandardCharsets.UTF_8)).isEqualTo("target.txt");
         }
     }
 }
