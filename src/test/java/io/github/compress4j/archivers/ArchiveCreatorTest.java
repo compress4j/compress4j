@@ -226,7 +226,7 @@ class ArchiveCreatorTest {
         String fileName = "file_name.txt";
         var path = createFile(tempDir, fileName, "789");
 
-        try (InMemoryArchiveCreator archive = new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out))) {
+        try (InMemoryArchiveCreator archive = spy(new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out)))) {
             archive.withFilter((name, p) -> false);
             archive.withFilter(null);
 
@@ -234,7 +234,7 @@ class ArchiveCreatorTest {
             archive.addFile(path);
 
             // then
-            assertThat(archive.accept(fileName, path)).isTrue();
+            verify(archive).writeFileEntry(eq(fileName), any(InputStream.class), eq(3L), any(FileTime.class), anyInt());
         }
     }
 
