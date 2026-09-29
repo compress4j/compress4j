@@ -25,7 +25,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
-import java.util.Optional;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarConstants;
@@ -59,18 +58,6 @@ public abstract class BaseTarArchiveCreator extends ArchiveCreator<TarArchiveOut
         super(archiveOutputStream);
     }
 
-    private static TarArchiveEntry getArchiveEntry(
-            String name, @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<Path> symlinkTarget) {
-        return symlinkTarget
-                .map(link -> {
-                    var entry = new TarArchiveEntry(name, TarConstants.LF_SYMLINK);
-                    entry.setSize(0);
-                    entry.setLinkName(link.toString());
-                    return entry;
-                })
-                .orElseGet(() -> new TarArchiveEntry(name));
-    }
-
     /** {@inheritDoc} */
     @Override
     protected void writeDirectoryEntry(String name, FileTime modTime) throws IOException {
@@ -80,41 +67,40 @@ public abstract class BaseTarArchiveCreator extends ArchiveCreator<TarArchiveOut
         archiveOutputStream.closeArchiveEntry();
     }
 
-    /**
-     * Write a file entry to the archive.
-     *
-     * @param name name of the entry
-     * @param source input stream to read the file from
-     * @param length length of the file
-     * @param modTime last modification time of the file
-     * @param mode file mode
-     * @param symlinkTarget target of the symbolic link, or {@code null} if the entry is not a symbolic link
-     * @throws IOException if an I/O error occurred
-     */
-    protected void writeFileEntry(
-            String name, InputStream source, long length, FileTime modTime, int mode, Optional<Path> symlinkTarget)
+    /** {@inheritDoc} */
+    @Override
+    protected void writeFileEntry(String name, InputStream source, long length, FileTime modTime, int mode)
             throws IOException {
-        TarArchiveEntry e = getArchiveEntry(name, symlinkTarget);
-        boolean hasContent = symlinkTarget.isEmpty();
-        byte[] content = hasContent && length < 0 ? IOUtils.toByteArray(source) : null;
-        if (hasContent) {
-            long entryLength = content != null ? content.length : length;
-            e.setSize(entryLength);
-            length = entryLength;
+        byte[] content = length < 0 ? IOUtils.toByteArray(source) : null;
+        long entryLength = content != null ? content.length : length;
+        TarArchiveEntry e = newEntry(new TarArchiveEntry(name), entryLength, modTime, mode);
+        archiveOutputStream.putArchiveEntry(e);
+        if (content != null) {
+            archiveOutputStream.write(content);
+        } else if (entryLength > 0) {
+            IOUtils.copy(source, archiveOutputStream);
         }
+        archiveOutputStream.closeArchiveEntry();
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    protected void writeFileEntry(
+            String name, InputStream source, long length, FileTime modTime, int mode, Path symlinkTarget)
+            throws IOException {
+        var e = new TarArchiveEntry(name, TarConstants.LF_SYMLINK);
+        e.setLinkName(symlinkTarget.toString());
+        archiveOutputStream.putArchiveEntry(newEntry(e, 0, modTime, mode));
+        archiveOutputStream.closeArchiveEntry();
+    }
+
+    private static TarArchiveEntry newEntry(TarArchiveEntry e, long size, FileTime modTime, int mode) {
+        e.setSize(size);
         e.setModTime(modTime);
         if (mode != 0) {
             e.setMode(mode);
         }
-        archiveOutputStream.putArchiveEntry(e);
-        if (hasContent) {
-            if (content != null) {
-                archiveOutputStream.write(content);
-            } else if (length > 0) {
-                IOUtils.copy(source, archiveOutputStream);
-            }
-        }
-        archiveOutputStream.closeArchiveEntry();
+        return e;
     }
 
     /**

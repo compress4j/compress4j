@@ -27,7 +27,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
-import java.util.Optional;
 import org.apache.commons.compress.archivers.ar.ArArchiveEntry;
 import org.apache.commons.compress.archivers.ar.ArArchiveInputStream;
 import org.junit.jupiter.api.Test;
@@ -312,8 +311,7 @@ class ArArchiveCreatorTest {
 
         // when
         try (ArArchiveCreator creator = ArArchiveCreator.builder(outputStream).build()) {
-            creator.writeFileEntry(
-                    "link", InputStream.nullInputStream(), 0, modTime, 0, Optional.of(Path.of("target.txt")));
+            creator.writeFileEntry("link", InputStream.nullInputStream(), 0, modTime, 0, Path.of("target.txt"));
         }
 
         // then

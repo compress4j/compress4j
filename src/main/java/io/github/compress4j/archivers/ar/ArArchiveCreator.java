@@ -16,6 +16,7 @@
 package io.github.compress4j.archivers.ar;
 
 import io.github.compress4j.archivers.ArchiveCreator;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -23,7 +24,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
-import java.util.Optional;
 import org.apache.commons.compress.archivers.ar.ArArchiveEntry;
 import org.apache.commons.compress.archivers.ar.ArArchiveOutputStream;
 import org.apache.commons.io.IOUtils;
@@ -101,31 +101,31 @@ public class ArArchiveCreator extends ArchiveCreator<ArArchiveOutputStream> {
 
     /** {@inheritDoc} */
     @Override
+    protected void writeFileEntry(String name, InputStream source, long length, FileTime modTime, int mode)
+            throws IOException {
+        if (length < 0) {
+            byte[] content = IOUtils.toByteArray(source);
+            writeEntry(name, new ByteArrayInputStream(content), content.length, modTime, mode);
+        } else {
+            writeEntry(name, source, length, modTime, mode);
+        }
+    }
+
+    /** {@inheritDoc} */
+    @Override
     @SuppressWarnings("OctalInteger")
     protected void writeFileEntry(
-            String name, InputStream source, long length, FileTime modTime, int mode, Optional<Path> symlinkTarget)
+            String name, InputStream source, long length, FileTime modTime, int mode, Path symlinkTarget)
             throws IOException {
+        byte[] target = symlinkTarget.toString().getBytes(StandardCharsets.UTF_8);
+        writeEntry(name, new ByteArrayInputStream(target), target.length, modTime, S_IFLNK | (mode & 0777));
+    }
 
-        byte[] content;
-        int entryMode;
-        if (symlinkTarget.isPresent()) {
-            content = symlinkTarget.get().toString().getBytes(StandardCharsets.UTF_8);
-            entryMode = S_IFLNK | (mode & 0777);
-        } else {
-            content = length < 0 ? IOUtils.toByteArray(source) : null;
-            entryMode = mode;
+    private void writeEntry(String name, InputStream data, long length, FileTime modTime, int mode) throws IOException {
+        archiveOutputStream.putArchiveEntry(new ArArchiveEntry(name, length, 0, 0, mode, modTime.toMillis() / 1000));
+        if (length > 0) {
+            IOUtils.copy(data, archiveOutputStream);
         }
-        long entryLength = content != null ? content.length : length;
-
-        ArArchiveEntry entry = new ArArchiveEntry(name, entryLength, 0, 0, entryMode, modTime.toMillis() / 1000);
-        archiveOutputStream.putArchiveEntry(entry);
-
-        if (content != null) {
-            archiveOutputStream.write(content);
-        } else if (entryLength > 0) {
-            IOUtils.copy(source, archiveOutputStream);
-        }
-
         archiveOutputStream.closeArchiveEntry();
     }
 

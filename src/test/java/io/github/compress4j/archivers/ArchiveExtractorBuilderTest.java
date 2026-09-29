@@ -26,7 +26,6 @@ import io.github.compress4j.archivers.memory.InMemoryArchiveExtractor.InMemoryAr
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -61,7 +60,7 @@ class ArchiveExtractorBuilderTest {
                             "escapingSymlinkPolicy",
                             "stripComponents",
                             "postProcessor")
-                    .containsExactly(Optional.of(filter), errorHandler, true, DISALLOW, 5, postProcessor);
+                    .containsExactly(filter, errorHandler, true, DISALLOW, 5, postProcessor);
         }
     }
 }

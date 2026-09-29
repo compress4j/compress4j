@@ -41,8 +41,8 @@ import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.time.Instant;
-import java.util.Optional;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.lang3.StringUtils;
@@ -60,8 +60,7 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ArchiveCreator.class);
 
-    @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    private Optional<BiPredicate<? super String, ? super Path>> entryFilter = Optional.empty();
+    private BiPredicate<? super String, ? super Path> entryFilter = (name, path) -> true;
 
     /** Archive output stream to be used for archiving. */
     protected final A archiveOutputStream;
@@ -106,16 +105,24 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
      * @param length length of the file
      * @param modTime last modification time of the file
      * @param mode file mode
-     * @param symlinkTarget target of the symbolic link, or {@code null} if the entry is not a symbolic link
+     * @throws IOException if an I/O error occurred
+     */
+    protected abstract void writeFileEntry(String name, InputStream source, long length, FileTime modTime, int mode)
+            throws IOException;
+
+    /**
+     * Write a symbolic link entry to the archive.
+     *
+     * @param name name of the entry
+     * @param source ignored; a symbolic link has no content besides its target
+     * @param length ignored; the size of the entry derives from the target
+     * @param modTime last modification time of the file
+     * @param mode file mode
+     * @param symlinkTarget target of the symbolic link
      * @throws IOException if an I/O error occurred
      */
     protected abstract void writeFileEntry(
-            String name,
-            InputStream source,
-            long length,
-            FileTime modTime,
-            int mode,
-            @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<Path> symlinkTarget)
+            String name, InputStream source, long length, FileTime modTime, int mode, Path symlinkTarget)
             throws IOException;
 
     /**
@@ -128,7 +135,7 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
      * @throws IOException if an I/O error occurred
      */
     public final void addDirectory(String entryName) throws IOException {
-        addDirectory(entryName, Optional.empty());
+        addDirectory(entryName, FileTime.from(Instant.now()));
     }
 
     /**
@@ -141,31 +148,16 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
      * @throws IOException if an I/O error occurred
      */
     public final void addDirectory(String entryName, FileTime modTime) throws IOException {
-        addDirectory(entryName, Optional.of(modTime));
+        entryName = sanitiseName(entryName);
+        if (accept(entryName, null)) {
+            writeDirectoryEntry(entryName, modTime);
+        }
     }
 
     /** {@inheritDoc} */
     @Override
     public void close() throws IOException {
         archiveOutputStream.close();
-    }
-
-    /**
-     * Add a directory to the archive. This method creates a directory entry without any content.
-     *
-     * <p>Predicate {@link #entryFilter} will be applied.
-     *
-     * @param entryName name of the entry
-     * @param modTime last modification time to be used for the entry
-     * @throws IOException if an I/O error occurred
-     */
-    private void addDirectory(
-            String entryName, @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<FileTime> modTime)
-            throws IOException {
-        entryName = sanitiseName(entryName);
-        if (accept(entryName, null)) {
-            writeDirectoryEntry(entryName, modTime.orElse(FileTime.from(Instant.now())));
-        }
     }
 
     /**
@@ -192,7 +184,7 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
      * @throws IOException if an I/O error occurred
      */
     public final void addDirectoryRecursively(String topLevelDir, Path directory) throws IOException {
-        addDirectoryRecursively(topLevelDir, directory, Optional.empty());
+        addDirectoryRecursively(topLevelDir, directory, BasicFileAttributes::lastModifiedTime);
     }
 
     /**
@@ -219,7 +211,7 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
      * @throws IOException if an I/O error occurred
      */
     public final void addDirectoryRecursively(String topLevelDir, Path directory, FileTime modTime) throws IOException {
-        addDirectoryRecursively(topLevelDir, directory, Optional.of(modTime));
+        addDirectoryRecursively(topLevelDir, directory, attrs -> modTime);
     }
 
     /**
@@ -227,14 +219,11 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
      *
      * @param topLevelDir when a non-empty value specified, create a directory entry with this name and add all entries
      * @param directory directory to add
-     * @param modTime last modification time of the directory
+     * @param modTime resolves each entry's modification time from the attributes of the visited path
      * @throws IOException if an I/O error occurred
      */
     private void addDirectoryRecursively(
-            String topLevelDir,
-            Path directory,
-            @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<FileTime> modTime)
-            throws IOException {
+            String topLevelDir, Path directory, Function<BasicFileAttributes, FileTime> modTime) throws IOException {
         if (!Files.isDirectory(directory)) {
             throw new IllegalArgumentException("Path is not a directory: " + directory);
         }
@@ -256,7 +245,7 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
      * @throws IOException if an I/O error occurred
      */
     public final void addFile(Path path) throws IOException {
-        addFile(path.getFileName().toString(), path, Optional.empty());
+        addFile(path.getFileName().toString(), path);
     }
 
     /**
@@ -270,7 +259,8 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
      * @throws IOException if an I/O error occurred
      */
     public final void addFile(String entryName, Path path) throws IOException {
-        addFile(entryName, path, Optional.empty());
+        BasicFileAttributes attrs = readAttributes(path);
+        addFile(entryName, path, attrs, attrs.lastModifiedTime());
     }
 
     /**
@@ -284,29 +274,11 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
      * @throws IOException if an I/O error occurred
      */
     public final void addFile(String entryName, Path path, FileTime modTime) throws IOException {
-        addFile(entryName, path, Optional.of(modTime));
+        addFile(entryName, path, readAttributes(path), modTime);
     }
 
-    /**
-     * Add {@code Path} to archive.
-     *
-     * <p>Predicate {@link #entryFilter} will be applied.
-     *
-     * @param entryName name of the entry
-     * @param path {@code Path} to add
-     * @param modTime last modification time to be used for the entry
-     * @throws IOException if an I/O error occurred
-     */
-    private void addFile(
-            String entryName,
-            Path path,
-            @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<FileTime> modTime)
-            throws IOException {
-        addFile(
-                entryName,
-                path,
-                Files.readAttributes(path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS),
-                modTime);
+    private static BasicFileAttributes readAttributes(Path path) throws IOException {
+        return Files.readAttributes(path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
     }
 
     /**
@@ -320,7 +292,7 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
      * @throws IOException if an I/O error occurred
      */
     public final void addFile(String entryName, byte[] content) throws IOException {
-        addFile(entryName, content, Optional.empty());
+        addFile(entryName, content, FileTime.from(Instant.now()));
     }
 
     /**
@@ -334,32 +306,9 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
      * @throws IOException if an I/O error occurred
      */
     public final void addFile(String entryName, byte[] content, FileTime modTime) throws IOException {
-        addFile(entryName, content, Optional.of(modTime));
-    }
-
-    /**
-     * Add {@code byte[]} to the archive.
-     *
-     * <p>Predicate {@link #entryFilter} will be applied.
-     *
-     * @param entryName name of the entry
-     * @param content {@code byte[]} to add
-     * @param modTime last modification time to be used for the entry
-     * @throws IOException if an I/O error occurred
-     */
-    private void addFile(
-            String entryName,
-            byte[] content,
-            @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<FileTime> modTime)
-            throws IOException {
         entryName = sanitiseName(entryName);
         if (accept(entryName, null)) {
-            writeFileEntry(
-                    entryName,
-                    new ByteArrayInputStream(content),
-                    content.length,
-                    modTime.orElse(FileTime.from(Instant.now())),
-                    NO_MODE);
+            writeFileEntry(entryName, new ByteArrayInputStream(content), content.length, modTime, NO_MODE);
         }
     }
 
@@ -374,7 +323,7 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
      * @throws IOException if an I/O error occurred
      */
     public final void addFile(String entryName, InputStream content) throws IOException {
-        addFile(entryName, content, Optional.empty());
+        addFile(entryName, content, FileTime.from(Instant.now()));
     }
 
     /**
@@ -388,27 +337,9 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
      * @throws IOException if an I/O error occurred
      */
     public final void addFile(String entryName, InputStream content, FileTime modTime) throws IOException {
-        addFile(entryName, content, Optional.of(modTime));
-    }
-
-    /**
-     * Add {@code InputStream} to the archive.
-     *
-     * <p>Predicate {@link #entryFilter} will be applied.
-     *
-     * @param entryName name of the entry
-     * @param content {@code InputStream} to add
-     * @param modTime last modification time to be used for the entry
-     * @throws IOException if an I/O error occurred
-     */
-    private void addFile(
-            String entryName,
-            InputStream content,
-            @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<FileTime> modTime)
-            throws IOException {
         entryName = sanitiseName(entryName);
         if (accept(entryName, null)) {
-            writeFileEntry(entryName, content, -1, modTime.orElse(FileTime.from(Instant.now())), NO_MODE);
+            writeFileEntry(entryName, content, -1, modTime, NO_MODE);
         }
     }
 
@@ -421,26 +352,21 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
      * @param modTime last modification time of the {@code Path}
      * @throws IOException if an I/O error occurred
      */
-    public final void addFile(
-            String entryName,
-            Path path,
-            BasicFileAttributes attrs,
-            @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<FileTime> modTime)
+    public final void addFile(String entryName, Path path, BasicFileAttributes attrs, FileTime modTime)
             throws IOException {
         entryName = sanitiseName(entryName);
         if (accept(entryName, path)) {
-            FileTime fileTime = modTime.orElse(attrs.lastModifiedTime());
             if (attrs.isSymbolicLink()) {
                 writeFileEntry(
                         entryName,
                         InputStream.nullInputStream(),
                         attrs.size(),
-                        fileTime,
+                        modTime,
                         mode(path),
                         Files.readSymbolicLink(path));
             } else {
                 try (InputStream source = Files.newInputStream(path)) {
-                    writeFileEntry(entryName, source, attrs.size(), fileTime, mode(path));
+                    writeFileEntry(entryName, source, attrs.size(), modTime, mode(path));
                 }
             }
         }
@@ -454,39 +380,7 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
      *     entry not present on a disk, i.e. via {@link #addFile(String, byte[])}.
      */
     public void withFilter(@Nullable BiPredicate<? super String, ? super Path> filter) {
-        entryFilter = Optional.ofNullable(filter);
-    }
-
-    /**
-     * Write a file entry to the archive.
-     *
-     * @param name name of the entry
-     * @param source input stream to read the file from
-     * @param length length of the file
-     * @param modTime last modification time of the file
-     * @param mode file mode
-     * @throws IOException if an I/O error occurred
-     */
-    protected void writeFileEntry(String name, InputStream source, long length, FileTime modTime, int mode)
-            throws IOException {
-        writeFileEntry(name, source, length, modTime, mode, Optional.empty());
-    }
-
-    /**
-     * Write a file entry to the archive.
-     *
-     * @param name name of the entry
-     * @param source input stream to read the file from
-     * @param length length of the file
-     * @param modTime last modification time of the file
-     * @param mode file mode
-     * @param symlinkTarget target of the symbolic link, or {@code null} if the entry is not a symbolic link
-     * @throws IOException if an I/O error occurred
-     */
-    protected void writeFileEntry(
-            String name, InputStream source, long length, FileTime modTime, int mode, Path symlinkTarget)
-            throws IOException {
-        writeFileEntry(name, source, length, modTime, mode, Optional.of(symlinkTarget));
+        entryFilter = filter != null ? filter : (name, path) -> true;
     }
 
     /**
@@ -499,7 +393,7 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
      * @return boolean {@code true} if the entry is accepted, {@code false} otherwise
      */
     protected boolean accept(String entryName, @Nullable Path path) {
-        return entryFilter.map(f -> f.test(entryName, path)).orElse(true);
+        return entryFilter.test(entryName, path);
     }
 
     /**
@@ -564,8 +458,7 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
         private final Path root;
         private final String prefix;
 
-        @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-        private final Optional<FileTime> modTime;
+        private final Function<BasicFileAttributes, FileTime> modTime;
 
         private final ArchiveCreator<E> archiveCreator;
 
@@ -573,7 +466,7 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
                 ArchiveCreator<E> archiveCreator,
                 Path root,
                 String prefix,
-                @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<FileTime> modTime) {
+                Function<BasicFileAttributes, FileTime> modTime) {
             this.root = root;
             this.prefix = prefix;
             this.modTime = modTime;
@@ -589,7 +482,7 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
                 return FileVisitResult.CONTINUE;
             } else if (archiveCreator.accept(name, dir)) {
                 LOGGER.atTrace().log("  {} -> {}/", dir, name);
-                archiveCreator.addDirectory(name, modTime.orElse(attrs.lastModifiedTime()));
+                archiveCreator.addDirectory(name, modTime.apply(attrs));
                 return FileVisitResult.CONTINUE;
             } else {
                 return FileVisitResult.SKIP_SUBTREE;
@@ -603,7 +496,7 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
             if (archiveCreator.accept(name, file)) {
                 LOGGER.atTrace()
                         .log("  {} -> {}{}", file, name, attrs.isSymbolicLink() ? " symlink" : " size=" + attrs.size());
-                archiveCreator.addFile(name, file, attrs, modTime);
+                archiveCreator.addFile(name, file, attrs, modTime.apply(attrs));
             }
             return FileVisitResult.CONTINUE;
         }
@@ -629,8 +522,7 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
         /** Output stream to write the archive to. */
         protected final OutputStream outputStream;
 
-        @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-        Optional<BiPredicate<? super String, ? super Path>> entryFilter = Optional.empty();
+        BiPredicate<? super String, ? super Path> entryFilter = (name, path) -> true;
 
         /**
          * Create a new {@link ArchiveCreatorBuilder} with the given output stream.
@@ -650,7 +542,7 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
          * @return the instance of the {@link ArchiveCreatorBuilder}
          */
         public B filter(@Nullable BiPredicate<? super String, ? super Path> predicate) {
-            this.entryFilter = Optional.ofNullable(predicate);
+            this.entryFilter = predicate != null ? predicate : (name, path) -> true;
             return getThis();
         }
 
