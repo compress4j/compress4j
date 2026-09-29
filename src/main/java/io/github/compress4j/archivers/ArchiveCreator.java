@@ -15,39 +15,28 @@
  */
 package io.github.compress4j.archivers;
 
-import static io.github.compress4j.utils.FileUtils.DOS_HIDDEN;
-import static io.github.compress4j.utils.FileUtils.DOS_READ_ONLY;
 import static io.github.compress4j.utils.FileUtils.NO_MODE;
 import static io.github.compress4j.utils.StringUtil.trimLeading;
 import static io.github.compress4j.utils.StringUtil.trimTrailing;
 import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 
-import io.github.compress4j.utils.PosixFilePermissionsMapper;
-import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.DosFileAttributeView;
-import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileTime;
-import java.nio.file.attribute.PosixFileAttributeView;
 import java.time.Instant;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This abstract class is the superclass of all classes providing archiving. This class provides functionality to add
@@ -57,8 +46,6 @@ import org.slf4j.LoggerFactory;
  * @since 2.2
  */
 public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends ArchiveEntry>> implements Closeable {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(ArchiveCreator.class);
 
     private BiPredicate<? super String, ? super Path> entryFilter = (name, path) -> true;
 
@@ -224,15 +211,7 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
      */
     private void addDirectoryRecursively(
             String topLevelDir, Path directory, Function<BasicFileAttributes, FileTime> modTime) throws IOException {
-        if (!Files.isDirectory(directory)) {
-            throw new IllegalArgumentException("Path is not a directory: " + directory);
-        }
-        topLevelDir = topLevelDir.isEmpty() ? "" : sanitiseName(topLevelDir);
-        LOGGER.atTrace().log("dir={} topLevelDir={}", directory, topLevelDir);
-
-        Files.walkFileTree(directory, new PathSimpleFileVisitor<>(this, directory, topLevelDir, modTime));
-
-        LOGGER.atTrace().log(".");
+        DirectoryTreeWalker.walk(this, topLevelDir, directory, modTime);
     }
 
     /**
@@ -404,29 +383,7 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
      * @throws IOException thrown by the underlying output stream for I/O errors
      */
     protected static int mode(Path path) throws IOException {
-        if (isIsOsWindows()) {
-            DosFileAttributeView attrs =
-                    Files.getFileAttributeView(path, DosFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
-            if (attrs != null) {
-                DosFileAttributes dosAttrs = attrs.readAttributes();
-                int mode = NO_MODE;
-                if (dosAttrs.isReadOnly()) mode |= DOS_READ_ONLY;
-                if (dosAttrs.isHidden()) mode |= DOS_HIDDEN;
-                return mode;
-            } else {
-                LOGGER.trace("Cannot get DOS file attributes for: {}", path);
-            }
-        } else {
-            PosixFileAttributeView attrs =
-                    Files.getFileAttributeView(path, PosixFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
-            if (attrs != null) {
-                return PosixFilePermissionsMapper.toUnixMode(
-                        attrs.readAttributes().permissions());
-            } else {
-                LOGGER.trace("Cannot get POSIX file attributes for: {}", path);
-            }
-        }
-        return NO_MODE;
+        return FileModes.of(path, isIsOsWindows());
     }
 
     /**
@@ -451,61 +408,6 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
         String entryName = trimLeading(trimTrailing(name.replaceAll("\\\\+", "/"), '/'), '/');
         if (StringUtils.isBlank(entryName)) throw new IllegalArgumentException("Invalid entry name: " + name);
         return entryName;
-    }
-
-    private static class PathSimpleFileVisitor<E extends ArchiveOutputStream<? extends ArchiveEntry>>
-            extends SimpleFileVisitor<Path> {
-        private final Path root;
-        private final String prefix;
-
-        private final Function<BasicFileAttributes, FileTime> modTime;
-
-        private final ArchiveCreator<E> archiveCreator;
-
-        public PathSimpleFileVisitor(
-                ArchiveCreator<E> archiveCreator,
-                Path root,
-                String prefix,
-                Function<BasicFileAttributes, FileTime> modTime) {
-            this.root = root;
-            this.prefix = prefix;
-            this.modTime = modTime;
-            this.archiveCreator = archiveCreator;
-        }
-
-        @Override
-        @Nonnull
-        public FileVisitResult preVisitDirectory(@Nonnull Path dir, @Nonnull BasicFileAttributes attrs)
-                throws IOException {
-            String name = dir == root ? prefix : entryName(dir);
-            if (name.isEmpty()) {
-                return FileVisitResult.CONTINUE;
-            } else if (archiveCreator.accept(name, dir)) {
-                LOGGER.atTrace().log("  {} -> {}/", dir, name);
-                archiveCreator.addDirectory(name, modTime.apply(attrs));
-                return FileVisitResult.CONTINUE;
-            } else {
-                return FileVisitResult.SKIP_SUBTREE;
-            }
-        }
-
-        @Override
-        @Nonnull
-        public FileVisitResult visitFile(@Nonnull Path file, @Nonnull BasicFileAttributes attrs) throws IOException {
-            String name = entryName(file);
-            if (archiveCreator.accept(name, file)) {
-                LOGGER.atTrace()
-                        .log("  {} -> {}{}", file, name, attrs.isSymbolicLink() ? " symlink" : " size=" + attrs.size());
-                archiveCreator.addFile(name, file, attrs, modTime.apply(attrs));
-            }
-            return FileVisitResult.CONTINUE;
-        }
-
-        private String entryName(Path fileOrDir) {
-            String relativeName =
-                    ArchiveCreator.sanitiseName(root.relativize(fileOrDir).toString());
-            return prefix.isEmpty() ? relativeName : prefix + '/' + relativeName;
-        }
     }
 
     /**

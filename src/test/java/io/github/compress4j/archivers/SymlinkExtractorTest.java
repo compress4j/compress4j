@@ -1,0 +1,95 @@
+/*
+ * Copyright 2024-2026 The Compress4J Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.github.compress4j.archivers;
+
+import static io.github.compress4j.archivers.ArchiveExtractor.EscapingSymlinkPolicy.ALLOW;
+import static io.github.compress4j.archivers.ArchiveExtractor.EscapingSymlinkPolicy.DISALLOW;
+import static io.github.compress4j.archivers.ArchiveExtractor.EscapingSymlinkPolicy.RELATIVIZE_ABSOLUTE;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import io.github.compress4j.archivers.ArchiveExtractor.Entry;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
+import org.junit.jupiter.api.io.TempDir;
+
+@DisabledOnOs(OS.WINDOWS)
+class SymlinkExtractorTest {
+
+    @TempDir
+    Path outputDir;
+
+    private static Entry link(String target) {
+        return new Entry("link", Entry.Type.SYMLINK, 0, target);
+    }
+
+    private void extract(SymlinkExtractor extractor, Entry entry) throws IOException {
+        extractor.extract(outputDir, entry, outputDir.resolve(entry.name()));
+    }
+
+    @Test
+    void allow_createsTheLinkAsIs() throws IOException {
+        extract(new SymlinkExtractor(ALLOW, false), link("/opt/foo"));
+        assertThat(Files.readSymbolicLink(outputDir.resolve("link"))).isEqualTo(Path.of("/opt/foo"));
+    }
+
+    @Test
+    void relativizeAbsolute_rebasesAbsoluteTargetsUnderTheOutputDir() throws IOException {
+        extract(new SymlinkExtractor(RELATIVIZE_ABSOLUTE, false), link("/opt/foo"));
+        assertThat(Files.readSymbolicLink(outputDir.resolve("link"))).isEqualTo(outputDir.resolve("opt/foo"));
+    }
+
+    @Test
+    void disallow_rejectsAbsoluteTargets() {
+        assertThatThrownBy(() -> extract(new SymlinkExtractor(DISALLOW, false), link("/opt/foo")))
+                .isInstanceOf(IOException.class)
+                .hasMessageContaining("Invalid symlink (absolute path): link -> /opt/foo");
+    }
+
+    @Test
+    void disallow_rejectsTargetsEscapingTheOutputDir() {
+        assertThatThrownBy(() -> extract(new SymlinkExtractor(DISALLOW, false), link("../outside")))
+                .isInstanceOf(IOException.class)
+                .hasMessageContaining("Invalid symlink (points outside of output directory): link -> ../outside");
+    }
+
+    @Test
+    void disallow_acceptsTargetsInsideTheOutputDir() throws IOException {
+        extract(new SymlinkExtractor(DISALLOW, false), link("inside/file"));
+        assertThat(Files.readSymbolicLink(outputDir.resolve("link"))).isEqualTo(Path.of("inside/file"));
+    }
+
+    @Test
+    void rejectsBlankTargets() {
+        assertThatThrownBy(() -> extract(new SymlinkExtractor(ALLOW, false), link("  ")))
+                .isInstanceOf(IOException.class)
+                .hasMessage("Invalid symlink entry: link (empty target)");
+    }
+
+    @Test
+    void keepsAnExistingLinkUnlessOverwriting() throws IOException {
+        Files.createSymbolicLink(outputDir.resolve("link"), Path.of("old"));
+        extract(new SymlinkExtractor(ALLOW, false), link("new"));
+        assertThat(Files.readSymbolicLink(outputDir.resolve("link"))).isEqualTo(Path.of("old"));
+
+        extract(new SymlinkExtractor(ALLOW, true), link("new"));
+        assertThat(Files.readSymbolicLink(outputDir.resolve("link"))).isEqualTo(Path.of("new"));
+    }
+}
