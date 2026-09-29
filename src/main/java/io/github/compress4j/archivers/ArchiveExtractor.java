@@ -265,7 +265,9 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
                     return;
                 }
                 case EntryOutcome.IgnoreFurtherErrors() -> ignoreErrors = true;
-                case EntryOutcome.Continue() -> {}
+                case EntryOutcome.Continue() -> {
+                    // Nothing to record: success and SKIP both move on to the next entry
+                }
             }
         }
     }
