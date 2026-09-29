@@ -16,12 +16,12 @@
 package io.github.compress4j.archivers.memory;
 
 import io.github.compress4j.archivers.ArchiveExtractor;
-import jakarta.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Optional;
 
 public class InMemoryArchiveExtractor extends ArchiveExtractor<InMemoryArchiveInputStream> {
 
@@ -54,14 +54,10 @@ public class InMemoryArchiveExtractor extends ArchiveExtractor<InMemoryArchiveIn
         return new InMemoryArchiveExtractorBuilder(InMemoryArchiveInputStream.toInputStream(entries));
     }
 
-    @Nullable
     @Override
-    public Entry nextEntry() {
-        InMemoryArchiveEntry nextEntry = archiveInputStream.getNextEntry();
-        if (nextEntry == null) {
-            return null;
-        }
-        return new Entry(nextEntry.getName(), nextEntry.getType(), nextEntry.getMode(), nextEntry.getLinkName());
+    public Optional<Entry> nextEntry() {
+        return Optional.ofNullable(archiveInputStream.getNextEntry())
+                .map(next -> new Entry(next.getName(), next.getType(), next.getMode(), next.getLinkName()));
     }
 
     @Override

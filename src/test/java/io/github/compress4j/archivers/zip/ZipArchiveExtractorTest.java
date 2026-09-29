@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,10 +64,9 @@ class ZipArchiveExtractorTest {
             when(mockInputStream.getNextEntry()).thenReturn(mockZipEntry);
 
             // When
-            var entry = extractor.nextEntry();
+            var entry = extractor.nextEntry().orElseThrow();
 
             // Then
-            assertThat(entry).isNotNull();
             assertThat(entry.name()).isEqualTo("file.txt");
             assertThat(entry.type()).isEqualTo(ArchiveExtractor.Entry.Type.FILE);
             assertThat(entry.mode()).isEqualTo(0644);
@@ -88,10 +87,9 @@ class ZipArchiveExtractorTest {
             when(mockInputStream.getNextEntry()).thenReturn(mockZipEntry);
 
             // When
-            var entry = extractor.nextEntry();
+            var entry = extractor.nextEntry().orElseThrow();
 
             // Then
-            assertThat(entry).isNotNull();
             assertThat(entry.name()).isEqualTo("directory");
             assertThat(entry.type()).isEqualTo(ArchiveExtractor.Entry.Type.DIR);
             assertThat(entry.mode()).isEqualTo(0755);
@@ -111,10 +109,9 @@ class ZipArchiveExtractorTest {
             when(mockInputStream.getNextEntry()).thenReturn(mockZipEntry);
 
             // When
-            var entry = extractor.nextEntry();
+            var entry = extractor.nextEntry().orElseThrow();
 
             // Then
-            assertThat(entry).isNotNull();
             assertThat(entry.name()).isEqualTo("link");
             assertThat(entry.type()).isEqualTo(ArchiveExtractor.Entry.Type.SYMLINK);
             assertThat(entry.linkTarget()).isEqualTo("target/file");
@@ -123,8 +120,8 @@ class ZipArchiveExtractorTest {
         }
 
         @Test
-        @DisplayName("Should return null when no more entries")
-        void testNextEntry_Null() throws IOException {
+        @DisplayName("Should return empty when no more entries")
+        void testNextEntry_Empty() throws IOException {
             // Given
             when(mockInputStream.getNextEntry()).thenReturn(null);
 
@@ -132,7 +129,7 @@ class ZipArchiveExtractorTest {
             var entry = extractor.nextEntry();
 
             // Then
-            assertThat(entry).isNull();
+            assertThat(entry).isEmpty();
         }
 
         @Test

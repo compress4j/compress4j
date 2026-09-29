@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ class TarArchiveExtractorTest {
             var result = tarDecompressor.nextEntry();
 
             // then
-            Compress4JAssertions.assertThat(result)
+            Compress4JAssertions.assertThat(result.orElseThrow())
                     .hasName("file.txt")
                     .hasType(ArchiveExtractor.Entry.Type.FILE)
                     .hasMode(Set.of(OWNER_READ));
@@ -97,7 +97,7 @@ class TarArchiveExtractorTest {
             var result = tarDecompressor.nextEntry();
 
             // then
-            Compress4JAssertions.assertThat(result)
+            Compress4JAssertions.assertThat(result.orElseThrow())
                     .hasName("file.txt")
                     .hasMode(Set.of(OWNER_READ, OWNER_WRITE, GROUP_READ, OTHERS_READ))
                     .hasLinkName("target.txt")
@@ -131,7 +131,7 @@ class TarArchiveExtractorTest {
             var result = tarDecompressor.nextEntry();
 
             // then
-            Compress4JAssertions.assertThat(result)
+            Compress4JAssertions.assertThat(result.orElseThrow())
                     .hasName("file.txt")
                     .hasMode(Set.of(OWNER_READ))
                     .hasType(ArchiveExtractor.Entry.Type.DIR);
@@ -160,7 +160,7 @@ class TarArchiveExtractorTest {
             var result = tarDecompressor.nextEntry();
 
             // then
-            Compress4JAssertions.assertThat(result)
+            Compress4JAssertions.assertThat(result.orElseThrow())
                     .hasName("file.txt")
                     .hasType(ArchiveExtractor.Entry.Type.FILE)
                     .hasMode(0);
@@ -190,7 +190,7 @@ class TarArchiveExtractorTest {
             var result = tarDecompressor.nextEntry();
 
             // then
-            Compress4JAssertions.assertThat(result)
+            Compress4JAssertions.assertThat(result.orElseThrow())
                     .hasName("file.txt")
                     .hasMode(Collections.emptySet())
                     .hasLinkName("target.txt")
@@ -221,7 +221,7 @@ class TarArchiveExtractorTest {
             var result = tarDecompressor.nextEntry();
 
             // then
-            Compress4JAssertions.assertThat(result)
+            Compress4JAssertions.assertThat(result.orElseThrow())
                     .hasName("some-path")
                     .hasMode(Collections.emptySet())
                     .hasType(ArchiveExtractor.Entry.Type.DIR);
@@ -229,7 +229,7 @@ class TarArchiveExtractorTest {
     }
 
     @Test
-    void shouldReturnNullWhenNextEntryIsNull() throws IOException {
+    void shouldReturnEmptyWhenNoMoreEntries() throws IOException {
         // given
         var mockInputStream = new ByteArrayInputStream("test".getBytes());
 
@@ -239,7 +239,7 @@ class TarArchiveExtractorTest {
             var result = tarDecompressor.nextEntry();
 
             // then
-            assertThat(result).isNull();
+            assertThat(result).isEmpty();
         }
     }
 
@@ -263,7 +263,7 @@ class TarArchiveExtractorTest {
             then(tarArchiveInputStream).should(times(3)).getNextEntry();
             then(mockTarEntry).should().isFile();
             then(mockTarEntry).should().isLink();
-            assertThat(result).isNull();
+            assertThat(result).isEmpty();
         }
     }
 }

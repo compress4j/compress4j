@@ -17,6 +17,8 @@ package io.github.compress4j.archivers.cpio;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 
 import io.github.compress4j.exceptions.ArchiveLimitExceededException;
 import java.io.ByteArrayInputStream;
@@ -25,6 +27,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
+import org.apache.commons.compress.archivers.cpio.CpioArchiveEntry;
 import org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -302,6 +305,24 @@ class CpioArchiveExtractorTest {
 
         // then
         assertThat(extractDir.resolve("large.txt")).exists().hasContent(content.toString());
+    }
+
+    @Test
+    void nextEntryShouldBeEmptyWhenStreamEndsWithoutTrailer() throws IOException {
+        var stream = mock(CpioArchiveInputStream.class);
+        given(stream.getNextEntry()).willReturn(null);
+        try (var extractor = new CpioArchiveExtractor(stream)) {
+            assertThat(extractor.nextEntry()).isEmpty();
+        }
+    }
+
+    @Test
+    void nextEntryShouldBeEmptyAtTrailerEntry() throws IOException {
+        var stream = mock(CpioArchiveInputStream.class);
+        given(stream.getNextEntry()).willReturn(new CpioArchiveEntry("TRAILER!!!"));
+        try (var extractor = new CpioArchiveExtractor(stream)) {
+            assertThat(extractor.nextEntry()).isEmpty();
+        }
     }
 
     private byte[] createSampleArchive() throws IOException {

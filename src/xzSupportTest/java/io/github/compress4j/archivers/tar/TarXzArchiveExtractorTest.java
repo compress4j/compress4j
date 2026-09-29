@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ class TarXzArchiveExtractorTest {
      * TarArchiveExtractorTest
      */
     @Test
-    void shouldReturnNullWhenNextEntryIsNull() throws IOException {
+    void shouldReturnEmptyWhenNoMoreEntries() throws IOException {
         // given
         var mockInputStream = mock(TarArchiveInputStream.class);
 
@@ -38,7 +38,7 @@ class TarXzArchiveExtractorTest {
             var result = tarXZDecompressor.nextEntry();
 
             // then
-            assertThat(result).isNull();
+            assertThat(result).isEmpty();
         }
     }
 }

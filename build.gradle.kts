@@ -74,7 +74,7 @@ dependencies {
     testFixturesApi(libs.assertj.core)
     testFixturesApi(libs.commons.compress)
     testFixturesApi(libs.jackson.core)
-    testFixturesApi(libs.jakarta.annotation.api)
+    testFixturesCompileOnly(libs.jakarta.annotation.api)
     testFixturesApi(libs.logback.classic)
     testFixturesApi(libs.logback.core)
 

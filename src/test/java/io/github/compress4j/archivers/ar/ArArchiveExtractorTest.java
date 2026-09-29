@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -239,5 +239,13 @@ class ArArchiveExtractorTest {
 
         // then
         assertThat(tempDir.resolve("closeable.txt")).exists();
+    }
+
+    @Test
+    void nextEntryShouldBeEmptyForEmptyArchive() throws IOException {
+        var emptyArchive = "!<arch>\n".getBytes(StandardCharsets.US_ASCII);
+        try (var extractor = new ArArchiveExtractor(new ArArchiveInputStream(new ByteArrayInputStream(emptyArchive)))) {
+            assertThat(extractor.nextEntry()).isEmpty();
+        }
     }
 }

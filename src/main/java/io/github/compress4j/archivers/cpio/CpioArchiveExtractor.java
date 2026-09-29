@@ -16,13 +16,13 @@
 package io.github.compress4j.archivers.cpio;
 
 import io.github.compress4j.archivers.ArchiveExtractor;
-import jakarta.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 import org.apache.commons.compress.archivers.cpio.CpioArchiveEntry;
 import org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream;
 
@@ -58,10 +58,10 @@ public class CpioArchiveExtractor extends ArchiveExtractor<CpioArchiveInputStrea
     }
 
     @Override
-    public @Nullable Entry nextEntry() throws IOException {
+    public Optional<Entry> nextEntry() throws IOException {
         CpioArchiveEntry cpioEntry = archiveInputStream.getNextEntry();
         if (cpioEntry == null || "TRAILER!!!".equals(cpioEntry.getName())) {
-            return null;
+            return Optional.empty();
         }
 
         int mode = (int) cpioEntry.getMode();
@@ -69,11 +69,11 @@ public class CpioArchiveExtractor extends ArchiveExtractor<CpioArchiveInputStrea
             // CPIO has no dedicated link-name header field; the target path is the entry's content.
             byte[] targetBytes = readEntryContent(cpioEntry.getName(), archiveInputStream, cpioEntry.getSize());
             String target = new String(targetBytes, StandardCharsets.UTF_8);
-            return new Entry(cpioEntry.getName(), Entry.Type.SYMLINK, mode, target);
+            return Optional.of(new Entry(cpioEntry.getName(), Entry.Type.SYMLINK, mode, target));
         } else if (cpioEntry.isDirectory()) {
-            return new Entry(cpioEntry.getName(), Entry.Type.DIR, mode, null);
+            return Optional.of(new Entry(cpioEntry.getName(), Entry.Type.DIR, mode, null));
         } else {
-            return new Entry(cpioEntry.getName(), Entry.Type.FILE, mode, null);
+            return Optional.of(new Entry(cpioEntry.getName(), Entry.Type.FILE, mode, null));
         }
     }
 

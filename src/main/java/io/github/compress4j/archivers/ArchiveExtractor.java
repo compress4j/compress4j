@@ -44,6 +44,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.function.BiConsumer;
@@ -248,8 +249,9 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         extractedBytes = 0;
         long entries = 0;
         boolean ignoreErrors = false;
-        Entry entry;
-        while ((entry = nextEntry()) != null) {
+        Optional<Entry> next;
+        while ((next = nextEntry()).isPresent()) {
+            Entry entry = next.orElseThrow();
             // Skip entry if filter does not match
             if (!entryFilter.test(entry)) {
                 continue;
@@ -258,12 +260,12 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
                 throw new ArchiveLimitExceededException(
                         "Archive holds more than the maximum of " + maxEntries + " entries allowed");
             }
-            ErrorHandlerChoice choice = extractEntry(outputDir, entry, ignoreErrors);
-            if (choice == ABORT) {
-                return;
-            }
-            if (choice == SKIP_ALL) {
-                ignoreErrors = true;
+            switch (extractEntry(outputDir, entry, ignoreErrors)) {
+                case EntryOutcome.Abort() -> {
+                    return;
+                }
+                case EntryOutcome.IgnoreFurtherErrors() -> ignoreErrors = true;
+                case EntryOutcome.Continue() -> {}
             }
         }
     }
@@ -274,26 +276,41 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * @param outputDir the directory to extract the archive to
      * @param entry the entry to extract
      * @param ignoreErrors whether {@link ErrorHandlerChoice#SKIP_ALL} was selected for an earlier entry
-     * @return the choice the error handler settled on, or {@code null} when the entry was extracted without error
+     * @return what the extraction loop does next
      * @throws IOException if an I/O error occurs and the error handler rethrows it
      * @throws ArchiveLimitExceededException if the entry breaches one of the configured extraction limits
      */
-    private @Nullable ErrorHandlerChoice extractEntry(Path outputDir, Entry entry, boolean ignoreErrors)
-            throws IOException {
+    private EntryOutcome extractEntry(Path outputDir, Entry entry, boolean ignoreErrors) throws IOException {
         while (true) {
             try {
                 processEntry(outputDir, entry);
-                return null;
+                return new EntryOutcome.Continue();
             } catch (ArchiveLimitExceededException limitExceeded) {
                 // A breached limit is not negotiable, the error handler does not get to keep the extraction going
                 throw limitExceeded;
             } catch (IOException ioException) {
                 ErrorHandlerChoice choice = handleException(ioException, ignoreErrors, entry);
                 if (choice != RETRY) {
-                    return choice;
+                    return outcomeOf(choice);
                 }
             }
         }
+    }
+
+    private static EntryOutcome outcomeOf(ErrorHandlerChoice choice) {
+        return switch (choice) {
+            case ABORT -> new EntryOutcome.Abort();
+            case SKIP_ALL -> new EntryOutcome.IgnoreFurtherErrors();
+            case SKIP, RETRY, BAIL_OUT -> new EntryOutcome.Continue();
+        };
+    }
+
+    private sealed interface EntryOutcome {
+        record Continue() implements EntryOutcome {}
+
+        record Abort() implements EntryOutcome {}
+
+        record IgnoreFurtherErrors() implements EntryOutcome {}
     }
 
     /**
@@ -444,11 +461,11 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
     /**
      * Retrieve the next entry from the archive.
      *
-     * @return the next entry from the archive, or {@code null} if there are no more entries
+     * @return the next entry from the archive, or empty if there are no more entries
      * @throws IOException if an I/O error occurs
      * @since 3.0
      */
-    public abstract @Nullable Entry nextEntry() throws IOException;
+    public abstract Optional<Entry> nextEntry() throws IOException;
 
     /**
      * Open the stream for the current entry. This method is called before the entry is processed and should open the
@@ -496,7 +513,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
     @Override
     public @Nonnull Iterator<Entry> iterator() {
         return new Iterator<>() {
-            Entry next;
+            Optional<Entry> next = Optional.empty();
             boolean nextFetched = false;
 
             @Override
@@ -509,25 +526,25 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
                         throw new UncheckedIOException(e);
                     }
                 }
-                return next != null;
+                return next.isPresent();
             }
 
             @Override
             public Entry next() {
                 if (!hasNext()) throw new NoSuchElementException();
                 nextFetched = false;
-                return next;
+                return next.orElseThrow();
             }
         };
     }
 
-    private @Nullable Entry stripComponents(Entry e) {
+    private Optional<Entry> stripComponents(Entry e) {
         List<String> ourPathSplit = splitPath(e.name);
         if (ourPathSplit.size() <= stripComponents) {
-            return null;
+            return Optional.empty();
         }
         String newName = String.join("/", ourPathSplit.subList(stripComponents, ourPathSplit.size()));
-        return new Entry(newName, e.type, e.mode, e.linkTarget);
+        return Optional.of(new Entry(newName, e.type, e.mode, e.linkTarget));
     }
 
     /**
@@ -659,8 +676,9 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      */
     private void processEntry(Path outputDir, Entry entry) throws IOException {
         if (stripComponents > 0) {
-            entry = stripComponents(entry);
-            if (entry == null) return;
+            Optional<Entry> stripped = stripComponents(entry);
+            if (stripped.isEmpty()) return;
+            entry = stripped.orElseThrow();
         }
 
         Path outputFile = entryFile(outputDir, entry.name);
