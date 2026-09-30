@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Compress4J Project
+ * Copyright 2024-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,14 +22,6 @@ public class DependencyCheckerTestConstants {
     public static final String EXPECTED_MESSAGE_BROTLI =
             "Brotli compression is not available. In addition to Apache Commons Compress"
                     + " you need the Google Brotli Dec library - see https://github.com/google/brotli/";
-
-    public static final String EXPECTED_MESSAGE_LZMA =
-            "LZMA compression is not available. In addition to Apache Commons Compress"
-                    + " you need the XZ for Java library - see https://tukaani.org/xz/java.html";
-
-    public static final String EXPECTED_MESSAGE_XZ =
-            "XZ compression is not available. In addition to Apache Commons Compress"
-                    + " you need the XZ for Java library - see https://tukaani.org/xz/java.html";
 
     public static final String EXPECTED_MESSAGE_ZSTD =
             "Zstandard compression is not available. In addition to Apache Commons Compress"

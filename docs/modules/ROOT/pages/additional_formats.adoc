@@ -4,7 +4,9 @@ Some formats may require additional support libraries to be included in your pro
 
 == XZ Support
 
-The XZ compression format support is provided through an additional module. Make sure to include it in your project to work with XZ compressed files.
+XZ support needs `org.tukaani:xz` on the class path or module path. There is no separate Compress4J artifact; the former `compress4j-xz-support` capability and its `io.github.compress4j.xz` automatic module name no longer exist, so remove them from your build and `module-info.java`.
+
+On the module path, `org.tukaani.xz` is not resolved automatically. Add `requires org.tukaani.xz;` to your module, or start the JVM with `--add-modules org.tukaani.xz`.
 
 [tabs]
 ====
@@ -18,9 +20,9 @@ Maven::
     <version>YOUR_VERSION</version>
 </dependency>
 <dependency>
-    <groupId>io.github.compress4j</groupId>
-    <artifactId>compress4j-xz-support</artifactId>
-    <version>YOUR_VERSION</version>
+    <groupId>org.tukaani</groupId>
+    <artifactId>xz</artifactId>
+    <version>YOUR_XZ_VERSION</version>
 </dependency>
 ----
 
@@ -29,12 +31,8 @@ Gradle Groovy::
 [source,groovy]
 ----
 dependencies {
-    implementation('io.github.compress4j:compress4j:YOUR_VERSION')
-    implementation('io.github.compress4j:compress4j:YOUR_VERSION') {
-        capabilities {
-            requireCapability("io.github.compress4j:compress4j-xz-support")
-        }
-    }
+    implementation 'io.github.compress4j:compress4j:YOUR_VERSION'
+    implementation 'org.tukaani:xz:YOUR_XZ_VERSION'
 }
 ----
 
@@ -44,11 +42,7 @@ Gradle Kotlin::
 ----
 dependencies {
     implementation("io.github.compress4j:compress4j:YOUR_VERSION")
-    implementation("io.github.compress4j:compress4j:YOUR_VERSION") {
-        capabilities {
-            requireCapability("io.github.compress4j:compress4j-xz-support")
-        }
-    }
+    implementation("org.tukaani:xz:YOUR_XZ_VERSION")
 }
 ----
 ====

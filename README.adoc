@@ -20,9 +20,7 @@ dependencies {
     implementation("io.github.compress4j:compress4j:<version>")
 
     // Only needed for the .xz and .tar.xz formats
-    implementation("io.github.compress4j:compress4j:<version>") {
-        capabilities { requireCapability("io.github.compress4j:compress4j-xz-support") }
-    }
+    implementation("org.tukaani:xz:<version>")
 }
 ----
 

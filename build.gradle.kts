@@ -34,13 +34,8 @@ repositories {
     mavenCentral()
 }
 
-val xzSupport: SourceSet by sourceSets.creating {
-    compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
-    runtimeClasspath += sourceSets.main.get().output + sourceSets.main.get().runtimeClasspath
-}
 val examples: SourceSet by sourceSets.creating {
     compileClasspath += sourceSets.main.get().output + sourceSets.main.get().compileClasspath
-    compileClasspath += xzSupport.output + sourceSets.main.get().compileClasspath
     runtimeClasspath += sourceSets.main.get().output + sourceSets.main.get().runtimeClasspath
 }
 
@@ -50,17 +45,10 @@ java {
     }
     withJavadocJar()
     withSourcesJar()
-    registerFeature("xzSupport") {
-        usingSourceSet(xzSupport)
-        capability("${project.group}", "${project.name}-xz-support", "${project.version}")
-        withJavadocJar()
-        withSourcesJar()
-    }
 }
 
 val examplesImplementation: Configuration by configurations
 val mockitoAgent: Configuration = configurations.create("mockitoAgent")
-val xzSupportApi: Configuration by configurations
 
 dependencies {
     api(libs.commons.compress)
@@ -69,6 +57,8 @@ dependencies {
 
     implementation(libs.commons.lang3)
     implementation(libs.slf4j.api)
+
+    compileOnly(libs.org.tukaani.xz)
 
     testFixturesApi(platform(libs.jackson.bom))
     testFixturesApi(libs.assertj.core)
@@ -83,8 +73,6 @@ dependencies {
     testFixturesImplementation(libs.jackson.annotations)
     testFixturesImplementation(libs.jackson.databind)
     testFixturesImplementation(libs.mockito.core)
-
-    xzSupportApi(libs.org.tukaani.xz)
 
     examplesImplementation(libs.org.tukaani.xz)
 
@@ -105,30 +93,10 @@ testing {
                 implementation(libs.logback.core)
                 implementation(libs.mockito.core)
                 implementation(libs.mockito.jupiter)
+                implementation(libs.org.tukaani.xz)
             }
         }
     }
-}
-
-val xzSupportTest by testing.suites.registering(JvmTestSuite::class) {
-    dependencies {
-        implementation(platform(libs.junit.bom))
-        implementation(project())
-        implementation(testFixtures(project()))
-        implementation(project()) {
-            capabilities {
-                requireCapability("${project.group}:${project.name}-xz-support")
-            }
-        }
-
-        implementation(libs.assertj.core)
-        implementation(libs.junit.jupiter.api)
-        implementation(libs.mockito.core)
-    }
-
-    targets.all { testTask.configure {
-        shouldRunAfter(tasks.test)
-    }}
 }
 
 val integrationTest by testing.suites.registering(JvmTestSuite::class) {
@@ -136,19 +104,14 @@ val integrationTest by testing.suites.registering(JvmTestSuite::class) {
         implementation(platform(libs.junit.bom))
         implementation(project())
         implementation(testFixtures(project()))
-        implementation(project()) {
-            capabilities {
-                requireCapability("${project.group}:${project.name}-xz-support")
-            }
-        }
-
         implementation(libs.junit.jupiter.api)
 
         runtimeOnly(libs.asm)
+        runtimeOnly(libs.org.tukaani.xz)
     }
 
     targets.all { testTask.configure {
-        shouldRunAfter(xzSupportTest)
+        shouldRunAfter(tasks.test)
     }}
 }
 
@@ -211,19 +174,12 @@ val japicmpMain = registerApiComparison(
     tasks.jar,
     sourceSets.main.get().compileClasspath
 )
-val japicmpXzSupport = registerApiComparison(
-    "japicmpXzSupport",
-    baselineArtifacts("xz-support"),
-    tasks.named<Jar>("xzSupportJar"),
-    xzSupport.compileClasspath
-)
-
 val checkApiCompatibility = tasks.register<CheckApiCompatibilityTask>("checkApiCompatibility") {
     group = "verification"
     description = "Fails when the API changes since the last release ask for a bigger version bump than the commits declare."
     baselineVersion = provider { newestDownloadableBaselineVersion }
     declaredBump = semver.declaredBump
-    reports.from(japicmpMain.flatMap { it.xmlOutputFile }, japicmpXzSupport.flatMap { it.xmlOutputFile })
+    reports.from(japicmpMain.flatMap { it.xmlOutputFile })
 }
 
 dependencyAnalysis {
@@ -235,7 +191,6 @@ dependencyAnalysis {
             onAny {
                 severity("fail")
             }
-            ignoreSourceSet("xzSupport")
         }
     }
 }
@@ -245,18 +200,14 @@ tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
 }
 
-fun Jar.compress4jManifest(moduleName: String, title: String) = manifest {
-    attributes(
-        "Automatic-Module-Name" to moduleName,
-        "Implementation-Title" to title,
-        "Implementation-Version" to project.version,
-        "Implementation-Vendor" to "The Compress4J Project"
-    )
-}
-
-tasks.jar { compress4jManifest("io.github.compress4j", project.name) }
-tasks.named<Jar>("xzSupportJar") {
-    compress4jManifest("io.github.compress4j.xz", "${project.name}-xz-support")
+tasks.jar {
+    manifest {
+        attributes(
+            "Implementation-Title" to project.name,
+            "Implementation-Version" to project.version,
+            "Implementation-Vendor" to "The Compress4J Project"
+        )
+    }
 }
 
 tasks.withType<Javadoc> {
@@ -265,7 +216,7 @@ tasks.withType<Javadoc> {
 }
 
 tasks.testCodeCoverageReport {
-    dependsOn(tasks.test, integrationTest, xzSupportTest)
+    dependsOn(tasks.test, integrationTest)
     executionData(
         fileTree(layout.buildDirectory).include("jacoco/*.exec")
     )
@@ -292,8 +243,8 @@ sonar {
         property("sonar.projectKey", "compress4j_compress4j")
         property("sonar.organization", "compress4j")
         property("sonar.host.url", "https://sonarcloud.io")
-        property("sonar.sources", "src/main/java,src/xzSupport/java,src/examples/java,.github/workflows")
-        property("sonar.tests", "src/test/java,src/xzSupportTest/java,src/integrationTest/java,src/testFixtures/java")
+        property("sonar.sources", "src/main/java,src/examples/java,.github/workflows")
+        property("sonar.tests", "src/test/java,src/integrationTest/java,src/testFixtures/java")
         property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/testCodeCoverageReport/testCodeCoverageReport.xml")
         property(
             "sonar.coverage.exclusions",
@@ -311,8 +262,6 @@ tasks.sonar {
         tasks.classes,
         tasks.testClasses,
         tasks.named("testFixturesClasses"),
-        tasks.named("xzSupportClasses"),
-        tasks.named("xzSupportTestClasses"),
         tasks.named("integrationTestClasses")
     )
 }
@@ -365,14 +314,20 @@ publishing {
             from(components["java"])
             suppressPomMetadataWarningsFor("testFixturesApiElements")
             suppressPomMetadataWarningsFor("testFixturesRuntimeElements")
-            suppressPomMetadataWarningsFor("xzSupportApiElements")
-            suppressPomMetadataWarningsFor("xzSupportJavadocElements")
-            suppressPomMetadataWarningsFor("xzSupportRuntimeElements")
-            suppressPomMetadataWarningsFor("xzSupportSourcesElements")
             pom {
                 name = project.name
                 description = project.description
                 url = "https://github.com/compress4j/compress4j"
+                withXml {
+                    val dependencies = asNode().get("dependencies") as groovy.util.NodeList
+                    (dependencies.first() as groovy.util.Node).appendNode("dependency").apply {
+                        appendNode("groupId", "org.tukaani")
+                        appendNode("artifactId", "xz")
+                        appendNode("version", libs.versions.tukaani.xz.get())
+                        appendNode("scope", "compile")
+                        appendNode("optional", "true")
+                    }
+                }
                 scm {
                     connection = "scm:git:https://github.com/compress4j/compress4j.git"
                     developerConnection = "scm:git:git@github.com:compress4j/compress4j.git"
