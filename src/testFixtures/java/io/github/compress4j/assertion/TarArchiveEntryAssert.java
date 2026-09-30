@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@ package io.github.compress4j.assertion;
 
 import static org.assertj.core.api.Assertions.within;
 
-import io.github.compress4j.utils.PosixFilePermissionsMapper;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFilePermission;
 import java.time.Instant;
@@ -74,7 +73,7 @@ public class TarArchiveEntryAssert extends AbstractAssert<TarArchiveEntryAssert,
 
     @SuppressWarnings("UnusedReturnValue")
     public TarArchiveEntryAssert hasMode(Set<PosixFilePermission> permissions) {
-        Set<PosixFilePermission> actualPermissions = PosixFilePermissionsMapper.fromUnixMode(actual.getMode());
+        Set<PosixFilePermission> actualPermissions = UnixModes.permissions(actual.getMode());
         Assertions.assertThat(actualPermissions).containsAll(permissions);
         return this;
     }
