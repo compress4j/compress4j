@@ -90,6 +90,7 @@ public class TarXzArchiveExtractor extends BaseTarArchiveExtractor {
          *
          * @param inputStream the input stream
          */
+        @SuppressWarnings("this-escape")
         public TarXzArchiveExtractorBuilder(InputStream inputStream) {
             super(inputStream);
             this.xzInputStreamBuilder = new XZDecompressorInputStreamBuilder<>(this, inputStream);
