@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,6 +79,8 @@ public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
      * @since 2.2
      */
     public static class GzipCompressorOutputStreamBuilder<P> {
+        private static final int UNKNOWN_OPERATING_SYSTEM = 255;
+
         /** The output stream to write the compressed data to. */
         protected final OutputStream outputStream;
 
@@ -89,7 +91,7 @@ public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
         private int deflateStrategy = Deflater.DEFAULT_STRATEGY;
         private String fileName;
         private long modificationTime;
-        private int operatingSystem = 255; // Unknown OS by default
+        private int operatingSystem = UNKNOWN_OPERATING_SYSTEM;
 
         /**
          * Constructs a builder for a Gzip output stream.

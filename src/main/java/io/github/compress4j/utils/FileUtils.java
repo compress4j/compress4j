@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 The Compress4J Project
+ * Copyright 2024-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ public class FileUtils {
 
     /** Private constructor to prevent instantiation. */
     private FileUtils() {
-        // No-op
+        /* no-op */
     }
 
     /** DOS read-only attribute. */

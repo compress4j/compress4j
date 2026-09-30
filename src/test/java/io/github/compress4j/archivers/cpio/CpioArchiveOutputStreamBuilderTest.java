@@ -244,7 +244,6 @@ class CpioArchiveOutputStreamBuilderTest {
         for (int blockSize : blockSizes) {
             var outputStream = new ByteArrayOutputStream();
 
-            // Create builder with specific block size
             var creatorBuilder = CpioArchiveCreator.builder(outputStream);
             var outputStreamBuilder = creatorBuilder.cpioOutputStream().blockSize(blockSize);
 
@@ -268,12 +267,10 @@ class CpioArchiveOutputStreamBuilderTest {
     @Test
     void testBuilderWithVariousEncodings() throws IOException {
         // given
-        // US-ASCII cannot represent the accented character, so it gets a plain-ASCII name; the other encodings are
-        // exercised with a name they can all represent.
-        Map<String, String> encodingToName =
+        Map<String, String> encodingToRepresentableName =
                 Map.of("UTF-8", "café.txt", "ISO-8859-1", "café.txt", "US-ASCII", "cafe.txt", "UTF-16", "café.txt");
 
-        for (var entry : encodingToName.entrySet()) {
+        for (var entry : encodingToRepresentableName.entrySet()) {
             String encoding = entry.getKey();
             String entryName = entry.getValue();
 

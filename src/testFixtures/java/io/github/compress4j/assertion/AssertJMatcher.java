@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,9 +26,10 @@ import org.mockito.ArgumentMatchers;
  * @see AssertionMatcher
  */
 public final class AssertJMatcher {
-    private AssertJMatcher() {}
+    private AssertJMatcher() {
+        /* no-op */
+    }
 
-    // TODO: remove when https://github.com/mockito/mockito/issues/3307 is fixed
     @SafeVarargs
     public static <T> T assertArgs(Consumer<T>... assertions) {
         AtomicInteger counter = new AtomicInteger();
@@ -39,7 +40,7 @@ public final class AssertJMatcher {
                     assertions[index].accept(actual);
                 }
             } catch (ClassCastException ignored) {
-                // ignore
+                return true;
             }
             return true;
         });

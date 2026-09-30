@@ -8,12 +8,12 @@ repositories {
 }
 
 dependencies {
-    implementation(libs.plugins.build.health.asDependency())
-    implementation(libs.plugins.foojay.resolver.convention.asDependency())
-    implementation(libs.plugins.git.hooks.asDependency())
-    implementation(libs.plugins.gradle.develocity.asDependency())
-    implementation(libs.plugins.japicmp.asDependency())
-    implementation(libs.plugins.jreleaser.asDependency())
+    implementation(libs.plugins.build.health.asDependencyWorkaround())
+    implementation(libs.plugins.foojay.resolver.convention.asDependencyWorkaround())
+    implementation(libs.plugins.git.hooks.asDependencyWorkaround())
+    implementation(libs.plugins.gradle.develocity.asDependencyWorkaround())
+    implementation(libs.plugins.japicmp.asDependencyWorkaround())
+    implementation(libs.plugins.jreleaser.asDependencyWorkaround())
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.assertj.core)
@@ -27,8 +27,7 @@ tasks.test {
     useJUnitPlatform()
 }
 
-// workaround for https://github.com/gradle/gradle/issues/17963
-fun Provider<PluginDependency>.asDependency(): String =
+fun Provider<PluginDependency>.asDependencyWorkaround(): String =
     get().let {
         val id = it.pluginId
         val version = it.version

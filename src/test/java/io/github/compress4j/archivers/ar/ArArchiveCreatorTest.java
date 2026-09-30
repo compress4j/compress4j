@@ -192,7 +192,7 @@ class ArArchiveCreatorTest {
 
     @Test
     void testCreateEmptyArchive() throws IOException {
-        // givem
+        // given
         var outputStream = new ByteArrayOutputStream();
 
         // when
@@ -248,7 +248,7 @@ class ArArchiveCreatorTest {
     void testAddFileWithLongName() {
         // given
         var outputStream = new ByteArrayOutputStream();
-        var longName = "very_long_filename.txt"; // Still over 16 chars
+        var longName = "very_long_filename.txt";
         var content = "Long name test";
 
         assertThatThrownBy(() -> {

@@ -96,7 +96,6 @@ public class DirectoryAssert extends AbstractPathAssert<DirectoryAssert> {
         final Set<String> actualPaths = actualContents.keySet();
         final Set<String> expectedPaths = expectedContents.keySet();
 
-        // Find differences
         final Set<String> missingPaths = new TreeSet<>(expectedPaths);
         missingPaths.removeAll(actualPaths);
 
@@ -106,7 +105,6 @@ public class DirectoryAssert extends AbstractPathAssert<DirectoryAssert> {
         final Set<String> commonPaths = new TreeSet<>(actualPaths);
         commonPaths.retainAll(expectedPaths);
 
-        // Build detailed error message
         final StringBuilder errorMessage = new StringBuilder();
         boolean hasDifferences = false;
 
@@ -123,7 +121,6 @@ public class DirectoryAssert extends AbstractPathAssert<DirectoryAssert> {
             extraPaths.forEach(path -> errorMessage.append("  + ").append(path).append("\n"));
         }
 
-        // Check content differences for common paths
         for (final String relativePath : commonPaths) {
             final Path actualPath = actualContents.get(relativePath);
             final Path expectedPath = expectedContents.get(relativePath);

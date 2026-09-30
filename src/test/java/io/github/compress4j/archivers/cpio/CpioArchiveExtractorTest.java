@@ -45,7 +45,6 @@ class CpioArchiveExtractorTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        // Create a sample CPIO archive for testing extraction
         sampleArchive = createSampleArchive();
         directoryArchive = createDirectoryArchive();
     }
@@ -181,7 +180,7 @@ class CpioArchiveExtractorTest {
         var emptyArchiveOutput = new ByteArrayOutputStream();
         // noinspection EmptyTryBlock
         try (var ignored = CpioArchiveCreator.builder(emptyArchiveOutput).build()) {
-            // Don't add any files - archive will only contain TRAILER
+            /* no-op */
         }
         byte[] emptyArchive = emptyArchiveOutput.toByteArray();
 
@@ -203,18 +202,15 @@ class CpioArchiveExtractorTest {
         var extractDir = tempDir.resolve("extract-overwrite");
         Files.createDirectories(extractDir);
 
-        // Create existing file
         Path existingFile = extractDir.resolve("file1.txt");
         Files.write(existingFile, "Existing content".getBytes());
 
-        // Extract archive (should overwrite)
         var archiveInput = new ByteArrayInputStream(sampleArchive);
         try (var extractor =
                 CpioArchiveExtractor.builder(archiveInput).overwrite(true).build()) {
             extractor.extract(extractDir);
         }
 
-        // Verify file was overwritten
         assertThat(Files.readString(existingFile)).isEqualTo("Content 1");
     }
 
@@ -287,7 +283,6 @@ class CpioArchiveExtractorTest {
         }
         Files.write(largeFile, content.toString().getBytes());
 
-        // Create archive with large file
         ByteArrayOutputStream archiveOutput = new ByteArrayOutputStream();
         try (CpioArchiveCreator creator =
                 CpioArchiveCreator.builder(archiveOutput).build()) {

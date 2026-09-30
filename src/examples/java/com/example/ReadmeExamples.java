@@ -26,7 +26,7 @@ import java.nio.file.Path;
 @SuppressWarnings({"unused"})
 public class ReadmeExamples {
     private ReadmeExamples() {
-        // Usage example
+        /* no-op */
     }
 
     public static void create() throws IOException {

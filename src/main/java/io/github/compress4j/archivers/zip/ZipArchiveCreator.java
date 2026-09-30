@@ -105,11 +105,9 @@ public class ZipArchiveCreator extends ArchiveCreator<ZipArchiveOutputStream> {
     protected void writeFileEntry(
             String name, InputStream inputStream, long size, FileTime modTime, int mode, Path symlinkTarget)
             throws IOException {
-        // ZIP doesn't support symbolic links in the same way as TAR - store symlinks as regular files containing the
-        // target path.
-        byte[] target = symlinkTarget.toString().getBytes(StandardCharsets.UTF_8);
-        archiveOutputStream.putArchiveEntry(newEntry(name, target.length, modTime, mode));
-        archiveOutputStream.write(target);
+        byte[] symlinkStoredAsFileContent = symlinkTarget.toString().getBytes(StandardCharsets.UTF_8);
+        archiveOutputStream.putArchiveEntry(newEntry(name, symlinkStoredAsFileContent.length, modTime, mode));
+        archiveOutputStream.write(symlinkStoredAsFileContent);
         archiveOutputStream.closeArchiveEntry();
     }
 
@@ -331,10 +329,8 @@ public class ZipArchiveCreator extends ArchiveCreator<ZipArchiveOutputStream> {
          * @return the configured ZipArchiveOutputStream
          */
         public ZipArchiveOutputStream buildArchiveOutputStream() {
-            // Already a seekable, file-backed stream (built from a Path) - configure it directly instead of
-            // wrapping it in another ZipArchiveOutputStream.
-            ZipArchiveOutputStream zipOut = outputStream instanceof ZipArchiveOutputStream seekable
-                    ? seekable
+            ZipArchiveOutputStream zipOut = outputStream instanceof ZipArchiveOutputStream alreadyZipStream
+                    ? alreadyZipStream
                     : new ZipArchiveOutputStream(outputStream);
             zipOut.setLevel(level);
             zipOut.setMethod(method);

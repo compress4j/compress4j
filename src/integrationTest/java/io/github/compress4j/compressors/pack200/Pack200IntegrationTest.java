@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,7 +138,6 @@ class Pack200IntegrationTest {
         try (var fos = new FileOutputStream(jarPath.toFile());
                 var jos = new JarOutputStream(fos)) {
 
-            // Add a simple text file entry
             var entry = new JarEntry("test.txt");
             jos.putNextEntry(entry);
             jos.write("Test content for Pack200 compression".getBytes());

@@ -38,7 +38,6 @@ class CpioArchiveExtractorBuilderTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        // Create sample archives for testing
         sampleArchive = createSampleArchive();
         multiFileArchive = createMultiFileArchive();
     }
@@ -204,8 +203,6 @@ class CpioArchiveExtractorBuilderTest {
             assertThat(extractor1).isNotNull();
         }
 
-        // Second build should work (builder should be reusable)
-        // Note: Need new input stream since the first one is consumed
         InputStream inputStream2 = new ByteArrayInputStream(sampleArchive);
         var builder2 = CpioArchiveExtractor.builder(inputStream2);
 
@@ -232,7 +229,6 @@ class CpioArchiveExtractorBuilderTest {
                 // then
                 assertThat(extractor).isNotNull();
 
-                // Test extraction works with each block size
                 var extractDir = tempDir.resolve("extract-block-" + blockSize);
                 Files.createDirectories(extractDir);
                 extractor.extract(extractDir);
@@ -261,7 +257,6 @@ class CpioArchiveExtractorBuilderTest {
                 // then
                 assertThat(extractor).isNotNull();
 
-                // Test extraction works with each encoding
                 var extractDir = tempDir.resolve("extract-encoding-" + encoding.replace("-", ""));
                 Files.createDirectories(extractDir);
                 extractor.extract(extractDir);
@@ -286,7 +281,6 @@ class CpioArchiveExtractorBuilderTest {
 
             assertThat(extractor).isNotNull();
 
-            // Test extraction of multiple files
             var extractDir = tempDir.resolve("extract-complex");
             Files.createDirectories(extractDir);
             extractor.extract(extractDir);
@@ -324,7 +318,6 @@ class CpioArchiveExtractorBuilderTest {
 
             assertThat(extractor).isNotNull();
 
-            // Test extraction of file with special characters
             var extractDir = tempDir.resolve("extract-special");
             Files.createDirectories(extractDir);
             extractor.extract(extractDir);
@@ -339,11 +332,10 @@ class CpioArchiveExtractorBuilderTest {
     @SuppressWarnings("try")
     void testBuilderWithEmptyArchive() throws IOException {
         // given
-        // Create empty archive (just TRAILER)
         var emptyArchiveOutput = new ByteArrayOutputStream();
         // noinspection EmptyTryBlock
         try (var ignored = CpioArchiveCreator.builder(emptyArchiveOutput).build()) {
-            // Don't add any files
+            /* no-op */
         }
         byte[] emptyArchive = emptyArchiveOutput.toByteArray();
         InputStream inputStream = new ByteArrayInputStream(emptyArchive);
@@ -352,7 +344,6 @@ class CpioArchiveExtractorBuilderTest {
         try (var extractor = CpioArchiveExtractor.builder(inputStream).build()) {
             assertThat(extractor).isNotNull();
 
-            // Test extraction of empty archive
             var extractDir = tempDir.resolve("extract-empty");
             Files.createDirectories(extractDir);
             extractor.extract(extractDir);
@@ -379,7 +370,6 @@ class CpioArchiveExtractorBuilderTest {
         try (var extractor = builder.build()) {
             assertThat(extractor).isNotNull();
 
-            // Verify the chained configuration works
             var extractDir = tempDir.resolve("extract-chained");
             Files.createDirectories(extractDir);
             extractor.extract(extractDir);
@@ -408,7 +398,6 @@ class CpioArchiveExtractorBuilderTest {
     @Test
     void testBuilderWithLargeArchive() throws IOException {
         // given
-        // Create archive with larger content
         var largeFile = tempDir.resolve("large-file.txt");
         StringBuilder content = new StringBuilder();
         for (int i = 0; i < 1000; i++) {

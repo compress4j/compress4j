@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import org.apache.commons.compress.archivers.cpio.CpioConstants;
 public class CpioExamples {
 
     private CpioExamples() {
-        // Usage example
+        /* no-op */
     }
 
     public static void cpioCreator() throws IOException {
@@ -45,12 +45,10 @@ public class CpioExamples {
                 .filter((name, p) -> !name.endsWith("temp.txt"))
                 .build()) {
 
-            // Add files and directories
             cpioCreator.addFile("document.txt", Path.of("path/to/document.txt"));
             cpioCreator.addDirectory("subdir/", FileTime.from(Instant.now()));
             cpioCreator.addFile("subdir/nested.txt", Path.of("path/to/nested.txt"));
 
-            // Add directories recursively
             cpioCreator.addDirectoryRecursively(Path.of("sourceDir"));
         }
         // end::cpio-creator[]
@@ -66,9 +64,7 @@ public class CpioExamples {
                 .filter(entry -> !entry.name().startsWith("temp"))
                 .errorHandler((entry, exception) -> RETRY)
                 .escapingSymlinkPolicy(ArchiveExtractor.EscapingSymlinkPolicy.DISALLOW)
-                .postProcessor((entry, exception) -> {
-                    // Log successful extraction (in real applications, use a proper logger)
-                })
+                .postProcessor((entry, exception) -> {})
                 .stripComponents(1)
                 .overwrite(true)
                 .build()) {

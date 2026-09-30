@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,13 +49,11 @@ class TarBZip2ArchiveIntegrationTest extends AbstractArchiverIntegrationTest {
 
     @Test
     void testBZip2CompressionFeatures() throws Exception {
-        // Create multiple files with different characteristics for BZip2 compression
         var textFile = tempDir.resolve("text.txt");
         var binaryFile = tempDir.resolve("binary.dat");
 
         Files.write(textFile, "Text content with patterns patterns patterns".getBytes());
 
-        // Create binary data
         byte[] binaryData = new byte[2048];
         for (int i = 0; i < binaryData.length; i++) {
             binaryData[i] = (byte) (i % 256);
@@ -66,14 +64,12 @@ class TarBZip2ArchiveIntegrationTest extends AbstractArchiverIntegrationTest {
         var extractDir = tempDir.resolve("extracted");
         Files.createDirectories(extractDir);
 
-        // Create BZip2 compressed archive
         try (var creator = TarBZip2ArchiveCreator.builder(Files.newOutputStream(archivePath))
                 .build()) {
             creator.addFile("text.txt", textFile);
             creator.addFile("binary.dat", binaryFile);
         }
 
-        // Extract and verify
         try (var extractor = TarBZip2ArchiveExtractor.builder(Files.newInputStream(archivePath))
                 .build()) {
             extractor.extract(extractDir);

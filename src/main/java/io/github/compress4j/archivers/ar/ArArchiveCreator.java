@@ -96,7 +96,7 @@ public class ArArchiveCreator extends ArchiveCreator<ArArchiveOutputStream> {
      */
     @Override
     protected void writeDirectoryEntry(String name, FileTime modTime) {
-        // AR format doesn't support directories - skip them
+        /* no-op */
     }
 
     /** {@inheritDoc} */

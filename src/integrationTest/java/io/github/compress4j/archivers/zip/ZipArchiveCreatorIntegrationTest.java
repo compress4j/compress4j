@@ -114,8 +114,7 @@ class ZipArchiveCreatorIntegrationTest extends AbstractArchiverIntegrationTest {
 
         assertThat(extractDir.resolve("file.txt")).exists().hasContent("File content");
 
-        // ZIP has no native symlink type, so the entry is stored as a regular file whose content is the literal
-        // symlink target path, not the dereferenced target file's content.
-        assertThat(extractDir.resolve("link.txt")).exists().isRegularFile().hasContent("link_target.txt");
+        var symlinkStoredAsRegularFile = extractDir.resolve("link.txt");
+        assertThat(symlinkStoredAsRegularFile).exists().isRegularFile().hasContent("link_target.txt");
     }
 }

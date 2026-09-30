@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,7 +104,6 @@ class XZCompressorTest {
 
     @Test
     void testFullCompressionLifecycle() throws IOException {
-        // iven
         var originalData = "Test data for XZ compression. "
                 + "This string will be compressed and then decompressed. "
                 + "Repeating data helps compression. ".repeat(20);

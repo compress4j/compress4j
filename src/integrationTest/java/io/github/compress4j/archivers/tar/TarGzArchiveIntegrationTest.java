@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,6 @@ class TarGzArchiveIntegrationTest extends AbstractArchiverIntegrationTest {
 
     @Test
     void testCompressionEfficiency() throws Exception {
-        // Create a large file with repetitive content to test compression
         var sourceFile = tempDir.resolve("large.txt");
         var content = "This is a repetitive line for testing compression efficiency.\n".repeat(1000);
         Files.write(sourceFile, content.getBytes());
@@ -56,16 +55,13 @@ class TarGzArchiveIntegrationTest extends AbstractArchiverIntegrationTest {
         var extractDir = tempDir.resolve("extracted");
         Files.createDirectories(extractDir);
 
-        // Create compressed archive
         try (var creator =
                 TarGzArchiveCreator.builder(Files.newOutputStream(archivePath)).build()) {
             creator.addFile("large.txt", sourceFile);
         }
 
-        // Verify archive is smaller than source
         assertThat(Files.size(archivePath)).isLessThan(Files.size(sourceFile));
 
-        // Extract and verify content integrity
         try (var extractor =
                 TarGzArchiveExtractor.builder(Files.newInputStream(archivePath)).build()) {
             extractor.extract(extractDir);

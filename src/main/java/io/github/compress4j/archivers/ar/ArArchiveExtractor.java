@@ -80,12 +80,14 @@ public class ArArchiveExtractor extends ArchiveExtractor<ArArchiveInputStream> {
 
         int mode = ae.getMode();
         if ((mode & ArArchiveCreator.S_IFMT) == ArArchiveCreator.S_IFLNK) {
-            // See ArArchiveCreator.S_IFLNK: the target path is stored as the entry's content.
-            byte[] targetBytes = readEntryContent(ae.getName(), archiveInputStream, ae.getSize());
-            String target = new String(targetBytes, StandardCharsets.UTF_8);
-            return Optional.of(new Entry(ae.getName(), Entry.Type.SYMLINK, mode, target));
+            return Optional.of(new Entry(ae.getName(), Entry.Type.SYMLINK, mode, readSymlinkTargetStoredAsContent(ae)));
         }
         return Optional.of(new Entry(ae.getName(), Entry.Type.FILE, mode));
+    }
+
+    private String readSymlinkTargetStoredAsContent(ArArchiveEntry entry) throws IOException {
+        byte[] targetBytes = readEntryContent(entry.getName(), archiveInputStream, entry.getSize());
+        return new String(targetBytes, StandardCharsets.UTF_8);
     }
 
     /** {@inheritDoc} */

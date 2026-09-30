@@ -36,7 +36,6 @@ class CpioArchiveInputStreamBuilderTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        // Create a sample CPIO archive for testing
         sampleArchive = createSampleArchive();
     }
 
@@ -45,7 +44,6 @@ class CpioArchiveInputStreamBuilderTest {
         // given
         var inputStream = new ByteArrayInputStream(sampleArchive);
 
-        // Create extractor builder
         var extractorBuilder = CpioArchiveExtractor.builder(inputStream);
         var inputStreamBuilder = extractorBuilder.cpioInputStream();
 
@@ -164,7 +162,6 @@ class CpioArchiveInputStreamBuilderTest {
         // then
         assertThat(returnedParent).isSameAs(extractorBuilder);
 
-        // Verify we can continue building from the parent
         try (CpioArchiveExtractor extractor = returnedParent.build()) {
             assertThat(extractor).isNotNull();
         }
@@ -253,16 +250,13 @@ class CpioArchiveInputStreamBuilderTest {
                 extractorBuilder.cpioInputStream().blockSize(1024).encoding("UTF-8");
 
         // when & then
-        // Build multiple times from the same builder
         var stream1 = inputStreamBuilder.build();
         assertThat(stream1).isNotNull();
 
-        // Note: Can't reuse the same input stream, so this tests builder reusability
         var entry1 = stream1.getNextEntry();
         assertThat(entry1).isNotNull();
         stream1.close();
 
-        // Create new input stream for second build
         var inputStream2 = new ByteArrayInputStream(sampleArchive);
         var extractorBuilder2 = CpioArchiveExtractor.builder(inputStream2);
         var inputStreamBuilder2 =
@@ -323,7 +317,7 @@ class CpioArchiveInputStreamBuilderTest {
         ByteArrayOutputStream emptyArchiveOutput = new ByteArrayOutputStream();
         // noinspection EmptyTryBlock
         try (var ignored = CpioArchiveCreator.builder(emptyArchiveOutput).build()) {
-            // Don't add any files
+            /* no-op */
         }
         byte[] emptyArchive = emptyArchiveOutput.toByteArray();
 
@@ -336,9 +330,8 @@ class CpioArchiveInputStreamBuilderTest {
         // then
         assertThat(cpioStream).isNotNull();
 
-        // An archive with no entries hits EOF before any TRAILER!!! record is read
-        var entry = cpioStream.getNextEntry();
-        assertThat(entry).isNull();
+        var entryAtEof = cpioStream.getNextEntry();
+        assertThat(entryAtEof).isNull();
 
         cpioStream.close();
     }
@@ -369,7 +362,6 @@ class CpioArchiveInputStreamBuilderTest {
         // then
         assertThat(cpioStream).isNotNull();
 
-        // Verify it can read multiple files
         var entry1 = cpioStream.getNextEntry();
         assertThat(entry1).isNotNull();
         assertThat(entry1.getName()).isEqualTo("file1.txt");

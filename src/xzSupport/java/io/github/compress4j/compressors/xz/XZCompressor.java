@@ -80,7 +80,7 @@ public class XZCompressor extends Compressor<XZCompressorOutputStream> {
      */
     public static class XZCompressorOutputStreamBuilder<P> {
         private final P parent;
-        private LZMA2Options lzma2Options = new LZMA2Options(); // Default options
+        private LZMA2Options lzma2Options = new LZMA2Options();
 
         /** The output stream to write to. */
         protected final OutputStream outputStream;
@@ -128,7 +128,6 @@ public class XZCompressor extends Compressor<XZCompressorOutputStream> {
                         + LZMA2Options.PRESET_MIN + ", " + LZMA2Options.PRESET_MAX + "], but was: "
                         + preset);
             }
-            // Create LZMA2Options from preset
             this.lzma2Options = new LZMA2Options(preset);
             return this;
         }
