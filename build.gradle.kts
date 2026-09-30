@@ -227,6 +227,25 @@ tasks.testCodeCoverageReport {
     mustRunAfter(tasks.spotlessCheck, tasks.javadoc)
 }
 
+val testCodeCoverageVerification by tasks.registering(JacocoCoverageVerification::class) {
+    val report = tasks.testCodeCoverageReport.get()
+    executionData(report.executionData)
+    classDirectories.setFrom(report.classDirectories)
+    violationRules {
+        rule {
+            limit {
+                counter = "LINE"
+                minimum = "0.93".toBigDecimal()
+            }
+            limit {
+                counter = "BRANCH"
+                minimum = "0.90".toBigDecimal()
+            }
+        }
+    }
+    mustRunAfter(tasks.testCodeCoverageReport)
+}
+
 tasks.check {
     dependsOn(
         tasks.buildHealth,
@@ -234,6 +253,7 @@ tasks.check {
         checkApiCompatibility,
         integrationTest,
         tasks.testCodeCoverageReport,
+        testCodeCoverageVerification,
         gradle.includedBuild("${rootProject.name}-build-logic").task(":test")
     )
 }
