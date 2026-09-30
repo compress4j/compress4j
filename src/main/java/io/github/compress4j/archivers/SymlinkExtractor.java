@@ -69,6 +69,12 @@ record SymlinkExtractor(EscapingSymlinkPolicy policy, boolean overwrite) {
         }
     }
 
+    private static String relativizeIfAbsolute(String target, Path outputDir) {
+        return Paths.get(target).isAbsolute()
+                ? Paths.get(outputDir.toString(), target.substring(1)).toString()
+                : target;
+    }
+
     /**
      * Verifies that the symlink target is valid.
      *
@@ -78,12 +84,6 @@ record SymlinkExtractor(EscapingSymlinkPolicy policy, boolean overwrite) {
      * @param outputFile the file to extract the entry to
      * @throws IOException if the symlink target is invalid
      */
-    private static String relativizeIfAbsolute(String target, Path outputDir) {
-        return Paths.get(target).isAbsolute()
-                ? Paths.get(outputDir.toString(), target.substring(1)).toString()
-                : target;
-    }
-
     private static void verifySymlinkTarget(String entryName, String linkTarget, Path outputDir, Path outputFile)
             throws IOException {
         Path outputTarget = Paths.get(linkTarget);
