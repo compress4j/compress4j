@@ -1,6 +1,6 @@
 = XZ
 
-Here is a simple example of how to use xz compression.
+Here is a simple example of how to use xz compression. It requires `org.tukaani:xz` at runtime; see xref:additional_formats.adoc[Additional Formats].
 
 == Example Usage
 

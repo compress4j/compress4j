@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 The Compress4J Project
+ * Copyright 2024-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,6 @@
 package io.github.compress4j.utils;
 
 import static io.github.compress4j.utils.DependencyCheckerTestConstants.EXPECTED_MESSAGE_BROTLI;
-import static io.github.compress4j.utils.DependencyCheckerTestConstants.EXPECTED_MESSAGE_LZMA;
-import static io.github.compress4j.utils.DependencyCheckerTestConstants.EXPECTED_MESSAGE_XZ;
 import static io.github.compress4j.utils.DependencyCheckerTestConstants.EXPECTED_MESSAGE_ZSTD;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -32,11 +30,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 class ArchiverDependencyCheckerTest {
 
     private static Stream<Arguments> individualCheckers() {
-        return Stream.of(
-                Arguments.of("br", EXPECTED_MESSAGE_BROTLI),
-                Arguments.of("lzma", EXPECTED_MESSAGE_LZMA),
-                Arguments.of("xz", EXPECTED_MESSAGE_XZ),
-                Arguments.of("zstd", EXPECTED_MESSAGE_ZSTD));
+        return Stream.of(Arguments.of("br", EXPECTED_MESSAGE_BROTLI), Arguments.of("zstd", EXPECTED_MESSAGE_ZSTD));
     }
 
     @ParameterizedTest
@@ -60,17 +54,13 @@ class ArchiverDependencyCheckerTest {
     }
 
     @Test
-    void shouldCheckLZMA() {
-        assertThatThrownBy(ArchiverDependencyChecker::checkLZMA)
-                .isInstanceOf(MissingArchiveDependencyException.class)
-                .hasMessage(EXPECTED_MESSAGE_LZMA);
+    void shouldNotThrowForLZMAWhenXzIsPresent() {
+        assertDoesNotThrow(ArchiverDependencyChecker::checkLZMA);
     }
 
     @Test
-    void shouldCheckXZ() {
-        assertThatThrownBy(ArchiverDependencyChecker::checkXZ)
-                .isInstanceOf(MissingArchiveDependencyException.class)
-                .hasMessage(EXPECTED_MESSAGE_XZ);
+    void shouldNotThrowForXZWhenXzIsPresent() {
+        assertDoesNotThrow(ArchiverDependencyChecker::checkXZ);
     }
 
     @Test

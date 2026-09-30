@@ -47,6 +47,9 @@ dependencies {
 ----
 ====
 
+=== Java modules
+
+Compress4J is the module `io.github.compress4j`. It requires `org.apache.commons.compress` and `org.apache.commons.io` transitively; Commons Compress is an automatic module, so its name is part of this module's contract. `org.tukaani.xz` is optional and only needed for the XZ formats; modular applications must `requires org.tukaani.xz;` themselves.
 
 === Core Concepts
 

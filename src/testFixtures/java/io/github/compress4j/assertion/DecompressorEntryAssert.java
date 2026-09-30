@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package io.github.compress4j.assertion;
 
 import io.github.compress4j.archivers.ArchiveExtractor.Entry;
-import io.github.compress4j.utils.PosixFilePermissionsMapper;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Set;
 import org.assertj.core.api.AbstractAssert;
@@ -48,7 +47,7 @@ public class DecompressorEntryAssert extends AbstractAssert<DecompressorEntryAss
     }
 
     public DecompressorEntryAssert hasMode(Set<PosixFilePermission> permissions) {
-        Set<PosixFilePermission> actualPermissions = PosixFilePermissionsMapper.fromUnixMode(actual.mode());
+        Set<PosixFilePermission> actualPermissions = UnixModes.permissions(actual.mode());
         Assertions.assertThat(actualPermissions).containsAll(permissions);
         return this;
     }

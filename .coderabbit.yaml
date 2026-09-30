@@ -52,12 +52,6 @@ reviews:
         missing cleanup of temp files/directories and tests that assume a
         specific OS without a skip/guard for platform-specific behavior
         (e.g., file permissions, symlinks on Windows).
-    - path: "src/xzSupport/java/**/*.java"
-      instructions: >
-        This is an optional capability module (xz/tar.xz support) — keep it
-        free of dependencies on the base module's internals beyond its public
-        API, and flag anything that would force xz-commons onto consumers who
-        did not request the capability.
     - path: "build.gradle.kts"
       instructions: >
         Changes here affect publishing to Maven Central, Sonar analysis, and
