@@ -55,12 +55,7 @@ record SymlinkExtractor(EscapingSymlinkPolicy policy, boolean overwrite) {
 
         switch (policy) {
             case DISALLOW -> verifySymlinkTarget(entry.name(), entry.linkTarget(), outputDir, outputFile);
-            case RELATIVIZE_ABSOLUTE -> {
-                if (Paths.get(target).isAbsolute()) {
-                    target = Paths.get(outputDir.toString(), entry.linkTarget().substring(1))
-                            .toString();
-                }
-            }
+            case RELATIVIZE_ABSOLUTE -> target = relativizeIfAbsolute(target, outputDir);
             case ALLOW -> LOGGER.debug("Extracting symlink entry as is: {} -> {}", entry.name(), target);
         }
 
@@ -83,6 +78,12 @@ record SymlinkExtractor(EscapingSymlinkPolicy policy, boolean overwrite) {
      * @param outputFile the file to extract the entry to
      * @throws IOException if the symlink target is invalid
      */
+    private static String relativizeIfAbsolute(String target, Path outputDir) {
+        return Paths.get(target).isAbsolute()
+                ? Paths.get(outputDir.toString(), target.substring(1)).toString()
+                : target;
+    }
+
     private static void verifySymlinkTarget(String entryName, String linkTarget, Path outputDir, Path outputFile)
             throws IOException {
         Path outputTarget = Paths.get(linkTarget);
