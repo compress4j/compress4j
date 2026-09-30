@@ -36,6 +36,8 @@ import org.junit.jupiter.api.Test;
 class ModuleDescriptorTest {
 
     private static final String BASE = "io.github.compress4j.";
+    private static final List<String> DEPENDENCY_JAR_PREFIXES =
+            List.of("commons-compress", "commons-codec", "commons-io", "commons-lang3", "slf4j-api");
 
     private static Path moduleRoot() throws URISyntaxException {
         return Path.of(ArchiveExtractor.class
@@ -48,12 +50,13 @@ class ModuleDescriptorTest {
     private static Path[] moduleRootAndDependencyJars() throws URISyntaxException {
         Stream<String> entries = Stream.of(System.getProperty("java.class.path").split(File.pathSeparator));
         return Stream.concat(
-                        Stream.of(moduleRoot()),
-                        entries.filter(
-                                        e -> e.matches(
-                                                ".*(commons-compress|commons-codec|commons-io|commons-lang3|slf4j-api)[^/\\\\]*\\.jar"))
-                                .map(Path::of))
+                        Stream.of(moduleRoot()), entries.map(Path::of).filter(ModuleDescriptorTest::isDependencyJar))
                 .toArray(Path[]::new);
+    }
+
+    private static boolean isDependencyJar(Path entry) {
+        String name = entry.getFileName().toString();
+        return name.endsWith(".jar") && DEPENDENCY_JAR_PREFIXES.stream().anyMatch(name::startsWith);
     }
 
     private static ModuleDescriptor descriptor() throws URISyntaxException {
