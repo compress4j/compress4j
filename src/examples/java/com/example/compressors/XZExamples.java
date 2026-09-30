@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import java.nio.file.Path;
 @SuppressWarnings({"unused"})
 public class XZExamples {
     private XZExamples() {
-        // Usage example
+        /* no-op */
     }
 
     /** Example for XZ compression using builder pattern. */
@@ -31,7 +31,7 @@ public class XZExamples {
         // tag::xz-compressor[]
         try (XZCompressor xzCompressor = XZCompressor.builder(Path.of("example.xz"))
                 .compressorOutputStreamBuilder()
-                .preset(6) // Set preset level (0-9)
+                .preset(6)
                 .parentBuilder()
                 .build()) {
             xzCompressor.write(Path.of("path/to/file.txt"));

@@ -354,7 +354,7 @@ class ZipFileArchiveInputStreamTest {
             when(mockZipFile.getEntriesInPhysicalOrder())
                     .thenReturn(Collections.enumeration(Collections.singletonList(mockEntry)));
             when(mockZipFile.getInputStream(mockEntry)).thenReturn(mockStream);
-            inputStream.getNextEntry(); // Activates mockStream
+            inputStream.getNextEntry();
 
             // When
             inputStream.close();

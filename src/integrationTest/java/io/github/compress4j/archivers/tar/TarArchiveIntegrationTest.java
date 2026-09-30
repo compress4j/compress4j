@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,6 @@ class TarArchiveIntegrationTest extends AbstractArchiverIntegrationTest {
 
     @Test
     void testTarSpecificFeatures() throws Exception {
-        // Test TAR-specific features like preserving file permissions
         var sourceFile = tempDir.resolve("executable.sh");
         Files.write(sourceFile, "#!/bin/bash\necho 'Hello World'".getBytes());
 
@@ -56,14 +55,12 @@ class TarArchiveIntegrationTest extends AbstractArchiverIntegrationTest {
         var extractDir = tempDir.resolve("extracted");
         Files.createDirectories(extractDir);
 
-        // Create archive with TAR features
         try (var creator = TarArchiveCreator.builder(Files.newOutputStream(archivePath))
                 .longFileMode(LONGFILE_GNU)
                 .build()) {
             creator.addFile("executable.sh", sourceFile);
         }
 
-        // Extract and verify
         try (var extractor =
                 TarArchiveExtractor.builder(Files.newInputStream(archivePath)).build()) {
             extractor.extract(extractDir);

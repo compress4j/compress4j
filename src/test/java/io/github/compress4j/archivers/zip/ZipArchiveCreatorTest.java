@@ -192,7 +192,7 @@ class ZipArchiveCreatorTest {
             var entry = entryCaptor.getValue();
             assertThat(entry.getName()).isEqualTo("testLink.lnk");
             assertThat(entry.isDirectory()).isFalse();
-            assertThat(entry.getSize()).isEqualTo(size); // Size is the length of the path string
+            assertThat(entry.getSize()).isEqualTo(size);
             assertThat(entry.getTime()).isEqualTo(testTime.toMillis());
             assertThat(entry.getUnixMode()).isEqualTo(mode);
             assertThat(bytesCaptor.getValue()).isEqualTo(targetBytes);

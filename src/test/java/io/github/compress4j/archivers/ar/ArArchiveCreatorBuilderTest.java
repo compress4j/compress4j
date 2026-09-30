@@ -285,7 +285,6 @@ class ArArchiveCreatorBuilderTest {
         var builder = ArArchiveCreator.builder(outputStream).filter((name, path) -> {
             if (path != null) {
                 try {
-                    // Only include files smaller than 20 bytes
                     return Files.size(path) < 20;
                 } catch (IOException e) {
                     return false;

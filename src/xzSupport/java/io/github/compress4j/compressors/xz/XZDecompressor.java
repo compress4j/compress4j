@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,10 +82,12 @@ public class XZDecompressor extends Decompressor<XZCompressorInputStream> {
      * @since 2.3
      */
     public static class XZDecompressorInputStreamBuilder<P> {
+        private static final int NO_MEMORY_LIMIT = -1;
+
         private final P parent;
         private final InputStream inputStream;
         private boolean decompressConcatenated = false;
-        private int memoryLimitInKb = -1; // No limit by default
+        private int memoryLimitInKb = NO_MEMORY_LIMIT;
 
         /**
          * Constructor that takes a parent builder and an InputStream.

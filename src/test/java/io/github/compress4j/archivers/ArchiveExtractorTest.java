@@ -451,7 +451,6 @@ class ArchiveExtractorTest {
                 .build();
         try (var inMemoryDecompressor = InMemoryArchiveExtractor.builder(List.of(entry1, entry1a, entry2))
                 .build()) {
-            // BAIL_OUT after the first call: SKIP_ALL must stop the handler from being consulted again
             var calls = new AtomicInteger();
             inMemoryDecompressor.setErrorHandler(
                     (entry, exception) -> calls.getAndIncrement() == 0 ? SKIP_ALL : BAIL_OUT);
@@ -1092,7 +1091,7 @@ class ArchiveExtractorTest {
             extractor.extract(tempDir);
             // then
             assertThat(tempDir).isEmptyDirectory();
-            Compress4JAssertions.assertThat(inMemoryLogAppender).isEmpty(); // No error, just skipped
+            Compress4JAssertions.assertThat(inMemoryLogAppender).isEmpty();
         }
     }
 
@@ -1120,7 +1119,7 @@ class ArchiveExtractorTest {
             extractor.extract(tempDir);
             // then
             assertThat(tempDir).isEmptyDirectory();
-            Compress4JAssertions.assertThat(inMemoryLogAppender).isEmpty(); // No file operations
+            Compress4JAssertions.assertThat(inMemoryLogAppender).isEmpty();
         }
     }
 
@@ -1174,7 +1173,7 @@ class ArchiveExtractorTest {
             // when & then
             assertThatThrownBy(() -> extractor.extract(fileAsOutputDir))
                     .isInstanceOf(IOException.class)
-                    .hasMessageContaining(fileAsOutputDir.getFileName().toString()); // Or more specific if possible
+                    .hasMessageContaining(fileAsOutputDir.getFileName().toString());
         }
     }
 
@@ -1204,7 +1203,7 @@ class ArchiveExtractorTest {
         };
 
         try (var extractor = faultInjectingBuilder.build()) {
-            extractor.setErrorHandler((entry, ex) -> BAIL_OUT); // Default, but explicit
+            extractor.setErrorHandler((entry, ex) -> BAIL_OUT);
 
             // when & then
             assertThatThrownBy(() -> extractor.extract(tempDir))
@@ -1542,9 +1541,8 @@ class ArchiveExtractorTest {
     @Test
     void setAttributesShouldSetComplexPosixPermissionsOnNix() throws IOException {
         var mockPath = mock(Path.class);
-        // rwxr-xr-x with setuid
         @SuppressWarnings("OctalInteger")
-        var mode = 04755; // setuid + rwxr-xr-x
+        var mode = 04755;
 
         //noinspection rawtypes
         try (MockedStatic<ArchiveExtractor> mockedExtractor = mockStatic(ArchiveExtractor.class, CALLS_REAL_METHODS);
@@ -1557,7 +1555,6 @@ class ArchiveExtractorTest {
 
             ArchiveExtractor.setAttributes(mode, mockPath);
 
-            // Expected permissions from fromUnixMode(04755)
             Set<java.nio.file.attribute.PosixFilePermission> expectedPermissions =
                     PosixFilePermissions.fromString("rwxr-xr-x");
 
@@ -1622,7 +1619,6 @@ class ArchiveExtractorTest {
                 .linkName(tempDir.resolve("adir/file.txt").toAbsolutePath().toString())
                 .build();
 
-        // ALLOW policy: absolute symlink is allowed
         try (var extractor = InMemoryArchiveExtractor.builder(List.of(dirEntry, fileEntry, symlinkEntry, absSymlink))
                 .escapingSymlinkPolicy(ALLOW)
                 .build()) {
@@ -1633,7 +1629,6 @@ class ArchiveExtractorTest {
             assertThat(tempDir.resolve("absLink")).isSymbolicLink();
         }
 
-        // DISALLOW policy: absolute symlink should fail
         try (var extractor = InMemoryArchiveExtractor.builder(List.of(dirEntry, fileEntry, absSymlink))
                 .escapingSymlinkPolicy(DISALLOW)
                 .build()) {

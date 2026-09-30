@@ -163,22 +163,18 @@ tasks.withType<Test>().configureEach {
 
 val apiBaselineVersion: String = providers.gradleProperty("api.baseline").orElse(semver.previousVersion).get()
 
-// A named configuration would resolve back to the project being built, a detached one honours the coordinates.
-fun baselineConfiguration(version: String, classifier: String?): Configuration = configurations.detachedConfiguration(
+fun detachedBaselineConfiguration(version: String, classifier: String?): Configuration = configurations.detachedConfiguration(
     dependencies.create(
         listOfNotNull("${project.group}", project.name, version, classifier).joinToString(":") + "@jar"
     )
 ).apply { isTransitive = false }
 
-// A release can tag a version that never reached the repository, so the newest tag is not always downloadable.
-// Falling back to the newest one that is keeps the check running instead of failing every build until that release
-// is fixed.
-val publishedBaselineVersion: String by lazy {
+val newestDownloadableBaselineVersion: String by lazy {
     val candidates = listOf(apiBaselineVersion).filter { it.isNotEmpty() }
         .plus(semver.releaseVersions.get())
         .distinct()
     val published = candidates.firstOrNull {
-        baselineConfiguration(it, null).incoming.artifactView { lenient(true) }.artifacts.artifacts.isNotEmpty()
+        detachedBaselineConfiguration(it, null).incoming.artifactView { lenient(true) }.artifacts.artifacts.isNotEmpty()
     }
     when {
         published == null -> "".also {
@@ -192,12 +188,12 @@ val publishedBaselineVersion: String by lazy {
 }
 
 fun baselineArtifacts(classifier: String?): FileCollection = files({
-    publishedBaselineVersion.takeIf { it.isNotEmpty() }?.let { baselineConfiguration(it, classifier) } ?: files()
+    newestDownloadableBaselineVersion.takeIf { it.isNotEmpty() }?.let { detachedBaselineConfiguration(it, classifier) } ?: files()
 })
 
 fun registerApiComparison(name: String, baseline: FileCollection, jarTask: TaskProvider<Jar>, classpath: FileCollection) =
     tasks.register<JapicmpTask>(name) {
-        onlyIf { publishedBaselineVersion.isNotEmpty() }
+        onlyIf { newestDownloadableBaselineVersion.isNotEmpty() }
         oldArchives.from(baseline)
         newArchives.from(jarTask)
         oldClasspath.from(classpath)
@@ -225,7 +221,7 @@ val japicmpXzSupport = registerApiComparison(
 val checkApiCompatibility = tasks.register<CheckApiCompatibilityTask>("checkApiCompatibility") {
     group = "verification"
     description = "Fails when the API changes since the last release ask for a bigger version bump than the commits declare."
-    baselineVersion = provider { publishedBaselineVersion }
+    baselineVersion = provider { newestDownloadableBaselineVersion }
     declaredBump = semver.declaredBump
     reports.from(japicmpMain.flatMap { it.xmlOutputFile }, japicmpXzSupport.flatMap { it.xmlOutputFile })
 }
@@ -249,8 +245,6 @@ tasks.withType<JavaCompile> {
     options.encoding = "UTF-8"
 }
 
-// Consumers on the module path derive the module name from the manifest; without it the file name decides, and that
-// changes with the version.
 fun Jar.compress4jManifest(moduleName: String, title: String) = manifest {
     attributes(
         "Automatic-Module-Name" to moduleName,
@@ -289,7 +283,6 @@ tasks.check {
         checkApiCompatibility,
         integrationTest,
         tasks.testCodeCoverageReport,
-        // The build logic decides what gets published to Maven Central, so its tests run with everything else
         gradle.includedBuild("${rootProject.name}-build-logic").task(":test")
     )
 }
@@ -312,8 +305,6 @@ sonar {
     }
 }
 
-// Sonar needs the aggregated coverage report and the compiled classes of every analysed source set, but not the rest of
-// `check` — CI already ran that in the same job, so depending on it here would only re-report the same failures.
 tasks.sonar {
     dependsOn(
         tasks.testCodeCoverageReport,
@@ -363,7 +354,6 @@ gitVersioning.apply {
         }
     }
 
-    // optional fallback configuration in case of no matching ref configuration
     rev {
         version = snapshotVersion
     }
@@ -419,7 +409,7 @@ publishing {
 configure<org.jreleaser.gradle.plugin.JReleaserExtension> {
     release {
         github {
-            skipTag = true // The release workflow creates and pushes the tag
+            skipTag = true
             changelog {
                 formatted = Active.ALWAYS
                 preset = "conventional-commits"

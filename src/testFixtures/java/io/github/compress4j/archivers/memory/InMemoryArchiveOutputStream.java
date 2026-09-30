@@ -35,7 +35,7 @@ public class InMemoryArchiveOutputStream extends ArchiveOutputStream<InMemoryArc
 
     @Override
     public void closeArchiveEntry() {
-        // Do Nothing
+        /* no-op */
     }
 
     @Override

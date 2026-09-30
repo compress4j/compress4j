@@ -43,9 +43,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class GzipDecompressionBuilderTest {
 
-    private static final IOConsumer<GzipCompressorInputStream> NO_OP_CONSUMER = inputStream -> {
-        // No operation consumer for testing purposes
-    };
+    private static final IOConsumer<GzipCompressorInputStream> NO_OP_CONSUMER = inputStream -> {};
 
     @Mock
     private GzipCompressorInputStream mockGzipCompressorInputStream;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,7 +151,6 @@ class XZDecompressorTest {
         // When
         try (var decompressor = XZDecompressor.builder(compressedFile)
                 .compressorInputStreamBuilder()
-                // Set limit to 10MB (10240 KiB), which is > 8,296 KiB required by default compression
                 .setMemoryLimitInKb(10240)
                 .setDecompressConcatenated(true)
                 .parentBuilder()

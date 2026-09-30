@@ -139,11 +139,7 @@ public class ZipFileArchiveInputStream extends ArchiveInputStream<ZipArchiveEntr
 
     /** Close the underlying ZipFile. */
     private void closeFile() {
-        try {
-            file.close();
-        } catch (IOException e) {
-            // close quietly
-        }
+        closeQuietly(file);
     }
 
     /**

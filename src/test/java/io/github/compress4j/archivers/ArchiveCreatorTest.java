@@ -138,9 +138,6 @@ class ArchiveCreatorTest {
         inMemoryLogAppender.stop();
     }
 
-    // ######################################################
-    // #     Files tests                                    #
-    // ######################################################
     @Test
     void shouldAddFileWithPath() throws IOException {
         // given
@@ -444,9 +441,6 @@ class ArchiveCreatorTest {
         }
     }
 
-    // ######################################################
-    // #     Directory tests                                #
-    // ######################################################
     @Test
     void shouldAddDirectoryWithName() throws IOException {
         // given
@@ -513,9 +507,6 @@ class ArchiveCreatorTest {
         }
     }
 
-    // ######################################################
-    // #     Directory Recursively tests                    #
-    // ######################################################
     @Test
     void shouldAddDirectoryRecursivelyWithPath() throws IOException {
         // given
@@ -731,9 +722,6 @@ class ArchiveCreatorTest {
         }
     }
 
-    // ######################################################
-    // #  Utility methods tests                             #
-    // ######################################################
     @Test
     void shouldReplaceBackslashesWithForwardSlashesFromName() {
         // given
@@ -1047,13 +1035,13 @@ class ArchiveCreatorTest {
                 new ArchiveCreator<>(mockAos) {
                     @Override
                     protected void writeDirectoryEntry(String name, FileTime modTime) {
-                        // No-op for this test
+                        /* no-op */
                     }
 
                     @Override
                     protected void writeFileEntry(
                             String name, InputStream source, long length, FileTime modTime, int mode) {
-                        // No-op for this test
+                        /* no-op */
                     }
 
                     @Override
@@ -1064,7 +1052,7 @@ class ArchiveCreatorTest {
                             FileTime modTime,
                             int mode,
                             Path symlinkTarget) {
-                        // No-op for this test
+                        /* no-op */
                     }
                 };
 
@@ -1084,13 +1072,13 @@ class ArchiveCreatorTest {
                 new ArchiveCreator<>(mockAos) {
                     @Override
                     protected void writeDirectoryEntry(String name, FileTime modTime) {
-                        // No-op for this test
+                        /* no-op */
                     }
 
                     @Override
                     protected void writeFileEntry(
                             String name, InputStream source, long length, FileTime modTime, int mode) {
-                        // No-op for this test
+                        /* no-op */
                     }
 
                     @Override
@@ -1101,7 +1089,7 @@ class ArchiveCreatorTest {
                             FileTime modTime,
                             int mode,
                             Path symlinkTarget) {
-                        // No-op for this test
+                        /* no-op */
                     }
                 };
 

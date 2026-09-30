@@ -52,6 +52,11 @@ public class CpioArchiveExtractor extends ArchiveExtractor<CpioArchiveInputStrea
         super(builder);
     }
 
+    private String readSymlinkTargetStoredAsContent(CpioArchiveEntry entry) throws IOException {
+        byte[] targetBytes = readEntryContent(entry.getName(), archiveInputStream, entry.getSize());
+        return new String(targetBytes, StandardCharsets.UTF_8);
+    }
+
     @Override
     public InputStream openEntryStream(Entry entry) {
         return archiveInputStream;
@@ -66,9 +71,7 @@ public class CpioArchiveExtractor extends ArchiveExtractor<CpioArchiveInputStrea
 
         int mode = (int) cpioEntry.getMode();
         if (cpioEntry.isSymbolicLink()) {
-            // CPIO has no dedicated link-name header field; the target path is the entry's content.
-            byte[] targetBytes = readEntryContent(cpioEntry.getName(), archiveInputStream, cpioEntry.getSize());
-            String target = new String(targetBytes, StandardCharsets.UTF_8);
+            String target = readSymlinkTargetStoredAsContent(cpioEntry);
             return Optional.of(new Entry(cpioEntry.getName(), Entry.Type.SYMLINK, mode, target));
         } else if (cpioEntry.isDirectory()) {
             return Optional.of(new Entry(cpioEntry.getName(), Entry.Type.DIR, mode, null));

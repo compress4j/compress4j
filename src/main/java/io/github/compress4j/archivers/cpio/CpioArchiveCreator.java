@@ -61,16 +61,12 @@ public class CpioArchiveCreator extends ArchiveCreator<CpioArchiveOutputStream> 
 
     @Override
     protected void writeDirectoryEntry(String name, FileTime modTime) throws IOException {
-        // Ensure directory names end with "/" as expected by CPIO format
         String directoryName = name.endsWith("/") ? name : name + "/";
 
-        // Create entry with the format that matches the output stream
         CpioArchiveEntry entry;
         if (format != CpioConstants.FORMAT_NEW) {
-            // Use explicit format for non-default formats
             entry = new CpioArchiveEntry(format, directoryName, 0);
         } else {
-            // Use default constructor for FORMAT_NEW to maintain compatibility
             entry = new CpioArchiveEntry(directoryName);
             entry.setSize(0);
         }

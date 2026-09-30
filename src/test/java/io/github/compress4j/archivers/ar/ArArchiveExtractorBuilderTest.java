@@ -139,7 +139,6 @@ class ArArchiveExtractorBuilderTest {
             extractor.extract(tempDir);
         }
 
-        // Verify file was overwritten
         assertThat(existingFile).hasContent("New content");
     }
 
@@ -148,12 +147,11 @@ class ArArchiveExtractorBuilderTest {
         // given
         var outputStream = new ByteArrayOutputStream();
         try (var creator = ArArchiveCreator.builder(outputStream).build()) {
-            creator.addFile("file.txt", "Nested file".getBytes(StandardCharsets.UTF_8)); // Use simple filename
+            creator.addFile("file.txt", "Nested file".getBytes(StandardCharsets.UTF_8));
         }
 
         var bais = new ByteArrayInputStream(outputStream.toByteArray());
-        var builder =
-                ArArchiveExtractor.builder(bais).stripComponents(0); // No stripping needed since we use simple filename
+        var builder = ArArchiveExtractor.builder(bais).stripComponents(0);
 
         // when
         try (var extractor = builder.build()) {

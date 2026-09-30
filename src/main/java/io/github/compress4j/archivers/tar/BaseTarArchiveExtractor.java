@@ -79,12 +79,14 @@ public abstract class BaseTarArchiveExtractor extends ArchiveExtractor<TarArchiv
      * @return the next {@code TarArchiveEntry}, or empty at the end of the archive
      * @throws IOException – if the next entry could not be read
      */
+    private static boolean isFileButNotHardLink(TarArchiveEntry entry) {
+        return entry.isFile() && !entry.isLink();
+    }
+
     private Optional<TarArchiveEntry> getNextTarArchiveEntry() throws IOException {
         TarArchiveEntry te;
         while ((te = archiveInputStream.getNextEntry()) != null) {
-            if ((te.isFile() && !te.isLink()) // ignore hardlink
-                    || te.isDirectory()
-                    || te.isSymbolicLink()) {
+            if (isFileButNotHardLink(te) || te.isDirectory() || te.isSymbolicLink()) {
                 return Optional.of(te);
             }
         }

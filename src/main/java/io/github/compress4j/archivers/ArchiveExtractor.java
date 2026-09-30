@@ -252,7 +252,6 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         Optional<Entry> next;
         while ((next = nextEntry()).isPresent()) {
             Entry entry = next.orElseThrow();
-            // Skip entry if filter does not match
             if (!entryFilter.test(entry)) {
                 continue;
             }
@@ -266,7 +265,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
                 }
                 case EntryOutcome.IgnoreFurtherErrors() -> ignoreErrors = true;
                 case EntryOutcome.Continue() -> {
-                    // Nothing to record: success and SKIP both move on to the next entry
+                    /* no-op */
                 }
             }
         }
@@ -287,9 +286,8 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
             try {
                 processEntry(outputDir, entry);
                 return new EntryOutcome.Continue();
-            } catch (ArchiveLimitExceededException limitExceeded) {
-                // A breached limit is not negotiable, the error handler does not get to keep the extraction going
-                throw limitExceeded;
+            } catch (ArchiveLimitExceededException unrecoverableLimitBreach) {
+                throw unrecoverableLimitBreach;
             } catch (IOException ioException) {
                 ErrorHandlerChoice choice = handleException(ioException, ignoreErrors, entry);
                 if (choice != RETRY) {
@@ -457,7 +455,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      */
     @SuppressWarnings("RedundantThrows")
     protected void closeEntryStream(@SuppressWarnings("unused") InputStream stream) throws IOException {
-        // Default implementation does nothing
+        /* no-op */
     }
 
     /**
@@ -785,7 +783,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
          * recommended to use the builder or parameterized constructors instead.
          */
         protected ArchiveExtractorBuilder() {
-            // Default constructor for subclassing or frameworks. Not recommended for direct use.
+            /* no-op */
         }
 
         /**
