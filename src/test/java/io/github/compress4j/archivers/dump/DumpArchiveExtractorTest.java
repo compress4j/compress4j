@@ -105,13 +105,18 @@ class DumpArchiveExtractorTest {
     }
 
     @Test
-    void shouldOpenFileEntry() throws IOException {
+    void shouldOpenFileEntryThatReadsItsDataThenReachesEndOfStream() throws IOException {
         var in = streamOf(entry("file.txt", DumpArchiveEntry.TYPE.FILE));
+        when(in.read()).thenReturn((int) 'h', (int) 'i', -1);
 
         try (var extractor = new DumpArchiveExtractor(in)) {
             var mapped = extractor.nextEntry().orElseThrow();
 
-            assertThat(extractor.openEntryStream(mapped)).isSameAs(in);
+            var data = extractor.openEntryStream(mapped);
+
+            assertThat(data.read()).isEqualTo('h');
+            assertThat(data.read()).isEqualTo('i');
+            assertThat(data.read()).isEqualTo(-1);
         }
     }
 
