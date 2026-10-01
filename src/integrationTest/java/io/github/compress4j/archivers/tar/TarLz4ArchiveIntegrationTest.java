@@ -17,19 +17,18 @@ package io.github.compress4j.archivers.tar;
 
 import io.github.compress4j.archivers.AbstractArchiverIntegrationTest;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 class TarLz4ArchiveIntegrationTest extends AbstractArchiverIntegrationTest {
 
     @Override
     protected TarLz4ArchiveCreator archiveCreatorBuilder(Path archivePath) throws IOException {
-        return TarLz4ArchiveCreator.builder(Files.newOutputStream(archivePath)).build();
+        return TarLz4ArchiveCreator.builder(archivePath).build();
     }
 
     @Override
     protected TarLz4ArchiveExtractor archiveExtractorBuilder(Path archivePath) throws IOException {
-        return TarLz4ArchiveExtractor.builder(Files.newInputStream(archivePath)).build();
+        return TarLz4ArchiveExtractor.builder(archivePath).build();
     }
 
     @Override

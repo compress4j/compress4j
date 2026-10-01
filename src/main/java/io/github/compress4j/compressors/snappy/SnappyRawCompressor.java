@@ -81,11 +81,6 @@ public class SnappyRawCompressor extends Compressor<SnappyCompressorOutputStream
         return uncompressedSize;
     }
 
-    private static OutputStream open(Path path, long uncompressedSize) throws IOException {
-        requireNonNegative(uncompressedSize);
-        return Files.newOutputStream(path);
-    }
-
     /**
      * Builder for creating a {@link SnappyCompressorOutputStream}.
      *
@@ -159,6 +154,11 @@ public class SnappyRawCompressor extends Compressor<SnappyCompressorOutputStream
          */
         public SnappyRawCompressorBuilder(OutputStream outputStream, long uncompressedSize) {
             this(outputStream, uncompressedSize, false);
+        }
+
+        private static OutputStream open(Path path, long uncompressedSize) throws IOException {
+            requireNonNegative(uncompressedSize);
+            return Files.newOutputStream(path);
         }
 
         @SuppressWarnings("this-escape")

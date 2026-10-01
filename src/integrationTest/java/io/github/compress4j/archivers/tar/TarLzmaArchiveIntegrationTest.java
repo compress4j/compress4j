@@ -17,20 +17,18 @@ package io.github.compress4j.archivers.tar;
 
 import io.github.compress4j.archivers.AbstractArchiverIntegrationTest;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 class TarLzmaArchiveIntegrationTest extends AbstractArchiverIntegrationTest {
 
     @Override
     protected TarLzmaArchiveCreator archiveCreatorBuilder(Path archivePath) throws IOException {
-        return TarLzmaArchiveCreator.builder(Files.newOutputStream(archivePath)).build();
+        return TarLzmaArchiveCreator.builder(archivePath).build();
     }
 
     @Override
     protected TarLzmaArchiveExtractor archiveExtractorBuilder(Path archivePath) throws IOException {
-        return TarLzmaArchiveExtractor.builder(Files.newInputStream(archivePath))
-                .build();
+        return TarLzmaArchiveExtractor.builder(archivePath).build();
     }
 
     @Override

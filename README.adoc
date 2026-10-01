@@ -26,7 +26,7 @@ Gradle:
 dependencies {
     implementation("io.github.compress4j:compress4j:<version>")
 
-    // Only needed for the .xz and .tar.xz formats
+    // Only needed for the .xz, .tar.xz, .lzma and .tar.lzma formats
     implementation("org.tukaani:xz:<version>")
 
     // Only needed for the .zst and .tar.zst formats
@@ -44,7 +44,7 @@ Maven:
     <version>VERSION</version>
 </dependency>
 
-<!-- Only needed for the .xz and .tar.xz formats -->
+<!-- Only needed for the .xz, .tar.xz, .lzma and .tar.lzma formats -->
 <dependency>
     <groupId>org.tukaani</groupId>
     <artifactId>xz</artifactId>

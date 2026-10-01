@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-@SuppressWarnings({"unused"})
+@SuppressWarnings({"java:S1192", "unused"})
 public class SnappyExamples {
     private SnappyExamples() {
         /* no-op */

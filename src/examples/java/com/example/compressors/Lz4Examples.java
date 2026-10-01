@@ -22,7 +22,7 @@ import io.github.compress4j.compressors.lz4.Lz4FramedDecompressor;
 import java.io.IOException;
 import java.nio.file.Path;
 
-@SuppressWarnings({"unused"})
+@SuppressWarnings({"java:S1192", "unused"})
 public class Lz4Examples {
     private Lz4Examples() {
         /* no-op */
