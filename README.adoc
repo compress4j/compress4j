@@ -12,7 +12,7 @@ https://github.com/thrau/jarchivelib[JArchiveLib].
 
 * *Safe extraction.* Path traversal (Zip Slip) is rejected, escaping symlinks can be disallowed, and entry-count and
   size limits stop decompression bombs. See <<_safe_extraction_of_untrusted_archives>>.
-* *One API for every format.* Tar, `.tar.gz`, `.tar.bz2`, `.tar.xz`, Zip, 7z, AR, CPIO and more share the same builders.
+* *One API for every format.* Tar, `.tar.gz`, `.tar.bz2`, `.tar.xz`, `.tar.zst`, Zip, 7z, AR, CPIO and more share the same builders.
 * *Java 21+, JPMS-ready,* published to Maven Central.
 
 == Installation
@@ -28,6 +28,9 @@ dependencies {
 
     // Only needed for the .xz and .tar.xz formats
     implementation("org.tukaani:xz:<version>")
+
+    // Only needed for the .zst and .tar.zst formats
+    implementation("com.github.luben:zstd-jni:<version>")
 }
 ----
 
@@ -46,6 +49,13 @@ Maven:
     <groupId>org.tukaani</groupId>
     <artifactId>xz</artifactId>
     <version>XZ_VERSION</version>
+</dependency>
+
+<!-- Only needed for the .zst and .tar.zst formats -->
+<dependency>
+    <groupId>com.github.luben</groupId>
+    <artifactId>zstd-jni</artifactId>
+    <version>ZSTD_JNI_VERSION</version>
 </dependency>
 ----
 
@@ -91,7 +101,7 @@ Breaching a limit throws `ArchiveLimitExceededException`, which an error handler
 
 == Supported formats
 
-AR, CPIO, 7z, Deflate, BZip2, Gzip, Pack200, Tar (plain, `.tar.gz`, `.tar.bz2`, `.tar.xz`), XZ and Zip.
+AR, CPIO, 7z, Deflate, BZip2, Gzip, Pack200, Tar (plain, `.tar.gz`, `.tar.bz2`, `.tar.xz`, `.tar.zst`), XZ, Zstandard and Zip.
 
 == Documentation
 

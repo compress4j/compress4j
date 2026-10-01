@@ -18,7 +18,8 @@
  * Archiving and compression API on top of Apache Commons Compress.
  *
  * <p>Commons Compress is an automatic module, so consumers are bound to the name {@code org.apache.commons.compress}.
- * The XZ formats need {@code org.tukaani.xz} on the module path.
+ * The XZ formats need {@code org.tukaani.xz} and the Zstandard formats need {@code com.github.luben.zstd_jni} on the
+ * module path.
  */
 module io.github.compress4j {
     requires transitive org.apache.commons.compress;
@@ -27,6 +28,7 @@ module io.github.compress4j {
     requires org.slf4j;
     requires static transitive jakarta.annotation;
     requires static transitive org.tukaani.xz;
+    requires static transitive com.github.luben.zstd_jni;
 
     exports io.github.compress4j.archivers;
     exports io.github.compress4j.archivers.ar;
@@ -40,5 +42,6 @@ module io.github.compress4j {
     exports io.github.compress4j.compressors.gzip;
     exports io.github.compress4j.compressors.pack200;
     exports io.github.compress4j.compressors.xz;
+    exports io.github.compress4j.compressors.zstd;
     exports io.github.compress4j.exceptions;
 }

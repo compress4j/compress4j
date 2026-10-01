@@ -46,3 +46,48 @@ dependencies {
 }
 ----
 ====
+
+== Zstandard Support
+
+Zstandard support needs `com.github.luben:zstd-jni` on the class path or module path. It ships native libraries for common platforms.
+
+On the module path, `com.github.luben.zstd_jni` is not resolved automatically. Add `requires com.github.luben.zstd_jni;` to your module, or start the JVM with `--add-modules com.github.luben.zstd_jni`.
+
+[tabs]
+====
+Maven::
++
+[source,xml]
+----
+<dependency>
+    <groupId>io.github.compress4j</groupId>
+    <artifactId>compress4j</artifactId>
+    <version>YOUR_VERSION</version>
+</dependency>
+<dependency>
+    <groupId>com.github.luben</groupId>
+    <artifactId>zstd-jni</artifactId>
+    <version>YOUR_ZSTD_JNI_VERSION</version>
+</dependency>
+----
+
+Gradle Groovy::
++
+[source,groovy]
+----
+dependencies {
+    implementation 'io.github.compress4j:compress4j:YOUR_VERSION'
+    implementation 'com.github.luben:zstd-jni:YOUR_ZSTD_JNI_VERSION'
+}
+----
+
+Gradle Kotlin::
++
+[source,kotlin]
+----
+dependencies {
+    implementation("io.github.compress4j:compress4j:YOUR_VERSION")
+    implementation("com.github.luben:zstd-jni:YOUR_ZSTD_JNI_VERSION")
+}
+----
+====

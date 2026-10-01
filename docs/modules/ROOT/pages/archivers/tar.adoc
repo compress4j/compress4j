@@ -42,3 +42,15 @@ include::example$java/com/example/archivers/tar/TarExamples.java[tag=tar-bzip2-c
 ----
 include::example$java/com/example/archivers/tar/TarExamples.java[tag=tar-bzip2-extractor,indent=0]
 ----
+
+.Tar Zstandard Creation
+[,java]
+----
+include::example$java/com/example/archivers/tar/TarExamples.java[tag=tar-zstd-creator,indent=0]
+----
+
+.Tar Zstandard Extraction
+[,java]
+----
+include::example$java/com/example/archivers/tar/TarExamples.java[tag=tar-zstd-extractor,indent=0]
+----
