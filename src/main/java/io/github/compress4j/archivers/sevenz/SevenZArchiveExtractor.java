@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.Optional;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
 import org.apache.commons.compress.archivers.sevenz.SevenZFile;
@@ -35,6 +36,7 @@ public class SevenZArchiveExtractor extends ArchiveExtractor<SevenZFileArchiveIn
     static final int UNIX_EXTENSION = 0x8000;
     static final int S_IFMT = 0170000;
     static final int S_IFLNK = 0120000;
+    static final long MAX_SYMLINK_TARGET_BYTES = 4096;
 
     /**
      * Create a new {@link SevenZArchiveExtractor} with the given input stream.
@@ -72,16 +74,24 @@ public class SevenZArchiveExtractor extends ArchiveExtractor<SevenZFileArchiveIn
         if (entry == null) {
             return Optional.empty();
         }
+        String name = Objects.requireNonNull(entry.getName(), "7z entry has no name");
         int mode = unixMode(entry);
         if (entry.isDirectory()) {
-            return Optional.of(new Entry(entry.getName(), Entry.Type.DIR, mode));
+            return Optional.of(new Entry(name, Entry.Type.DIR, mode));
         }
         if ((mode & S_IFMT) == S_IFLNK) {
-            byte[] target = readEntryContent(entry.getName(), archiveInputStream, entry.getSize());
-            return Optional.of(
-                    new Entry(entry.getName(), Entry.Type.SYMLINK, mode, new String(target, StandardCharsets.UTF_8)));
+            return Optional.of(new Entry(name, Entry.Type.SYMLINK, mode, readSymlinkTarget(entry)));
         }
-        return Optional.of(new Entry(entry.getName(), Entry.Type.FILE, mode));
+        return Optional.of(new Entry(name, Entry.Type.FILE, mode));
+    }
+
+    private String readSymlinkTarget(SevenZArchiveEntry entry) throws IOException {
+        if (entry.getSize() > MAX_SYMLINK_TARGET_BYTES) {
+            throw new IOException("Symlink target of '" + entry.getName() + "' exceeds " + MAX_SYMLINK_TARGET_BYTES
+                    + " bytes: " + entry.getSize());
+        }
+        byte[] target = readEntryContent(entry.getName(), archiveInputStream, entry.getSize());
+        return new String(target, StandardCharsets.UTF_8);
     }
 
     private static int unixMode(SevenZArchiveEntry entry) {
@@ -150,7 +160,7 @@ public class SevenZArchiveExtractor extends ArchiveExtractor<SevenZFileArchiveIn
          */
         @Override
         public SevenZFileArchiveInputStream buildArchiveInputStream() throws IOException {
-            SevenZFile.Builder file = SevenZFile.builder();
+            SevenZFile.Builder file = SevenZFile.builder().setUseDefaultNameForUnnamedEntries(true);
             if (seekableByteChannel != null) {
                 file.setSeekableByteChannel(seekableByteChannel);
             } else {

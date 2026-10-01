@@ -25,6 +25,8 @@ import org.apache.commons.compress.archivers.sevenz.SevenZFile;
 /** Wraps a {@link SevenZFile} to make it usable as an {@link ArchiveInputStream}. */
 public class SevenZFileArchiveInputStream extends ArchiveInputStream<SevenZArchiveEntry> {
 
+    private static final int SKIP_BUFFER_SIZE = 8192;
+
     private final SevenZFile file;
 
     /**
@@ -64,6 +66,24 @@ public class SevenZFileArchiveInputStream extends ArchiveInputStream<SevenZArchi
             count(1);
         }
         return value;
+    }
+
+    /** {@inheritDoc} */
+    @Override
+    public long skip(long n) throws IOException {
+        if (n <= 0) {
+            return 0;
+        }
+        byte[] buffer = new byte[(int) Math.min(n, SKIP_BUFFER_SIZE)];
+        long skipped = 0;
+        while (skipped < n) {
+            int read = read(buffer, 0, (int) Math.min(buffer.length, n - skipped));
+            if (read == -1) {
+                break;
+            }
+            skipped += read;
+        }
+        return skipped;
     }
 
     /** {@inheritDoc} */

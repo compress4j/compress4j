@@ -20,6 +20,8 @@ import static io.github.compress4j.archivers.ArchiveExtractor.Entry.Type.FILE;
 import static io.github.compress4j.archivers.ArchiveExtractor.Entry.Type.SYMLINK;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import io.github.compress4j.archivers.ArchiveExtractor.Entry;
 import io.github.compress4j.archivers.ArchiveExtractor.EscapingSymlinkPolicy;
@@ -329,5 +331,50 @@ class SevenZArchiveTest {
         Path extracted = tmp.resolve("raw");
         extract(archive, null, extracted);
         assertThat(extracted.resolve("named.txt")).hasContent("z");
+    }
+
+    @Test
+    @DisplayName("Skip consumes entry content and reports what it skipped")
+    void inputStreamSkips() throws IOException {
+        Path archive = craft("skip.txt", "abcd", null);
+
+        try (var in = new SevenZFileArchiveInputStream(
+                SevenZFile.builder().setPath(archive).get())) {
+            in.getNextEntry();
+
+            assertThat(in.skip(0)).isZero();
+            assertThat(in.skip(-1)).isZero();
+            assertThat(in.skip(1)).isEqualTo(1);
+            assertThat(in.read()).isEqualTo('b');
+            assertThat(in.skip(10)).isEqualTo(2);
+            assertThat(in.skip(1)).isZero();
+        }
+    }
+
+    @Test
+    @DisplayName("Rejects a symlink entry whose target is larger than a path can be")
+    void oversizedSymlinkTarget() throws IOException {
+        Path archive = tmp.resolve("big-link.7z");
+        try (SevenZOutputFile out = new SevenZOutputFile(archive.toFile())) {
+            int attributes = SevenZArchiveExtractor.UNIX_EXTENSION | ((0777 | SevenZArchiveExtractor.S_IFLNK) << 16);
+            put(out, "link", false, attributes, "x".repeat(5000));
+        }
+
+        try (var extractor = SevenZArchiveExtractor.builder(archive).build()) {
+            assertThatThrownBy(extractor::nextEntry)
+                    .isInstanceOf(IOException.class)
+                    .hasMessageContaining("exceeds");
+        }
+    }
+
+    @Test
+    @DisplayName("Reports an entry without a name instead of failing obscurely")
+    void unnamedEntryIsRejected() throws IOException {
+        var stream = mock(SevenZFileArchiveInputStream.class);
+        when(stream.getNextEntry()).thenReturn(new SevenZArchiveEntry());
+
+        assertThatThrownBy(() -> new SevenZArchiveExtractor(stream).nextEntry())
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("7z entry has no name");
     }
 }
