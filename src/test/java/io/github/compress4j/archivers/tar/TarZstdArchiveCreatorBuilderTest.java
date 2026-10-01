@@ -53,8 +53,16 @@ class TarZstdArchiveCreatorBuilderTest {
                 .level(9)
                 .parentBuilder());
 
+        assertThat(builder.compressorOutputStreamBuilder()).extracting("level").isEqualTo(9);
         try (var out = builder.buildArchiveOutputStream()) {
             assertThat(out).isNotNull();
         }
+    }
+
+    @Test
+    void shouldUseDefaultLevelWhenNoneConfigured() {
+        var builder = TarZstdArchiveCreator.builder(mock(OutputStream.class));
+
+        assertThat(builder.compressorOutputStreamBuilder()).extracting("level").isEqualTo(3);
     }
 }
