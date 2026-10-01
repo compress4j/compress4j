@@ -32,19 +32,24 @@ module io.github.compress4j {
 
     exports io.github.compress4j.archivers;
     exports io.github.compress4j.archivers.ar;
+    exports io.github.compress4j.archivers.arj;
     exports io.github.compress4j.archivers.cpio;
+    exports io.github.compress4j.archivers.dump;
     exports io.github.compress4j.archivers.sevenz;
     exports io.github.compress4j.archivers.tar;
     exports io.github.compress4j.archivers.zip;
     exports io.github.compress4j.compressors;
+    exports io.github.compress4j.compressors.brotli;
     exports io.github.compress4j.compressors.bzip2;
     exports io.github.compress4j.compressors.deflate;
+    exports io.github.compress4j.compressors.deflate64;
     exports io.github.compress4j.compressors.gzip;
     exports io.github.compress4j.compressors.lz4;
     exports io.github.compress4j.compressors.lzma;
     exports io.github.compress4j.compressors.pack200;
     exports io.github.compress4j.compressors.snappy;
     exports io.github.compress4j.compressors.xz;
+    exports io.github.compress4j.compressors.z;
     exports io.github.compress4j.compressors.zstd;
     exports io.github.compress4j.exceptions;
 }

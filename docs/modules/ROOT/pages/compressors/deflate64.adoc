@@ -1,0 +1,13 @@
+= Deflate64
+
+NOTE: Read-only: Compress4J can extract this format but cannot create it.
+
+Deflate64 support needs no extra dependency. It decompresses a raw Deflate64 stream, the compression method 9 that some zip files use for their entries.
+
+== Example Usage
+
+.Deflate64 Decompression
+[,java]
+----
+include::example$java/com/example/compressors/Deflate64Examples.java[tag=deflate64-decompressor,indent=0]
+----

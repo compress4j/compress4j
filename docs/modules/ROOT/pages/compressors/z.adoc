@@ -1,0 +1,15 @@
+= Unix compress (.Z)
+
+NOTE: Read-only: Compress4J can extract this format but cannot create it.
+
+Unix compress support needs no extra dependency. The `.Z` format has no end marker, so a truncated file decompresses to a shorter output without an error; `.tar.Z` extraction still fails on a truncated archive because the tar entries are incomplete.
+
+== Example Usage
+
+.Unix compress Decompression
+[,java]
+----
+include::example$java/com/example/compressors/ZExamples.java[tag=z-decompressor,indent=0]
+----
+
+The `.tar.Z` extractor is described on the xref:archivers/tar.adoc[tar] page.

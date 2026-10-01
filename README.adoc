@@ -31,6 +31,9 @@ dependencies {
 
     // Only needed for the .zst and .tar.zst formats
     implementation("com.github.luben:zstd-jni:<version>")
+
+    // Only needed to read Brotli (.br)
+    implementation("org.brotli:dec:<version>")
 }
 ----
 
@@ -56,6 +59,13 @@ Maven:
     <groupId>com.github.luben</groupId>
     <artifactId>zstd-jni</artifactId>
     <version>ZSTD_JNI_VERSION</version>
+</dependency>
+
+<!-- Only needed to read Brotli (.br) -->
+<dependency>
+    <groupId>org.brotli</groupId>
+    <artifactId>dec</artifactId>
+    <version>BROTLI_DEC_VERSION</version>
 </dependency>
 ----
 
@@ -101,7 +111,7 @@ Breaching a limit throws `ArchiveLimitExceededException`, which an error handler
 
 == Supported formats
 
-AR, CPIO, 7z, Deflate, BZip2, Gzip, Pack200, Tar (plain, `.tar.gz`, `.tar.bz2`, `.tar.xz`, `.tar.lzma`, `.tar.lz4`, `.tar.zst`), LZ4, LZMA, Snappy, XZ, Zstandard and Zip.
+AR, CPIO, 7z, ARJ (read-only), UNIX dump (read-only), Deflate, Deflate64 (read-only), BZip2, Brotli (read-only), Gzip, LZ4, LZMA, Pack200, Snappy, Tar (plain, `.tar.gz`, `.tar.bz2`, `.tar.xz`, `.tar.lzma`, `.tar.lz4`, `.tar.zst`, `.tar.Z` read-only), Unix compress (`.Z`, read-only), XZ, Zstandard and Zip.
 
 == Documentation
 

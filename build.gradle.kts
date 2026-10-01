@@ -96,6 +96,7 @@ testing {
                 implementation(libs.mockito.jupiter)
                 implementation(libs.org.tukaani.xz)
                 runtimeOnly(libs.com.github.luben.zstd.jni)
+                runtimeOnly(libs.org.brotli.dec)
             }
         }
     }
@@ -111,6 +112,7 @@ val integrationTest by testing.suites.registering(JvmTestSuite::class) {
         runtimeOnly(libs.asm)
         runtimeOnly(libs.org.tukaani.xz)
         runtimeOnly(libs.com.github.luben.zstd.jni)
+        runtimeOnly(libs.org.brotli.dec)
     }
 
     targets.all { testTask.configure {
@@ -354,6 +356,13 @@ publishing {
                         appendNode("groupId", "com.github.luben")
                         appendNode("artifactId", "zstd-jni")
                         appendNode("version", libs.versions.zstd.jni.get())
+                        appendNode("scope", "compile")
+                        appendNode("optional", "true")
+                    }
+                    (dependencies.first() as groovy.util.Node).appendNode("dependency").apply {
+                        appendNode("groupId", "org.brotli")
+                        appendNode("artifactId", "dec")
+                        appendNode("version", libs.versions.brotli.dec.get())
                         appendNode("scope", "compile")
                         appendNode("optional", "true")
                     }

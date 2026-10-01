@@ -43,6 +43,18 @@ include::example$java/com/example/archivers/tar/TarExamples.java[tag=tar-bzip2-c
 include::example$java/com/example/archivers/tar/TarExamples.java[tag=tar-bzip2-extractor,indent=0]
 ----
 
+.Tar XZ Creation
+[,java]
+----
+include::example$java/com/example/archivers/tar/TarExamples.java[tag=tar-xz-creator,indent=0]
+----
+
+.Tar XZ Extraction
+[,java]
+----
+include::example$java/com/example/archivers/tar/TarExamples.java[tag=tar-xz-extractor,indent=0]
+----
+
 .Tar Zstandard Creation
 [,java]
 ----
@@ -77,4 +89,12 @@ include::example$java/com/example/archivers/tar/TarExamples.java[tag=tar-lz4-cre
 [,java]
 ----
 include::example$java/com/example/archivers/tar/TarExamples.java[tag=tar-lz4-extractor,indent=0]
+----
+
+NOTE: Read-only: Compress4J can extract this format but cannot create it.
+
+.Tar Unix compress (.Z) Extraction
+[,java]
+----
+include::example$java/com/example/archivers/tar/TarExamples.java[tag=tar-z-extractor,indent=0]
 ----

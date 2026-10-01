@@ -49,7 +49,7 @@ dependencies {
 
 === Java modules
 
-Compress4J is the module `io.github.compress4j`. It requires `org.apache.commons.compress` and `org.apache.commons.io` transitively; Commons Compress is an automatic module, so its name is part of this module's contract. `org.tukaani.xz` is optional and only needed for the XZ and LZMA formats; modular applications must `requires org.tukaani.xz;` themselves. `com.github.luben.zstd_jni` is optional and only needed for the Zstandard formats; modular applications must `requires com.github.luben.zstd_jni;` themselves.
+Compress4J is the module `io.github.compress4j`. It requires `org.apache.commons.compress` and `org.apache.commons.io` transitively; Commons Compress is an automatic module, so its name is part of this module's contract. `org.tukaani.xz` is optional and only needed for the XZ and LZMA formats; modular applications must `requires org.tukaani.xz;` themselves. `com.github.luben.zstd_jni` is optional and only needed for the Zstandard formats; modular applications must `requires com.github.luben.zstd_jni;` themselves. `org.brotli:dec` is optional and only needed to read Brotli; its jar has no module descriptor, so modular applications start the JVM with `--add-modules dec`.
 
 === Core Concepts
 
@@ -67,8 +67,12 @@ Each supported archive or compression format has its own `ArchiveCreator`/`Archi
 Compress4J supports a variety of common stream compression formats. The goal is to provide access to efficient and widely used algorithms, including (but not necessarily limited to):
 
 * AR (`.a`, `.ar`)
+* ARJ (`.arj`, read-only)
 * CPIO (`.cpio`)
+* UNIX dump (`.dump`, read-only)
 * Deflate (`.deflate`)
+* Deflate64 (read-only)
+* Brotli (read-only)
 * Bzip2 (`.bz2`)
 * Gzip (`.gz`, `gzip`)
 * Pack200 (`.pack`)
@@ -76,9 +80,12 @@ Compress4J supports a variety of common stream compression formats. The goal is 
 * Tar (`.tar`, `tar.bz2`, `tbz2`, `tar.gz`, `tgz`, `tar.xz`, `txz`, `tar.lzma`, `tar.lz4`, `tar.zst`)
 * LZ4 (`.lz4`, framed and block)
 * LZMA (`.lzma`)
+* Unix compress (`.Z`, `tar.Z`, read-only)
 * XZ (`.xz`)
 * Zip (`.zip`)
 * Zstandard (`.zst`)
+
+Formats marked (read-only) can be extracted but not created; see xref:read_only_formats.adoc[Read-only formats].
 
 The library often achieves this by integrating with robust, high-performance backend libraries or by providing its own implementations.
 
