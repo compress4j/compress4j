@@ -77,7 +77,7 @@ Compress4J supports a variety of common stream compression formats. The goal is 
 * Gzip (`.gz`, `gzip`)
 * Pack200 (`.pack`)
 * Snappy (`.sz` framed, and raw)
-* Tar (`.tar`, `tar.bz2`, `tbz2`, `tar.gz`, `tgz`, `tar.xz`, `txz`, `tar.lzma`, `tar.lz4`, `tar.zst`)
+* Tar (`.tar`, `tar.bz2`, `tbz2`, `tar.gz`, `tgz`, `tar.xz`, `txz`, `tar.lzma`, `tar.lz4`, `tar.zst`, `tar.Z` read-only)
 * LZ4 (`.lz4`, framed and block)
 * LZMA (`.lzma`)
 * Unix compress (`.Z`, `tar.Z`, read-only)
