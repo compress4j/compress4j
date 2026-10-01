@@ -75,6 +75,11 @@ public class InMemoryArchiveExtractor extends ArchiveExtractor<InMemoryArchiveIn
             this.inputStream = inputStream;
         }
 
+        public InMemoryArchiveExtractorBuilder(InputStream inputStream, boolean owned) {
+            super(inputStream, owned);
+            this.inputStream = inputStream;
+        }
+
         @Override
         protected InMemoryArchiveExtractorBuilder getThis() {
             return this;

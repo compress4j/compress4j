@@ -72,7 +72,7 @@ public class XZDecompressor extends Decompressor<XZCompressorInputStream> {
      * @throws IOException if an I/O error occurs while creating the input stream
      */
     public static XZDecompressorBuilder builder(Path path) throws IOException {
-        return new XZDecompressorBuilder(newInputStream(path));
+        return new XZDecompressorBuilder(path);
     }
 
     /**
@@ -166,7 +166,11 @@ public class XZDecompressor extends Decompressor<XZCompressorInputStream> {
          * @param inputStream the InputStream to read from.
          */
         public XZDecompressorBuilder(InputStream inputStream) {
-            super(inputStream);
+            this(inputStream, false);
+        }
+
+        private XZDecompressorBuilder(InputStream inputStream, boolean owned) {
+            super(inputStream, owned);
             this.inputStreamBuilder = new XZDecompressorInputStreamBuilder<>(this, inputStream);
         }
 
@@ -177,7 +181,7 @@ public class XZDecompressor extends Decompressor<XZCompressorInputStream> {
          * @throws IOException if an I/O error occurs while creating the input stream
          */
         public XZDecompressorBuilder(Path path) throws IOException {
-            this(newInputStream(path));
+            this(newInputStream(path), true);
         }
 
         /**

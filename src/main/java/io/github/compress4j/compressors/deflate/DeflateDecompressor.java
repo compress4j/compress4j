@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 The Compress4J Project
+ * Copyright 2024-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import io.github.compress4j.compressors.Decompressor;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStream;
 import org.apache.commons.compress.compressors.deflate.DeflateParameters;
@@ -75,7 +74,7 @@ public class DeflateDecompressor extends Decompressor<DeflateCompressorInputStre
      * @throws IOException if an I/O error occurs while creating the input stream
      */
     public static DeflateDecompressorBuilder builder(Path path) throws IOException {
-        return new DeflateDecompressorBuilder(Files.newInputStream(path));
+        return new DeflateDecompressorBuilder(path);
     }
 
     /** DeflateDecompressor Builder */
@@ -148,7 +147,11 @@ public class DeflateDecompressor extends Decompressor<DeflateCompressorInputStre
          * @param inputStream the input stream to read from
          */
         public DeflateDecompressorBuilder(InputStream inputStream) {
-            super(inputStream);
+            this(inputStream, false);
+        }
+
+        private DeflateDecompressorBuilder(InputStream inputStream, boolean owned) {
+            super(inputStream, owned);
             this.inputStreamBuilder = new DeflateDecompressorInputStreamBuilder(this, inputStream);
         }
 
@@ -159,7 +162,7 @@ public class DeflateDecompressor extends Decompressor<DeflateCompressorInputStre
          * @throws IOException if an I/O error occurs while creating the input stream
          */
         public DeflateDecompressorBuilder(Path path) throws IOException {
-            this(newInputStream(path));
+            this(newInputStream(path), true);
         }
 
         /**

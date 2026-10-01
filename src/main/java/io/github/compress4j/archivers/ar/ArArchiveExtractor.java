@@ -110,7 +110,7 @@ public class ArArchiveExtractor extends ArchiveExtractor<ArArchiveInputStream> {
          * @throws IOException if an I/O error occurred
          */
         public ArArchiveExtractorBuilder(Path path) throws IOException {
-            this(Files.newInputStream(path));
+            this(Files.newInputStream(path), true);
         }
 
         /**
@@ -119,6 +119,11 @@ public class ArArchiveExtractor extends ArchiveExtractor<ArArchiveInputStream> {
          * @param inputStream the input stream
          */
         public ArArchiveExtractorBuilder(InputStream inputStream) {
+            this(inputStream, false);
+        }
+
+        private ArArchiveExtractorBuilder(InputStream inputStream, boolean owned) {
+            super(inputStream, owned);
             this.inputStream = inputStream;
         }
 

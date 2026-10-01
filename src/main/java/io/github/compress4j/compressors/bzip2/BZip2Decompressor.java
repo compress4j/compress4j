@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 The Compress4J Project
+ * Copyright 2024-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,7 +72,7 @@ public class BZip2Decompressor extends Decompressor<BZip2CompressorInputStream> 
      * @throws IOException if an I/O error occurs while creating the input stream
      */
     public static BZip2DecompressorBuilder builder(Path path) throws IOException {
-        return new BZip2DecompressorBuilder(newInputStream(path));
+        return new BZip2DecompressorBuilder(path);
     }
 
     /**
@@ -145,7 +145,11 @@ public class BZip2Decompressor extends Decompressor<BZip2CompressorInputStream> 
          * @param inputStream the InputStream to read from.
          */
         public BZip2DecompressorBuilder(InputStream inputStream) {
-            super(inputStream);
+            this(inputStream, false);
+        }
+
+        private BZip2DecompressorBuilder(InputStream inputStream, boolean owned) {
+            super(inputStream, owned);
             this.inputStreamBuilder = new BZip2DecompressorInputStreamBuilder<>(this, inputStream);
         }
 
@@ -156,7 +160,7 @@ public class BZip2Decompressor extends Decompressor<BZip2CompressorInputStream> 
          * @throws IOException if an I/O error occurs while creating the input stream
          */
         public BZip2DecompressorBuilder(Path path) throws IOException {
-            this(newInputStream(path));
+            this(newInputStream(path), true);
         }
 
         /**

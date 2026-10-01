@@ -162,7 +162,7 @@ public class DeflateCompressor extends Compressor<DeflateCompressorOutputStream>
          * @throws IOException if an I/O error occurs opening the file
          */
         public DeflateCompressorBuilder(Path path) throws IOException {
-            this(Files.newOutputStream(path));
+            this(Files.newOutputStream(path), true);
         }
 
         /**
@@ -171,7 +171,11 @@ public class DeflateCompressor extends Compressor<DeflateCompressorOutputStream>
          * @param outputStream the output stream to write compressed data to
          */
         public DeflateCompressorBuilder(OutputStream outputStream) {
-            super(outputStream);
+            this(outputStream, false);
+        }
+
+        private DeflateCompressorBuilder(OutputStream outputStream, boolean owned) {
+            super(outputStream, owned);
             this.compressorOutputStreamBuilder = new DeflateOutputStreamBuilder<>(this, outputStream);
         }
 

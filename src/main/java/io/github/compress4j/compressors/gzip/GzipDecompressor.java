@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.io.function.IOConsumer;
@@ -66,7 +65,7 @@ public class GzipDecompressor extends Decompressor<GzipCompressorInputStream> {
      * @throws IOException if an I/O error occurs opening the file
      */
     public static GzipDecompressorBuilder builder(Path path) throws IOException {
-        return new GzipDecompressorBuilder(Files.newInputStream(path));
+        return new GzipDecompressorBuilder(path);
     }
 
     /**
@@ -200,7 +199,11 @@ public class GzipDecompressor extends Decompressor<GzipCompressorInputStream> {
          * @param inputStream the {@link GzipCompressorInputStream} to read from.
          */
         public GzipDecompressorBuilder(InputStream inputStream) {
-            super(inputStream);
+            this(inputStream, false);
+        }
+
+        private GzipDecompressorBuilder(InputStream inputStream, boolean owned) {
+            super(inputStream, owned);
             this.inputStreamBuilder = new GzipDecompressorInputStreamBuilder(this, inputStream);
         }
 
@@ -211,7 +214,7 @@ public class GzipDecompressor extends Decompressor<GzipCompressorInputStream> {
          * @throws IOException if an I/O error occurs while creating the input stream
          */
         public GzipDecompressorBuilder(Path path) throws IOException {
-            this(newInputStream(path));
+            this(newInputStream(path), true);
         }
 
         /**

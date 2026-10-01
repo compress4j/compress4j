@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 The Compress4J Project
+ * Copyright 2024-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ public class TarArchiveExtractor extends BaseTarArchiveExtractor {
          * @throws IOException if an I/O error occurred
          */
         public TarArchiveExtractorBuilder(Path path) throws IOException {
-            this(Files.newInputStream(path));
+            this(Files.newInputStream(path), true);
         }
 
         /**
@@ -87,7 +87,11 @@ public class TarArchiveExtractor extends BaseTarArchiveExtractor {
          * @param inputStream the input stream
          */
         public TarArchiveExtractorBuilder(InputStream inputStream) {
-            super(inputStream);
+            this(inputStream, false);
+        }
+
+        private TarArchiveExtractorBuilder(InputStream inputStream, boolean owned) {
+            super(inputStream, owned);
         }
 
         /** {@inheritDoc} */

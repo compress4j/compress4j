@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -148,7 +148,7 @@ public class BZip2Compressor extends Compressor<BZip2CompressorOutputStream> {
          * @throws IOException if an I/O error occurred
          */
         public BZip2CompressorBuilder(Path path) throws IOException {
-            this(Files.newOutputStream(path));
+            this(Files.newOutputStream(path), true);
         }
 
         /**
@@ -157,7 +157,11 @@ public class BZip2Compressor extends Compressor<BZip2CompressorOutputStream> {
          * @param outputStream the output stream
          */
         public BZip2CompressorBuilder(OutputStream outputStream) {
-            super(outputStream);
+            this(outputStream, false);
+        }
+
+        private BZip2CompressorBuilder(OutputStream outputStream, boolean owned) {
+            super(outputStream, owned);
             this.compressorOutputStreamBuilder = new BZip2CompressorOutputStreamBuilder<>(this, outputStream);
         }
 

@@ -76,6 +76,10 @@ public class InMemoryArchiveCreator extends ArchiveCreator<InMemoryArchiveOutput
             super(outputStream);
         }
 
+        public InMemoryArchiveCreatorBuilder(OutputStream outputStream, boolean owned) {
+            super(outputStream, owned);
+        }
+
         @Override
         protected InMemoryArchiveCreatorBuilder getThis() {
             return this;

@@ -155,7 +155,7 @@ public class ZstdCompressor extends Compressor<ZstdCompressorOutputStream> {
          * @throws IOException if an I/O error occurred
          */
         public ZstdCompressorBuilder(Path path) throws IOException {
-            this(Files.newOutputStream(path));
+            this(Files.newOutputStream(path), true);
         }
 
         /**
@@ -163,9 +163,13 @@ public class ZstdCompressor extends Compressor<ZstdCompressorOutputStream> {
          *
          * @param outputStream the output stream
          */
-        @SuppressWarnings("this-escape")
         public ZstdCompressorBuilder(OutputStream outputStream) {
-            super(outputStream);
+            this(outputStream, false);
+        }
+
+        @SuppressWarnings("this-escape")
+        private ZstdCompressorBuilder(OutputStream outputStream, boolean owned) {
+            super(outputStream, owned);
             this.compressorOutputStreamBuilder = new ZstdCompressorOutputStreamBuilder<>(this, outputStream);
         }
 

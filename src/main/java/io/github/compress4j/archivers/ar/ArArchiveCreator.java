@@ -140,7 +140,7 @@ public class ArArchiveCreator extends ArchiveCreator<ArArchiveOutputStream> {
          * @throws IOException if an I/O error occurred
          */
         public ArArchiveCreatorBuilder(Path path) throws IOException {
-            this(Files.newOutputStream(path));
+            this(Files.newOutputStream(path), true);
         }
 
         /**
@@ -149,7 +149,11 @@ public class ArArchiveCreator extends ArchiveCreator<ArArchiveOutputStream> {
          * @param outputStream the output stream
          */
         public ArArchiveCreatorBuilder(OutputStream outputStream) {
-            super(outputStream);
+            this(outputStream, false);
+        }
+
+        private ArArchiveCreatorBuilder(OutputStream outputStream, boolean owned) {
+            super(outputStream, owned);
         }
 
         /** {@inheritDoc} */

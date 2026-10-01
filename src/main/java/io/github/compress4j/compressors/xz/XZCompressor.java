@@ -169,7 +169,7 @@ public class XZCompressor extends Compressor<XZCompressorOutputStream> {
          * @throws IOException if an I/O error occurred
          */
         public XZCompressorBuilder(Path path) throws IOException {
-            this(Files.newOutputStream(path));
+            this(Files.newOutputStream(path), true);
         }
 
         /**
@@ -178,7 +178,11 @@ public class XZCompressor extends Compressor<XZCompressorOutputStream> {
          * @param outputStream the output stream
          */
         public XZCompressorBuilder(OutputStream outputStream) {
-            super(outputStream);
+            this(outputStream, false);
+        }
+
+        private XZCompressorBuilder(OutputStream outputStream, boolean owned) {
+            super(outputStream, owned);
             this.compressorOutputStreamBuilder = new XZCompressorOutputStreamBuilder<>(this, outputStream);
         }
 
