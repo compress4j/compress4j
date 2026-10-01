@@ -373,7 +373,9 @@ class SevenZArchiveTest {
         var stream = mock(SevenZFileArchiveInputStream.class);
         when(stream.getNextEntry()).thenReturn(new SevenZArchiveEntry());
 
-        assertThatThrownBy(() -> new SevenZArchiveExtractor(stream).nextEntry())
+        var extractor = new SevenZArchiveExtractor(stream);
+
+        assertThatThrownBy(extractor::nextEntry)
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("7z entry has no name");
     }
