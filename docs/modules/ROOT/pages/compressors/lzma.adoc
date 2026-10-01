@@ -1,0 +1,17 @@
+= LZMA
+
+Here is a simple example of how to use LZMA compression. It requires `org.tukaani:xz` at runtime, the same library the XZ formats use; see xref:additional_formats.adoc[Additional Formats].
+
+== Example Usage
+
+.LZMA Compression
+[,java]
+----
+include::example$java/com/example/compressors/LZMAExamples.java[tag=lzma-compressor,indent=0]
+----
+
+.LZMA Decompression
+[,java]
+----
+include::example$java/com/example/compressors/LZMAExamples.java[tag=lzma-decompressor,indent=0]
+----

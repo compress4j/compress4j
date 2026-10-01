@@ -54,3 +54,27 @@ include::example$java/com/example/archivers/tar/TarExamples.java[tag=tar-zstd-cr
 ----
 include::example$java/com/example/archivers/tar/TarExamples.java[tag=tar-zstd-extractor,indent=0]
 ----
+
+.Tar LZMA Creation
+[,java]
+----
+include::example$java/com/example/archivers/tar/TarExamples.java[tag=tar-lzma-creator,indent=0]
+----
+
+.Tar LZMA Extraction
+[,java]
+----
+include::example$java/com/example/archivers/tar/TarExamples.java[tag=tar-lzma-extractor,indent=0]
+----
+
+.Tar framed LZ4 Creation
+[,java]
+----
+include::example$java/com/example/archivers/tar/TarExamples.java[tag=tar-lz4-creator,indent=0]
+----
+
+.Tar framed LZ4 Extraction
+[,java]
+----
+include::example$java/com/example/archivers/tar/TarExamples.java[tag=tar-lz4-extractor,indent=0]
+----

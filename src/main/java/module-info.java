@@ -40,7 +40,10 @@ module io.github.compress4j {
     exports io.github.compress4j.compressors.bzip2;
     exports io.github.compress4j.compressors.deflate;
     exports io.github.compress4j.compressors.gzip;
+    exports io.github.compress4j.compressors.lz4;
+    exports io.github.compress4j.compressors.lzma;
     exports io.github.compress4j.compressors.pack200;
+    exports io.github.compress4j.compressors.snappy;
     exports io.github.compress4j.compressors.xz;
     exports io.github.compress4j.compressors.zstd;
     exports io.github.compress4j.exceptions;

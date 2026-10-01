@@ -18,13 +18,18 @@ package io.github.compress4j.utils;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.github.compress4j.exceptions.MissingArchiveDependencyException;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -80,5 +85,53 @@ class ArchiverDependencyCheckerWithoutXzTest {
 
         assertThat(failure.getClass().getName()).isEqualTo(MissingArchiveDependencyException.class.getName());
         assertThat(failure).hasMessage(format + " compression is not available." + YOU_NEED_XZ_JAVA);
+    }
+
+    private static Throwable buildFailureWithoutXz(String builderClass, Class<?> argType, Object arg) throws Exception {
+        try (XzHidingClassLoader loader = new XzHidingClassLoader(classpathUrls())) {
+            Object builder =
+                    loader.loadClass(builderClass).getMethod("builder", argType).invoke(null, arg);
+            builder.getClass().getMethod("build").invoke(builder);
+            throw new AssertionError("Expected failure without xz");
+        } catch (InvocationTargetException e) {
+            return e.getCause();
+        }
+    }
+
+    private static void assertMissingLzma(Throwable failure) {
+        assertThat(failure.getClass().getName()).isEqualTo(MissingArchiveDependencyException.class.getName());
+        assertThat(failure).hasMessage("LZMA compression is not available." + YOU_NEED_XZ_JAVA);
+    }
+
+    @Test
+    void lzmaCompressorBuildRejectsMissingXz() throws Exception {
+        assertMissingLzma(buildFailureWithoutXz(
+                "io.github.compress4j.compressors.lzma.LZMACompressor",
+                OutputStream.class,
+                new ByteArrayOutputStream()));
+    }
+
+    @Test
+    void lzmaDecompressorBuildRejectsMissingXz() throws Exception {
+        assertMissingLzma(buildFailureWithoutXz(
+                "io.github.compress4j.compressors.lzma.LZMADecompressor",
+                InputStream.class,
+                new ByteArrayInputStream(new byte[0])));
+    }
+
+    @Test
+    void tarLzmaCreatorBuildRejectsMissingXz() throws Exception {
+        assertMissingLzma(buildFailureWithoutXz(
+                "io.github.compress4j.archivers.tar.TarLzmaArchiveCreator",
+                OutputStream.class,
+                new ByteArrayOutputStream()));
+    }
+
+    @Test
+    void tarLzmaExtractorBuildRejectsMissingXz() throws Exception {
+        assertMissingLzma(buildFailureWithoutXz(
+                "io.github.compress4j.archivers.tar.TarLzmaArchiveExtractor",
+                InputStream.class,
+                new ByteArrayInputStream(new byte[0])));
     }
 }
