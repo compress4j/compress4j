@@ -82,9 +82,11 @@ class ZstdDecompressorTest {
 
     @Test
     void shouldExposeInputStreamBuilderParent() throws IOException {
-        var builder = ZstdDecompressor.builder(Files.newInputStream(compressedFile()));
+        try (var in = Files.newInputStream(compressedFile())) {
+            var builder = ZstdDecompressor.builder(in);
 
-        assertThat(builder.compressorInputStreamBuilder().parentBuilder()).isSameAs(builder);
+            assertThat(builder.compressorInputStreamBuilder().parentBuilder()).isSameAs(builder);
+        }
     }
 
     @Test
@@ -96,12 +98,9 @@ class ZstdDecompressorTest {
 
         var output = tempDir.resolve("out.txt");
 
-        assertThatThrownBy(() -> {
-                    try (var decompressor = ZstdDecompressor.builder(new ByteArrayInputStream(gzip.toByteArray()))
-                            .build()) {
-                        decompressor.write(output);
-                    }
-                })
-                .isInstanceOf(IOException.class);
+        try (var decompressor = ZstdDecompressor.builder(new ByteArrayInputStream(gzip.toByteArray()))
+                .build()) {
+            assertThatThrownBy(() -> decompressor.write(output)).isInstanceOf(IOException.class);
+        }
     }
 }

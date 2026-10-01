@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
+import io.github.compress4j.archivers.ArchiveExtractor;
 import io.github.compress4j.exceptions.ArchiveLimitExceededException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -30,7 +31,11 @@ import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.zip.GZIPOutputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.archivers.tar.TarConstants;
+import org.apache.commons.compress.compressors.zstandard.ZstdCompressorOutputStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -85,7 +90,7 @@ class TarZstdArchiveExtractorTest {
         var payload = new byte[1_000_000];
         Arrays.fill(payload, (byte) 'a');
         var archive = archiveOf("bomb.txt", payload);
-        assertThat(archive.length).isLessThan(payload.length / 10);
+        assertThat(archive).hasSizeLessThan(payload.length / 10);
 
         try (var extractor = TarZstdArchiveExtractor.builder(new ByteArrayInputStream(archive))
                 .maxEntrySize(1024)
@@ -111,13 +116,10 @@ class TarZstdArchiveExtractorTest {
                 archiveOf("file.txt", "a longer payload to truncate".repeat(100).getBytes(StandardCharsets.UTF_8));
         var truncated = Arrays.copyOf(archive, archive.length / 2);
 
-        assertThatThrownBy(() -> {
-                    try (var extractor = TarZstdArchiveExtractor.builder(new ByteArrayInputStream(truncated))
-                            .build()) {
-                        extractor.extract(tempDir);
-                    }
-                })
-                .isInstanceOf(IOException.class);
+        try (var extractor = TarZstdArchiveExtractor.builder(new ByteArrayInputStream(truncated))
+                .build()) {
+            assertThatThrownBy(() -> extractor.extract(tempDir)).isInstanceOf(IOException.class);
+        }
     }
 
     @Test
@@ -127,12 +129,39 @@ class TarZstdArchiveExtractorTest {
             out.write("not zstd".getBytes(StandardCharsets.UTF_8));
         }
 
-        assertThatThrownBy(() -> {
-                    try (var extractor = TarZstdArchiveExtractor.builder(new ByteArrayInputStream(gzip.toByteArray()))
-                            .build()) {
-                        extractor.extract(tempDir);
-                    }
-                })
-                .isInstanceOf(IOException.class);
+        try (var extractor = TarZstdArchiveExtractor.builder(new ByteArrayInputStream(gzip.toByteArray()))
+                .build()) {
+            assertThatThrownBy(() -> extractor.extract(tempDir)).isInstanceOf(IOException.class);
+        }
+    }
+
+    @Test
+    void shouldEnforceMaxTotalSize() throws IOException {
+        var archive = archiveOf("big.txt", "x".repeat(4096).getBytes(StandardCharsets.UTF_8));
+
+        try (var extractor = TarZstdArchiveExtractor.builder(new ByteArrayInputStream(archive))
+                .maxTotalSize(1024)
+                .build()) {
+            assertThatThrownBy(() -> extractor.extract(tempDir)).isInstanceOf(ArchiveLimitExceededException.class);
+        }
+    }
+
+    @Test
+    void shouldRejectEscapingSymlinkWhenDisallowed() throws IOException {
+        var bytes = new ByteArrayOutputStream();
+        try (var tar = new TarArchiveOutputStream(new ZstdCompressorOutputStream(bytes))) {
+            var link = new TarArchiveEntry("link", TarConstants.LF_SYMLINK);
+            link.setLinkName("../outside");
+            tar.putArchiveEntry(link);
+            tar.closeArchiveEntry();
+        }
+        var target = Files.createDirectory(tempDir.resolve("target"));
+
+        try (var extractor = TarZstdArchiveExtractor.builder(new ByteArrayInputStream(bytes.toByteArray()))
+                .escapingSymlinkPolicy(ArchiveExtractor.EscapingSymlinkPolicy.DISALLOW)
+                .build()) {
+            assertThatThrownBy(() -> extractor.extract(target)).isInstanceOf(IOException.class);
+        }
+        assertThat(target.resolve("link")).doesNotExist();
     }
 }

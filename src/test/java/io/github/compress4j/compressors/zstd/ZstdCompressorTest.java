@@ -85,9 +85,9 @@ class ZstdCompressorTest {
 
     @Test
     void shouldRejectLevelAboveMaximum() {
-        var builder = ZstdCompressor.builder(new ByteArrayOutputStream());
+        var streamBuilder = ZstdCompressor.builder(new ByteArrayOutputStream()).compressorOutputStreamBuilder();
 
-        assertThatThrownBy(() -> builder.compressorOutputStreamBuilder().level(23))
+        assertThatThrownBy(() -> streamBuilder.level(23))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("Zstd level must be in the range")
                 .hasMessageContaining("but was: 23");
@@ -95,10 +95,9 @@ class ZstdCompressorTest {
 
     @Test
     void shouldRejectLevelBelowMinimum() {
-        var builder = ZstdCompressor.builder(new ByteArrayOutputStream());
+        var streamBuilder = ZstdCompressor.builder(new ByteArrayOutputStream()).compressorOutputStreamBuilder();
 
-        assertThatThrownBy(() -> builder.compressorOutputStreamBuilder().level(Integer.MIN_VALUE))
-                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> streamBuilder.level(Integer.MIN_VALUE)).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
