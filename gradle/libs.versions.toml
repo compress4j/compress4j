@@ -18,7 +18,7 @@ slf4j = "2.0.20"
 sonarqube = "7.5.0.8588"
 spotless = "8.10.2"
 tukaani-xz = "1.12"
-zstd-jni = "1.5.7-15"
+zstd-jni = "1.5.7-19"
 
 [libraries]
 commons-compress = { module = "org.apache.commons:commons-compress", version.ref = "apache-commons-compress" }
