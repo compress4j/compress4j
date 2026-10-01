@@ -133,3 +133,28 @@ jobs:
             build/jreleaser/trace.log
             build/jreleaser/output.properties
           if-no-files-found: ignore
+
+  # A release created with GITHUB_TOKEN does not fire `release` events, so dispatch from here.
+  notify-docs:
+    name: Notify docs site
+    needs: [plan, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Create docs site token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.DOCS_APP_CLIENT_ID }}
+          private-key: ${{ secrets.DOCS_APP_PRIVATE_KEY }}
+          repositories: compress4j.github.io
+          permission-contents: write
+
+      - name: Dispatch update to docs site
+        uses: peter-evans/repository-dispatch@28959ce8df70de7be546dd1250a005dd32156697 # v4.0.1
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          repository: compress4j/compress4j.github.io
+          event-type: update-docs
+          client-payload: '{"repository": "${{ github.repository }}", "ref": "v${{ needs.plan.outputs.nextVersion }}"}'
