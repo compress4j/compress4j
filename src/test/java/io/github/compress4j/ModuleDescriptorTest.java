@@ -82,6 +82,7 @@ class ModuleDescriptorTest {
                         BASE + "archivers",
                         BASE + "archivers.ar",
                         BASE + "archivers.cpio",
+                        BASE + "archivers.sevenz",
                         BASE + "archivers.tar",
                         BASE + "archivers.zip",
                         BASE + "compressors",
