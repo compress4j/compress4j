@@ -15,6 +15,8 @@
  */
 package io.github.compress4j.archivers.tar;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.stream.Collectors.joining;
 import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.BIGNUMBER_POSIX;
 import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.LONGFILE_POSIX;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,8 +25,14 @@ import static org.mockito.Mockito.assertArg;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 
+import io.github.compress4j.archivers.tar.TarZstdArchiveCreator.TarZstdArchiveCreatorBuilder;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.attribute.FileTime;
+import java.util.function.UnaryOperator;
+import java.util.stream.IntStream;
 import org.apache.commons.compress.compressors.zstandard.ZstdCompressorOutputStream;
 import org.junit.jupiter.api.Test;
 
@@ -47,22 +55,35 @@ class TarZstdArchiveCreatorBuilderTest {
     }
 
     @Test
-    void shouldBuildArchiveOutputStreamWithLevel() throws IOException {
-        var builder = spy(TarZstdArchiveCreator.builder(mock(OutputStream.class))
-                .compressorOutputStreamBuilder()
-                .level(9)
-                .parentBuilder());
+    void shouldUseDefaultLevelWhenNoneConfigured() throws IOException {
+        var withDefault = archive(builder -> builder);
+        var withLevelThree = archive(
+                builder -> builder.compressorOutputStreamBuilder().level(3).parentBuilder());
 
-        assertThat(builder.compressorOutputStreamBuilder()).extracting("level").isEqualTo(9);
-        try (var out = builder.buildArchiveOutputStream()) {
-            assertThat(out).isNotNull();
-        }
+        assertThat(withDefault).isEqualTo(withLevelThree);
     }
 
     @Test
-    void shouldUseDefaultLevelWhenNoneConfigured() {
-        var builder = TarZstdArchiveCreator.builder(mock(OutputStream.class));
+    void shouldApplyConfiguredLevel() throws IOException {
+        var fastest = archive(
+                builder -> builder.compressorOutputStreamBuilder().level(1).parentBuilder());
+        var strongest = archive(
+                builder -> builder.compressorOutputStreamBuilder().level(19).parentBuilder());
 
-        assertThat(builder.compressorOutputStreamBuilder()).extracting("level").isEqualTo(3);
+        assertThat(strongest).hasSizeLessThan(fastest.length);
+    }
+
+    @SuppressWarnings("OctalInteger")
+    private static byte[] archive(UnaryOperator<TarZstdArchiveCreatorBuilder> configure) throws IOException {
+        var bytes = new ByteArrayOutputStream();
+        var payload = IntStream.range(0, 2000)
+                .mapToObj(i -> "line " + i + " value " + (i * 31 % 97) + "\n")
+                .collect(joining())
+                .getBytes(UTF_8);
+        try (var creator = configure.apply(TarZstdArchiveCreator.builder(bytes)).build()) {
+            creator.writeFileEntry(
+                    "data.txt", new ByteArrayInputStream(payload), payload.length, FileTime.fromMillis(0), 0644);
+        }
+        return bytes.toByteArray();
     }
 }
