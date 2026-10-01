@@ -11,4 +11,5 @@
 *** xref:compressors/gzip.adoc[]
 *** xref:compressors/pack200.adoc[]
 *** xref:compressors/xz.adoc[]
+*** xref:compressors/zstd.adoc[]
 ** xref:additional_formats.adoc[]

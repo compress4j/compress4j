@@ -91,6 +91,7 @@ class ModuleDescriptorTest {
                         BASE + "compressors.gzip",
                         BASE + "compressors.pack200",
                         BASE + "compressors.xz",
+                        BASE + "compressors.zstd",
                         BASE + "exceptions");
     }
 
@@ -113,11 +114,14 @@ class ModuleDescriptorTest {
                 finder, List.of(ModuleLayer.boot().configuration()), ModuleFinder.of(), Set.of("io.github.compress4j"));
 
         assertThat(configuration.findModule("org.tukaani.xz")).isEmpty();
+        assertThat(configuration.findModule("com.github.luben.zstd_jni")).isEmpty();
     }
 
     @Test
     void declaresOptionalDependenciesAsStatic() throws Exception {
         assertThat(modifiersOf(descriptor(), "org.tukaani.xz")).contains(Modifier.STATIC, Modifier.TRANSITIVE);
+        assertThat(modifiersOf(descriptor(), "com.github.luben.zstd_jni"))
+                .contains(Modifier.STATIC, Modifier.TRANSITIVE);
         assertThat(modifiersOf(descriptor(), "jakarta.annotation")).contains(Modifier.STATIC, Modifier.TRANSITIVE);
     }
 

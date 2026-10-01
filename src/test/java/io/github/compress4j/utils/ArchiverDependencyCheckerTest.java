@@ -16,7 +16,6 @@
 package io.github.compress4j.utils;
 
 import static io.github.compress4j.utils.DependencyCheckerTestConstants.EXPECTED_MESSAGE_BROTLI;
-import static io.github.compress4j.utils.DependencyCheckerTestConstants.EXPECTED_MESSAGE_ZSTD;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
@@ -30,7 +29,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 class ArchiverDependencyCheckerTest {
 
     private static Stream<Arguments> individualCheckers() {
-        return Stream.of(Arguments.of("br", EXPECTED_MESSAGE_BROTLI), Arguments.of("zstd", EXPECTED_MESSAGE_ZSTD));
+        return Stream.of(Arguments.of("br", EXPECTED_MESSAGE_BROTLI));
     }
 
     @ParameterizedTest
@@ -64,9 +63,7 @@ class ArchiverDependencyCheckerTest {
     }
 
     @Test
-    void shouldCheckZstd() {
-        assertThatThrownBy(ArchiverDependencyChecker::checkZstd)
-                .isInstanceOf(MissingArchiveDependencyException.class)
-                .hasMessage(EXPECTED_MESSAGE_ZSTD);
+    void shouldNotThrowForZstdWhenZstdJniIsPresent() {
+        assertDoesNotThrow(ArchiverDependencyChecker::checkZstd);
     }
 }

@@ -33,6 +33,8 @@ import io.github.compress4j.archivers.tar.TarGzArchiveCreator;
 import io.github.compress4j.archivers.tar.TarGzArchiveExtractor;
 import io.github.compress4j.archivers.tar.TarXzArchiveCreator;
 import io.github.compress4j.archivers.tar.TarXzArchiveExtractor;
+import io.github.compress4j.archivers.tar.TarZstdArchiveCreator;
+import io.github.compress4j.archivers.tar.TarZstdArchiveExtractor;
 import java.io.IOException;
 import java.nio.file.Path;
 import org.tukaani.xz.LZMA2Options;
@@ -179,5 +181,39 @@ public class TarExamples {
             tarXzExtractor.extract(Path.of("outputDir"));
         }
         // end::tar-xz-extractor[]
+    }
+
+    public static void tarZstdCreator() throws IOException {
+        // tag::tar-zstd-creator[]
+        try (TarZstdArchiveCreator tarZstdCreator = TarZstdArchiveCreator.builder(Path.of("example.tar.zst"))
+                .compressorOutputStreamBuilder()
+                .level(6)
+                .parentBuilder()
+                .blockSize(1024)
+                .encoding(UTF_8.name())
+                .addPaxHeadersForNonAsciiNames(true)
+                .bigNumberMode(BIGNUMBER_ERROR)
+                .longFileMode(LONGFILE_GNU)
+                .filter((name, p) -> !name.endsWith("some_file.txt"))
+                .build()) {
+            tarZstdCreator.addDirectoryRecursively(Path.of("exampleDir"));
+            tarZstdCreator.addFile(Path.of("path/to/file.txt"));
+        }
+        // end::tar-zstd-creator[]
+    }
+
+    public static void tarZstdExtractor() throws IOException {
+        // tag::tar-zstd-extractor[]
+        try (TarZstdArchiveExtractor tarZstdExtractor = TarZstdArchiveExtractor.builder(Path.of("example.tar.zst"))
+                .filter(entry -> !entry.name().startsWith("bad"))
+                .errorHandler((entry, exception) -> RETRY)
+                .escapingSymlinkPolicy(ArchiveExtractor.EscapingSymlinkPolicy.DISALLOW)
+                .postProcessor((entry, exception) -> {})
+                .stripComponents(1)
+                .overwrite(true)
+                .build()) {
+            tarZstdExtractor.extract(Path.of("outputDir"));
+        }
+        // end::tar-zstd-extractor[]
     }
 }

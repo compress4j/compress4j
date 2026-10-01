@@ -59,6 +59,7 @@ dependencies {
     implementation(libs.slf4j.api)
 
     compileOnly(libs.org.tukaani.xz)
+    compileOnly(libs.com.github.luben.zstd.jni)
 
     testFixturesApi(platform(libs.jackson.bom))
     testFixturesApi(libs.assertj.core)
@@ -94,6 +95,7 @@ testing {
                 implementation(libs.mockito.core)
                 implementation(libs.mockito.jupiter)
                 implementation(libs.org.tukaani.xz)
+                runtimeOnly(libs.com.github.luben.zstd.jni)
             }
         }
     }
@@ -108,6 +110,7 @@ val integrationTest by testing.suites.registering(JvmTestSuite::class) {
 
         runtimeOnly(libs.asm)
         runtimeOnly(libs.org.tukaani.xz)
+        runtimeOnly(libs.com.github.luben.zstd.jni)
     }
 
     targets.all { testTask.configure {
@@ -344,6 +347,13 @@ publishing {
                         appendNode("groupId", "org.tukaani")
                         appendNode("artifactId", "xz")
                         appendNode("version", libs.versions.tukaani.xz.get())
+                        appendNode("scope", "compile")
+                        appendNode("optional", "true")
+                    }
+                    (dependencies.first() as groovy.util.Node).appendNode("dependency").apply {
+                        appendNode("groupId", "com.github.luben")
+                        appendNode("artifactId", "zstd-jni")
+                        appendNode("version", libs.versions.zstd.jni.get())
                         appendNode("scope", "compile")
                         appendNode("optional", "true")
                     }
