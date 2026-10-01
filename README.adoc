@@ -36,9 +36,16 @@ Maven:
 [source,xml]
 ----
 <dependency>
-  <groupId>io.github.compress4j</groupId>
-  <artifactId>compress4j</artifactId>
-  <version>VERSION</version>
+    <groupId>io.github.compress4j</groupId>
+    <artifactId>compress4j</artifactId>
+    <version>VERSION</version>
+</dependency>
+
+<!-- Only needed for the .xz and .tar.xz formats -->
+<dependency>
+    <groupId>org.tukaani</groupId>
+    <artifactId>xz</artifactId>
+    <version>XZ_VERSION</version>
 </dependency>
 ----
 
