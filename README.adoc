@@ -5,14 +5,21 @@ image:https://github.com/compress4j/compress4j/actions/workflows/ci.yml/badge.sv
 image:https://sonarcloud.io/api/project_badges/measure?project=compress4j_compress4j&metric=alert_status[Quality Gate Status,link=https://sonarcloud.io/summary/new_code?id=compress4j_compress4j]
 image:https://sonarcloud.io/api/project_badges/measure?project=compress4j_compress4j&metric=coverage[Coverage Status,link=https://sonarcloud.io/summary/new_code?id=compress4j_compress4j]
 
-A simple archiving and compression library for Java that provides a thin and easy-to-use API layer on top of the
-powerful and feature-rich http://commons.apache.org/proper/commons-compress/[org.apache.commons.compress].
+Create and extract archives in Java, with guards against Zip Slip and decompression bombs. Compress4J is a thin
+builder-style API on top of
+https://commons.apache.org/proper/commons-compress/[Apache Commons Compress], and a maintained successor to
+https://github.com/thrau/jarchivelib[JArchiveLib].
 
-This project is a fork of https://github.com/thrau/jarchivelib[JArchiveLib].
+* *Safe extraction.* Path traversal (Zip Slip) is rejected, escaping symlinks can be disallowed, and entry-count and
+  size limits stop decompression bombs. See <<_safe_extraction_of_untrusted_archives>>.
+* *One API for every format.* Tar, `.tar.gz`, `.tar.bz2`, `.tar.xz`, Zip, AR, CPIO and more share the same builders.
+* *Java 21+, JPMS-ready,* published to Maven Central.
 
 == Installation
 
 Requires Java 21 or later.
+
+Gradle:
 
 [source,kotlin]
 ----
@@ -22,6 +29,24 @@ dependencies {
     // Only needed for the .xz and .tar.xz formats
     implementation("org.tukaani:xz:<version>")
 }
+----
+
+Maven:
+
+[source,xml]
+----
+<dependency>
+    <groupId>io.github.compress4j</groupId>
+    <artifactId>compress4j</artifactId>
+    <version>VERSION</version>
+</dependency>
+
+<!-- Only needed for the .xz and .tar.xz formats -->
+<dependency>
+    <groupId>org.tukaani</groupId>
+    <artifactId>xz</artifactId>
+    <version>XZ_VERSION</version>
+</dependency>
 ----
 
 == Quick start
@@ -45,7 +70,10 @@ try (TarGzArchiveExtractor extractor = TarGzArchiveExtractor.builder(Path.of("ex
 }
 ----
 
-Extracting an archive you do not trust? Turn on the guards — see link:.github/SECURITY.md[SECURITY.md]:
+== Safe extraction of untrusted archives
+
+Extracting an archive you do not trust? Path traversal is rejected by default. Turn on the remaining guards for symlinks
+and decompression bombs, as described in link:.github/SECURITY.md[SECURITY.md]:
 
 [source,java]
 ----
@@ -58,6 +86,8 @@ try (TarGzArchiveExtractor extractor = TarGzArchiveExtractor.builder(Path.of("un
     extractor.extract(Path.of("outputDir"));
 }
 ----
+
+Breaching a limit throws `ArchiveLimitExceededException`, which an error handler cannot suppress.
 
 == Supported formats
 
