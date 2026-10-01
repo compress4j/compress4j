@@ -31,6 +31,7 @@ module io.github.compress4j {
     exports io.github.compress4j.archivers;
     exports io.github.compress4j.archivers.ar;
     exports io.github.compress4j.archivers.cpio;
+    exports io.github.compress4j.archivers.sevenz;
     exports io.github.compress4j.archivers.tar;
     exports io.github.compress4j.archivers.zip;
     exports io.github.compress4j.compressors;

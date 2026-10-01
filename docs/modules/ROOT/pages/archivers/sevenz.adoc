@@ -1,0 +1,32 @@
+= 7z
+
+7z is the archive format of the 7-Zip utility. Compress4J creates 7z archives and extracts them, including password-protected ones.
+
+Extraction goes through the same guards as every other format: path traversal is rejected, and `escapingSymlinkPolicy`, `maxEntries`, `maxEntrySize` and `maxTotalSize` apply.
+
+== Example Usage
+
+.7z Creation
+[,java]
+----
+include::example$java/com/example/archivers/sevenz/SevenZExamples.java[tag=sevenz-creator,indent=0]
+----
+
+.7z Extraction
+[,java]
+----
+include::example$java/com/example/archivers/sevenz/SevenZExamples.java[tag=sevenz-extractor,indent=0]
+----
+
+.Extracting a password-protected archive
+[,java]
+----
+include::example$java/com/example/archivers/sevenz/SevenZExamples.java[tag=sevenz-encrypted,indent=0]
+----
+
+== Notes
+
+* The creator writes to a file path only, because 7z must seek back to patch its header.
+* The creator does not encrypt. Only extraction accepts a password.
+* A symbolic link is stored the way p7zip stores it, as a Unix-mode entry whose content is the link target, and is restored as a symlink on extraction.
+* A wrong or missing password fails with an `IOException`.

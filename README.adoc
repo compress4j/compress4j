@@ -12,7 +12,7 @@ https://github.com/thrau/jarchivelib[JArchiveLib].
 
 * *Safe extraction.* Path traversal (Zip Slip) is rejected, escaping symlinks can be disallowed, and entry-count and
   size limits stop decompression bombs. See <<_safe_extraction_of_untrusted_archives>>.
-* *One API for every format.* Tar, `.tar.gz`, `.tar.bz2`, `.tar.xz`, Zip, AR, CPIO and more share the same builders.
+* *One API for every format.* Tar, `.tar.gz`, `.tar.bz2`, `.tar.xz`, Zip, 7z, AR, CPIO and more share the same builders.
 * *Java 21+, JPMS-ready,* published to Maven Central.
 
 == Installation
@@ -91,7 +91,7 @@ Breaching a limit throws `ArchiveLimitExceededException`, which an error handler
 
 == Supported formats
 
-AR, CPIO, Deflate, BZip2, Gzip, Pack200, Tar (plain, `.tar.gz`, `.tar.bz2`, `.tar.xz`), XZ and Zip.
+AR, CPIO, 7z, Deflate, BZip2, Gzip, Pack200, Tar (plain, `.tar.gz`, `.tar.bz2`, `.tar.xz`), XZ and Zip.
 
 == Documentation
 
