@@ -21,6 +21,7 @@ import static io.github.compress4j.archivers.ArchiveExtractor.Entry.Type.SYMLINK
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import io.github.compress4j.archivers.ArchiveExtractor.Entry;
 import io.github.compress4j.archivers.ArchiveExtractor.EscapingSymlinkPolicy;
 import io.github.compress4j.exceptions.ArchiveLimitExceededException;
 import java.io.File;
@@ -239,7 +240,7 @@ class SevenZArchiveTest {
         try (var extractor = SevenZArchiveExtractor.builder(archive).build()) {
             var entries = extractor.stream().toList();
 
-            assertThat(entries).extracting(e -> e.type()).containsExactly(DIR, SYMLINK, FILE);
+            assertThat(entries).extracting(Entry::type).containsExactly(DIR, SYMLINK, FILE);
             assertThat(entries.get(0).mode()).isEqualTo(0755);
             assertThat(entries.get(1).linkTarget()).isEqualTo("target");
             assertThat(entries.get(2).mode()).isZero();
@@ -273,8 +274,8 @@ class SevenZArchiveTest {
         try (var extractor = SevenZArchiveExtractor.builder(archive).build()) {
             var entries = extractor.stream().toList();
 
-            assertThat(entries).extracting(e -> e.type()).containsOnly(SYMLINK);
-            assertThat(entries).extracting(e -> e.linkTarget()).containsExactly("t1", "t2");
+            assertThat(entries).extracting(Entry::type).containsOnly(SYMLINK);
+            assertThat(entries).extracting(Entry::linkTarget).containsExactly("t1", "t2");
         }
     }
 
