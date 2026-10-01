@@ -122,6 +122,17 @@ public abstract class BaseTarArchiveExtractor extends ArchiveExtractor<TarArchiv
          * @param inputStream the input stream
          */
         protected BaseTarArchiveExtractorBuilder(InputStream inputStream) {
+            this(inputStream, false);
+        }
+
+        /**
+         * Create a new builder with the given input stream.
+         *
+         * @param inputStream the input stream
+         * @param owned whether the builder opened {@code inputStream} itself, so a failed build closes it
+         */
+        protected BaseTarArchiveExtractorBuilder(InputStream inputStream, boolean owned) {
+            super(inputStream, owned);
             this.inputStream = inputStream;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,14 @@
  */
 package io.github.compress4j.compressors;
 
+import io.github.compress4j.utils.BuildFailureCleanup;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 import org.apache.commons.compress.compressors.CompressorOutputStream;
 
 /**
@@ -53,7 +55,7 @@ public abstract class Compressor<O extends CompressorOutputStream<? extends Outp
      */
     protected <B extends Compressor.CompressorBuilder<O, B, C>, C extends Compressor<O>> Compressor(B builder)
             throws IOException {
-        this(builder.buildCompressorOutputStream());
+        this(BuildFailureCleanup.build(builder.ownedStream, builder::buildCompressorOutputStream));
     }
 
     /**
@@ -97,13 +99,26 @@ public abstract class Compressor<O extends CompressorOutputStream<? extends Outp
         /** Output stream to which the compressor will write. */
         protected final OutputStream outputStream;
 
+        final Optional<Closeable> ownedStream;
+
         /**
          * Create a new {@link Compressor.CompressorBuilder} with the given output stream.
          *
          * @param outputStream the output stream
          */
         protected CompressorBuilder(OutputStream outputStream) {
+            this(outputStream, false);
+        }
+
+        /**
+         * Create a new {@link Compressor.CompressorBuilder} with the given output stream.
+         *
+         * @param outputStream the output stream
+         * @param owned whether the builder opened {@code outputStream} itself, so a failed build closes it
+         */
+        protected CompressorBuilder(OutputStream outputStream, boolean owned) {
             this.outputStream = outputStream;
+            this.ownedStream = owned ? Optional.of(outputStream) : Optional.empty();
         }
 
         /**

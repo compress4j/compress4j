@@ -82,7 +82,7 @@ public class TarZstdArchiveExtractor extends BaseTarArchiveExtractor {
          * @throws IOException if an I/O error occurred
          */
         public TarZstdArchiveExtractorBuilder(Path path) throws IOException {
-            this(Files.newInputStream(path));
+            this(Files.newInputStream(path), true);
         }
 
         /**
@@ -90,9 +90,13 @@ public class TarZstdArchiveExtractor extends BaseTarArchiveExtractor {
          *
          * @param inputStream the input stream
          */
-        @SuppressWarnings("this-escape")
         public TarZstdArchiveExtractorBuilder(InputStream inputStream) {
-            super(inputStream);
+            this(inputStream, false);
+        }
+
+        @SuppressWarnings("this-escape")
+        private TarZstdArchiveExtractorBuilder(InputStream inputStream, boolean owned) {
+            super(inputStream, owned);
             this.zstdInputStreamBuilder = new ZstdDecompressorInputStreamBuilder<>(this, inputStream);
         }
 

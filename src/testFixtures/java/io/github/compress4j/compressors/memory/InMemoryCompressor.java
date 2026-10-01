@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,10 @@ public class InMemoryCompressor extends Compressor<InMemoryCompressorOutputStrea
          */
         public InMemoryCompressorBuilder(OutputStream outputStream) {
             super(outputStream);
+        }
+
+        public InMemoryCompressorBuilder(OutputStream outputStream, boolean owned) {
+            super(outputStream, owned);
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 The Compress4J Project
+ * Copyright 2024-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,14 @@
  */
 package io.github.compress4j.compressors;
 
+import io.github.compress4j.utils.BuildFailureCleanup;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 import org.apache.commons.compress.compressors.CompressorInputStream;
 
 /**
@@ -53,7 +55,7 @@ public abstract class Decompressor<I extends CompressorInputStream> implements C
      */
     protected <B extends Decompressor.DecompressorBuilder<I, D, B>, D extends Decompressor<I>> Decompressor(B builder)
             throws IOException {
-        this(builder.buildCompressorInputStream());
+        this(BuildFailureCleanup.build(builder.ownedStream, builder::buildCompressorInputStream));
     }
 
     /**
@@ -103,13 +105,26 @@ public abstract class Decompressor<I extends CompressorInputStream> implements C
         /** Input stream to read from for decompression. */
         protected final InputStream inputStream;
 
+        final Optional<Closeable> ownedStream;
+
         /**
          * Constructor that takes an input stream to read from.
          *
          * @param inputStream the input stream to read from
          */
         protected DecompressorBuilder(InputStream inputStream) {
+            this(inputStream, false);
+        }
+
+        /**
+         * Constructor that takes an input stream to read from.
+         *
+         * @param inputStream the input stream to read from
+         * @param owned whether the builder opened {@code inputStream} itself, so a failed build closes it
+         */
+        protected DecompressorBuilder(InputStream inputStream, boolean owned) {
             this.inputStream = inputStream;
+            this.ownedStream = owned ? Optional.of(inputStream) : Optional.empty();
         }
 
         /**

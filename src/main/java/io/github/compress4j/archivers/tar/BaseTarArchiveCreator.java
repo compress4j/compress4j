@@ -146,6 +146,16 @@ public abstract class BaseTarArchiveCreator extends ArchiveCreator<TarArchiveOut
         }
 
         /**
+         * Create a new {@link ArchiveCreatorBuilder} with the given output stream.
+         *
+         * @param outputStream the output stream
+         * @param owned whether the builder opened {@code outputStream} itself, so a failed build closes it
+         */
+        protected BaseTarArchiveCreatorBuilder(OutputStream outputStream, boolean owned) {
+            super(outputStream, owned);
+        }
+
+        /**
          * Sets the block size
          *
          * @param blockSize the block size to use. Must be a multiple of 512 bytes.

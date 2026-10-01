@@ -258,7 +258,7 @@ public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
          * @throws IOException if an I/O error occurs opening the file
          */
         public GzipCompressorBuilder(Path path) throws IOException {
-            this(Files.newOutputStream(path));
+            this(Files.newOutputStream(path), true);
         }
 
         /**
@@ -267,7 +267,11 @@ public class GzipCompressor extends Compressor<GzipCompressorOutputStream> {
          * @param outputStream the output stream to write compressed data to
          */
         public GzipCompressorBuilder(OutputStream outputStream) {
-            super(outputStream);
+            this(outputStream, false);
+        }
+
+        private GzipCompressorBuilder(OutputStream outputStream, boolean owned) {
+            super(outputStream, owned);
             this.compressorOutputStreamBuilder = new GzipCompressorOutputStreamBuilder<>(this, this.outputStream);
         }
 

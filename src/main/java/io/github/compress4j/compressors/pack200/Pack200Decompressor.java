@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,7 +76,7 @@ public class Pack200Decompressor extends Decompressor<Pack200CompressorInputStre
      * @throws IOException if an I/O error occurs while creating the input stream
      */
     public static Pack200DecompressorBuilder builder(Path path) throws IOException {
-        return new Pack200DecompressorBuilder(newInputStream(path));
+        return new Pack200DecompressorBuilder(path);
     }
 
     /**
@@ -160,8 +160,22 @@ public class Pack200Decompressor extends Decompressor<Pack200CompressorInputStre
          * @param inputStream the InputStream to read from.
          */
         public Pack200DecompressorBuilder(InputStream inputStream) {
-            super(inputStream);
+            this(inputStream, false);
+        }
+
+        private Pack200DecompressorBuilder(InputStream inputStream, boolean owned) {
+            super(inputStream, owned);
             this.inputStreamBuilder = new Pack200DecompressorInputStreamBuilder(this, inputStream);
+        }
+
+        /**
+         * Constructor that takes a Path.
+         *
+         * @param path the Path to read from.
+         * @throws IOException if an I/O error occurs while opening the path
+         */
+        public Pack200DecompressorBuilder(Path path) throws IOException {
+            this(newInputStream(path), true);
         }
 
         /**

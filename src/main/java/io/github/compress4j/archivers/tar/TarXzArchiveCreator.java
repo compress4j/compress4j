@@ -86,7 +86,7 @@ public class TarXzArchiveCreator extends BaseTarArchiveCreator {
          * @throws IOException if an I/O error occurred
          */
         public TarXzArchiveCreatorBuilder(Path path) throws IOException {
-            this(Files.newOutputStream(path));
+            this(Files.newOutputStream(path), true);
         }
 
         /**
@@ -94,9 +94,13 @@ public class TarXzArchiveCreator extends BaseTarArchiveCreator {
          *
          * @param outputStream the output stream
          */
-        @SuppressWarnings("this-escape")
         protected TarXzArchiveCreatorBuilder(OutputStream outputStream) {
-            super(outputStream);
+            this(outputStream, false);
+        }
+
+        @SuppressWarnings("this-escape")
+        private TarXzArchiveCreatorBuilder(OutputStream outputStream, boolean owned) {
+            super(outputStream, owned);
             this.compressorOutputStreamBuilder = new XZCompressorOutputStreamBuilder<>(this, this.outputStream);
         }
 

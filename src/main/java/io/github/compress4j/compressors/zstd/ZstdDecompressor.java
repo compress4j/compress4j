@@ -70,7 +70,7 @@ public class ZstdDecompressor extends Decompressor<ZstdCompressorInputStream> {
      * @throws IOException if an I/O error occurs while opening the path
      */
     public static ZstdDecompressorBuilder builder(Path path) throws IOException {
-        return new ZstdDecompressorBuilder(newInputStream(path));
+        return new ZstdDecompressorBuilder(path);
     }
 
     /**
@@ -127,9 +127,13 @@ public class ZstdDecompressor extends Decompressor<ZstdCompressorInputStream> {
          *
          * @param inputStream the InputStream to read from.
          */
-        @SuppressWarnings("this-escape")
         public ZstdDecompressorBuilder(InputStream inputStream) {
-            super(inputStream);
+            this(inputStream, false);
+        }
+
+        @SuppressWarnings("this-escape")
+        private ZstdDecompressorBuilder(InputStream inputStream, boolean owned) {
+            super(inputStream, owned);
             this.inputStreamBuilder = new ZstdDecompressorInputStreamBuilder<>(this, inputStream);
         }
 
@@ -140,7 +144,7 @@ public class ZstdDecompressor extends Decompressor<ZstdCompressorInputStream> {
          * @throws IOException if an I/O error occurs while opening the path
          */
         public ZstdDecompressorBuilder(Path path) throws IOException {
-            this(newInputStream(path));
+            this(newInputStream(path), true);
         }
 
         /**

@@ -23,6 +23,7 @@ import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 
 import io.github.compress4j.archivers.ExtractionErrorPolicy.EntryOutcome;
 import io.github.compress4j.exceptions.ArchiveLimitExceededException;
+import io.github.compress4j.utils.BuildFailureCleanup;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.io.Closeable;
@@ -105,7 +106,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      */
     protected <B extends ArchiveExtractorBuilder<A, B, C>, C extends ArchiveExtractor<A>> ArchiveExtractor(B builder)
             throws IOException {
-        this.archiveInputStream = builder.buildArchiveInputStream();
+        this.archiveInputStream = BuildFailureCleanup.build(builder.ownedStream, builder::buildArchiveInputStream);
         this.entryFilter = builder.entryFilter;
         this.errorHandler = builder.errorHandlerFunction;
         this.postProcessor = builder.postProcessor;
@@ -573,6 +574,8 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         long maxEntrySize = UNLIMITED;
         long maxTotalSize = UNLIMITED;
 
+        final Optional<Closeable> ownedStream;
+
         /**
          * Default constructor for ArchiveExtractor.
          *
@@ -580,7 +583,17 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
          * recommended to use the builder or parameterized constructors instead.
          */
         protected ArchiveExtractorBuilder() {
-            /* no-op */
+            this.ownedStream = Optional.empty();
+        }
+
+        /**
+         * Constructor for builders that read from a stream.
+         *
+         * @param stream the stream the archive is read from
+         * @param owned whether the builder opened {@code stream} itself, so a failed build closes it
+         */
+        protected ArchiveExtractorBuilder(Closeable stream, boolean owned) {
+            this.ownedStream = owned ? Optional.of(stream) : Optional.empty();
         }
 
         /**

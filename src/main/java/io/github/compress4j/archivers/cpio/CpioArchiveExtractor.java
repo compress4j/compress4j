@@ -196,7 +196,7 @@ public class CpioArchiveExtractor extends ArchiveExtractor<CpioArchiveInputStrea
          * @throws IOException if an I/O error occurs opening the file
          */
         public CpioArchiveExtractorBuilder(Path path) throws IOException {
-            this(Files.newInputStream(path));
+            this(Files.newInputStream(path), true);
         }
 
         /**
@@ -205,6 +205,11 @@ public class CpioArchiveExtractor extends ArchiveExtractor<CpioArchiveInputStrea
          * @param inputStream the input stream to read the archive from
          */
         public CpioArchiveExtractorBuilder(InputStream inputStream) {
+            this(inputStream, false);
+        }
+
+        private CpioArchiveExtractorBuilder(InputStream inputStream, boolean owned) {
+            super(inputStream, owned);
             this.cpioInputStreamBuilder = new CpioArchiveInputStreamBuilder<>(this, inputStream);
         }
 

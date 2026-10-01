@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 The Compress4J Project
+ * Copyright 2025-2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -156,7 +156,7 @@ public class Pack200Compressor extends Compressor<Pack200CompressorOutputStream>
          * @throws IOException if an I/O error occurred
          */
         public Pack200CompressorBuilder(Path path) throws IOException {
-            this(Files.newOutputStream(path));
+            this(Files.newOutputStream(path), true);
         }
 
         /**
@@ -165,7 +165,11 @@ public class Pack200Compressor extends Compressor<Pack200CompressorOutputStream>
          * @param outputStream the output stream to write the compressor to
          */
         public Pack200CompressorBuilder(OutputStream outputStream) {
-            super(outputStream);
+            this(outputStream, false);
+        }
+
+        private Pack200CompressorBuilder(OutputStream outputStream, boolean owned) {
+            super(outputStream, owned);
             this.compressorOutputStreamBuilder = new Pack200CompressorOutputStreamBuilder<>(this, outputStream);
         }
 

@@ -20,6 +20,7 @@ import static io.github.compress4j.utils.StringUtil.trimLeading;
 import static io.github.compress4j.utils.StringUtil.trimTrailing;
 import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 
+import io.github.compress4j.utils.BuildFailureCleanup;
 import jakarta.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
@@ -32,6 +33,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import org.apache.commons.compress.archivers.ArchiveEntry;
@@ -62,7 +64,7 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
      */
     protected <B extends ArchiveCreatorBuilder<A, B, C>, C extends ArchiveCreator<A>> ArchiveCreator(B builder)
             throws IOException {
-        this(builder.buildArchiveOutputStream());
+        this(BuildFailureCleanup.build(builder.ownedStream, builder::buildArchiveOutputStream));
         this.entryFilter = builder.entryFilter;
     }
 
@@ -424,6 +426,8 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
         /** Output stream to write the archive to. */
         protected final OutputStream outputStream;
 
+        final Optional<Closeable> ownedStream;
+
         BiPredicate<? super String, ? super Path> entryFilter = (name, path) -> true;
 
         /**
@@ -432,7 +436,18 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
          * @param outputStream the output stream
          */
         protected ArchiveCreatorBuilder(OutputStream outputStream) {
+            this(outputStream, false);
+        }
+
+        /**
+         * Create a new {@link ArchiveCreatorBuilder} with the given output stream.
+         *
+         * @param outputStream the output stream
+         * @param owned whether the builder opened {@code outputStream} itself, so a failed build closes it
+         */
+        protected ArchiveCreatorBuilder(OutputStream outputStream, boolean owned) {
             this.outputStream = outputStream;
+            this.ownedStream = owned ? Optional.of(outputStream) : Optional.empty();
         }
 
         /**

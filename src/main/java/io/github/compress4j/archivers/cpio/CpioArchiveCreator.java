@@ -243,7 +243,7 @@ public class CpioArchiveCreator extends ArchiveCreator<CpioArchiveOutputStream> 
          * @throws IOException if an I/O error occurs opening the file
          */
         public CpioArchiveCreatorBuilder(Path path) throws IOException {
-            super(Files.newOutputStream(path));
+            super(Files.newOutputStream(path), true);
             this.cpioOutputStreamBuilder = new CpioArchiveOutputStreamBuilder<>(this, outputStream);
         }
 
@@ -253,7 +253,11 @@ public class CpioArchiveCreator extends ArchiveCreator<CpioArchiveOutputStream> 
          * @param outputStream the output stream to write the archive to
          */
         public CpioArchiveCreatorBuilder(OutputStream outputStream) {
-            super(outputStream);
+            this(outputStream, false);
+        }
+
+        private CpioArchiveCreatorBuilder(OutputStream outputStream, boolean owned) {
+            super(outputStream, owned);
             if (outputStream == null) {
                 throw new NullPointerException("Output stream cannot be null");
             }
