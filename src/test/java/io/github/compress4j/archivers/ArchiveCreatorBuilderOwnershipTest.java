@@ -28,13 +28,13 @@ import org.junit.jupiter.api.Test;
 
 class ArchiveCreatorBuilderOwnershipTest {
 
-    private final IllegalStateException FAILURE = new IllegalStateException("build failed");
+    private final IllegalStateException failure = new IllegalStateException("build failed");
 
     private InMemoryArchiveCreatorBuilder failingBuilder(OutputStream stream, boolean owned) {
         return new InMemoryArchiveCreatorBuilder(stream, owned) {
             @Override
             public InMemoryArchiveOutputStream buildArchiveOutputStream() {
-                throw FAILURE;
+                throw failure;
             }
         };
     }
@@ -44,7 +44,7 @@ class ArchiveCreatorBuilderOwnershipTest {
         var stream = mock(OutputStream.class);
         var builder = failingBuilder(stream, true);
 
-        assertThatThrownBy(builder::build).isSameAs(FAILURE);
+        assertThatThrownBy(builder::build).isSameAs(failure);
 
         verify(stream).close();
     }
@@ -54,7 +54,7 @@ class ArchiveCreatorBuilderOwnershipTest {
         var stream = mock(OutputStream.class);
         var builder = failingBuilder(stream, false);
 
-        assertThatThrownBy(builder::build).isSameAs(FAILURE);
+        assertThatThrownBy(builder::build).isSameAs(failure);
 
         verify(stream, never()).close();
     }

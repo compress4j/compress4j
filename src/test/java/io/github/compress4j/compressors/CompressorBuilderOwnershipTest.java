@@ -28,13 +28,13 @@ import org.junit.jupiter.api.Test;
 
 class CompressorBuilderOwnershipTest {
 
-    private final IOException FAILURE = new IOException("build failed");
+    private final IOException failure = new IOException("build failed");
 
     private InMemoryCompressorBuilder failingBuilder(OutputStream stream, boolean owned) {
         return new InMemoryCompressorBuilder(stream, owned) {
             @Override
             public InMemoryCompressorOutputStream buildCompressorOutputStream() throws IOException {
-                throw FAILURE;
+                throw failure;
             }
         };
     }
@@ -44,7 +44,7 @@ class CompressorBuilderOwnershipTest {
         var stream = mock(OutputStream.class);
         var builder = failingBuilder(stream, true);
 
-        assertThatThrownBy(builder::build).isSameAs(FAILURE);
+        assertThatThrownBy(builder::build).isSameAs(failure);
 
         verify(stream).close();
     }
@@ -54,7 +54,7 @@ class CompressorBuilderOwnershipTest {
         var stream = mock(OutputStream.class);
         var builder = failingBuilder(stream, false);
 
-        assertThatThrownBy(builder::build).isSameAs(FAILURE);
+        assertThatThrownBy(builder::build).isSameAs(failure);
 
         verify(stream, never()).close();
     }

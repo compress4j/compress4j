@@ -28,13 +28,13 @@ import org.junit.jupiter.api.Test;
 
 class DecompressorBuilderOwnershipTest {
 
-    private final IllegalStateException FAILURE = new IllegalStateException("build failed");
+    private final IllegalStateException failure = new IllegalStateException("build failed");
 
     private InMemoryDecompressorBuilder failingBuilder(InputStream stream, boolean owned) {
         return new InMemoryDecompressorBuilder(stream, owned) {
             @Override
             public InMemoryDecompressorInputStream buildCompressorInputStream() {
-                throw FAILURE;
+                throw failure;
             }
         };
     }
@@ -44,7 +44,7 @@ class DecompressorBuilderOwnershipTest {
         var stream = mock(InputStream.class);
         var builder = failingBuilder(stream, true);
 
-        assertThatThrownBy(builder::build).isSameAs(FAILURE);
+        assertThatThrownBy(builder::build).isSameAs(failure);
 
         verify(stream).close();
     }
@@ -54,7 +54,7 @@ class DecompressorBuilderOwnershipTest {
         var stream = mock(InputStream.class);
         var builder = failingBuilder(stream, false);
 
-        assertThatThrownBy(builder::build).isSameAs(FAILURE);
+        assertThatThrownBy(builder::build).isSameAs(failure);
 
         verify(stream, never()).close();
     }

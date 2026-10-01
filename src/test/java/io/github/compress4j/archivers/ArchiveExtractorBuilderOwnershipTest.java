@@ -28,13 +28,13 @@ import org.junit.jupiter.api.Test;
 
 class ArchiveExtractorBuilderOwnershipTest {
 
-    private final IOException FAILURE = new IOException("build failed");
+    private final IOException failure = new IOException("build failed");
 
     private InMemoryArchiveExtractorBuilder failingBuilder(InputStream stream, boolean owned) {
         return new InMemoryArchiveExtractorBuilder(stream, owned) {
             @Override
             public InMemoryArchiveInputStream buildArchiveInputStream() throws IOException {
-                throw FAILURE;
+                throw failure;
             }
         };
     }
@@ -44,7 +44,7 @@ class ArchiveExtractorBuilderOwnershipTest {
         var stream = mock(InputStream.class);
         var builder = failingBuilder(stream, true);
 
-        assertThatThrownBy(builder::build).isSameAs(FAILURE);
+        assertThatThrownBy(builder::build).isSameAs(failure);
 
         verify(stream).close();
     }
@@ -54,7 +54,7 @@ class ArchiveExtractorBuilderOwnershipTest {
         var stream = mock(InputStream.class);
         var builder = failingBuilder(stream, false);
 
-        assertThatThrownBy(builder::build).isSameAs(FAILURE);
+        assertThatThrownBy(builder::build).isSameAs(failure);
 
         verify(stream, never()).close();
     }

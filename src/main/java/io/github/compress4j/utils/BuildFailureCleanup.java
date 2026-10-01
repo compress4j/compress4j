@@ -54,19 +54,30 @@ public final class BuildFailureCleanup {
      * @throws IOException if the build fails with an I/O error
      */
     public static <T> T build(Optional<? extends Closeable> owned, IOSupplier<T> build) throws IOException {
-        try {
-            return build.get();
-        } catch (IOException | RuntimeException | Error failure) {
-            owned.ifPresent(stream -> closeSuppressing(stream, failure));
-            throw failure;
+        try (var cleanup = new CloseUnlessBuilt(owned)) {
+            var value = build.get();
+            cleanup.built();
+            return value;
         }
     }
 
-    private static void closeSuppressing(Closeable stream, Throwable failure) {
-        try {
-            stream.close();
-        } catch (IOException | RuntimeException cleanupFailure) {
-            failure.addSuppressed(cleanupFailure);
+    private static final class CloseUnlessBuilt implements Closeable {
+        private final Optional<? extends Closeable> owned;
+        private boolean built;
+
+        CloseUnlessBuilt(Optional<? extends Closeable> owned) {
+            this.owned = owned;
+        }
+
+        void built() {
+            built = true;
+        }
+
+        @Override
+        public void close() throws IOException {
+            if (!built && owned.isPresent()) {
+                owned.get().close();
+            }
         }
     }
 }
