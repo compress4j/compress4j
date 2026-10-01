@@ -1,0 +1,31 @@
+= Snappy
+
+Snappy support needs no extra dependency. Compress4J provides two stream types, because they are different formats: the framed format (`.sz`, used for files and streams) and the raw format, a single block.
+
+The raw format stores the uncompressed length first, so `SnappyRawCompressor.builder(...)` requires it as an argument and rejects a negative value with an `IllegalArgumentException`.
+
+== Example Usage
+
+.Framed Snappy Compression
+[,java]
+----
+include::example$java/com/example/compressors/SnappyExamples.java[tag=snappy-framed-compressor,indent=0]
+----
+
+.Framed Snappy Decompression
+[,java]
+----
+include::example$java/com/example/compressors/SnappyExamples.java[tag=snappy-framed-decompressor,indent=0]
+----
+
+.Raw Snappy Compression
+[,java]
+----
+include::example$java/com/example/compressors/SnappyExamples.java[tag=snappy-raw-compressor,indent=0]
+----
+
+.Raw Snappy Decompression
+[,java]
+----
+include::example$java/com/example/compressors/SnappyExamples.java[tag=snappy-raw-decompressor,indent=0]
+----

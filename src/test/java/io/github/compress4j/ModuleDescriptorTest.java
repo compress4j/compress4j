@@ -92,6 +92,9 @@ class ModuleDescriptorTest {
                         BASE + "compressors.pack200",
                         BASE + "compressors.xz",
                         BASE + "compressors.zstd",
+                        BASE + "compressors.lzma",
+                        BASE + "compressors.lz4",
+                        BASE + "compressors.snappy",
                         BASE + "exceptions");
     }
 

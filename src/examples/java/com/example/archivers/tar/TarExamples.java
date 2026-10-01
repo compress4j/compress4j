@@ -31,6 +31,10 @@ import io.github.compress4j.archivers.tar.TarBZip2ArchiveCreator;
 import io.github.compress4j.archivers.tar.TarBZip2ArchiveExtractor;
 import io.github.compress4j.archivers.tar.TarGzArchiveCreator;
 import io.github.compress4j.archivers.tar.TarGzArchiveExtractor;
+import io.github.compress4j.archivers.tar.TarLz4ArchiveCreator;
+import io.github.compress4j.archivers.tar.TarLz4ArchiveExtractor;
+import io.github.compress4j.archivers.tar.TarLzmaArchiveCreator;
+import io.github.compress4j.archivers.tar.TarLzmaArchiveExtractor;
 import io.github.compress4j.archivers.tar.TarXzArchiveCreator;
 import io.github.compress4j.archivers.tar.TarXzArchiveExtractor;
 import io.github.compress4j.archivers.tar.TarZstdArchiveCreator;
@@ -215,5 +219,67 @@ public class TarExamples {
             tarZstdExtractor.extract(Path.of("outputDir"));
         }
         // end::tar-zstd-extractor[]
+    }
+
+    public static void tarLzmaCreator() throws IOException {
+        // tag::tar-lzma-creator[]
+        try (TarLzmaArchiveCreator tarLzmaCreator = TarLzmaArchiveCreator.builder(Path.of("example.tar.lzma"))
+                .blockSize(1024)
+                .encoding(UTF_8.name())
+                .addPaxHeadersForNonAsciiNames(true)
+                .bigNumberMode(BIGNUMBER_ERROR)
+                .longFileMode(LONGFILE_GNU)
+                .filter((name, p) -> !name.endsWith("some_file.txt"))
+                .build()) {
+            tarLzmaCreator.addDirectoryRecursively(Path.of("exampleDir"));
+            tarLzmaCreator.addFile(Path.of("path/to/file.txt"));
+        }
+        // end::tar-lzma-creator[]
+    }
+
+    public static void tarLzmaExtractor() throws IOException {
+        // tag::tar-lzma-extractor[]
+        try (TarLzmaArchiveExtractor tarLzmaExtractor = TarLzmaArchiveExtractor.builder(Path.of("example.tar.lzma"))
+                .filter(entry -> !entry.name().startsWith("bad"))
+                .errorHandler((entry, exception) -> RETRY)
+                .escapingSymlinkPolicy(ArchiveExtractor.EscapingSymlinkPolicy.DISALLOW)
+                .postProcessor((entry, exception) -> {})
+                .stripComponents(1)
+                .overwrite(true)
+                .build()) {
+            tarLzmaExtractor.extract(Path.of("outputDir"));
+        }
+        // end::tar-lzma-extractor[]
+    }
+
+    public static void tarLz4Creator() throws IOException {
+        // tag::tar-lz4-creator[]
+        try (TarLz4ArchiveCreator tarLz4Creator = TarLz4ArchiveCreator.builder(Path.of("example.tar.lz4"))
+                .blockSize(1024)
+                .encoding(UTF_8.name())
+                .addPaxHeadersForNonAsciiNames(true)
+                .bigNumberMode(BIGNUMBER_ERROR)
+                .longFileMode(LONGFILE_GNU)
+                .filter((name, p) -> !name.endsWith("some_file.txt"))
+                .build()) {
+            tarLz4Creator.addDirectoryRecursively(Path.of("exampleDir"));
+            tarLz4Creator.addFile(Path.of("path/to/file.txt"));
+        }
+        // end::tar-lz4-creator[]
+    }
+
+    public static void tarLz4Extractor() throws IOException {
+        // tag::tar-lz4-extractor[]
+        try (TarLz4ArchiveExtractor tarLz4Extractor = TarLz4ArchiveExtractor.builder(Path.of("example.tar.lz4"))
+                .filter(entry -> !entry.name().startsWith("bad"))
+                .errorHandler((entry, exception) -> RETRY)
+                .escapingSymlinkPolicy(ArchiveExtractor.EscapingSymlinkPolicy.DISALLOW)
+                .postProcessor((entry, exception) -> {})
+                .stripComponents(1)
+                .overwrite(true)
+                .build()) {
+            tarLz4Extractor.extract(Path.of("outputDir"));
+        }
+        // end::tar-lz4-extractor[]
     }
 }
