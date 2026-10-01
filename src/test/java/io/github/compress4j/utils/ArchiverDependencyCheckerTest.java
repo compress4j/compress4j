@@ -15,30 +15,11 @@
  */
 package io.github.compress4j.utils;
 
-import static io.github.compress4j.utils.DependencyCheckerTestConstants.EXPECTED_MESSAGE_BROTLI;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-import io.github.compress4j.exceptions.MissingArchiveDependencyException;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
 
 class ArchiverDependencyCheckerTest {
-
-    private static Stream<Arguments> individualCheckers() {
-        return Stream.of(Arguments.of("br", EXPECTED_MESSAGE_BROTLI));
-    }
-
-    @ParameterizedTest
-    @MethodSource("individualCheckers")
-    void shouldCheckArchiverDependency(String entryName, String expectedMessage) {
-        assertThatThrownBy(() -> ArchiverDependencyChecker.check(entryName))
-                .isInstanceOf(MissingArchiveDependencyException.class)
-                .hasMessage(expectedMessage);
-    }
 
     @Test
     void shouldNotThrowExceptionsForUnchecked() {
@@ -46,10 +27,9 @@ class ArchiverDependencyCheckerTest {
     }
 
     @Test
-    void shouldCheckBrotli() {
-        assertThatThrownBy(ArchiverDependencyChecker::checkBrotli)
-                .isInstanceOf(MissingArchiveDependencyException.class)
-                .hasMessage(EXPECTED_MESSAGE_BROTLI);
+    void shouldNotThrowForBrotliWhenDecIsPresent() {
+        assertDoesNotThrow(ArchiverDependencyChecker::checkBrotli);
+        assertDoesNotThrow(() -> ArchiverDependencyChecker.check("br"));
     }
 
     @Test

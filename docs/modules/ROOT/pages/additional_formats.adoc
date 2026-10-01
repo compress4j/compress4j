@@ -91,3 +91,48 @@ dependencies {
 }
 ----
 ====
+
+== Brotli Support
+
+Brotli support needs `org.brotli:dec` on the class path or module path. It only reads Brotli data; see xref:read_only_formats.adoc[Read-only formats].
+
+The `org.brotli:dec` jar has no module descriptor, so its module name is derived from the file name (`dec`). On the module path, start the JVM with `--add-modules dec`.
+
+[tabs]
+====
+Maven::
++
+[source,xml]
+----
+<dependency>
+    <groupId>io.github.compress4j</groupId>
+    <artifactId>compress4j</artifactId>
+    <version>YOUR_VERSION</version>
+</dependency>
+<dependency>
+    <groupId>org.brotli</groupId>
+    <artifactId>dec</artifactId>
+    <version>YOUR_BROTLI_DEC_VERSION</version>
+</dependency>
+----
+
+Gradle Groovy::
++
+[source,groovy]
+----
+dependencies {
+    implementation 'io.github.compress4j:compress4j:YOUR_VERSION'
+    implementation 'org.brotli:dec:YOUR_BROTLI_DEC_VERSION'
+}
+----
+
+Gradle Kotlin::
++
+[source,kotlin]
+----
+dependencies {
+    implementation("io.github.compress4j:compress4j:YOUR_VERSION")
+    implementation("org.brotli:dec:YOUR_BROTLI_DEC_VERSION")
+}
+----
+====

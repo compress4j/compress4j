@@ -1,0 +1,14 @@
+= Read-only formats
+
+Commons Compress reads, but cannot write, some formats. Compress4J supports these formats with an extractor or decompressor only; no creator or compressor class exists for them.
+
+== Convention
+
+* The class Javadoc starts with `Read-only: Compress4J provides no creator for this format.`
+* The format's page opens with the note `Read-only: Compress4J can extract this format but cannot create it.`
+* Format lists mark the format with `(read-only)`.
+* Extractors inherit the same extraction guards as every other archive extractor: path traversal, escaping symlink policy, and entry and size limits.
+
+== Read-only formats
+
+ARJ, UNIX dump, Unix compress (`.Z` and `.tar.Z`), Deflate64 and Brotli.

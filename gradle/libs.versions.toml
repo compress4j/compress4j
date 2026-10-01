@@ -18,6 +18,7 @@ slf4j = "2.0.20"
 sonarqube = "7.5.0.8588"
 spotless = "8.10.2"
 tukaani-xz = "1.12"
+brotli-dec = "0.1.2"
 zstd-jni = "1.5.7-19"
 
 [libraries]
@@ -25,6 +26,7 @@ commons-compress = { module = "org.apache.commons:commons-compress", version.ref
 commons-io = { module = "commons-io:commons-io", version = "2.22.0" }
 commons-lang3 = { module = "org.apache.commons:commons-lang3", version = "3.20.0" }
 jakarta-annotation-api = { module = "jakarta.annotation:jakarta.annotation-api", version.ref = "jakarta-annotation" }
+org-brotli-dec = { module = "org.brotli:dec", version.ref = "brotli-dec" }
 org-tukaani-xz = { module = "org.tukaani:xz", version.ref = "tukaani-xz" }
 com-github-luben-zstd-jni = { module = "com.github.luben:zstd-jni", version.ref = "zstd-jni" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }

@@ -95,6 +95,11 @@ class ModuleDescriptorTest {
                         BASE + "compressors.lzma",
                         BASE + "compressors.lz4",
                         BASE + "compressors.snappy",
+                        BASE + "compressors.z",
+                        BASE + "compressors.deflate64",
+                        BASE + "compressors.brotli",
+                        BASE + "archivers.arj",
+                        BASE + "archivers.dump",
                         BASE + "exceptions");
     }
 

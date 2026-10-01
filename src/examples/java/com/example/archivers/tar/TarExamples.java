@@ -37,6 +37,7 @@ import io.github.compress4j.archivers.tar.TarLzmaArchiveCreator;
 import io.github.compress4j.archivers.tar.TarLzmaArchiveExtractor;
 import io.github.compress4j.archivers.tar.TarXzArchiveCreator;
 import io.github.compress4j.archivers.tar.TarXzArchiveExtractor;
+import io.github.compress4j.archivers.tar.TarZArchiveExtractor;
 import io.github.compress4j.archivers.tar.TarZstdArchiveCreator;
 import io.github.compress4j.archivers.tar.TarZstdArchiveExtractor;
 import java.io.IOException;
@@ -281,5 +282,20 @@ public class TarExamples {
             tarLz4Extractor.extract(Path.of("outputDir"));
         }
         // end::tar-lz4-extractor[]
+    }
+
+    public static void tarZExtractor() throws IOException {
+        // tag::tar-z-extractor[]
+        try (TarZArchiveExtractor tarZExtractor = TarZArchiveExtractor.builder(Path.of("example.tar.Z"))
+                .filter(entry -> !entry.name().startsWith("bad"))
+                .errorHandler((entry, exception) -> RETRY)
+                .escapingSymlinkPolicy(ArchiveExtractor.EscapingSymlinkPolicy.DISALLOW)
+                .postProcessor((entry, exception) -> {})
+                .stripComponents(1)
+                .overwrite(true)
+                .build()) {
+            tarZExtractor.extract(Path.of("outputDir"));
+        }
+        // end::tar-z-extractor[]
     }
 }
