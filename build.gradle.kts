@@ -336,7 +336,7 @@ gitVersioning.apply {
 }
 
 fun MavenPom.centralMetadata() {
-    url = "https://hominux.com/docs/"
+    url = "https://hominux.com/compress4j/"
     organization {
         name = "Hominux"
         url = "https://hominux.com"
@@ -348,7 +348,7 @@ fun MavenPom.centralMetadata() {
     scm {
         connection = "scm:git:https://github.com/hominux/compress4j.git"
         developerConnection = "scm:git:git@github.com:hominux/compress4j.git"
-        url = "https://github.com/hominux/compress4j.git"
+        url = "https://github.com/hominux/compress4j"
     }
     licenses {
         license {
