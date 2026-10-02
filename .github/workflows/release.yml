@@ -1,5 +1,26 @@
 name: Release
 on:
+  workflow_call:
+    inputs:
+      dry_run:
+        type: boolean
+        required: false
+        default: false
+    secrets:
+      SONATYPE_USERNAME:
+        required: true
+      SONATYPE_PASSWORD:
+        required: true
+      GPG_PASSPHRASE:
+        required: true
+      GPG_SECRET_KEY:
+        required: true
+      GPG_PUBLIC_KEY:
+        required: true
+      DOCS_APP_CLIENT_ID:
+        required: true
+      DOCS_APP_PRIVATE_KEY:
+        required: true
   workflow_dispatch:
     inputs:
       dry_run:
