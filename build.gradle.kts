@@ -23,6 +23,7 @@ plugins {
 }
 
 val stagingDir: Provider<Directory> = layout.buildDirectory.dir("staging-deploy")
+val relocationStagingDir: Provider<Directory> = layout.buildDirectory.dir("staging-deploy-relocation")
 val snapshotVersion: String = "\${describe.tag.version.major}." +
         "\${describe.tag.version.minor}." +
         "\${describe.tag.version.patch.next}-SNAPSHOT"
@@ -425,9 +426,20 @@ publishing {
 
     repositories {
         maven {
+            name = "staging"
             url = uri(stagingDir.get().toString())
         }
+        maven {
+            name = "relocationStaging"
+            url = uri(relocationStagingDir.get().toString())
+        }
     }
+}
+
+// Central rejects a deployment that spans namespaces, so the relocation POM is staged and deployed on its own.
+tasks.withType<PublishToMavenRepository>().configureEach {
+    val isRelocation = publication.name == "relocation"
+    onlyIf { isRelocation == (repository.name == "relocationStaging") }
 }
 
 configure<org.jreleaser.gradle.plugin.JReleaserExtension> {
@@ -454,6 +466,12 @@ configure<org.jreleaser.gradle.plugin.JReleaserExtension> {
                     active = Active.ALWAYS
                     url = "https://central.sonatype.com/api/v1/publisher"
                     stagingRepository(stagingDir.get().toString())
+                }
+                register("sonatypeRelocation") {
+                    active = Active.ALWAYS
+                    namespace = "io.github.compress4j"
+                    url = "https://central.sonatype.com/api/v1/publisher"
+                    stagingRepository(relocationStagingDir.get().toString())
                 }
             }
         }

@@ -4,11 +4,11 @@ Version 4.0 moves Compress4J from `io.github.compress4j` to `com.hominux` and al
 
 == Dependency
 
-Change the group in your build. Maven follows the relocation POM published at `io.github.compress4j:compress4j:4.0.0`, but Gradle builds, and automated version bumps that keep the old group, must use the new coordinates explicitly.
+Change the group in your build. Maven follows the relocation POM that every 4.x release also publishes at `io.github.compress4j:compress4j`, but Gradle builds, and automated version bumps that keep the old group, must use the new coordinates explicitly.
 
 [source,kotlin]
 ----
-implementation("com.hominux:compress4j:4.0.0")
+implementation("com.hominux:compress4j:YOUR_VERSION")
 ----
 
 [source,xml]
@@ -16,7 +16,7 @@ implementation("com.hominux:compress4j:4.0.0")
 <dependency>
     <groupId>com.hominux</groupId>
     <artifactId>compress4j</artifactId>
-    <version>4.0.0</version>
+    <version>YOUR_VERSION</version>
 </dependency>
 ----
 
