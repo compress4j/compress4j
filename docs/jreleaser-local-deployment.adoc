@@ -11,7 +11,7 @@ A maintainer starts the "Release" workflow on `main`. Nothing releases on merge.
 . *Publish* tags the commit, stages the artifacts, and deploys them to Maven Central through JReleaser. It runs in the `release` environment, which is limited to `main` and holds the signing and Central secrets.
 . *Notify docs site* tells `hominux.github.io` to rebuild the docs.
 
-The workflow's `dry_run` input defaults to `true`, which only prints the plan. Untick it to publish.
+The workflow's `dry_run` input defaults to `true`, which only prints the plan. Untick it to publish; it still publishes only when the computed release plan says to release.
 
 == What gets deployed
 
@@ -48,7 +48,7 @@ export JRELEASER_GPG_SECRET_KEY="$(gpg --armor --export-secret-keys YOUR_KEY_ID)
 export JRELEASER_GITHUB_TOKEN="your-github-token"
 ----
 
-The workflow maps the environment secrets `SONATYPE_USERNAME`, `SONATYPE_PASSWORD`, `GPG_PASSPHRASE`, `GPG_SECRET_KEY` and `GPG_PUBLIC_KEY` to these variables, and uses `GITHUB_TOKEN` for the GitHub token.
+The workflow maps the environment secrets `SONATYPE_USERNAME`, `SONATYPE_PASSWORD`, `GPG_PASSPHRASE`, `GPG_SECRET_KEY` and `GPG_PUBLIC_KEY` to these variables, and uses `GITHUB_TOKEN` for the GitHub token. The docs notification job reads `DOCS_APP_CLIENT_ID` and `DOCS_APP_PRIVATE_KEY` from the organization secrets, not from the `release` environment.
 
 The Central credentials are a user token, not your login: generate one at https://central.sonatype.com under View Account. Generating a new token replaces the old one.
 
