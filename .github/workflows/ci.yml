@@ -205,7 +205,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: write  # The release job pushes the version tag
-    uses: ./.github/workflows/release.yml
+    uses: $/.github/workflows/release.yml
     secrets:
       SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
       SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
