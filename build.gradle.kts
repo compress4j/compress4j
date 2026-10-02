@@ -342,7 +342,15 @@ publishing {
             pom {
                 name = project.name
                 description = project.description
-                url = "https://github.com/hominux/compress4j"
+                url = "https://hominux.com/docs/"
+                organization {
+                    name = "Hominux"
+                    url = "https://hominux.com"
+                }
+                issueManagement {
+                    system = "GitHub"
+                    url = "https://github.com/hominux/compress4j/issues"
+                }
                 withXml {
                     val dependencies = asNode().get("dependencies") as groovy.util.NodeList
                     (dependencies.first() as groovy.util.Node).appendNode("dependency").apply {
