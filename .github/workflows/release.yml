@@ -1,26 +1,5 @@
 name: Release
 on:
-  workflow_call:
-    inputs:
-      dry_run:
-        type: boolean
-        required: false
-        default: false
-    secrets:
-      SONATYPE_USERNAME:
-        required: true
-      SONATYPE_PASSWORD:
-        required: true
-      GPG_PASSPHRASE:
-        required: true
-      GPG_SECRET_KEY:
-        required: true
-      GPG_PUBLIC_KEY:
-        required: true
-      DOCS_APP_CLIENT_ID:
-        required: true
-      DOCS_APP_PRIVATE_KEY:
-        required: true
   workflow_dispatch:
     inputs:
       dry_run:
@@ -34,8 +13,33 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  authorize:
+    name: Authorize
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Require a maintainer on main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ACTOR: ${{ github.triggering_actor }}
+          REPO: ${{ github.repository }}
+          REF: ${{ github.ref }}
+        run: |
+          set -euo pipefail
+          if [ "$REF" != 'refs/heads/main' ]; then
+            echo "::error::Releases run from main, not $REF"
+            exit 1
+          fi
+          role=$(gh api "repos/$REPO/collaborators/$ACTOR/permission" --jq .role_name)
+          case "$role" in
+            admin|maintain) echo "$ACTOR has role $role" ;;
+            *) echo "::error::$ACTOR has role '$role'; releasing needs admin or maintain"; exit 1 ;;
+          esac
+
   plan:
     name: Plan
+    needs: authorize
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -73,24 +77,12 @@ jobs:
         if: steps.plan.outputs.release != 'true'
         run: echo "No commit since v${{ steps.plan.outputs.previousVersion }} asks for a release."
 
-  # Gated by the `release` environment's required reviewers -- this job pauses here until
-  # someone approves it, and everything after it only runs on approval.
-  approve:
-    name: Approve release
+  publish:
+    name: Publish
     needs: plan
     if: needs.plan.outputs.release == 'true' && !inputs.dry_run
     runs-on: ubuntu-latest
     environment: release
-    permissions: {}
-    steps:
-      - env:
-          VERSION: ${{ needs.plan.outputs.nextVersion }}
-        run: echo "Approved v$VERSION for release"
-
-  publish:
-    name: Publish
-    needs: [plan, approve]
-    runs-on: ubuntu-latest
     permissions:
       contents: write
 
@@ -159,6 +151,7 @@ jobs:
   notify-docs:
     name: Notify docs site
     needs: [plan, publish]
+    if: needs.plan.outputs.release == 'true' && !inputs.dry_run
     runs-on: ubuntu-latest
     permissions:
       contents: read
