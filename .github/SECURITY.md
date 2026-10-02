@@ -13,7 +13,7 @@ Security fixes are released for the latest `3.x` release. Older majors are not m
 
 Please **do not open a public issue** for a security problem.
 
-Report it through [GitHub's private vulnerability reporting](https://github.com/compress4j/compress4j/security/advisories/new).
+Report it through [GitHub's private vulnerability reporting](https://github.com/hominux/compress4j/security/advisories/new).
 If that is not available to you, email the maintainers listed in `build.gradle.kts`.
 
 Include, as far as you can:

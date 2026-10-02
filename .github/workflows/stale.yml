@@ -30,7 +30,7 @@ jobs:
           stale-issue-message: |
             This issue has been waiting on a reproducer for 30 days with no activity, so it's been marked as `stale`.
 
-            If you can still reproduce it on the latest [release](https://github.com/compress4j/compress4j/releases/latest), please reply with:
+            If you can still reproduce it on the latest [release](https://github.com/hominux/compress4j/releases/latest), please reply with:
             - The Compress4J version, the JDK version and the OS
             - A minimal reproducer — the few lines of code plus, if the archive matters, one that triggers it
             - The full stack trace
@@ -41,4 +41,4 @@ jobs:
           close-issue-message: |
             Closing as stale — no reproducer was received in 44 days.
 
-            If you hit this on a recent release, please open a fresh issue using the [bug report template](https://github.com/compress4j/compress4j/issues/new/choose), which collects the diagnostic info up-front. Thanks for the original report regardless.
+            If you hit this on a recent release, please open a fresh issue using the [bug report template](https://github.com/hominux/compress4j/issues/new/choose), which collects the diagnostic info up-front. Thanks for the original report regardless.

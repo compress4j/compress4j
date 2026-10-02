@@ -342,7 +342,7 @@ publishing {
             pom {
                 name = project.name
                 description = project.description
-                url = "https://github.com/compress4j/compress4j"
+                url = "https://github.com/hominux/compress4j"
                 withXml {
                     val dependencies = asNode().get("dependencies") as groovy.util.NodeList
                     (dependencies.first() as groovy.util.Node).appendNode("dependency").apply {
@@ -368,9 +368,9 @@ publishing {
                     }
                 }
                 scm {
-                    connection = "scm:git:https://github.com/compress4j/compress4j.git"
-                    developerConnection = "scm:git:git@github.com:compress4j/compress4j.git"
-                    url = "https://github.com/compress4j/compress4j.git"
+                    connection = "scm:git:https://github.com/hominux/compress4j.git"
+                    developerConnection = "scm:git:git@github.com:hominux/compress4j.git"
+                    url = "https://github.com/hominux/compress4j.git"
                 }
                 licenses {
                     license {
