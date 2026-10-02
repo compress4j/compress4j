@@ -1,11 +1,11 @@
-import io.github.compress4j.semver.CheckCommitMessagesTask
-import io.github.compress4j.semver.ConventionalCommits
-import io.github.compress4j.semver.GitHistoryValueSource
-import io.github.compress4j.semver.ReleaseTagsValueSource
-import io.github.compress4j.semver.SemverExtension
-import io.github.compress4j.semver.SemverPlanTask
-import io.github.compress4j.semver.parseGitHistory
-import io.github.compress4j.semver.parseReleaseTags
+import com.hominux.compress4j.semver.CheckCommitMessagesTask
+import com.hominux.compress4j.semver.ConventionalCommits
+import com.hominux.compress4j.semver.GitHistoryValueSource
+import com.hominux.compress4j.semver.ReleaseTagsValueSource
+import com.hominux.compress4j.semver.SemverExtension
+import com.hominux.compress4j.semver.SemverPlanTask
+import com.hominux.compress4j.semver.parseGitHistory
+import com.hominux.compress4j.semver.parseReleaseTags
 
 plugins { id("me.champeau.gradle.japicmp") }
 

@@ -15,7 +15,7 @@
  */
 package com.example.archivers.tar;
 
-import static io.github.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice.RETRY;
+import static com.hominux.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice.RETRY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.zip.Deflater.BEST_COMPRESSION;
 import static java.util.zip.Deflater.HUFFMAN_ONLY;
@@ -24,22 +24,22 @@ import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.B
 import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.LONGFILE_GNU;
 import static org.apache.commons.compress.archivers.tar.TarArchiveOutputStream.LONGFILE_POSIX;
 
-import io.github.compress4j.archivers.ArchiveExtractor;
-import io.github.compress4j.archivers.tar.TarArchiveCreator;
-import io.github.compress4j.archivers.tar.TarArchiveExtractor;
-import io.github.compress4j.archivers.tar.TarBZip2ArchiveCreator;
-import io.github.compress4j.archivers.tar.TarBZip2ArchiveExtractor;
-import io.github.compress4j.archivers.tar.TarGzArchiveCreator;
-import io.github.compress4j.archivers.tar.TarGzArchiveExtractor;
-import io.github.compress4j.archivers.tar.TarLz4ArchiveCreator;
-import io.github.compress4j.archivers.tar.TarLz4ArchiveExtractor;
-import io.github.compress4j.archivers.tar.TarLzmaArchiveCreator;
-import io.github.compress4j.archivers.tar.TarLzmaArchiveExtractor;
-import io.github.compress4j.archivers.tar.TarXzArchiveCreator;
-import io.github.compress4j.archivers.tar.TarXzArchiveExtractor;
-import io.github.compress4j.archivers.tar.TarZArchiveExtractor;
-import io.github.compress4j.archivers.tar.TarZstdArchiveCreator;
-import io.github.compress4j.archivers.tar.TarZstdArchiveExtractor;
+import com.hominux.compress4j.archivers.ArchiveExtractor;
+import com.hominux.compress4j.archivers.tar.TarArchiveCreator;
+import com.hominux.compress4j.archivers.tar.TarArchiveExtractor;
+import com.hominux.compress4j.archivers.tar.TarBZip2ArchiveCreator;
+import com.hominux.compress4j.archivers.tar.TarBZip2ArchiveExtractor;
+import com.hominux.compress4j.archivers.tar.TarGzArchiveCreator;
+import com.hominux.compress4j.archivers.tar.TarGzArchiveExtractor;
+import com.hominux.compress4j.archivers.tar.TarLz4ArchiveCreator;
+import com.hominux.compress4j.archivers.tar.TarLz4ArchiveExtractor;
+import com.hominux.compress4j.archivers.tar.TarLzmaArchiveCreator;
+import com.hominux.compress4j.archivers.tar.TarLzmaArchiveExtractor;
+import com.hominux.compress4j.archivers.tar.TarXzArchiveCreator;
+import com.hominux.compress4j.archivers.tar.TarXzArchiveExtractor;
+import com.hominux.compress4j.archivers.tar.TarZArchiveExtractor;
+import com.hominux.compress4j.archivers.tar.TarZstdArchiveCreator;
+import com.hominux.compress4j.archivers.tar.TarZstdArchiveExtractor;
 import java.io.IOException;
 import java.nio.file.Path;
 import org.tukaani.xz.LZMA2Options;

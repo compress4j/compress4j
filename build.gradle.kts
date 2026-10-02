@@ -1,8 +1,9 @@
 @file:Suppress("UnstableApiUsage")
 
 import com.diffplug.spotless.FormatterFunc
-import io.github.compress4j.semver.CheckApiCompatibilityTask
+import com.hominux.compress4j.semver.CheckApiCompatibilityTask
 import me.champeau.gradle.japicmp.JapicmpTask
+import org.gradle.api.publish.maven.MavenPom
 import org.jreleaser.model.Active
 import java.io.Serializable
 
@@ -26,7 +27,7 @@ val snapshotVersion: String = "\${describe.tag.version.major}." +
         "\${describe.tag.version.minor}." +
         "\${describe.tag.version.patch.next}-SNAPSHOT"
 
-group = "io.github.compress4j"
+group = "com.hominux"
 description = "A simple archiving and compression library for Java."
 version = "0.0.0-SNAPSHOT"
 
@@ -333,6 +334,40 @@ gitVersioning.apply {
     }
 }
 
+fun MavenPom.centralMetadata() {
+    url = "https://hominux.com/docs/"
+    organization {
+        name = "Hominux"
+        url = "https://hominux.com"
+    }
+    issueManagement {
+        system = "GitHub"
+        url = "https://github.com/hominux/compress4j/issues"
+    }
+    scm {
+        connection = "scm:git:https://github.com/hominux/compress4j.git"
+        developerConnection = "scm:git:git@github.com:hominux/compress4j.git"
+        url = "https://github.com/hominux/compress4j.git"
+    }
+    licenses {
+        license {
+            name = "Apache-2.0"
+            url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
+            distribution = "repo"
+        }
+    }
+    developers {
+        developer {
+            id = "austek"
+            name = "Ali Ustek"
+        }
+        developer {
+            id = "renasustek"
+            name = "Renas Ustek"
+        }
+    }
+}
+
 publishing {
     publications {
         create<MavenPublication>("maven") {
@@ -342,7 +377,7 @@ publishing {
             pom {
                 name = project.name
                 description = project.description
-                url = "https://github.com/hominux/compress4j"
+                centralMetadata()
                 withXml {
                     val dependencies = asNode().get("dependencies") as groovy.util.NodeList
                     (dependencies.first() as groovy.util.Node).appendNode("dependency").apply {
@@ -367,26 +402,21 @@ publishing {
                         appendNode("optional", "true")
                     }
                 }
-                scm {
-                    connection = "scm:git:https://github.com/hominux/compress4j.git"
-                    developerConnection = "scm:git:git@github.com:hominux/compress4j.git"
-                    url = "https://github.com/hominux/compress4j.git"
-                }
-                licenses {
-                    license {
-                        name = "Apache-2.0"
-                        url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
-                        distribution = "repo"
-                    }
-                }
-                developers {
-                    developer {
-                        id = "austek"
-                        name = "Ali Ustek"
-                    }
-                    developer {
-                        id = "renasustek"
-                        name = "Renas Ustek"
+            }
+        }
+        create<MavenPublication>("relocation") {
+            groupId = "io.github.compress4j"
+            artifactId = project.name
+            pom {
+                packaging = "pom"
+                name = project.name
+                description = "Relocated to com.hominux:compress4j."
+                centralMetadata()
+                distributionManagement {
+                    relocation {
+                        groupId = "com.hominux"
+                        artifactId = project.name
+                        message = "compress4j moved to the com.hominux group."
                     }
                 }
             }

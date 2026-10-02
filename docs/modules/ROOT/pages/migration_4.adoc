@@ -1,0 +1,36 @@
+= Migrating from 3.x to 4.0
+
+Version 4.0 moves Compress4J from `io.github.compress4j` to `com.hominux` and also includes API changes made since 3.1.1.
+
+== Dependency
+
+Change the group in your build. Maven follows the relocation POM published at `io.github.compress4j:compress4j:4.0.0`, but Gradle builds, and automated version bumps that keep the old group, must use the new coordinates explicitly.
+
+[source,kotlin]
+----
+implementation("com.hominux:compress4j:4.0.0")
+----
+
+[source,xml]
+----
+<dependency>
+    <groupId>com.hominux</groupId>
+    <artifactId>compress4j</artifactId>
+    <version>4.0.0</version>
+</dependency>
+----
+
+== Packages
+
+Replace the package prefix `io.github.compress4j` with `com.hominux.compress4j` in imports. This applies to every build tool; the relocation does not rewrite imports.
+
+== Module name
+
+The JPMS module is now `com.hominux.compress4j`. Update `requires io.github.compress4j;` in your `module-info.java`.
+
+== API changes since 3.1.1
+
+* `ArchiveExtractor.nextEntry()` returns `Optional<Entry>`. Subclasses return `Optional.empty()` at the end of an archive instead of `null`.
+* Archive APIs no longer take or expose `Optional` fields and parameters. `ArchiveCreator.addFile(String, Path, BasicFileAttributes, Optional<FileTime>)` is replaced by an overload taking `FileTime`.
+* Custom `ArchiveCreator` subclasses implement two abstract methods in place of `writeFileEntry(..., Optional<Path>)`: a five-argument one for regular files and a six-argument one taking a non-null symlink target.
+* The `compress4j-xz-support` capability is removed. Add `org.tukaani:xz` directly for the XZ formats; see xref:additional_formats.adoc[].

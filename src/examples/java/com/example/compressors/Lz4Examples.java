@@ -15,10 +15,10 @@
  */
 package com.example.compressors;
 
-import io.github.compress4j.compressors.lz4.Lz4BlockCompressor;
-import io.github.compress4j.compressors.lz4.Lz4BlockDecompressor;
-import io.github.compress4j.compressors.lz4.Lz4FramedCompressor;
-import io.github.compress4j.compressors.lz4.Lz4FramedDecompressor;
+import com.hominux.compress4j.compressors.lz4.Lz4BlockCompressor;
+import com.hominux.compress4j.compressors.lz4.Lz4BlockDecompressor;
+import com.hominux.compress4j.compressors.lz4.Lz4FramedCompressor;
+import com.hominux.compress4j.compressors.lz4.Lz4FramedDecompressor;
 import java.io.IOException;
 import java.nio.file.Path;
 

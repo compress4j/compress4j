@@ -15,7 +15,7 @@
  */
 package com.example.compressors;
 
-import io.github.compress4j.compressors.deflate64.Deflate64Decompressor;
+import com.hominux.compress4j.compressors.deflate64.Deflate64Decompressor;
 import java.io.IOException;
 import java.nio.file.Path;
 

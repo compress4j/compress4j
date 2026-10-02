@@ -15,8 +15,8 @@
  */
 package com.example.compressors;
 
-import io.github.compress4j.compressors.lzma.LZMACompressor;
-import io.github.compress4j.compressors.lzma.LZMADecompressor;
+import com.hominux.compress4j.compressors.lzma.LZMACompressor;
+import com.hominux.compress4j.compressors.lzma.LZMADecompressor;
 import java.io.IOException;
 import java.nio.file.Path;
 

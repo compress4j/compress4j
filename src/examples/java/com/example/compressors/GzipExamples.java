@@ -18,8 +18,8 @@ package com.example.compressors;
 import static java.util.zip.Deflater.BEST_COMPRESSION;
 import static java.util.zip.Deflater.HUFFMAN_ONLY;
 
-import io.github.compress4j.compressors.gzip.GzipCompressor;
-import io.github.compress4j.compressors.gzip.GzipDecompressor;
+import com.hominux.compress4j.compressors.gzip.GzipCompressor;
+import com.hominux.compress4j.compressors.gzip.GzipDecompressor;
 import java.io.IOException;
 import java.nio.file.Path;
 

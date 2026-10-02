@@ -1,6 +1,6 @@
 = Compress4J
 
-image:https://img.shields.io/maven-central/v/io.github.compress4j/compress4j[Maven Central Version]
+image:https://img.shields.io/maven-central/v/com.hominux/compress4j[Maven Central Version]
 image:https://github.com/hominux/compress4j/actions/workflows/ci.yml/badge.svg[Build Status]
 image:https://sonarcloud.io/api/project_badges/measure?project=compress4j_compress4j&metric=alert_status[Quality Gate Status,link=https://sonarcloud.io/summary/new_code?id=compress4j_compress4j]
 image:https://sonarcloud.io/api/project_badges/measure?project=compress4j_compress4j&metric=coverage[Coverage Status,link=https://sonarcloud.io/summary/new_code?id=compress4j_compress4j]
@@ -24,7 +24,7 @@ Gradle:
 [source,kotlin]
 ----
 dependencies {
-    implementation("io.github.compress4j:compress4j:<version>")
+    implementation("com.hominux:compress4j:<version>")
 
     // Only needed for the .xz, .tar.xz, .lzma and .tar.lzma formats
     implementation("org.tukaani:xz:<version>")
@@ -42,7 +42,7 @@ Maven:
 [source,xml]
 ----
 <dependency>
-    <groupId>io.github.compress4j</groupId>
+    <groupId>com.hominux</groupId>
     <artifactId>compress4j</artifactId>
     <version>VERSION</version>
 </dependency>

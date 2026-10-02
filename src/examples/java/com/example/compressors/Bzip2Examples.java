@@ -15,8 +15,8 @@
  */
 package com.example.compressors;
 
-import io.github.compress4j.compressors.bzip2.BZip2Compressor;
-import io.github.compress4j.compressors.bzip2.BZip2Decompressor;
+import com.hominux.compress4j.compressors.bzip2.BZip2Compressor;
+import com.hominux.compress4j.compressors.bzip2.BZip2Decompressor;
 import java.io.IOException;
 import java.nio.file.Path;
 

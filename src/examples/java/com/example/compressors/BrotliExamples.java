@@ -15,7 +15,7 @@
  */
 package com.example.compressors;
 
-import io.github.compress4j.compressors.brotli.BrotliDecompressor;
+import com.hominux.compress4j.compressors.brotli.BrotliDecompressor;
 import java.io.IOException;
 import java.nio.file.Path;
 

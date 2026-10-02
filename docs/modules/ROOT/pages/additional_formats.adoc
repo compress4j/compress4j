@@ -15,7 +15,7 @@ Maven::
 [source,xml]
 ----
 <dependency>
-    <groupId>io.github.compress4j</groupId>
+    <groupId>com.hominux</groupId>
     <artifactId>compress4j</artifactId>
     <version>YOUR_VERSION</version>
 </dependency>
@@ -31,7 +31,7 @@ Gradle Groovy::
 [source,groovy]
 ----
 dependencies {
-    implementation 'io.github.compress4j:compress4j:YOUR_VERSION'
+    implementation 'com.hominux:compress4j:YOUR_VERSION'
     implementation 'org.tukaani:xz:YOUR_XZ_VERSION'
 }
 ----
@@ -41,7 +41,7 @@ Gradle Kotlin::
 [source,kotlin]
 ----
 dependencies {
-    implementation("io.github.compress4j:compress4j:YOUR_VERSION")
+    implementation("com.hominux:compress4j:YOUR_VERSION")
     implementation("org.tukaani:xz:YOUR_XZ_VERSION")
 }
 ----
@@ -60,7 +60,7 @@ Maven::
 [source,xml]
 ----
 <dependency>
-    <groupId>io.github.compress4j</groupId>
+    <groupId>com.hominux</groupId>
     <artifactId>compress4j</artifactId>
     <version>YOUR_VERSION</version>
 </dependency>
@@ -76,7 +76,7 @@ Gradle Groovy::
 [source,groovy]
 ----
 dependencies {
-    implementation 'io.github.compress4j:compress4j:YOUR_VERSION'
+    implementation 'com.hominux:compress4j:YOUR_VERSION'
     implementation 'com.github.luben:zstd-jni:YOUR_ZSTD_JNI_VERSION'
 }
 ----
@@ -86,7 +86,7 @@ Gradle Kotlin::
 [source,kotlin]
 ----
 dependencies {
-    implementation("io.github.compress4j:compress4j:YOUR_VERSION")
+    implementation("com.hominux:compress4j:YOUR_VERSION")
     implementation("com.github.luben:zstd-jni:YOUR_ZSTD_JNI_VERSION")
 }
 ----
@@ -105,7 +105,7 @@ Maven::
 [source,xml]
 ----
 <dependency>
-    <groupId>io.github.compress4j</groupId>
+    <groupId>com.hominux</groupId>
     <artifactId>compress4j</artifactId>
     <version>YOUR_VERSION</version>
 </dependency>
@@ -121,7 +121,7 @@ Gradle Groovy::
 [source,groovy]
 ----
 dependencies {
-    implementation 'io.github.compress4j:compress4j:YOUR_VERSION'
+    implementation 'com.hominux:compress4j:YOUR_VERSION'
     implementation 'org.brotli:dec:YOUR_BROTLI_DEC_VERSION'
 }
 ----
@@ -131,7 +131,7 @@ Gradle Kotlin::
 [source,kotlin]
 ----
 dependencies {
-    implementation("io.github.compress4j:compress4j:YOUR_VERSION")
+    implementation("com.hominux:compress4j:YOUR_VERSION")
     implementation("org.brotli:dec:YOUR_BROTLI_DEC_VERSION")
 }
 ----

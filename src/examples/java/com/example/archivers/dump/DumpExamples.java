@@ -15,7 +15,7 @@
  */
 package com.example.archivers.dump;
 
-import io.github.compress4j.archivers.dump.DumpArchiveExtractor;
+import com.hominux.compress4j.archivers.dump.DumpArchiveExtractor;
 import java.io.IOException;
 import java.nio.file.Path;
 

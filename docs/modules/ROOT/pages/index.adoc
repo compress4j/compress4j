@@ -22,7 +22,7 @@ Maven::
 [source,xml]
 ----
 <dependency>
-    <groupId>io.github.compress4j</groupId>
+    <groupId>com.hominux</groupId>
     <artifactId>compress4j</artifactId>
     <version>YOUR_VERSION</version>
 </dependency>
@@ -33,7 +33,7 @@ Gradle Groovy::
 [source,groovy]
 ----
 dependencies {
-    implementation 'io.github.compress4j:compress4j:YOUR_VERSION'
+    implementation 'com.hominux:compress4j:YOUR_VERSION'
 }
 ----
 
@@ -42,14 +42,14 @@ Gradle Kotlin::
 [source,kotlin]
 ----
 dependencies {
-    implementation("io.github.compress4j:compress4j:YOUR_VERSION")
+    implementation("com.hominux:compress4j:YOUR_VERSION")
 }
 ----
 ====
 
 === Java modules
 
-Compress4J is the module `io.github.compress4j`. It requires `org.apache.commons.compress` and `org.apache.commons.io` transitively; Commons Compress is an automatic module, so its name is part of this module's contract. `org.tukaani.xz` is optional and only needed for the XZ and LZMA formats; modular applications must `requires org.tukaani.xz;` themselves. `com.github.luben.zstd_jni` is optional and only needed for the Zstandard formats; modular applications must `requires com.github.luben.zstd_jni;` themselves. `org.brotli:dec` is optional and only needed to read Brotli; its jar has no module descriptor, so modular applications start the JVM with `--add-modules dec`.
+Compress4J is the module `com.hominux.compress4j`. It requires `org.apache.commons.compress` and `org.apache.commons.io` transitively; Commons Compress is an automatic module, so its name is part of this module's contract. `org.tukaani.xz` is optional and only needed for the XZ and LZMA formats; modular applications must `requires org.tukaani.xz;` themselves. `com.github.luben.zstd_jni` is optional and only needed for the Zstandard formats; modular applications must `requires com.github.luben.zstd_jni;` themselves. `org.brotli:dec` is optional and only needed to read Brotli; its jar has no module descriptor, so modular applications start the JVM with `--add-modules dec`.
 
 === Core Concepts
 
