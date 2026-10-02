@@ -15,10 +15,10 @@
  */
 package com.example;
 
-import static io.github.compress4j.archivers.ArchiveExtractor.EscapingSymlinkPolicy.DISALLOW;
+import static com.hominux.compress4j.archivers.ArchiveExtractor.EscapingSymlinkPolicy.DISALLOW;
 
-import io.github.compress4j.archivers.tar.TarGzArchiveCreator;
-import io.github.compress4j.archivers.tar.TarGzArchiveExtractor;
+import com.hominux.compress4j.archivers.tar.TarGzArchiveCreator;
+import com.hominux.compress4j.archivers.tar.TarGzArchiveExtractor;
 import java.io.IOException;
 import java.nio.file.Path;
 

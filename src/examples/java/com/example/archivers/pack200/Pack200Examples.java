@@ -15,8 +15,8 @@
  */
 package com.example.archivers.pack200;
 
-import io.github.compress4j.compressors.pack200.Pack200Compressor;
-import io.github.compress4j.compressors.pack200.Pack200Decompressor;
+import com.hominux.compress4j.compressors.pack200.Pack200Compressor;
+import com.hominux.compress4j.compressors.pack200.Pack200Decompressor;
 import java.io.IOException;
 import java.nio.file.Path;
 

@@ -15,12 +15,12 @@
  */
 package com.example.archivers.zip;
 
-import static io.github.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice.SKIP;
+import static com.hominux.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice.SKIP;
 import static java.util.zip.ZipEntry.DEFLATED;
 
-import io.github.compress4j.archivers.ArchiveExtractor;
-import io.github.compress4j.archivers.zip.ZipArchiveCreator;
-import io.github.compress4j.archivers.zip.ZipArchiveExtractor;
+import com.hominux.compress4j.archivers.ArchiveExtractor;
+import com.hominux.compress4j.archivers.zip.ZipArchiveCreator;
+import com.hominux.compress4j.archivers.zip.ZipArchiveExtractor;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;

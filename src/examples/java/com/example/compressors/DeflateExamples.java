@@ -15,9 +15,9 @@
  */
 package com.example.compressors;
 
-import io.github.compress4j.compressors.deflate.DeflateCompressionLevel;
-import io.github.compress4j.compressors.deflate.DeflateCompressor;
-import io.github.compress4j.compressors.deflate.DeflateDecompressor;
+import com.hominux.compress4j.compressors.deflate.DeflateCompressionLevel;
+import com.hominux.compress4j.compressors.deflate.DeflateCompressor;
+import com.hominux.compress4j.compressors.deflate.DeflateDecompressor;
 import java.io.IOException;
 import java.nio.file.Path;
 

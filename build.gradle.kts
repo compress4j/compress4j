@@ -1,7 +1,7 @@
 @file:Suppress("UnstableApiUsage")
 
 import com.diffplug.spotless.FormatterFunc
-import io.github.compress4j.semver.CheckApiCompatibilityTask
+import com.hominux.compress4j.semver.CheckApiCompatibilityTask
 import me.champeau.gradle.japicmp.JapicmpTask
 import org.gradle.api.publish.maven.MavenPom
 import org.jreleaser.model.Active

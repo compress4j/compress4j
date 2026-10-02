@@ -15,8 +15,8 @@
  */
 package com.example.archivers.ar;
 
-import io.github.compress4j.archivers.ar.ArArchiveCreator;
-import io.github.compress4j.archivers.ar.ArArchiveExtractor;
+import com.hominux.compress4j.archivers.ar.ArArchiveCreator;
+import com.hominux.compress4j.archivers.ar.ArArchiveExtractor;
 import java.io.IOException;
 import java.nio.file.Path;
 

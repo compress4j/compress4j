@@ -15,10 +15,10 @@
  */
 package com.example.compressors;
 
-import io.github.compress4j.compressors.snappy.SnappyFramedCompressor;
-import io.github.compress4j.compressors.snappy.SnappyFramedDecompressor;
-import io.github.compress4j.compressors.snappy.SnappyRawCompressor;
-import io.github.compress4j.compressors.snappy.SnappyRawDecompressor;
+import com.hominux.compress4j.compressors.snappy.SnappyFramedCompressor;
+import com.hominux.compress4j.compressors.snappy.SnappyFramedDecompressor;
+import com.hominux.compress4j.compressors.snappy.SnappyRawCompressor;
+import com.hominux.compress4j.compressors.snappy.SnappyRawDecompressor;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;

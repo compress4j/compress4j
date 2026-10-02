@@ -21,7 +21,7 @@
  * The XZ formats need {@code org.tukaani.xz} and the Zstandard formats need {@code com.github.luben.zstd_jni} on the
  * module path.
  */
-module io.github.compress4j {
+module com.hominux.compress4j {
     requires transitive org.apache.commons.compress;
     requires transitive org.apache.commons.io;
     requires org.apache.commons.lang3;
@@ -30,26 +30,26 @@ module io.github.compress4j {
     requires static transitive org.tukaani.xz;
     requires static transitive com.github.luben.zstd_jni;
 
-    exports io.github.compress4j.archivers;
-    exports io.github.compress4j.archivers.ar;
-    exports io.github.compress4j.archivers.arj;
-    exports io.github.compress4j.archivers.cpio;
-    exports io.github.compress4j.archivers.dump;
-    exports io.github.compress4j.archivers.sevenz;
-    exports io.github.compress4j.archivers.tar;
-    exports io.github.compress4j.archivers.zip;
-    exports io.github.compress4j.compressors;
-    exports io.github.compress4j.compressors.brotli;
-    exports io.github.compress4j.compressors.bzip2;
-    exports io.github.compress4j.compressors.deflate;
-    exports io.github.compress4j.compressors.deflate64;
-    exports io.github.compress4j.compressors.gzip;
-    exports io.github.compress4j.compressors.lz4;
-    exports io.github.compress4j.compressors.lzma;
-    exports io.github.compress4j.compressors.pack200;
-    exports io.github.compress4j.compressors.snappy;
-    exports io.github.compress4j.compressors.xz;
-    exports io.github.compress4j.compressors.z;
-    exports io.github.compress4j.compressors.zstd;
-    exports io.github.compress4j.exceptions;
+    exports com.hominux.compress4j.archivers;
+    exports com.hominux.compress4j.archivers.ar;
+    exports com.hominux.compress4j.archivers.arj;
+    exports com.hominux.compress4j.archivers.cpio;
+    exports com.hominux.compress4j.archivers.dump;
+    exports com.hominux.compress4j.archivers.sevenz;
+    exports com.hominux.compress4j.archivers.tar;
+    exports com.hominux.compress4j.archivers.zip;
+    exports com.hominux.compress4j.compressors;
+    exports com.hominux.compress4j.compressors.brotli;
+    exports com.hominux.compress4j.compressors.bzip2;
+    exports com.hominux.compress4j.compressors.deflate;
+    exports com.hominux.compress4j.compressors.deflate64;
+    exports com.hominux.compress4j.compressors.gzip;
+    exports com.hominux.compress4j.compressors.lz4;
+    exports com.hominux.compress4j.compressors.lzma;
+    exports com.hominux.compress4j.compressors.pack200;
+    exports com.hominux.compress4j.compressors.snappy;
+    exports com.hominux.compress4j.compressors.xz;
+    exports com.hominux.compress4j.compressors.z;
+    exports com.hominux.compress4j.compressors.zstd;
+    exports com.hominux.compress4j.exceptions;
 }

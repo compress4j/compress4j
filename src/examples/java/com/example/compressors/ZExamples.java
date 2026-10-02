@@ -15,7 +15,7 @@
  */
 package com.example.compressors;
 
-import io.github.compress4j.compressors.z.ZDecompressor;
+import com.hominux.compress4j.compressors.z.ZDecompressor;
 import java.io.IOException;
 import java.nio.file.Path;
 

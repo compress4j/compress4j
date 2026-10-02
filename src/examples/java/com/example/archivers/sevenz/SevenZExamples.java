@@ -15,11 +15,11 @@
  */
 package com.example.archivers.sevenz;
 
-import static io.github.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice.SKIP;
+import static com.hominux.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice.SKIP;
 
-import io.github.compress4j.archivers.ArchiveExtractor;
-import io.github.compress4j.archivers.sevenz.SevenZArchiveCreator;
-import io.github.compress4j.archivers.sevenz.SevenZArchiveExtractor;
+import com.hominux.compress4j.archivers.ArchiveExtractor;
+import com.hominux.compress4j.archivers.sevenz.SevenZArchiveCreator;
+import com.hominux.compress4j.archivers.sevenz.SevenZArchiveExtractor;
 import java.io.IOException;
 import java.nio.file.Path;
 

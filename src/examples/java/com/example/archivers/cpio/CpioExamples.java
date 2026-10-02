@@ -15,12 +15,12 @@
  */
 package com.example.archivers.cpio;
 
-import static io.github.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice.RETRY;
+import static com.hominux.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice.RETRY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import io.github.compress4j.archivers.ArchiveExtractor;
-import io.github.compress4j.archivers.cpio.CpioArchiveCreator;
-import io.github.compress4j.archivers.cpio.CpioArchiveExtractor;
+import com.hominux.compress4j.archivers.ArchiveExtractor;
+import com.hominux.compress4j.archivers.cpio.CpioArchiveCreator;
+import com.hominux.compress4j.archivers.cpio.CpioArchiveExtractor;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
