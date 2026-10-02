@@ -369,7 +369,7 @@ publishing {
                 }
                 scm {
                     connection = "scm:git:https://github.com/hominux/compress4j.git"
-                    developerConnection = "scm:git:git@github.com:compress4j/compress4j.git"
+                    developerConnection = "scm:git:git@github.com:hominux/compress4j.git"
                     url = "https://github.com/hominux/compress4j.git"
                 }
                 licenses {
