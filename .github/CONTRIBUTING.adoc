@@ -33,7 +33,7 @@ Because pull requests can be squash merged, the pull request title becomes the c
 
 == Commit Messages
 
-Compress4J releases on every merge to `main`, and the version is derived from the commit messages, so they have to follow https://www.conventionalcommits.org/[Conventional Commits]:
+A maintainer cuts each release by running the "Release" workflow on `main`. The version is derived from the commit messages since the last tag, so they have to follow https://www.conventionalcommits.org/[Conventional Commits]:
 
 [source]
 ----
