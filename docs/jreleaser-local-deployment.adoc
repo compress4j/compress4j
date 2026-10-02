@@ -1,68 +1,74 @@
-= Running jreleaserDeploy Locally
+= Releasing and Running jreleaserDeploy Locally
 
-This guide explains how to run `jreleaserDeploy` locally to test the Maven Central deployment process before running it in the GitHub Actions pipeline.
+This guide explains how releases reach Maven Central and how to run `jreleaserDeploy` locally to test the deployment before running it in GitHub Actions.
+
+== How a release works
+
+A maintainer starts the "Release" workflow on `main`. Nothing releases on merge.
+
+. *Authorize* requires the run to be on `main` and the actor to have the `admin` or `maintain` role.
+. *Plan* derives the next version from the Conventional Commits since the last tag. `feat` bumps the minor, `fix` and `perf` the patch, and `!` or a `BREAKING CHANGE:` footer the major. `docs`, `ci` and `chore` release nothing.
+. *Publish* tags the commit, stages the artifacts, and deploys them to Maven Central through JReleaser. It runs in the `release` environment, which is limited to `main` and holds the signing and Central secrets.
+. *Notify docs site* tells `hominux.github.io` to rebuild the docs.
+
+The workflow's `dry_run` input defaults to `true`, which only prints the plan. Untick it to publish; it still publishes only when the computed release plan says to release.
+
+== What gets deployed
+
+Central rejects a deployment that spans namespaces, so each release uploads two bundles:
+
+[cols="2,2,3"]
+|===
+|Deployer |Staging directory |Contents
+
+|`sonatype`
+|`build/staging-deploy`
+|`com.hominux:compress4j`: jars, sources, javadoc, Gradle module metadata
+
+|`sonatypeRelocation`
+|`build/staging-deploy-relocation`
+|`io.github.compress4j:compress4j`: a pom-only relocation to `com.hominux:compress4j`
+|===
+
+The main bundle is deployed first. A published Central version cannot be changed, so if the relocation bundle fails afterwards, fix and publish it separately.
 
 == Prerequisites
 
-=== 1. Required Secrets/Environment Variables
+=== 1. Required secrets
 
-Based on the GitHub Actions workflow, you need the following environment variables set:
+In CI these are `release` environment secrets. Locally, export the equivalents:
 
 [source,bash]
 ----
-# Maven Central credentials
-export SONATYPE_USERNAME="your-maven-central-username"
-export SONATYPE_PASSWORD="your-maven-central-password"
-
-# GPG signing keys (same values for both jReleaser and GPG)
-export GPG_SECRET_KEY="your-gpg-private-key"
-export GPG_PASSPHRASE="your-gpg-passphrase"
-export GPG_PUBLIC_KEY="your-gpg-public-key"
-
-# GitHub Token
+export JRELEASER_MAVENCENTRAL_USERNAME="your-central-user-token-username"
+export JRELEASER_MAVENCENTRAL_PASSWORD="your-central-user-token-password"
+export JRELEASER_GPG_PASSPHRASE="your-gpg-passphrase"
+export JRELEASER_GPG_PUBLIC_KEY="$(gpg --armor --export YOUR_KEY_ID)"
+export JRELEASER_GPG_SECRET_KEY="$(gpg --armor --export-secret-keys YOUR_KEY_ID)"
 export JRELEASER_GITHUB_TOKEN="your-github-token"
-
-# Sonar Token
-export SONAR_TOKEN="your-sonar-token"
 ----
 
-=== 2. Getting Your GPG Keys
+The workflow maps the environment secrets `SONATYPE_USERNAME`, `SONATYPE_PASSWORD`, `GPG_PASSPHRASE`, `GPG_SECRET_KEY` and `GPG_PUBLIC_KEY` to these variables, and uses `GITHUB_TOKEN` for the GitHub token. The docs notification job reads `DOCS_APP_CLIENT_ID` and `DOCS_APP_PRIVATE_KEY` from the organization secrets, not from the `release` environment.
 
-If you don't have GPG keys set up yet:
+The Central credentials are a user token, not your login: generate one at https://central.sonatype.com under View Account. Generating a new token replaces the old one.
+
+=== 2. A GPG signing key
+
+Create a dedicated signing key if you don't have one:
 
 [source,bash]
-.Generate a new GPG key pair
 ----
-gpg --full-generate-key
+gpg --quick-generate-key "Compress4J Releases <you@example.com>" rsa4096 sign 2y
 ----
 
-Choose:
-- RSA and RSA (default)
-- 4096 bits
-- Key does not expire (or set appropriate expiration)
-- Enter your name and email (should match your Maven Central account)
-
-==== Export your keys:
+Set a passphrase and store it in a password manager before anything else; a key without its passphrase cannot sign. Find the key ID with:
 
 [source,bash]
-.Get your key ID:
 ----
 gpg --list-secret-keys --keyid-format=long
 ----
 
-[source,bash]
-.Private Key (ASCII armored):
-----
-gpg --armor --export-secret-keys YOUR_KEY_ID > private-key.asc
-----
-
-[source,bash]
-.Public Key (ASCII armored):
-----
-gpg --armor --export YOUR_KEY_ID > public-key.asc
-----
-
-==== Upload public key to key servers:
+Central must be able to fetch the public key, so publish it:
 
 [source,bash]
 ----
@@ -70,19 +76,26 @@ gpg --keyserver keyserver.ubuntu.com --send-keys YOUR_KEY_ID
 gpg --keyserver keys.openpgp.org --send-keys YOUR_KEY_ID
 ----
 
-=== 3. Setting Up
+To set the CI secrets, pipe the exports straight into `gh` and never write the private key into the repository directory:
 
-Store secrets in https://jreleaser.org/guide/latest/reference/environment.html[~/.jreleaser/config.toml].
-The TOML format is chosen as it allows multiline strings which are required for defining both public and secret keys.
-You may opt instead to use the YAML format in which case be aware of indentation or use environment variables.
+[source,bash]
+----
+gpg --armor --export-secret-keys YOUR_KEY_ID | gh secret set GPG_SECRET_KEY --env release
+gpg --armor --export YOUR_KEY_ID | gh secret set GPG_PUBLIC_KEY --env release
+gh secret set GPG_PASSPHRASE --env release
+----
+
+If `gpg` prints "nothing exported", stop: `gh secret set` would store an empty secret that shadows the right one.
+
+=== 3. Optional: a JReleaser config file
+
+Instead of exporting variables, store them in https://jreleaser.org/guide/latest/reference/environment.html[~/.jreleaser/config.toml]. TOML allows the multiline strings that the keys need.
 
 [source,toml]
 .~/.jreleaser/config.toml
 ----
-JRELEASER_MAVENCENTRAL_USERNAME = "<your-publisher-portal-username>"
-JRELEASER_MAVENCENTRAL_PASSWORD = "<your-publisher-portal-password>"
-JRELEASER_NEXUS2_USERNAME = "<your-sonatype-account-username>"
-JRELEASER_NEXUS2_PASSWORD = "<your-sonatype-account-password>"
+JRELEASER_MAVENCENTRAL_USERNAME = "<your-central-token-username>"
+JRELEASER_MAVENCENTRAL_PASSWORD = "<your-central-token-password>"
 JRELEASER_GPG_PASSPHRASE = "<your-pgp-passphrase>"
 
 JRELEASER_GPG_PUBLIC_KEY="""-----BEGIN PGP PUBLIC KEY BLOCK-----
@@ -98,57 +111,66 @@ JRELEASER_GPG_SECRET_KEY="""-----BEGIN PGP PRIVATE KEY BLOCK-----
 -----END PGP PRIVATE KEY BLOCK-----"""
 ----
 
-== Running the Deployment Locally
+The blank line after each `BEGIN` line is part of the armor format; keep it.
 
-=== Build and publish artifacts to local staging
+== Running the deployment locally
 
-[source,bash]
-----
-./gradlew clean build publish
-----
+=== Step 1: Stage the artifacts
 
-This will:
-- Build all modules
-- Run tests
-- Publish artifacts to `build/staging-deploy` directory
-
-=== Step 3: Verify the staged artifacts
+The version comes from git tags. To stage a release version instead of a snapshot, name the tag the release would use:
 
 [source,bash]
 ----
-ls -la build/staging-deploy/
+VERSIONING_GIT_TAG=v4.0.2 ./gradlew clean build publish
 ----
 
-You should see your artifacts organized by group/artifact/version.
+This builds, runs the tests and writes the artifacts to `build/staging-deploy` and `build/staging-deploy-relocation`.
 
-=== Step 4: Deploy to Maven Central (DRY RUN first)
+=== Step 2: Verify the staged artifacts
 
 [source,bash]
 ----
-./gradlew jreleaserDeploy --dryrun
+find build/staging-deploy build/staging-deploy-relocation -name '*.pom'
 ----
 
-This simulates the deployment without actually publishing anything. Use JReleaser's own `--dryrun` flag, not
-Gradle's `--dry-run` — the latter skips every task action instead of running them in simulated mode.
+You should see one POM under `com/hominux/compress4j/` and one under `io/github/compress4j/compress4j/`.
 
-=== Step 5: Deploy to Maven Central
+=== Step 3: Inspect the configuration
 
 [source,bash]
 ----
-./gradlew jreleaserDeploy
+VERSIONING_GIT_TAG=v4.0.2 ./gradlew jreleaserConfig --full
 ----
 
-== Testing Snapshot vs Release Deployment
+Both deployers, `sonatype` and `sonatypeRelocation`, must be listed with their own staging repository and namespace.
 
-This will deploy to Maven Central via the new Central Portal API.
+=== Step 4: Dry run
+
+[source,bash]
+----
+VERSIONING_GIT_TAG=v4.0.2 ./gradlew jreleaserDeploy --dryrun
+----
+
+This simulates the deployment without publishing. Use JReleaser's `--dryrun` flag, not Gradle's `--dry-run`, which skips every task action instead of running them in simulated mode.
+
+=== Step 5: Deploy
+
+Only deploy locally for a version you intend to publish; Central versions are immutable. Releases normally run from the workflow.
+
+[source,bash]
+----
+VERSIONING_GIT_TAG=v4.0.2 ./gradlew jreleaserDeploy
+----
 
 == Troubleshooting
 
+=== "Deployment contains files for multiple namespaces"
+
+Central accepts one namespace per bundle. The main artifact and the relocation POM must stay in separate staging directories with separate deployers. Check that `jreleaserConfig --full` lists both.
+
 === Issue: `org/eclipse/jgit/lib/GpgObjectSigner` error
 
-This is the classloader conflict we've been fixing. Make sure the JReleaser plugin is resolved from the `gradle/build-logic` build and that you have the latest changes.
-
-*Solution:*
+This is a classloader conflict. Make sure the JReleaser plugin is resolved from the `gradle/build-logic` build and that you have the latest changes.
 
 [source,bash]
 ----
@@ -158,102 +180,75 @@ This is the classloader conflict we've been fixing. Make sure the JReleaser plug
 
 === Issue: GPG signing fails
 
-*Check your GPG setup:*
+Check that the secret key is in your keyring and that the passphrase works:
 
 [source,bash]
 ----
 gpg --list-secret-keys
-----
-
-*Test GPG signing manually:*
-
-[source,bash]
-----
 echo "test" | gpg --armor --sign
 ----
 
 === Issue: Authentication fails
 
-*Verify your credentials:*
-- For Maven Central Portal: Use your portal token (not your Sonatype OSSRH password)
-- Get token from: https://central.sonatype.com/account
+Use the Central user token, not your login or an old OSSRH password. A bad pair returns HTTP 401; this call returns 400 or 404 when the credentials are accepted:
+
+[source,bash]
+----
+curl -s -o /dev/null -w '%{http_code}\n' -u "$JRELEASER_MAVENCENTRAL_USERNAME:$JRELEASER_MAVENCENTRAL_PASSWORD" \
+  -X POST 'https://central.sonatype.com/api/v1/publisher/status?id=00000000-0000-0000-0000-000000000000'
+----
 
 === Issue: "Repository not found" or "Unauthorized"
 
 Make sure:
-1. You've verified your namespace on Maven Central Portal
-2. Your group ID matches your verified namespace (e.g., `com.hominux`)
-3. Your credentials are correct
 
-== Understanding the Deployment Process
+. The namespaces are verified in the Central Portal. This project needs `com.hominux` and `io.github.compress4j`.
+. The group ID matches a verified namespace.
+. The account that owns the namespaces generated the token.
 
-=== What happens during `jreleaserDeploy`:
+=== Issue: the public key is not found
 
-. *Signing Phase:*
+Central looks the signing key up on public keyservers. Confirm the fingerprint resolves on https://keyserver.ubuntu.com and https://keys.openpgp.org.
 
-** jReleaser signs all artifacts (JARs, POMs, etc.) with your GPG key
-** Creates `.asc` signature files
-. *Deployment Phase:*
+== Understanding the deployment process
 
-** For RELEASE versions: Uploads to Maven Central Portal (https://central.sonatype.com)
-** For SNAPSHOT versions: Uploads to Nexus2 snapshot repository (https://s01.oss.sonatype.org)
-. *Verification Phase:*
+=== What happens during `jreleaserDeploy`
 
-** Maven Central validates:
-*** All required files present (JAR, POM, sources, javadoc)
-*** All files are signed
-*** POM contains required metadata
-*** Signatures are valid
+. *Signing:* JReleaser signs every staged file and creates the `.asc` signatures.
+. *Upload:* each deployer zips its staging directory into a bundle and uploads it to the Central Portal API.
+. *Validation:* Central checks that the POM has the required metadata (name, description, url, license, developers, SCM), that all files are signed, and that the signatures are valid. A jar release also needs sources and javadoc jars; the pom-only relocation does not.
+. *Publishing:* JReleaser polls the deployment until its state is `PUBLISHED` or `FAILED`.
 
-== Useful Commands
-
-=== Check jReleaser configuration:
+== Useful commands
 
 [source,bash]
 ----
-./gradlew jreleaserConfig
+./gradlew jreleaserConfig --full      # resolved configuration
+./gradlew tasks --group jreleaser     # JReleaser tasks
+./gradlew jreleaserDeploy --info      # debug output
 ----
 
-=== List all jReleaser tasks:
-
-[source,bash]
-----
-./gradlew tasks --group jreleaser
-----
-
-=== Run with debug output:
-
-[source,bash]
-----
-./gradlew jreleaserDeploy --info
-----
-
-=== Check what will be deployed:
-
-[source,bash]
-----
-./gradlew jreleaserConfig
-----
-
-== Files Generated
+== Files generated
 
 After running `jreleaserDeploy`, check these locations:
 
-* *Staged artifacts:* `build/staging-deploy/`
-* *jReleaser output:* `build/jreleaser/`
+* *Staged artifacts:* `build/staging-deploy/` and `build/staging-deploy-relocation/`
+* *JReleaser output:* `build/jreleaser/`
 * *Logs:* `build/jreleaser/trace.log`
 * *Deployment info:* `build/jreleaser/deploy/`
 
-== Security Best Practices
+The workflow uploads `trace.log` and `output.properties` as the `jreleaser-release` artifact, which holds Central's validation errors when a deployment fails.
 
-. *Never commit secrets* - Use environment variables or a secrets file that's gitignored
-. *Use tokens instead of passwords* - Maven Central Portal provides API tokens
-. *Rotate credentials regularly* - Especially if they're exposed
-. *Test with dry-run first* - Always use `--dryrun` before actual deployment
-. *Keep GPG keys secure* - Store private keys in a secure location (e.g., password manager, encrypted volume)
+== Security best practices
+
+. *Never commit secrets.* `*.asc` is gitignored, but keep exported keys outside the repository directory anyway.
+. *Use tokens, not passwords.* Central user tokens can be regenerated.
+. *Rotate credentials* when they may have been exposed, and update the `release` environment secrets.
+. *Dry-run first.* Always use `--dryrun` before a real deployment.
+. *Keep GPG keys safe.* Store the private key and its passphrase in a password manager, and give the key an expiry.
 
 == References
 
-* https://jreleaser.org/[jReleaser Documentation]
+* https://jreleaser.org/[JReleaser Documentation]
 * https://central.sonatype.com/[Maven Central Portal]
 * https://central.sonatype.org/publish/requirements/gpg/[GPG Signing Guide]
