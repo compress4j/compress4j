@@ -6,7 +6,7 @@ on:
         description: 'Only compute the release plan, do not tag or publish'
         type: boolean
         required: false
-        default: false
+        default: true
 
 concurrency:
   group: release
