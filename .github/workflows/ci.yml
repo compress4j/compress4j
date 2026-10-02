@@ -198,3 +198,19 @@ jobs:
             echo "build-other-os concluded: $MATRIX_RESULT"
             exit 1
           fi
+
+  release:
+    name: Release
+    needs: build-matrix-result
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write  # The release job pushes the version tag
+    uses: ./.github/workflows/release.yml
+    secrets:
+      SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+      SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+      GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      GPG_SECRET_KEY: ${{ secrets.GPG_SECRET_KEY }}
+      GPG_PUBLIC_KEY: ${{ secrets.GPG_PUBLIC_KEY }}
+      DOCS_APP_CLIENT_ID: ${{ secrets.DOCS_APP_CLIENT_ID }}
+      DOCS_APP_PRIVATE_KEY: ${{ secrets.DOCS_APP_PRIVATE_KEY }}
