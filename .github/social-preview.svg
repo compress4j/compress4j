@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640">
+  <rect width="1280" height="640" fill="#0f172a"/>
+  <rect x="0" y="0" width="16" height="640" fill="#38bdf8"/>
+  <g font-family="DejaVu Sans, sans-serif">
+    <text x="100" y="250" font-size="104" font-weight="bold" fill="#f8fafc">compress4j</text>
+    <text x="100" y="325" font-size="38" fill="#cbd5e1">A simple archiving and compression library for Java.</text>
+    <g font-size="30" font-weight="bold" fill="#0f172a">
+      <rect x="100" y="385" width="100" height="56" rx="12" fill="#38bdf8"/><text x="150" y="425" text-anchor="middle">zip</text>
+      <rect x="220" y="385" width="100" height="56" rx="12" fill="#38bdf8"/><text x="270" y="425" text-anchor="middle">tar</text>
+      <rect x="340" y="385" width="100" height="56" rx="12" fill="#38bdf8"/><text x="390" y="425" text-anchor="middle">7z</text>
+      <rect x="460" y="385" width="130" height="56" rx="12" fill="#38bdf8"/><text x="525" y="425" text-anchor="middle">gzip</text>
+      <rect x="610" y="385" width="130" height="56" rx="12" fill="#38bdf8"/><text x="675" y="425" text-anchor="middle">bzip2</text>
+    </g>
+    <text x="100" y="540" font-size="30" font-family="DejaVu Sans Mono, monospace" fill="#94a3b8">com.hominux:compress4j</text>
+    <text x="1180" y="540" font-size="30" text-anchor="end" fill="#94a3b8">Apache-2.0</text>
+  </g>
+</svg>
