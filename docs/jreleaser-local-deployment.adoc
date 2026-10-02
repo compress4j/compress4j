@@ -146,7 +146,7 @@ This will deploy to Maven Central via the new Central Portal API.
 
 === Issue: `org/eclipse/jgit/lib/GpgObjectSigner` error
 
-This is the classloader conflict we've been fixing. Make sure you have the latest changes with the `build-logic-jreleaser` separate build.
+This is the classloader conflict we've been fixing. Make sure the JReleaser plugin is resolved from the `gradle/build-logic` build and that you have the latest changes.
 
 *Solution:*
 
@@ -182,7 +182,7 @@ echo "test" | gpg --armor --sign
 
 Make sure:
 1. You've verified your namespace on Maven Central Portal
-2. Your group ID matches your verified namespace (e.g., `io.taktx`)
+2. Your group ID matches your verified namespace (e.g., `io.github.compress4j`)
 3. Your credentials are correct
 
 == Understanding the Deployment Process

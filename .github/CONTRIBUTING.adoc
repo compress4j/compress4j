@@ -117,7 +117,7 @@ Releases are automatic. Once a merge to `main` passes CI, the `Release` workflow
 
 The workflow can also be started manually; it defaults to a dry run that only reports the version it would release.
 
-For instructions on how to perform a local deployment using JReleaser, please refer to link:docs/jreleaser-local-deployment.adoc[JReleaser Local Deployment].
+For instructions on how to perform a local deployment using JReleaser, please refer to link:../docs/jreleaser-local-deployment.adoc[JReleaser Local Deployment].
 
 == Coding Style
 

@@ -12,8 +12,6 @@ reviews:
   profile: chill
   request_changes_workflow: false
   high_level_summary: true
-  high_level_summary_placeholder: "@coderabbit summary"
-  auto_title_placeholder: "@coderabbit"
   poem: false
   review_status: true
   collapse_walkthrough: true
