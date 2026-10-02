@@ -1,0 +1,88 @@
+= Migrating from JArchiveLib
+:description: Move from the unmaintained JArchiveLib to Compress4J: dependency, API mapping and behavior differences.
+:keywords: JArchiveLib, jarchivelib, migration, compress4j, tar, zip
+
+Compress4J is a maintained fork of https://github.com/thrau/jarchivelib[JArchiveLib]. The factory API is gone; you pick the concrete class for your format and build it with a builder.
+
+== Dependency
+
+[source,kotlin]
+----
+// before
+implementation("org.rauschig:jarchivelib:1.2.0")
+// after
+implementation("com.hominux:compress4j:YOUR_VERSION")
+----
+
+Imports change from `org.rauschig.jarchivelib` to `com.hominux.compress4j.archivers` and the format subpackages (`tar`, `zip`, `sevenz`, ...).
+
+== API mapping
+
+[cols="1,1"]
+|===
+|JArchiveLib |Compress4J
+
+|`ArchiverFactory.createArchiver(ArchiveFormat.TAR, CompressionType.GZIP)`
+|`TarGzArchiveCreator` / `TarGzArchiveExtractor`
+
+|`ArchiverFactory.createArchiver(File)` (format from extension)
+|None. Choose the class explicitly.
+
+|`archiver.create(name, destDir, sources...)`
+|`XArchiveCreator.builder(path).build()`, then `addFile` / `addDirectoryRecursively`
+
+|`archiver.extract(archive, destDir)`
+|`XArchiveExtractor.builder(archive).build()`, then `extract(destDir)`
+
+|`archiver.stream(archive)` and `ArchiveStream.getNextEntry()`
+|`extractor.stream()`, `iterator()` or `nextEntry()` (returns `Optional<Entry>`)
+
+|`ArchiveEntry`
+|`ArchiveExtractor.Entry` record
+
+|`Archiver` / `ArchiveFormat` / `CompressionType`
+|One creator and extractor class per format and compression
+
+|`java.io.File`
+|`java.nio.file.Path`
+|===
+
+== Creating
+
+[source,java]
+----
+// JArchiveLib
+Archiver archiver = ArchiverFactory.createArchiver(ArchiveFormat.TAR, CompressionType.GZIP);
+archiver.create("example", destDir, sourceDir);
+
+// Compress4J
+try (TarGzArchiveCreator creator =
+        TarGzArchiveCreator.builder(Path.of("example.tar.gz")).build()) {
+    creator.addDirectoryRecursively(sourceDir);
+}
+----
+
+The creator takes the full archive path; it does not append the extension.
+
+== Extracting
+
+[source,java]
+----
+// JArchiveLib
+Archiver archiver = ArchiverFactory.createArchiver(archive);
+archiver.extract(archive, destDir);
+
+// Compress4J
+try (TarGzArchiveExtractor extractor =
+        TarGzArchiveExtractor.builder(archive).build()) {
+    extractor.extract(destDir);
+}
+----
+
+== Behavior differences
+
+* **Safety.** Path traversal is always rejected. Escaping symlinks and archive expansion are unrestricted by default; see xref:index.adoc#_extracting_untrusted_archives[Extracting Untrusted Archives] to bound them.
+* **Resource handling.** Creators and extractors are `Closeable`; use try-with-resources.
+* **Formats.** Compress4J adds Zstandard, LZ4, Snappy, Brotli (read), Deflate64 (read) and others; see xref:index.adoc#_supported_formats[Supported Formats]. XZ and LZMA need `org.tukaani:xz` on the classpath; see xref:additional_formats.adoc[].
+* **Extraction options.** `filter`, `stripComponents`, `overwrite`, `errorHandler` and `postProcessor` are builder options with no JArchiveLib equivalent.
+* **No nulls.** `nextEntry()` returns `Optional<Entry>` at the end of an archive.

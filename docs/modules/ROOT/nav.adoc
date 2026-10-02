@@ -23,3 +23,4 @@
 ** xref:read_only_formats.adoc[]
 ** xref:additional_formats.adoc[]
 ** xref:migration_4.adoc[]
+** xref:migration_jarchivelib.adoc[]
