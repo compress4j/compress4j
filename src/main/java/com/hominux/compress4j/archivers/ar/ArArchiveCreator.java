@@ -112,9 +112,7 @@ public class ArArchiveCreator extends ArchiveCreator<ArArchiveOutputStream> {
 
     /** AR has no directory entries, so this writes nothing. {@inheritDoc} */
     @Override
-    protected void writeDirectory(String name, int mode, FileTime lastModified) {
-        // ar has no directory entries.
-    }
+    protected void writeDirectory(String name, int mode, FileTime lastModified) {}
 
     /** {@inheritDoc} */
     @Override
