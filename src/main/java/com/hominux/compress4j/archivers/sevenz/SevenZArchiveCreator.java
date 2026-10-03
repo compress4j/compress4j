@@ -153,7 +153,7 @@ public class SevenZArchiveCreator extends ArchiveCreator<SevenZFileArchiveOutput
         /**
          * Create a new builder that writes to the given path. {@code build()} creates the file.
          *
-         * <p>7z needs a seekable target to patch its header, so only a path is accepted.
+         * <p>7z needs a seekable target to patch its header; for a channel, use {@code builder(SeekableByteChannel)}.
          *
          * @param path the path to write the archive to
          * @throws IOException not thrown; {@code build()} opens the file

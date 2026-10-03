@@ -120,6 +120,8 @@ Full documentation, with an example per format, is at https://hominux.com/docs/.
 It is built with https://antora.org/[Antora]; the pages live in `docs/modules/ROOT/pages` and the examples they include
 are compiled from `src/examples/java`.
 
+Upgrading from 4.x? Read the link:docs/modules/ROOT/pages/migration_5.adoc[4.x to 5.0 migration guide].
+
 == Contributing
 
 See link:.github/CONTRIBUTING.adoc[CONTRIBUTING.adoc]. Commit subjects and pull request titles follow

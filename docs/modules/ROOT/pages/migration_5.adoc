@@ -4,11 +4,10 @@
 
 == Safer defaults
 
-* Escaping symlinks are rejected by default with `UnsafeEntryException`. Pass `escapingSymlinkPolicy(ALLOW)` for archives you produced yourself.
+* The default `escapingSymlinkPolicy` changed from `ALLOW` in 4.x to `DISALLOW` in 5.0: escaping symlinks throw `UnsafeEntryException`. Pass `escapingSymlinkPolicy(ALLOW)` for archives you produced yourself.
 * Path traversal and escaping symlinks throw `UnsafeEntryException`; size limits throw `ArchiveLimitExceededException`. Both extend `ArchiveSecurityException`, which an `errorHandler` cannot suppress.
 * `DISALLOW`, the default, re-checks every symlink an extraction created once it finishes. Links that escape through later entries are removed and extraction fails with `UnsafeEntryException`.
 * `RELATIVIZE_ABSOLUTE` rewrites absolute targets under the output directory, then rejects any target that still escapes. 4.x accepted relative escapes.
-* The default `escapingSymlinkPolicy` changed from `ALLOW` in 4.x to `DISALLOW` in 5.0.
 
 == Reading archives
 
@@ -37,9 +36,9 @@
 
 An extractor reads its archive once: call either `stream()` or `extract()`, once.
 
-`RETRY` in an `errorHandler` resumes from where the failed write stopped reading the entry, as in 4.x. Partially read entries are not re-read.
+`RETRY` in an `errorHandler` rewrites the output file with only the bytes not yet read, as in 4.x. A file that failed midway stays truncated.
 
-Zip archives written by 4.x stored symlinks as regular files. 5.0 writes and restores real symlinks.
+Zips written by 4.x still extract their symlinks as regular files. Only archives re-created with 5.0 contain real symlinks.
 
 == Writing archives
 
@@ -58,12 +57,15 @@ Zip archives written by 4.x stored symlinks as regular files. 5.0 writes and res
 
 |`addFile(name, path, attrs, modTime)`
 |`addFile(name, path, modTime)`
+
+|`addFile(name, inputStream, modTime)`
+|`addFile(name, inputStream, size, modTime)`
 |===
 
 * `builder.filter(null)` throws `NullPointerException`; it no longer resets the filter. The filter may run more than once per entry, so keep it free of side effects.
 * After a write fails, the creator is failed: further adds throw `IllegalStateException`. `close()` still releases the sink.
 * Every format enforces a file's declared size. Too many or too few bytes throw an `IOException` naming the entry.
-* Leading slashes in entry names are stripped, and `\` becomes `/`. Names with a NUL, a drive prefix such as `C:` or a `..` segment throw `UnsafeEntryException`. A name made only of slashes throws `IllegalArgumentException`. A walked file literally named `..\x` aborts `addDirectoryRecursively`.
+* The creator strips leading slashes from entry names and converts `\` to `/`. Names with a NUL, a drive prefix such as `C:` or a `..` segment throw `UnsafeEntryException`. A name made only of slashes throws `IllegalArgumentException`. A walked file literally named `..\x` aborts `addDirectoryRecursively`.
 * Sockets, FIFOs and devices are rejected as entry sources with `IllegalArgumentException`, including during `addDirectoryRecursively`.
 * `addDirectoryRecursively` now stores directory permissions. On Windows, path modes stay unknown and the format default applies, instead of DOS flags.
 
@@ -72,12 +74,19 @@ Zip archives written by 4.x stored symlinks as regular files. 5.0 writes and res
 * `ZipArchiveExtractorBuilder.setSeekableByteChannel(ch)` becomes `ZipArchiveExtractor.builder(ch)`.
 * `SevenZArchiveExtractorBuilder.setSeekableByteChannel(ch)` becomes `SevenZArchiveExtractor.builder(ch)`.
 * New: `builder(SeekableByteChannel)` on every format, and `ZipArchiveExtractor.streaming(InputStream)`. See xref:streaming.adoc#_format_capabilities[format capabilities].
-* The public constructor `ZipArchiveExtractor(ZipFileArchiveInputStream)` and the public `SevenZArchiveExtractorBuilder(Path)` are removed. Zip builder constructors are no longer public. Use `ZipArchiveExtractor.builder(Path|SeekableByteChannel)`, `ZipArchiveExtractor.streaming(InputStream)` or `SevenZArchiveExtractor.builder(Path|SeekableByteChannel)`.
+* The public constructor `ZipArchiveExtractor(ZipFileArchiveInputStream)` and the public `SevenZArchiveExtractorBuilder(Path)` are removed. `new ZipArchiveExtractor(ZipArchiveExtractorBuilder)` is private, `new ZipArchiveExtractorBuilder(Path)` is package-private, and `ZipArchiveExtractor` can no longer be subclassed. Use `ZipArchiveExtractor.builder(Path|SeekableByteChannel)`, `ZipArchiveExtractor.streaming(InputStream)` or `SevenZArchiveExtractor.builder(Path|SeekableByteChannel)`.
 * Constructors taking a prebuilt archive stream are `protected` on `ArjArchiveExtractor`, `DumpArchiveExtractor` and `SevenZArchiveExtractor`. Use their builders.
 * Zip streaming mode reports mode `0`, extracts symlinks as regular files holding the target, and may leave an entry's `size()` empty.
 * 7z needs random access. To read a stream, copy it into a `SeekableInMemoryByteChannel` or a temp file; see xref:archivers/sevenz.adoc[].
+* `SevenZArchiveCreatorBuilder.buildArchiveOutputStream()` throws `IOException`.
 * `SevenZArchiveCreator.builder(Path)` creates its file at `build()`, not when the builder is made. The channel creator writes from offset 0.
 
 == Custom formats
 
 Subclasses of `ArchiveCreator` implement `writeDirectory`, `writeFile(name, content, OptionalLong size, mode, lastModified)`, `writeSymlink` and `requiresSize` instead of `writeDirectoryEntry` and `writeFileEntry`. Subclasses of `ArchiveExtractor` implement `nextEntry` and `openEntryStream` as `protected`.
+
+* The `protected accept(String, Path)` hook of `ArchiveCreator` is removed. Use `builder.filter(...)`.
+* `ArchiveLimitExceededException` is `final`.
+* The 4.x `setPostProcessor(Consumer<Path>)` has no builder counterpart. Use the `postProcessor(BiConsumer<Entry, Path>)` builder option.
+* `Entry`'s canonical constructor is now `(String, Type, int, Optional<String>, Optional<FileTime>, OptionalLong)`. Build entries with `new Entry(name, type, mode).withLinkTarget(target)`; record patterns over `Entry` need the new component list.
+* `ZipArchiveExtractor` now extends `ArchiveExtractor<ArchiveInputStream<ZipArchiveEntry>>`, and `ZipArchiveExtractorBuilder.buildArchiveInputStream()` returns `ArchiveInputStream<ZipArchiveEntry>`.

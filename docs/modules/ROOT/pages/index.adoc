@@ -87,7 +87,7 @@ Compress4J supports a variety of common stream compression formats. The goal is 
 
 Formats marked (read-only) can be extracted or decompressed, as applicable, but not created; see xref:read_only_formats.adoc[Read-only formats].
 
-The library often achieves this by integrating with robust, high-performance backend libraries or by providing its own implementations.
+The library often achieves this by integrating with high-performance backend libraries or by providing its own implementations.
 
 IMPORTANT: Some compression formats may require additional support libraries to be included in your project. Please refer to the xref:additional_formats.adoc[Additional Formats] for details on any extra dependencies needed for specific formats.
 

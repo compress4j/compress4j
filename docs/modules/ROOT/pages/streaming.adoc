@@ -18,7 +18,7 @@ An item's content is readable only while it is current. Collecting items first a
 include::example$java/com/example/StreamingExamples.java[tag=stale-item,indent=0]
 ----
 
-The stream is sequential and single-use: `parallel()` and a second `stream()` or `extract()` call throw `IllegalStateException`. Errors while advancing arrive as `UncheckedIOException`.
+The stream is sequential and single-use: a parallel stream fails with `IllegalStateException` when consumed, and a second `stream()` or `extract()` call throws it too. Errors while advancing arrive as `UncheckedIOException`.
 
 == Writing
 
@@ -36,6 +36,8 @@ tar, ar and cpio write each file's size before its content. A source without a s
 include::example$java/com/example/StreamingExamples.java[tag=unknown-size,indent=0]
 ----
 
+`EntrySource.buffered` closes the source stream it reads.
+
 == Repacking
 
 [,java]
@@ -43,10 +45,16 @@ include::example$java/com/example/StreamingExamples.java[tag=unknown-size,indent
 include::example$java/com/example/StreamingExamples.java[tag=repack,indent=0]
 ----
 
-Entry names are checked on write, so repacking an archive with `../` names fails with `UnsafeEntryException`.
+The creator checks entry names on write, so repacking an archive with `../` names fails with `UnsafeEntryException`.
 
 == Format capabilities
 
 Verified by the contract suite on every build:
 
 include::partial$capabilities.adoc[]
+
+* *directories*, *modes*, *symlinks*, *last modified*: the format preserves them on a round trip.
+* *requires size*: sizes must be known before content, so a source without a size needs `EntrySource.buffered`.
+* *stream input*, *stream output*: the format reads from an `InputStream` or writes to an `OutputStream`.
+* *random access input*: reads from the channel's start regardless of its position; other formats read from the current position.
+* Zip's stream input is the zip-streaming row.
