@@ -408,6 +408,24 @@ class SevenZArchiveTest {
     }
 
     @Test
+    void creatorWritesFromOffsetZeroOverPrecedingBytes() throws IOException {
+        // Given
+        var channel = new SeekableInMemoryByteChannel("prefix-bytes".getBytes(StandardCharsets.UTF_8));
+        channel.position(channel.size());
+
+        // When
+        try (var creator = SevenZArchiveCreator.builder(channel).build()) {
+            creator.addFile("a.txt", "alpha".getBytes(StandardCharsets.UTF_8));
+        }
+
+        // Then
+        try (var extractor = SevenZArchiveExtractor.builder(new SeekableInMemoryByteChannel(channel.array()))
+                .build()) {
+            assertThat(extractor.stream().map(item -> item.entry().name())).containsExactly("a.txt");
+        }
+    }
+
+    @Test
     void offersNoStreamBuilders() {
         assertThat(Arrays.stream(SevenZArchiveExtractor.class.getMethods())
                         .filter(m -> m.getName().equals("builder"))

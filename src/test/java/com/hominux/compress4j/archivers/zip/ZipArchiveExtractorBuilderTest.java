@@ -26,6 +26,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.hominux.compress4j.utils.BuildGatedChannel;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.SeekableByteChannel;
@@ -125,7 +126,7 @@ class ZipArchiveExtractorBuilderTest {
 
         verify(mockZipFileBuilder).setIgnoreLocalFileHeader(true);
         verify(mockZipFileBuilder).setMaxNumberOfDisks(10);
-        verify(mockZipFileBuilder).setSeekableByteChannel(mockChannel);
+        verify(mockZipFileBuilder).setSeekableByteChannel(any(BuildGatedChannel.class));
         verify(mockZipFileBuilder).setUseUnicodeExtraFields(false);
         verify(mockZipFileBuilder).setZstdInputStreamFactory(mockFactory);
         verify(mockZipFileBuilder, never()).setPath(any(Path.class));

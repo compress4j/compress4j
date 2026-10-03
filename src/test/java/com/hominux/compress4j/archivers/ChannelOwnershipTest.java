@@ -15,44 +15,102 @@
  */
 package com.hominux.compress4j.archivers;
 
+import static com.hominux.compress4j.archivers.catalog.Capability.RANDOM_ACCESS_INPUT;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowable;
 
-import com.hominux.compress4j.archivers.tar.TarArchiveCreator;
-import com.hominux.compress4j.archivers.tar.TarArchiveExtractor;
-import com.hominux.compress4j.archivers.tar.TarGzArchiveExtractor;
+import com.hominux.compress4j.archivers.catalog.ArchiveFormat;
+import com.hominux.compress4j.archivers.catalog.FormatCatalog;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.stream.Stream;
 import org.apache.commons.compress.utils.SeekableInMemoryByteChannel;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class ChannelOwnershipTest {
 
-    @Test
-    void closingTheExtractorClosesTheChannel() throws IOException {
-        // Given
-        var bytes = new SeekableInMemoryByteChannel();
-        try (var creator = TarArchiveCreator.builder(bytes).build()) {
-            creator.addFile("a", "1".getBytes(StandardCharsets.UTF_8));
-        }
-        var channel = new SeekableInMemoryByteChannel(bytes.array());
+    private static final byte[] PREFIX = "prefix-bytes".getBytes(StandardCharsets.UTF_8);
 
-        // When
-        try (var extractor = TarArchiveExtractor.builder(channel).build()) {
-            extractor.stream().toList();
+    static Stream<ArchiveFormat> channelReaders() {
+        return FormatCatalog.all().filter(f -> f.readFromChannel().isPresent());
+    }
+
+    static Stream<ArchiveFormat> channelWriters() {
+        return FormatCatalog.all().filter(f -> f.createOnChannel().isPresent());
+    }
+
+    private static byte[] archive(ArchiveFormat format) throws IOException {
+        var channel = new SeekableInMemoryByteChannel();
+        try (var creator =
+                FormatCatalog.writerOf(format).createOnChannel().orElseThrow().apply(channel)) {
+            creator.addFile("a.txt", "alpha".getBytes(StandardCharsets.UTF_8));
+        }
+        return Arrays.copyOf(channel.array(), (int) channel.size());
+    }
+
+    private static String firstContent(ArchiveExtractor<?> extractor) throws IOException {
+        var item = extractor.stream().findFirst().orElseThrow();
+        return new String(item.content().readAllBytes(), StandardCharsets.UTF_8);
+    }
+
+    @ParameterizedTest
+    @MethodSource("channelWriters")
+    void closingTheCreatorClosesTheChannel(ArchiveFormat format) throws IOException {
+        var channel = new SeekableInMemoryByteChannel();
+
+        try (var creator = format.createOnChannel().orElseThrow().apply(channel)) {
+            creator.addFile("a.txt", "alpha".getBytes(StandardCharsets.UTF_8));
         }
 
-        // Then
         assertThat(channel.isOpen()).isFalse();
     }
 
-    @Test
-    void failedBuildLeavesTheCallersChannelOpen() {
-        // Given
-        var garbage = new SeekableInMemoryByteChannel("not gzip".getBytes(StandardCharsets.UTF_8));
+    @ParameterizedTest
+    @MethodSource("channelReaders")
+    void closingTheExtractorClosesTheChannel(ArchiveFormat format) throws IOException {
+        var channel = new SeekableInMemoryByteChannel(archive(format));
 
-        // Then
-        assertThatThrownBy(() -> TarGzArchiveExtractor.builder(garbage).build()).isInstanceOf(IOException.class);
+        try (var extractor = format.readFromChannel().orElseThrow().apply(channel)) {
+            extractor.stream().toList();
+        }
+
+        assertThat(channel.isOpen()).isFalse();
+    }
+
+    @ParameterizedTest
+    @MethodSource("channelReaders")
+    void garbageFailsAndLeavesTheCallersChannelOpen(ArchiveFormat format) {
+        var bytes = new byte[1024];
+        Arrays.fill(bytes, (byte) 0xFF);
+        var garbage = new SeekableInMemoryByteChannel(bytes);
+
+        Throwable failure = catchThrowable(() ->
+                format.readFromChannel().orElseThrow().apply(garbage).stream().toList());
+
+        assertThat(failure).isNotNull();
         assertThat(garbage.isOpen()).isTrue();
+    }
+
+    @ParameterizedTest
+    @MethodSource("channelReaders")
+    void channelPositionMatchesDeclaration(ArchiveFormat format) throws IOException {
+        byte[] archive = archive(format);
+        SeekableInMemoryByteChannel channel;
+        if (format.has(RANDOM_ACCESS_INPUT)) {
+            channel = new SeekableInMemoryByteChannel(archive);
+        } else {
+            var bytes = new ByteArrayOutputStream();
+            bytes.write(PREFIX);
+            bytes.write(archive);
+            channel = new SeekableInMemoryByteChannel(bytes.toByteArray());
+        }
+        channel.position(PREFIX.length);
+
+        try (var extractor = format.readFromChannel().orElseThrow().apply(channel)) {
+            assertThat(firstContent(extractor)).isEqualTo("alpha");
+        }
     }
 }

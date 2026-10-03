@@ -140,7 +140,8 @@ public class CpioArchiveCreator extends ArchiveCreator<CpioArchiveOutputStream> 
     }
 
     /**
-     * Creates a builder writing at the channel's current position. The creator closes the channel when it is closed.
+     * Creates a builder writing at the channel's current position. The creator closes the channel when it is closed; a
+     * failed {@code build()} leaves it open.
      *
      * @param channel the channel to write the archive to
      * @return the builder

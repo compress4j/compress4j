@@ -15,7 +15,11 @@
  */
 package com.hominux.compress4j.archivers.catalog;
 
-/** A property a format either preserves on a round trip or supports as an I/O mode. */
+/**
+ * A property a format either preserves on a round trip or supports as an I/O mode. {@link #RANDOM_ACCESS_INPUT} marks a
+ * reader that reads the whole channel whatever its position; without it, a channel reader starts at the channel's
+ * current position.
+ */
 public enum Capability {
     DIRECTORIES,
     MODES,
@@ -23,5 +27,6 @@ public enum Capability {
     LAST_MODIFIED,
     REQUIRES_SIZE,
     STREAM_INPUT,
-    STREAM_OUTPUT
+    STREAM_OUTPUT,
+    RANDOM_ACCESS_INPUT
 }

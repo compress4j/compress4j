@@ -25,10 +25,20 @@ import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.io.function.IOFunction;
 
-/** One archive format's builders and declared capabilities, as exercised by the contract suite. */
+/**
+ * One archive format's builders and declared capabilities, as exercised by the contract suite.
+ *
+ * <p>{@code extractor} and {@code creator} are the production classes whose static builders the row calls;
+ * {@code streamFactory} names the extractor's static {@code InputStream} factory. A read-only row names the writable
+ * row that produces its test archives in {@code writer}.
+ */
 public record ArchiveFormat(
         String name,
         Set<Capability> capabilities,
+        Class<?> extractor,
+        Optional<Class<?>> creator,
+        String streamFactory,
+        Optional<String> writer,
         Optional<IOFunction<Path, ArchiveCreator<?>>> createAt,
         Optional<IOFunction<SeekableByteChannel, ArchiveCreator<?>>> createOnChannel,
         Optional<IOFunction<OutputStream, ArchiveCreator<?>>> createOnStream,

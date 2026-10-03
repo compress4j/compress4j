@@ -16,6 +16,7 @@
 package com.hominux.compress4j.archivers.zip;
 
 import com.hominux.compress4j.archivers.ArchiveExtractor;
+import com.hominux.compress4j.utils.BuildGatedChannel;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.SeekableByteChannel;
@@ -60,7 +61,9 @@ public class ZipArchiveExtractor extends ArchiveExtractor<ArchiveInputStream<Zip
     }
 
     /**
-     * Creates a builder reading the archive from the channel. The extractor closes the channel when it is closed.
+     * Creates a builder reading the whole channel, whatever its current position; zip keeps its central directory at
+     * the end of the archive. The extractor closes the channel when it is closed; a failed {@code build()} leaves it
+     * open.
      *
      * @param channel the channel holding the archive
      * @return the builder
@@ -72,6 +75,10 @@ public class ZipArchiveExtractor extends ArchiveExtractor<ArchiveInputStream<Zip
 
     /**
      * Creates a builder reading local headers from a forward-only stream.
+     *
+     * <p>A stream carries no central directory, where zip keeps Unix modes: entries report mode 0, and a symlink entry
+     * surfaces as a {@link Entry.Type#FILE} whose content is the link target. An entry's size may be empty until its
+     * content is read. Input that is not a zip archive fails on the first read, not in {@code build()}.
      *
      * @param inputStream the stream holding the archive
      * @return the builder
@@ -188,9 +195,9 @@ public class ZipArchiveExtractor extends ArchiveExtractor<ArchiveInputStream<Zip
         }
 
         /**
-         * Build the ZipArchiveInputStream.
+         * Opens the zip archive.
          *
-         * @return the configured ZipArchiveInputStream
+         * @return the entries of the archive, read through its central directory
          */
         @Override
         public ArchiveInputStream<ZipArchiveEntry> buildArchiveInputStream() throws IOException {
@@ -199,12 +206,15 @@ public class ZipArchiveExtractor extends ArchiveExtractor<ArchiveInputStream<Zip
                     .setMaxNumberOfDisks(maxNumberOfDisks)
                     .setUseUnicodeExtraFields(useUnicodeExtraFields)
                     .setZstdInputStreamFactory(zstdInputStreamFactory);
-            if (channel.isPresent()) {
-                zip.setSeekableByteChannel(channel.orElseThrow());
-            } else {
-                zip.setPath(path.orElseThrow());
+            if (channel.isEmpty()) {
+                return new ZipFileArchiveInputStream(
+                        zip.setPath(path.orElseThrow()).get());
             }
-            return new ZipFileArchiveInputStream(zip.get());
+            var gated = new BuildGatedChannel(channel.orElseThrow());
+            var stream = new ZipFileArchiveInputStream(
+                    zip.setSeekableByteChannel(gated).get());
+            gated.built();
+            return stream;
         }
 
         /**

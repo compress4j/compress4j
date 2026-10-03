@@ -18,6 +18,7 @@ package com.hominux.compress4j.archivers.catalog;
 import static com.hominux.compress4j.archivers.catalog.Capability.DIRECTORIES;
 import static com.hominux.compress4j.archivers.catalog.Capability.LAST_MODIFIED;
 import static com.hominux.compress4j.archivers.catalog.Capability.MODES;
+import static com.hominux.compress4j.archivers.catalog.Capability.RANDOM_ACCESS_INPUT;
 import static com.hominux.compress4j.archivers.catalog.Capability.REQUIRES_SIZE;
 import static com.hominux.compress4j.archivers.catalog.Capability.STREAM_INPUT;
 import static com.hominux.compress4j.archivers.catalog.Capability.STREAM_OUTPUT;
@@ -71,6 +72,8 @@ public final class FormatCatalog {
                 streamNative(
                         "tar",
                         TAR,
+                        TarArchiveExtractor.class,
+                        TarArchiveCreator.class,
                         p -> TarArchiveCreator.builder(p).build(),
                         o -> TarArchiveCreator.builder(o).build(),
                         ch -> TarArchiveCreator.builder(ch).build(),
@@ -80,6 +83,8 @@ public final class FormatCatalog {
                 streamNative(
                         "tar.gz",
                         TAR,
+                        TarGzArchiveExtractor.class,
+                        TarGzArchiveCreator.class,
                         p -> TarGzArchiveCreator.builder(p).build(),
                         o -> TarGzArchiveCreator.builder(o).build(),
                         ch -> TarGzArchiveCreator.builder(ch).build(),
@@ -89,6 +94,8 @@ public final class FormatCatalog {
                 streamNative(
                         "tar.bz2",
                         TAR,
+                        TarBZip2ArchiveExtractor.class,
+                        TarBZip2ArchiveCreator.class,
                         p -> TarBZip2ArchiveCreator.builder(p).build(),
                         o -> TarBZip2ArchiveCreator.builder(o).build(),
                         ch -> TarBZip2ArchiveCreator.builder(ch).build(),
@@ -98,6 +105,8 @@ public final class FormatCatalog {
                 streamNative(
                         "tar.xz",
                         TAR,
+                        TarXzArchiveExtractor.class,
+                        TarXzArchiveCreator.class,
                         p -> TarXzArchiveCreator.builder(p).build(),
                         o -> TarXzArchiveCreator.builder(o).build(),
                         ch -> TarXzArchiveCreator.builder(ch).build(),
@@ -107,6 +116,8 @@ public final class FormatCatalog {
                 streamNative(
                         "tar.lzma",
                         TAR,
+                        TarLzmaArchiveExtractor.class,
+                        TarLzmaArchiveCreator.class,
                         p -> TarLzmaArchiveCreator.builder(p).build(),
                         o -> TarLzmaArchiveCreator.builder(o).build(),
                         ch -> TarLzmaArchiveCreator.builder(ch).build(),
@@ -116,6 +127,8 @@ public final class FormatCatalog {
                 streamNative(
                         "tar.lz4",
                         TAR,
+                        TarLz4ArchiveExtractor.class,
+                        TarLz4ArchiveCreator.class,
                         p -> TarLz4ArchiveCreator.builder(p).build(),
                         o -> TarLz4ArchiveCreator.builder(o).build(),
                         ch -> TarLz4ArchiveCreator.builder(ch).build(),
@@ -125,6 +138,8 @@ public final class FormatCatalog {
                 streamNative(
                         "tar.zst",
                         TAR,
+                        TarZstdArchiveExtractor.class,
+                        TarZstdArchiveCreator.class,
                         p -> TarZstdArchiveCreator.builder(p).build(),
                         o -> TarZstdArchiveCreator.builder(o).build(),
                         ch -> TarZstdArchiveCreator.builder(ch).build(),
@@ -134,6 +149,8 @@ public final class FormatCatalog {
                 streamNative(
                         "ar",
                         EnumSet.of(MODES, SYMLINKS, LAST_MODIFIED, REQUIRES_SIZE, STREAM_INPUT, STREAM_OUTPUT),
+                        ArArchiveExtractor.class,
+                        ArArchiveCreator.class,
                         p -> ArArchiveCreator.builder(p).build(),
                         o -> ArArchiveCreator.builder(o).build(),
                         ch -> ArArchiveCreator.builder(ch).build(),
@@ -150,6 +167,8 @@ public final class FormatCatalog {
                                 REQUIRES_SIZE,
                                 STREAM_INPUT,
                                 STREAM_OUTPUT),
+                        CpioArchiveExtractor.class,
+                        CpioArchiveCreator.class,
                         p -> CpioArchiveCreator.builder(p).build(),
                         o -> CpioArchiveCreator.builder(o).build(),
                         ch -> CpioArchiveCreator.builder(ch).build(),
@@ -158,7 +177,11 @@ public final class FormatCatalog {
                         i -> CpioArchiveExtractor.builder(i).build()),
                 new ArchiveFormat(
                         "zip",
-                        EnumSet.of(DIRECTORIES, MODES, SYMLINKS, LAST_MODIFIED, STREAM_OUTPUT),
+                        EnumSet.of(DIRECTORIES, MODES, SYMLINKS, LAST_MODIFIED, STREAM_OUTPUT, RANDOM_ACCESS_INPUT),
+                        ZipArchiveExtractor.class,
+                        Optional.of(ZipArchiveCreator.class),
+                        "builder",
+                        Optional.empty(),
                         Optional.of(c(p -> ZipArchiveCreator.builder(p).build())),
                         Optional.of(ch -> ZipArchiveCreator.builder(ch).build()),
                         Optional.of(co(o -> ZipArchiveCreator.builder(o).build())),
@@ -168,6 +191,10 @@ public final class FormatCatalog {
                 new ArchiveFormat(
                         "zip-streaming",
                         EnumSet.of(DIRECTORIES, LAST_MODIFIED, STREAM_INPUT),
+                        ZipArchiveExtractor.class,
+                        Optional.empty(),
+                        "streaming",
+                        Optional.of("zip"),
                         Optional.empty(),
                         Optional.empty(),
                         Optional.empty(),
@@ -177,7 +204,11 @@ public final class FormatCatalog {
                         Optional.of(i -> ZipArchiveExtractor.streaming(i).build())),
                 new ArchiveFormat(
                         "7z",
-                        EnumSet.of(DIRECTORIES, MODES, SYMLINKS, LAST_MODIFIED),
+                        EnumSet.of(DIRECTORIES, MODES, SYMLINKS, LAST_MODIFIED, RANDOM_ACCESS_INPUT),
+                        SevenZArchiveExtractor.class,
+                        Optional.of(SevenZArchiveCreator.class),
+                        "builder",
+                        Optional.empty(),
                         Optional.of(c(p -> SevenZArchiveCreator.builder(p).build())),
                         Optional.of(ch -> SevenZArchiveCreator.builder(ch).build()),
                         Optional.empty(),
@@ -190,9 +221,36 @@ public final class FormatCatalog {
         return all().filter(ArchiveFormat::writable);
     }
 
+    /** Rows whose reader the round-trip contract can exercise: writable rows and rows naming a writer. */
+    public static Stream<ArchiveFormat> readable() {
+        return all().filter(f -> f.writable() || f.writer().isPresent());
+    }
+
+    /**
+     * The writable row that produces archives for {@code format}: the row itself when writable, else its writer.
+     *
+     * @param format the row to read archives with
+     * @return the writing row
+     */
+    public static ArchiveFormat writerOf(ArchiveFormat format) {
+        return format.writer().map(FormatCatalog::named).orElse(format);
+    }
+
+    /**
+     * The row named {@code name}.
+     *
+     * @param name the row name
+     * @return the row
+     */
+    public static ArchiveFormat named(String name) {
+        return all().filter(f -> f.name().equals(name)).findFirst().orElseThrow();
+    }
+
     private static ArchiveFormat streamNative(
             String name,
             Set<Capability> capabilities,
+            Class<?> extractor,
+            Class<?> creator,
             IOFunction<Path, ArchiveCreator<?>> createAt,
             IOFunction<SeekableByteChannel, ArchiveCreator<?>> createOnChannel,
             IOFunction<OutputStream, ArchiveCreator<?>> createOnStream,
@@ -202,6 +260,10 @@ public final class FormatCatalog {
         return new ArchiveFormat(
                 name,
                 capabilities,
+                extractor,
+                Optional.of(creator),
+                "builder",
+                Optional.empty(),
                 Optional.of(createAt),
                 Optional.of(createOnChannel),
                 Optional.of(createOnStream),
