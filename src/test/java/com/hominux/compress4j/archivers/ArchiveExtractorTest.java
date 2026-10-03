@@ -2092,4 +2092,26 @@ class ArchiveExtractorTest {
         assertThat(out.resolve("keep.txt")).hasContent("k");
         assertThat(out.resolve("skip.txt")).doesNotExist();
     }
+
+    @Test
+    void releaseFailureOnAdvanceIsReportedOnceAndStreamReleasedOnce(@TempDir Path out) throws IOException {
+        var entries = List.of(
+                InMemoryArchiveEntry.builder().name("a").content("1").build(),
+                InMemoryArchiveEntry.builder().name("b").content("2").build());
+        var releaseFailure = new IOException("release failed");
+        var releases = new AtomicInteger();
+
+        try (var extractor = new InMemoryArchiveExtractor(InMemoryArchiveExtractor.builder(entries)) {
+            @Override
+            protected void closeEntryStream(InputStream stream) throws IOException {
+                releases.incrementAndGet();
+                throw releaseFailure;
+            }
+        }) {
+            // When / Then
+            assertThatThrownBy(() -> extractor.extract(out)).isSameAs(releaseFailure);
+            assertThat(releases).hasValue(1);
+            assertThat(out.resolve("a")).hasContent("1");
+        }
+    }
 }

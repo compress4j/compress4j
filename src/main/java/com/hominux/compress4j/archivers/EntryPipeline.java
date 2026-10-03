@@ -117,11 +117,12 @@ final class EntryPipeline {
     }
 
     private void releaseContent() throws IOException {
-        if (rawContent.isPresent()) {
-            reader.release(rawContent.orElseThrow());
-        }
+        Optional<InputStream> toRelease = rawContent;
         rawContent = Optional.empty();
         guardedContent = Optional.empty();
+        if (toRelease.isPresent()) {
+            reader.release(toRelease.orElseThrow());
+        }
     }
 
     private static String staleMessage(Entry entry) {
