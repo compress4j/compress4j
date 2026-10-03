@@ -66,16 +66,21 @@ public final class ArchiveItem {
      * must be written before the stream advances, as {@link ArchiveCreator#addAll} does.
      *
      * @return the entry as a source; last-modified falls back to now when the archive records none
+     * @throws IllegalStateException if the entry is a symlink whose archive records no target
      */
     public EntrySource toSource() {
         FileTime modified = entry.lastModified().orElseGet(() -> FileTime.from(Instant.now()));
         int mode = entry.mode() & 07777;
         return switch (entry.type()) {
             case DIR -> new EntrySource.Directory(entry.name(), mode, modified);
-            case SYMLINK ->
-                new EntrySource.Symlink(entry.name(), entry.linkTarget().orElse(""), mode, modified);
+            case SYMLINK -> new EntrySource.Symlink(entry.name(), linkTarget(), mode, modified);
             case FILE -> new EntrySource.File(entry.name(), mode, modified, entry.size(), this::content);
         };
+    }
+
+    private String linkTarget() {
+        return entry.linkTarget()
+                .orElseThrow(() -> new IllegalStateException("Symlink '" + entry.name() + "' has no target"));
     }
 
     long position() {

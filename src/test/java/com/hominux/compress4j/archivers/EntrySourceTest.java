@@ -18,6 +18,9 @@ package com.hominux.compress4j.archivers;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.hominux.compress4j.archivers.ArchiveExtractor.Entry.Type;
+import com.hominux.compress4j.archivers.memory.InMemoryArchiveEntry;
+import com.hominux.compress4j.archivers.memory.InMemoryArchiveExtractor;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -134,5 +137,43 @@ class EntrySourceTest {
     void modeKeepsPermissionBitsOnly() {
         var d = new EntrySource.Directory("d", 040755, FileTime.from(Instant.EPOCH));
         assertThat(d.mode()).isEqualTo(0755);
+    }
+
+    @Test
+    void symlinkRejectsABlankTarget() {
+        assertThatThrownBy(() -> new EntrySource.Symlink("link", " ", 0, FileTime.from(Instant.EPOCH)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("link");
+    }
+
+    @Test
+    void recordsRejectNullComponents() {
+        var time = FileTime.from(Instant.EPOCH);
+        OptionalLong size = OptionalLong.empty();
+        assertThatThrownBy(() -> new EntrySource.File(null, 0, time, size, () -> null))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new EntrySource.File("f", 0, null, size, () -> null))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new EntrySource.File("f", 0, time, null, () -> null))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new EntrySource.File("f", 0, time, size, null))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new EntrySource.Directory(null, 0, time)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new EntrySource.Directory("d", 0, null)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new EntrySource.Symlink(null, "t", 0, time)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new EntrySource.Symlink("l", null, 0, time)).isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new EntrySource.Symlink("l", "t", 0, null)).isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void toSourceRejectsASymlinkWithoutTarget() throws IOException {
+        var entry =
+                InMemoryArchiveEntry.builder().name("link").type(Type.SYMLINK).build();
+        try (var extractor = InMemoryArchiveExtractor.builder(List.of(entry)).build()) {
+            var item = extractor.stream().findFirst().orElseThrow();
+            assertThatThrownBy(item::toSource)
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("link");
+        }
     }
 }

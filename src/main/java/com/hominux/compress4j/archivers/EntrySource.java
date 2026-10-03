@@ -27,6 +27,7 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.OptionalLong;
 import org.apache.commons.io.function.IOSupplier;
 
@@ -72,8 +73,12 @@ public sealed interface EntrySource permits EntrySource.File, EntrySource.Direct
      */
     record File(String name, int mode, FileTime lastModified, OptionalLong size, IOSupplier<InputStream> content)
             implements EntrySource {
-        /** Masks {@code mode} to permission bits. */
+        /** Masks {@code mode} to permission bits and rejects null components. */
         public File {
+            Objects.requireNonNull(name, "name");
+            Objects.requireNonNull(lastModified, "lastModified");
+            Objects.requireNonNull(size, "size");
+            Objects.requireNonNull(content, "content");
             mode &= 07777;
         }
     }
@@ -86,8 +91,10 @@ public sealed interface EntrySource permits EntrySource.File, EntrySource.Direct
      * @param lastModified the last-modified time
      */
     record Directory(String name, int mode, FileTime lastModified) implements EntrySource {
-        /** Masks {@code mode} to permission bits. */
+        /** Masks {@code mode} to permission bits and rejects null components. */
         public Directory {
+            Objects.requireNonNull(name, "name");
+            Objects.requireNonNull(lastModified, "lastModified");
             mode &= 07777;
         }
     }
@@ -96,13 +103,23 @@ public sealed interface EntrySource permits EntrySource.File, EntrySource.Direct
      * A symbolic link to {@code target}, stored verbatim.
      *
      * @param name the entry name
-     * @param target the link target
+     * @param target the link target, not blank
      * @param mode the permission bits, masked to {@code 07777}
      * @param lastModified the last-modified time
      */
     record Symlink(String name, String target, int mode, FileTime lastModified) implements EntrySource {
-        /** Masks {@code mode} to permission bits. */
+        /**
+         * Masks {@code mode} to permission bits and rejects null components.
+         *
+         * @throws IllegalArgumentException if {@code target} is blank
+         */
         public Symlink {
+            Objects.requireNonNull(name, "name");
+            Objects.requireNonNull(target, "target");
+            Objects.requireNonNull(lastModified, "lastModified");
+            if (target.isBlank()) {
+                throw new IllegalArgumentException("Symlink '" + name + "' has a blank target");
+            }
             mode &= 07777;
         }
     }
