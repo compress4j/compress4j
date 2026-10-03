@@ -61,7 +61,8 @@ public sealed interface EntrySource permits EntrySource.File, EntrySource.Direct
 
     /**
      * A regular file. {@code content} is opened once, by the creator, which closes it after writing. {@code size} must
-     * be present for formats that record sizes before content (tar, ar, cpio); see {@link #buffered}.
+     * be present for formats that record sizes before content (tar, ar, cpio); see {@link #buffered}. A present
+     * {@code size} must match the content exactly, or the write fails.
      *
      * @param name the entry name
      * @param mode the permission bits, masked to {@code 07777}

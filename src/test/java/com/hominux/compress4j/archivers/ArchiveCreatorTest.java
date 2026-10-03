@@ -1325,11 +1325,7 @@ class ArchiveCreatorTest {
             // Then
             verify(archive)
                     .writeFile(
-                            eq(entryName),
-                            any(ByteArrayInputStream.class),
-                            eq(OptionalLong.of(0L)),
-                            eq(NO_MODE),
-                            eq(modTime));
+                            eq(entryName), any(InputStream.class), eq(OptionalLong.of(0L)), eq(NO_MODE), eq(modTime));
         }
     }
 

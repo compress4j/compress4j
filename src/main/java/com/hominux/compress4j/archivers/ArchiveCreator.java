@@ -138,7 +138,8 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
      *     segment
      * @throws IllegalArgumentException if a file's size is unknown and this format records sizes before content
      * @throws IllegalStateException if an earlier write failed
-     * @throws IOException if writing fails; the archive is then incomplete
+     * @throws IOException if writing fails or a file's content does not match its declared size; the archive is then
+     *     incomplete
      */
     public final void add(EntrySource source) throws IOException {
         if (failed) {
@@ -187,11 +188,19 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
         switch (source) {
             case EntrySource.Directory d -> writeDirectory(d.name(), d.mode(), d.lastModified());
             case EntrySource.Symlink s -> writeSymlink(s.name(), s.target(), s.mode(), s.lastModified());
-            case EntrySource.File f -> {
-                try (InputStream in = f.content().get()) {
-                    writeFile(f.name(), in, f.size(), f.mode(), f.lastModified());
-                }
+            case EntrySource.File f -> writeFile(f);
+        }
+    }
+
+    private void writeFile(EntrySource.File f) throws IOException {
+        try (InputStream in = f.content().get()) {
+            if (f.size().isEmpty()) {
+                writeFile(f.name(), in, f.size(), f.mode(), f.lastModified());
+                return;
             }
+            var sized = new DeclaredSizeInputStream(in, f.name(), f.size().getAsLong());
+            writeFile(f.name(), sized, f.size(), f.mode(), f.lastModified());
+            sized.requireExhausted();
         }
     }
 
