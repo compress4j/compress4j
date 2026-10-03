@@ -44,7 +44,7 @@ public class SevenZArchiveExtractor extends ArchiveExtractor<SevenZFileArchiveIn
      *
      * @param archiveInputStream the input 7z Archive Input Stream
      */
-    public SevenZArchiveExtractor(SevenZFileArchiveInputStream archiveInputStream) {
+    protected SevenZArchiveExtractor(SevenZFileArchiveInputStream archiveInputStream) {
         super(archiveInputStream);
     }
 
@@ -65,7 +65,19 @@ public class SevenZArchiveExtractor extends ArchiveExtractor<SevenZFileArchiveIn
      * @return An instance of the {@link SevenZArchiveExtractorBuilder}
      */
     public static SevenZArchiveExtractorBuilder builder(Path path) {
-        return new SevenZArchiveExtractorBuilder(path);
+        return new SevenZArchiveExtractorBuilder(Optional.of(path), Optional.empty());
+    }
+
+    /**
+     * Creates a builder reading the whole channel; 7z keeps its header at the end of the archive, so the channel must
+     * be seekable. The extractor closes the channel when it is closed.
+     *
+     * @param channel the channel holding the archive
+     * @return the builder
+     * @since 5.0
+     */
+    public static SevenZArchiveExtractorBuilder builder(SeekableByteChannel channel) {
+        return new SevenZArchiveExtractorBuilder(Optional.empty(), Optional.of(channel));
     }
 
     /** {@inheritDoc} */
@@ -116,17 +128,13 @@ public class SevenZArchiveExtractor extends ArchiveExtractor<SevenZFileArchiveIn
             extends ArchiveExtractorBuilder<
                     SevenZFileArchiveInputStream, SevenZArchiveExtractorBuilder, SevenZArchiveExtractor> {
 
-        private final Path origin;
-        private SeekableByteChannel seekableByteChannel;
+        private final Optional<Path> path;
+        private final Optional<SeekableByteChannel> channel;
         private char[] password;
 
-        /**
-         * Create a new builder for the archive at the given path.
-         *
-         * @param path the path to the archive to extract
-         */
-        public SevenZArchiveExtractorBuilder(Path path) {
-            this.origin = path;
+        SevenZArchiveExtractorBuilder(Optional<Path> path, Optional<SeekableByteChannel> channel) {
+            this.path = path;
+            this.channel = channel;
         }
 
         /**
@@ -137,17 +145,6 @@ public class SevenZArchiveExtractor extends ArchiveExtractor<SevenZFileArchiveIn
          */
         public SevenZArchiveExtractorBuilder password(char[] password) {
             this.password = password == null ? null : password.clone();
-            return this;
-        }
-
-        /**
-         * The actual channel, overrides the path.
-         *
-         * @param seekableByteChannel The actual channel.
-         * @return {@code this} instance.
-         */
-        public SevenZArchiveExtractorBuilder setSeekableByteChannel(SeekableByteChannel seekableByteChannel) {
-            this.seekableByteChannel = seekableByteChannel;
             return this;
         }
 
@@ -165,11 +162,8 @@ public class SevenZArchiveExtractor extends ArchiveExtractor<SevenZFileArchiveIn
         @Override
         public SevenZFileArchiveInputStream buildArchiveInputStream() throws IOException {
             SevenZFile.Builder file = SevenZFile.builder().setUseDefaultNameForUnnamedEntries(true);
-            if (seekableByteChannel != null) {
-                file.setSeekableByteChannel(seekableByteChannel);
-            } else {
-                file.setPath(origin);
-            }
+            channel.ifPresent(file::setSeekableByteChannel);
+            path.ifPresent(file::setPath);
             if (password != null) {
                 file.setPassword(password);
             }

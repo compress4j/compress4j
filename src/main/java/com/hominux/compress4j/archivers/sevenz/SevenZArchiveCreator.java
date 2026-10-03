@@ -21,6 +21,7 @@ import com.hominux.compress4j.archivers.ArchiveCreator;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
@@ -66,6 +67,19 @@ public class SevenZArchiveCreator extends ArchiveCreator<SevenZFileArchiveOutput
      */
     public static SevenZArchiveCreatorBuilder builder(Path path) throws IOException {
         return new SevenZArchiveCreatorBuilder(path);
+    }
+
+    /**
+     * Creates a builder writing to the channel; 7z rewrites its start header on close, so the channel must be seekable.
+     * The creator closes the channel when it is closed.
+     *
+     * @param channel the channel to write the archive to
+     * @return the builder
+     * @throws IOException if the archive header cannot be written
+     * @since 5.0
+     */
+    public static SevenZArchiveCreatorBuilder builder(SeekableByteChannel channel) throws IOException {
+        return new SevenZArchiveCreatorBuilder(new SevenZFileArchiveOutputStream(new SevenZOutputFile(channel)));
     }
 
     /** {@inheritDoc} */

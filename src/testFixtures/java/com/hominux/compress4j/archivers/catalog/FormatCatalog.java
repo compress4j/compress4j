@@ -179,10 +179,10 @@ public final class FormatCatalog {
                         "7z",
                         EnumSet.of(DIRECTORIES, MODES, SYMLINKS, LAST_MODIFIED),
                         Optional.of(c(p -> SevenZArchiveCreator.builder(p).build())),
-                        Optional.empty(),
+                        Optional.of(ch -> SevenZArchiveCreator.builder(ch).build()),
                         Optional.empty(),
                         x(p -> SevenZArchiveExtractor.builder(p).build()),
-                        Optional.empty(),
+                        Optional.of(ch -> SevenZArchiveExtractor.builder(ch).build()),
                         Optional.empty()));
     }
 

@@ -35,7 +35,6 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
@@ -155,7 +154,6 @@ class FormatContractTest {
     }
 
     @Test
-    @Disabled("enabled in P3 Task 4")
     void everyWritableFormatHasChannelBuilders() {
         assertThat(FormatCatalog.writable()).allSatisfy(f -> {
             assertThat(f.createOnChannel()).as(f.name() + " create").isPresent();
