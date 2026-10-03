@@ -73,7 +73,7 @@ public sealed interface EntrySource permits EntrySource.File, EntrySource.Direct
      */
     record File(String name, int mode, FileTime lastModified, OptionalLong size, IOSupplier<InputStream> content)
             implements EntrySource {
-        /** Masks {@code mode} to permission bits and rejects null components. */
+        /** Rejects null components. */
         public File {
             Objects.requireNonNull(name, "name");
             Objects.requireNonNull(lastModified, "lastModified");
@@ -91,7 +91,7 @@ public sealed interface EntrySource permits EntrySource.File, EntrySource.Direct
      * @param lastModified the last-modified time
      */
     record Directory(String name, int mode, FileTime lastModified) implements EntrySource {
-        /** Masks {@code mode} to permission bits and rejects null components. */
+        /** Rejects null components. */
         public Directory {
             Objects.requireNonNull(name, "name");
             Objects.requireNonNull(lastModified, "lastModified");
@@ -109,7 +109,7 @@ public sealed interface EntrySource permits EntrySource.File, EntrySource.Direct
      */
     record Symlink(String name, String target, int mode, FileTime lastModified) implements EntrySource {
         /**
-         * Masks {@code mode} to permission bits and rejects null components.
+         * Rejects null components.
          *
          * @throws IllegalArgumentException if {@code target} is blank
          */

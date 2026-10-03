@@ -52,8 +52,8 @@ public final class ArchiveItem {
     }
 
     /**
-     * Returns the entry's content; empty for directories and symlinks. Repeated calls while current return the same
-     * stream.
+     * Returns the entry's content; empty for directories and symlinks. Repeated calls on a current file item return the
+     * same stream.
      *
      * @return the content stream, metered against the extractor's limits
      * @throws IllegalStateException if the stream has advanced past this item
