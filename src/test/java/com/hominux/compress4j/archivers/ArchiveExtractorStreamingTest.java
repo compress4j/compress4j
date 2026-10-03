@@ -20,7 +20,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.hominux.compress4j.archivers.memory.InMemoryArchiveEntry;
 import com.hominux.compress4j.archivers.memory.InMemoryArchiveExtractor;
+import com.hominux.compress4j.archivers.tar.TarArchiveExtractor;
 import com.hominux.compress4j.exceptions.ArchiveLimitExceededException;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -29,6 +32,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.junit.jupiter.api.Test;
 
 class ArchiveExtractorStreamingTest {
@@ -210,7 +215,7 @@ class ArchiveExtractorStreamingTest {
     @Test
     void closingContentDoesNotCloseTheArchive() throws IOException {
         try (var extractor =
-                InMemoryArchiveExtractor.builder(files("a", "1", "b", "2")).build()) {
+                TarArchiveExtractor.builder(tar("a", "1", "b", "2")).build()) {
             // When
             List<String> names = new ArrayList<>();
             extractor.stream().forEach(i -> {
@@ -224,6 +229,101 @@ class ArchiveExtractorStreamingTest {
 
             // Then
             assertThat(names).containsExactly("a", "b");
+        }
+    }
+
+    @Test
+    void closingContentThenReadingTheNextFileStillYieldsItsContent() throws IOException {
+        try (var extractor =
+                TarArchiveExtractor.builder(tar("a", "1", "b", "2")).build()) {
+            // When
+            List<String> contents = new ArrayList<>();
+            extractor.stream().forEach(i -> {
+                try (var content = i.content()) {
+                    contents.add(new String(content.readAllBytes(), StandardCharsets.UTF_8));
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+
+            // Then
+            assertThat(contents).containsExactly("1", "2");
+        }
+    }
+
+    @Test
+    void dirAndSymlinkItemsHaveEmptyContentWithoutOpeningTheEntryStream() throws IOException {
+        var entries = List.of(
+                InMemoryArchiveEntry.builder()
+                        .name("d")
+                        .type(ArchiveExtractor.Entry.Type.DIR)
+                        .build(),
+                InMemoryArchiveEntry.builder()
+                        .name("l")
+                        .type(ArchiveExtractor.Entry.Type.SYMLINK)
+                        .linkName("t")
+                        .build());
+        try (var extractor = new NoOpenExtractor(InMemoryArchiveExtractor.builder(entries))) {
+            // When
+            List<byte[]> contents = extractor.stream().map(this::bytes).toList();
+
+            // Then
+            assertThat(contents).hasSize(2).allSatisfy(b -> assertThat(b).isEmpty());
+        }
+    }
+
+    private byte[] bytes(ArchiveItem item) {
+        try {
+            return item.content().readAllBytes();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static InputStream tar(String... namesAndContents) throws IOException {
+        var out = new ByteArrayOutputStream();
+        try (var tar = new TarArchiveOutputStream(out)) {
+            for (int i = 0; i < namesAndContents.length; i += 2) {
+                byte[] data = namesAndContents[i + 1].getBytes(StandardCharsets.UTF_8);
+                var entry = new TarArchiveEntry(namesAndContents[i]);
+                entry.setSize(data.length);
+                tar.putArchiveEntry(entry);
+                tar.write(data);
+                tar.closeArchiveEntry();
+            }
+        }
+        return new ClosableOnce(out.toByteArray());
+    }
+
+    private static final class ClosableOnce extends ByteArrayInputStream {
+        private boolean closed;
+
+        ClosableOnce(byte[] data) {
+            super(data);
+        }
+
+        @Override
+        public synchronized int read(byte[] b, int off, int len) {
+            if (closed) {
+                throw new IllegalStateException("archive stream was closed");
+            }
+            return super.read(b, off, len);
+        }
+
+        @Override
+        public void close() {
+            closed = true;
+        }
+    }
+
+    private static final class NoOpenExtractor extends InMemoryArchiveExtractor {
+        NoOpenExtractor(InMemoryArchiveExtractorBuilder builder) throws IOException {
+            super(builder);
+        }
+
+        @Override
+        protected InputStream openEntryStream(Entry entry) {
+            throw new AssertionError("openEntryStream must not be called for " + entry.type());
         }
     }
 }

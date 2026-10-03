@@ -20,7 +20,10 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-/** Tracks what one {@link ArchiveExtractor#extract} run has consumed against its {@link ExtractionLimits}. */
+/**
+ * Tracks what one {@link ArchiveExtractor#stream()} or {@link ArchiveExtractor#extract} run has consumed against its
+ * {@link ExtractionLimits}.
+ */
 final class ExtractionBudget {
 
     private final ExtractionLimits limits;

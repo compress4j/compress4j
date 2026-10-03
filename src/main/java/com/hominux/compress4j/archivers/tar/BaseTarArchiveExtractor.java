@@ -65,7 +65,7 @@ public abstract class BaseTarArchiveExtractor extends ArchiveExtractor<TarArchiv
         } else {
             base = new Entry(te.getName(), te.isDirectory());
         }
-        return base.withMetadata(te.getLastModifiedDate(), te.isDirectory() ? 0 : te.getSize());
+        return base.withMetadata(te.getLastModifiedDate(), base.type() == Entry.Type.FILE ? te.getSize() : 0);
     }
 
     /** {@inheritDoc} */

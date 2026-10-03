@@ -17,6 +17,7 @@ package com.hominux.compress4j.archivers.zip;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -104,6 +105,7 @@ class ZipArchiveExtractorTest {
             when(mockZipEntry.getName()).thenReturn("link");
             when(mockZipEntry.isUnixSymlink()).thenReturn(true);
             when(mockZipEntry.getUnixMode()).thenReturn(0777);
+            lenient().when(mockZipEntry.getSize()).thenReturn(11L);
             when(mockInputStream.getUnixSymlink(mockZipEntry)).thenReturn("target/file");
 
             when(mockInputStream.getNextEntry()).thenReturn(mockZipEntry);
@@ -116,6 +118,7 @@ class ZipArchiveExtractorTest {
             assertThat(entry.type()).isEqualTo(ArchiveExtractor.Entry.Type.SYMLINK);
             assertThat(entry.linkTarget()).contains("target/file");
             assertThat(entry.mode()).isEqualTo(0777);
+            assertThat(entry.size()).hasValue(0);
             verify(mockInputStream, times(1)).getUnixSymlink(mockZipEntry);
         }
 

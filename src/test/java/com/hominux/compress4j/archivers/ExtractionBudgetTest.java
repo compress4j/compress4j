@@ -26,10 +26,6 @@ import org.junit.jupiter.api.Test;
 
 class ExtractionBudgetTest {
 
-    private static ByteArrayInputStream bytes(int n) {
-        return new ByteArrayInputStream(new byte[n]);
-    }
-
     @Test
     void countEntry_throwsOnceMaxEntriesIsExceeded() throws IOException {
         ExtractionBudget budget = new ExtractionBudget(ExtractionLimits.NONE.withMaxEntries(2));
@@ -92,5 +88,29 @@ class ExtractionBudgetTest {
     void unlimitedBudgetReturnsTheSameStream() {
         var raw = new ByteArrayInputStream(new byte[1]);
         assertThat(new ExtractionBudget(ExtractionLimits.NONE).meter("x", raw)).isSameAs(raw);
+    }
+
+    @Test
+    void entryOfExactlyMaxEntrySizeReadsFullyThenReturnsEof() throws IOException {
+        // Given
+        var budget = new ExtractionBudget(new ExtractionLimits(-1, 4, -1));
+        var in = budget.meter("e", new ByteArrayInputStream(new byte[4]));
+
+        // Then
+        assertThat(in.readNBytes(4)).hasSize(4);
+        assertThat(in.read()).isEqualTo(-1);
+    }
+
+    @Test
+    void totalOfExactlyMaxTotalSizeAcrossTwoEntriesReadsWithoutThrowing() {
+        // Given
+        var budget = new ExtractionBudget(new ExtractionLimits(-1, -1, 6));
+
+        // Then
+        assertThatCode(() -> {
+                    budget.meter("a", new ByteArrayInputStream(new byte[3])).readAllBytes();
+                    budget.meter("b", new ByteArrayInputStream(new byte[3])).readAllBytes();
+                })
+                .doesNotThrowAnyException();
     }
 }

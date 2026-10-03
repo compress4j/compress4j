@@ -126,7 +126,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         this.overwrite = false;
         this.escapingSymlinkPolicy = EscapingSymlinkPolicy.DISALLOW;
         this.limits = ExtractionLimits.NONE;
-        this.pipeline = new EntryPipeline(reader(), 0, ACCEPT_ALL, ExtractionLimits.NONE);
+        this.pipeline = new EntryPipeline(reader(), stripComponents, entryFilter, limits);
     }
 
     /**
@@ -169,6 +169,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      *
      * @param outputDir the directory to extract the archive to
      * @throws IOException if an I/O error occurs
+     * @throws IllegalStateException if this extractor was already streamed or extracted
      * @throws ArchiveLimitExceededException if the archive breaches one of the configured extraction limits
      * @throws UnsafeEntryException if an entry would be written, or a symlink would point, outside outputDir
      */
@@ -281,6 +282,9 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * once: a second call, or a call after {@link #extract(Path)}, throws {@link IllegalStateException}. Failures while
      * advancing surface as {@link java.io.UncheckedIOException} wrapping the {@link IOException}. Closing the stream
      * does not close this extractor.
+     *
+     * <p>Entry names and link targets are passed through unchecked; only {@link #extract(Path)} resolves paths safely
+     * against the output directory.
      *
      * @return the entries of the archive
      * @since 5.0
@@ -416,7 +420,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
             A extends ArchiveInputStream<? extends ArchiveEntry>,
             B extends ArchiveExtractorBuilder<A, B, C>,
             C extends ArchiveExtractor<A>> {
-        /** Input stream to read from for extraction. */
+        /** How symbolic links whose target escapes the output directory are handled during extraction. */
         protected ArchiveExtractor.EscapingSymlinkPolicy escapingSymlinkPolicy = EscapingSymlinkPolicy.DISALLOW;
 
         Predicate<Entry> entryFilter = ACCEPT_ALL;
@@ -453,7 +457,9 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         }
 
         /**
-         * Sets predicate to be used when entries are being extracted
+         * Sets predicate to be used when entries are being extracted. The predicate applies to both {@link #stream()}
+         * and {@link #extract(Path)} and sees each entry after strip-components: with {@code stripComponents(1)}, match
+         * {@code a.txt}, not {@code root/a.txt}.
          *
          * @param entryPredicate the Predicate to filter entries to be extract from the archive.
          * @return the instance of the {@link ArchiveExtractor.ArchiveExtractorBuilder}
@@ -499,7 +505,8 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         }
 
         /**
-         * Sets the number of leading path components to strip from the extracted entries.
+         * Sets the number of leading path components to strip from the entries. Applies to both {@link #stream()} and
+         * {@link #extract(Path)}, before the filter runs.
          *
          * @param level the number of leading path components to strip
          * @return the instance of the {@link ArchiveExtractor.ArchiveExtractorBuilder}
@@ -521,7 +528,9 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         }
 
         /**
-         * Sets the maximum number of entries the extractor will process before aborting.
+         * Sets the maximum number of entries the extractor will process before aborting. Counts entries that pass
+         * strip-components and the filter. In {@link #stream()} a breach surfaces as
+         * {@link java.io.UncheckedIOException} wrapping {@link ArchiveLimitExceededException}.
          *
          * @param maxEntries the maximum number of entries, or {@link ArchiveExtractor#UNLIMITED} to disable the limit
          * @return the instance of the {@link ArchiveExtractor.ArchiveExtractorBuilder}
@@ -533,7 +542,8 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         }
 
         /**
-         * Sets the maximum number of bytes a single entry may expand to before the extractor aborts.
+         * Sets the maximum number of bytes a single entry may expand to before the extractor aborts. Counts bytes
+         * actually read from the entry's {@code content()}.
          *
          * @param maxEntrySize the maximum size of a single entry in bytes, or {@link ArchiveExtractor#UNLIMITED} to
          *     disable the limit
@@ -546,7 +556,8 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         }
 
         /**
-         * Sets the maximum number of bytes the whole archive may expand to before the extractor aborts.
+         * Sets the maximum number of bytes the whole archive may expand to before the extractor aborts. Counts bytes
+         * actually read from entries' {@code content()}.
          *
          * @param maxTotalSize the maximum total extracted size in bytes, or {@link ArchiveExtractor#UNLIMITED} to
          *     disable the limit
