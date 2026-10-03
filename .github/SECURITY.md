@@ -31,8 +31,8 @@ Compress4J extracts what an archive tells it to. When the archive comes from an 
 
 - **Path traversal** is rejected: entry paths are resolved canonically against the output directory, so `../` entries
   and writes through a symlink that points outside the output directory both fail.
-- **Escaping symlinks** are allowed by default. Set
-  `escapingSymlinkPolicy(EscapingSymlinkPolicy.DISALLOW)` to reject them outright, or `RELATIVIZE_ABSOLUTE` to rewrite
+- **Escaping symlinks** are rejected by default with `UnsafeEntryException`. Set
+  `escapingSymlinkPolicy(EscapingSymlinkPolicy.ALLOW)` to extract them as-is, or `RELATIVIZE_ABSOLUTE` to rewrite
   absolute targets so they stay inside the output directory.
 - **Decompression bombs** are not bounded by default. Set `maxEntries`, `maxEntrySize` and `maxTotalSize` on the
   extractor to cap what an archive may expand to; breaching a limit throws `ArchiveLimitExceededException` and cannot
@@ -40,7 +40,6 @@ Compress4J extracts what an archive tells it to. When the archive comes from an 
 
 ```java
 try (var extractor = TarGzArchiveExtractor.builder(in)
-        .escapingSymlinkPolicy(EscapingSymlinkPolicy.DISALLOW)
         .maxEntries(10_000)
         .maxEntrySize(100L * 1024 * 1024)
         .maxTotalSize(1024L * 1024 * 1024)
