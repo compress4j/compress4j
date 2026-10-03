@@ -49,10 +49,16 @@ class CapabilityTableTest {
                         .collect(Collectors.joining(" |"));
     }
 
+    private static String published() throws IOException {
+        return Files.exists(TABLE)
+                ? Files.readString(TABLE, StandardCharsets.UTF_8).replace("\r\n", "\n")
+                : "";
+    }
+
     @Test
     void publishedTableMatchesTheVerifiedCatalog() throws IOException {
         String expected = render();
-        assertThat(Files.readString(TABLE, StandardCharsets.UTF_8))
+        assertThat(published())
                 .as("Regenerate %s with this content:%n%s", TABLE, expected)
                 .isEqualTo(expected);
     }
