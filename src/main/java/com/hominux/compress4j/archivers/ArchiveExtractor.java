@@ -31,6 +31,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.DosFileAttributeView;
@@ -170,16 +171,21 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * @throws UnsafeEntryException if an entry would be written, or a symlink would point, outside outputDir
      */
     public final void extract(Path outputDir) throws IOException {
-        ExtractionBudget budget = new ExtractionBudget(limits);
+        pipeline.start();
+        try {
+            drain(outputDir);
+        } catch (IOException | RuntimeException failure) {
+            pipeline.release(failure);
+            throw failure;
+        }
+        pipeline.release(null);
+    }
+
+    private void drain(Path outputDir) throws IOException {
         boolean ignoreErrors = false;
-        Optional<Entry> next;
-        while ((next = nextEntry()).isPresent()) {
-            Entry entry = next.orElseThrow();
-            if (!entryFilter.test(entry)) {
-                continue;
-            }
-            budget.countEntry();
-            switch (extractEntry(outputDir, entry, ignoreErrors, budget)) {
+        Optional<ArchiveItem> next;
+        while ((next = pipeline.advance()).isPresent()) {
+            switch (extractItem(outputDir, next.orElseThrow(), ignoreErrors)) {
                 case EntryOutcome.Abort() -> {
                     return;
                 }
@@ -191,28 +197,16 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         }
     }
 
-    /**
-     * Extracts a single entry, retrying for as long as the error handler asks for it.
-     *
-     * @param outputDir the directory to extract the archive to
-     * @param entry the entry to extract
-     * @param ignoreErrors whether {@link ErrorHandlerChoice#SKIP_ALL} was selected for an earlier entry
-     * @param budget the budget of the current extraction
-     * @return what the extraction loop does next
-     * @throws IOException if an I/O error occurs and the error handler rethrows it
-     * @throws ArchiveLimitExceededException if the entry breaches one of the configured extraction limits
-     */
-    private EntryOutcome extractEntry(Path outputDir, Entry entry, boolean ignoreErrors, ExtractionBudget budget)
-            throws IOException {
+    private EntryOutcome extractItem(Path outputDir, ArchiveItem item, boolean ignoreErrors) throws IOException {
         while (true) {
             try {
-                processEntry(outputDir, entry, budget);
+                processItem(outputDir, item);
                 return new EntryOutcome.Continue();
             } catch (ArchiveSecurityException unsuppressible) {
                 throw unsuppressible;
             } catch (IOException ioException) {
                 ErrorHandlerChoice choice =
-                        new ExtractionErrorPolicy(errorHandler).handle(ioException, ignoreErrors, entry);
+                        new ExtractionErrorPolicy(errorHandler).handle(ioException, ignoreErrors, item.entry());
                 if (choice != RETRY) {
                     return ExtractionErrorPolicy.outcomeOf(choice);
                 }
@@ -386,37 +380,27 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         return pipeline.stream();
     }
 
-    private Optional<Entry> stripComponents(Entry e) {
-        return EntryPaths.stripComponents(e.name(), stripComponents).map(e::withName);
-    }
-
-    /**
-     * Writes the entry to the output file.
-     *
-     * @param entry the entry to write
-     * @param outputFile the file to write the entry to
-     * @param budget the budget of the current extraction
-     * @throws IOException if an I/O error occurs
-     */
-    @SuppressWarnings("try")
-    private void writeFile(Entry entry, Path outputFile, ExtractionBudget budget) throws IOException {
-        if (outputFile == null) {
-            LOGGER.warn("Output file is null for entry: {}. Skipping.", entry.name);
-            return;
-        }
+    private void writeFile(ArchiveItem item, Path outputFile) throws IOException {
+        Entry entry = item.entry();
         if (overwrite || !Files.exists(outputFile)) {
-            InputStream inputStream = openEntryStream(entry);
-            try (Closeable release = () -> closeEntryStream(inputStream)) {
-                EntryPaths.makeDirectory(outputFile.getParent());
-                try (OutputStream outputStream = Files.newOutputStream(outputFile)) {
-                    budget.meter(entry.name(), inputStream).transferTo(outputStream);
-                }
-                if (entry.mode != 0) {
-                    setAttributes(entry.mode, outputFile);
-                }
+            InputStream content = contentOf(item);
+            EntryPaths.makeDirectory(outputFile.getParent());
+            try (OutputStream outputStream = Files.newOutputStream(outputFile)) {
+                content.transferTo(outputStream);
+            }
+            if (entry.mode != 0) {
+                setAttributes(entry.mode, outputFile);
             }
         } else {
             LOGGER.debug("Skipping file entry: {} (already exists)", entry.name);
+        }
+    }
+
+    private static InputStream contentOf(ArchiveItem item) throws IOException {
+        try {
+            return item.content();
+        } catch (UncheckedIOException e) {
+            throw e.getCause();
         }
     }
 
@@ -437,22 +421,8 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         return IOUtils.toByteArray(in, declaredSize);
     }
 
-    /**
-     * Processes the entry by creating the output file and setting the attributes.
-     *
-     * @param outputDir the directory to extract the archive to
-     * @param entry the entry to process
-     * @param budget the budget of the current extraction
-     * @throws IOException if an I/O error occurs
-     * @throws ArchiveLimitExceededException if the archive breaches one of the configured extraction limits
-     */
-    private void processEntry(Path outputDir, Entry entry, ExtractionBudget budget) throws IOException {
-        if (stripComponents > 0) {
-            Optional<Entry> stripped = stripComponents(entry);
-            if (stripped.isEmpty()) return;
-            entry = stripped.orElseThrow();
-        }
-
+    private void processItem(Path outputDir, ArchiveItem item) throws IOException {
+        Entry entry = item.entry();
         Path outputFile = EntryPaths.entryFile(outputDir, entry.name);
         switch (entry.type) {
             case DIR -> {
@@ -461,11 +431,10 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
                     setAttributes(entry.mode, outputFile);
                 }
             }
-            case FILE -> writeFile(entry, outputFile, budget);
+            case FILE -> writeFile(item, outputFile);
             case SYMLINK ->
                 new SymlinkExtractor(escapingSymlinkPolicy, overwrite).extract(outputDir, entry, outputFile);
         }
-
         if (postProcessor != null) {
             postProcessor.accept(entry, outputFile);
         }

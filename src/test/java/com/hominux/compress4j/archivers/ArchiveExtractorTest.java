@@ -236,9 +236,9 @@ class ArchiveExtractorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        try (var inMemoryDecompressor =
-                InMemoryArchiveExtractor.builder(List.of(entry1, entry2)).build()) {
-            inMemoryDecompressor.setStripComponents(1);
+        try (var inMemoryDecompressor = InMemoryArchiveExtractor.builder(List.of(entry1, entry2))
+                .stripComponents(1)
+                .build()) {
 
             // when
             inMemoryDecompressor.extract(tempDir);
@@ -486,8 +486,8 @@ class ArchiveExtractorTest {
                 .build();
 
         try (var inMemoryDecompressor = InMemoryArchiveExtractor.builder(List.of(subdir, entry1, entry1a, entry2))
+                .filter(entry -> !entry.name().contains("some"))
                 .build()) {
-            inMemoryDecompressor.setEntryFilter(entry -> !entry.name().contains("some"));
 
             // when
             inMemoryDecompressor.extract(tempDir);
@@ -1083,8 +1083,9 @@ class ArchiveExtractorTest {
                 .name("a/b.txt")
                 .content("content")
                 .build();
-        try (var extractor = InMemoryArchiveExtractor.builder(List.of(entry1)).build()) {
-            extractor.setStripComponents(2);
+        try (var extractor = InMemoryArchiveExtractor.builder(List.of(entry1))
+                .stripComponents(2)
+                .build()) {
             // when
             extractor.extract(tempDir);
             // then
@@ -1097,8 +1098,9 @@ class ArchiveExtractorTest {
     void shouldCorrectlyStripComponentsForDirectoryEntryMakingItTopLevel() throws IOException {
         // given
         var entry1 = InMemoryArchiveEntry.builder().name("a/b/").type(DIR).build();
-        try (var extractor = InMemoryArchiveExtractor.builder(List.of(entry1)).build()) {
-            extractor.setStripComponents(1);
+        try (var extractor = InMemoryArchiveExtractor.builder(List.of(entry1))
+                .stripComponents(1)
+                .build()) {
             // when
             extractor.extract(tempDir);
             // then
@@ -1111,8 +1113,9 @@ class ArchiveExtractorTest {
         // given
         var entry =
                 InMemoryArchiveEntry.builder().name("a/b/c.txt").content("test").build();
-        try (var extractor = InMemoryArchiveExtractor.builder(List.of(entry)).build()) {
-            extractor.setStripComponents(3);
+        try (var extractor = InMemoryArchiveExtractor.builder(List.of(entry))
+                .stripComponents(3)
+                .build()) {
             // when
             extractor.extract(tempDir);
             // then
@@ -1128,8 +1131,9 @@ class ArchiveExtractorTest {
                 .name("a/b.txt")
                 .content("content")
                 .build();
-        try (var extractor = InMemoryArchiveExtractor.builder(List.of(entry1)).build()) {
-            extractor.setStripComponents(3);
+        try (var extractor = InMemoryArchiveExtractor.builder(List.of(entry1))
+                .stripComponents(3)
+                .build()) {
             // when
             extractor.extract(tempDir);
             // then
@@ -1775,8 +1779,8 @@ class ArchiveExtractorTest {
                     InMemoryArchiveEntry.builder().name("b").content("b").build(),
                     InMemoryArchiveEntry.builder().name("c").content("c").build());
 
-            try (var extractor = InMemoryArchiveExtractor.builder(entries).build()) {
-                extractor.setMaxEntries(2);
+            try (var extractor =
+                    InMemoryArchiveExtractor.builder(entries).maxEntries(2).build()) {
 
                 // when
                 assertThatThrownBy(() -> extractor.extract(tempDir))
@@ -1797,9 +1801,9 @@ class ArchiveExtractorTest {
                     .content("0123456789")
                     .build();
 
-            try (var extractor =
-                    InMemoryArchiveExtractor.builder(List.of(entry)).build()) {
-                extractor.setMaxEntrySize(4);
+            try (var extractor = InMemoryArchiveExtractor.builder(List.of(entry))
+                    .maxEntrySize(4)
+                    .build()) {
 
                 // when / then
                 assertThatThrownBy(() -> extractor.extract(tempDir))
@@ -1838,13 +1842,14 @@ class ArchiveExtractorTest {
                     .build();
             var released = new AtomicInteger();
 
-            try (var extractor = new InMemoryArchiveExtractor(InMemoryArchiveExtractor.builder(List.of(entry))) {
-                @Override
-                protected void closeEntryStream(InputStream stream) {
-                    released.incrementAndGet();
-                }
-            }) {
-                extractor.setMaxEntrySize(4);
+            try (var extractor =
+                    new InMemoryArchiveExtractor(
+                            InMemoryArchiveExtractor.builder(List.of(entry)).maxEntrySize(4)) {
+                        @Override
+                        protected void closeEntryStream(InputStream stream) {
+                            released.incrementAndGet();
+                        }
+                    }) {
 
                 // when
                 assertThatThrownBy(() -> extractor.extract(tempDir)).isInstanceOf(ArchiveLimitExceededException.class);
@@ -1863,13 +1868,14 @@ class ArchiveExtractorTest {
                     .build();
             var releaseFailure = new IOException("release failed");
 
-            try (var extractor = new InMemoryArchiveExtractor(InMemoryArchiveExtractor.builder(List.of(entry))) {
-                @Override
-                protected void closeEntryStream(InputStream stream) throws IOException {
-                    throw releaseFailure;
-                }
-            }) {
-                extractor.setMaxEntrySize(4);
+            try (var extractor =
+                    new InMemoryArchiveExtractor(
+                            InMemoryArchiveExtractor.builder(List.of(entry)).maxEntrySize(4)) {
+                        @Override
+                        protected void closeEntryStream(InputStream stream) throws IOException {
+                            throw releaseFailure;
+                        }
+                    }) {
 
                 // when / then
                 assertThatThrownBy(() -> extractor.extract(tempDir))
@@ -1891,8 +1897,8 @@ class ArchiveExtractorTest {
                             .content("12345")
                             .build());
 
-            try (var extractor = InMemoryArchiveExtractor.builder(entries).build()) {
-                extractor.setMaxTotalSize(8);
+            try (var extractor =
+                    InMemoryArchiveExtractor.builder(entries).maxTotalSize(8).build()) {
 
                 // when
                 assertThatThrownBy(() -> extractor.extract(tempDir))
@@ -1911,9 +1917,10 @@ class ArchiveExtractorTest {
                     InMemoryArchiveEntry.builder().name("a").content("a").build(),
                     InMemoryArchiveEntry.builder().name("b").content("b").build());
 
-            try (var extractor = InMemoryArchiveExtractor.builder(entries).build()) {
-                extractor.setMaxEntries(1);
-                extractor.setErrorHandler((entry, exception) -> SKIP_ALL);
+            try (var extractor = InMemoryArchiveExtractor.builder(entries)
+                    .maxEntries(1)
+                    .errorHandler((entry, exception) -> SKIP_ALL)
+                    .build()) {
 
                 // when / then
                 assertThatThrownBy(() -> extractor.extract(tempDir)).isInstanceOf(ArchiveLimitExceededException.class);
@@ -1949,14 +1956,14 @@ class ArchiveExtractorTest {
                     InMemoryArchiveEntry.builder().name("b").content("b").build());
             var secondDir = Files.createDirectory(tempDir.resolve("second"));
 
-            try (var extractor = InMemoryArchiveExtractor.builder(entries).build()) {
-                extractor.setMaxEntries(2);
+            try (var extractor =
+                    InMemoryArchiveExtractor.builder(entries).maxEntries(2).build()) {
                 extractor.extract(tempDir);
             }
 
             // when a fresh extractor runs again, the counters start from zero
-            try (var extractor = InMemoryArchiveExtractor.builder(entries).build()) {
-                extractor.setMaxEntries(2);
+            try (var extractor =
+                    InMemoryArchiveExtractor.builder(entries).maxEntries(2).build()) {
                 extractor.extract(secondDir);
 
                 // then
@@ -2034,5 +2041,55 @@ class ArchiveExtractorTest {
 
         // Then
         assertThat(Files.isSymbolicLink(out.resolve("link"))).isTrue();
+    }
+
+    @Test
+    void extractAfterStreamIsRejected(@TempDir Path out) throws IOException {
+        var entries =
+                List.of(InMemoryArchiveEntry.builder().name("a").content("1").build());
+        try (var extractor = InMemoryArchiveExtractor.builder(entries).build()) {
+            // When
+            extractor.stream().toList();
+
+            // Then
+            assertThatThrownBy(() -> extractor.extract(out)).isInstanceOf(IllegalStateException.class);
+        }
+    }
+
+    @Test
+    void extractTwiceIsRejected(@TempDir Path out) throws IOException {
+        var entries =
+                List.of(InMemoryArchiveEntry.builder().name("a").content("1").build());
+        try (var extractor = InMemoryArchiveExtractor.builder(entries).build()) {
+            // When
+            extractor.extract(out);
+
+            // Then
+            assertThatThrownBy(() -> extractor.extract(out)).isInstanceOf(IllegalStateException.class);
+        }
+    }
+
+    @Test
+    void extractFiltersOnStrippedName(@TempDir Path out) throws IOException {
+        var entries = List.of(
+                InMemoryArchiveEntry.builder()
+                        .name("root/keep.txt")
+                        .content("k")
+                        .build(),
+                InMemoryArchiveEntry.builder()
+                        .name("root/skip.txt")
+                        .content("s")
+                        .build());
+        try (var extractor = InMemoryArchiveExtractor.builder(entries)
+                .stripComponents(1)
+                .filter(e -> !e.name().equals("skip.txt"))
+                .build()) {
+            // When
+            extractor.extract(out);
+        }
+
+        // Then
+        assertThat(out.resolve("keep.txt")).hasContent("k");
+        assertThat(out.resolve("skip.txt")).doesNotExist();
     }
 }

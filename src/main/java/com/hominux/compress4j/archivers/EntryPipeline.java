@@ -74,6 +74,17 @@ final class EntryPipeline {
         return Optional.empty();
     }
 
+    void release(Throwable failure) throws IOException {
+        try {
+            releaseContent();
+        } catch (IOException releaseFailure) {
+            if (failure == null) {
+                throw releaseFailure;
+            }
+            failure.addSuppressed(releaseFailure);
+        }
+    }
+
     InputStream content(ArchiveItem item) {
         if (!isCurrent(item.position())) {
             throw new IllegalStateException(staleMessage(item.entry()));
