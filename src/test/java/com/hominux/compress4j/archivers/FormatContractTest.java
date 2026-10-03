@@ -18,12 +18,16 @@ package com.hominux.compress4j.archivers;
 import static com.hominux.compress4j.archivers.catalog.Capability.DIRECTORIES;
 import static com.hominux.compress4j.archivers.catalog.Capability.LAST_MODIFIED;
 import static com.hominux.compress4j.archivers.catalog.Capability.MODES;
+import static com.hominux.compress4j.archivers.catalog.Capability.STREAM_INPUT;
+import static com.hominux.compress4j.archivers.catalog.Capability.STREAM_OUTPUT;
 import static com.hominux.compress4j.archivers.catalog.Capability.SYMLINKS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
 
 import com.hominux.compress4j.archivers.catalog.ArchiveFormat;
 import com.hominux.compress4j.archivers.catalog.FormatCatalog;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -174,5 +178,36 @@ class FormatContractTest {
         var entries = entries(streaming, roundTrip(zip));
         assertThat(entries.get("d/run.sh").mode()).isZero();
         assertThat(entries.get("link").type()).isEqualTo(ArchiveExtractor.Entry.Type.FILE);
+    }
+
+    static Stream<ArchiveFormat> streamCapable() {
+        return FormatCatalog.writable().filter(f -> f.has(STREAM_INPUT) && f.has(STREAM_OUTPUT));
+    }
+
+    @ParameterizedTest
+    @MethodSource("streamCapable")
+    void streamRoundTrip(ArchiveFormat format) throws IOException {
+        var bytes = new ByteArrayOutputStream();
+        try (var creator = format.createOnStream().orElseThrow().apply(bytes)) {
+            creator.addFile("a.txt", "alpha".getBytes(StandardCharsets.UTF_8));
+        }
+        try (var extractor =
+                format.readFromStream().orElseThrow().apply(new ByteArrayInputStream(bytes.toByteArray()))) {
+            var item = extractor.stream().findFirst().orElseThrow();
+            assertThat(new String(item.content().readAllBytes(), StandardCharsets.UTF_8))
+                    .isEqualTo("alpha");
+        }
+    }
+
+    @Test
+    void streamBuildersExistExactlyWhereDeclared() {
+        assertThat(FormatCatalog.all()).allSatisfy(f -> {
+            assertThat(f.readFromStream().isPresent())
+                    .as(f.name() + " stream input")
+                    .isEqualTo(f.has(STREAM_INPUT));
+            assertThat(f.createOnStream().isPresent())
+                    .as(f.name() + " stream output")
+                    .isEqualTo(f.has(STREAM_OUTPUT));
+        });
     }
 }
