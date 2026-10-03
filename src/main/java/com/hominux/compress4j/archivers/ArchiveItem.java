@@ -16,6 +16,8 @@
 package com.hominux.compress4j.archivers;
 
 import java.io.InputStream;
+import java.nio.file.attribute.FileTime;
+import java.time.Instant;
 
 /**
  * One entry of an archive being read, with access to its content.
@@ -57,6 +59,23 @@ public final class ArchiveItem {
      */
     public InputStream content() {
         return pipeline.content(this);
+    }
+
+    /**
+     * Describes this item for {@link ArchiveCreator#add}. The returned file source reads this item's content, so it
+     * must be written before the stream advances, as {@link ArchiveCreator#addAll} does.
+     *
+     * @return the entry as a source; last-modified falls back to now when the archive records none
+     */
+    public EntrySource toSource() {
+        FileTime modified = entry.lastModified().orElseGet(() -> FileTime.from(Instant.now()));
+        int mode = entry.mode() & 07777;
+        return switch (entry.type()) {
+            case DIR -> new EntrySource.Directory(entry.name(), mode, modified);
+            case SYMLINK ->
+                new EntrySource.Symlink(entry.name(), entry.linkTarget().orElse(""), mode, modified);
+            case FILE -> new EntrySource.File(entry.name(), mode, modified, entry.size(), this::content);
+        };
     }
 
     long position() {
