@@ -54,6 +54,7 @@ import com.hominux.compress4j.archivers.memory.InMemoryArchiveExtractor.InMemory
 import com.hominux.compress4j.archivers.memory.InMemoryArchiveInputStream;
 import com.hominux.compress4j.assertion.Compress4JAssertions;
 import com.hominux.compress4j.exceptions.ArchiveLimitExceededException;
+import com.hominux.compress4j.exceptions.UnsafeEntryException;
 import com.hominux.compress4j.test.util.log.InMemoryLogAppender;
 import java.io.IOException;
 import java.io.InputStream;
@@ -2004,5 +2005,40 @@ class ArchiveExtractorTest {
             // Then
             assertThat(caught).isInstanceOf(com.hominux.compress4j.exceptions.UnsafeEntryException.class);
         }
+    }
+
+    @Test
+    void escapingSymlinkIsRejectedByDefault(@TempDir Path out) throws IOException {
+        // Given
+        var entries = List.of(InMemoryArchiveEntry.builder()
+                .name("link")
+                .type(ArchiveExtractor.Entry.Type.SYMLINK)
+                .linkName("../../outside")
+                .build());
+
+        try (var extractor = InMemoryArchiveExtractor.builder(entries).build()) {
+            // Then
+            assertThatThrownBy(() -> extractor.extract(out)).isInstanceOf(UnsafeEntryException.class);
+        }
+    }
+
+    @Test
+    void escapingSymlinkIsExtractedWhenAllowed(@TempDir Path out) throws IOException {
+        // Given
+        var entries = List.of(InMemoryArchiveEntry.builder()
+                .name("link")
+                .type(ArchiveExtractor.Entry.Type.SYMLINK)
+                .linkName("../../outside")
+                .build());
+
+        try (var extractor = InMemoryArchiveExtractor.builder(entries)
+                .escapingSymlinkPolicy(ArchiveExtractor.EscapingSymlinkPolicy.ALLOW)
+                .build()) {
+            // When
+            extractor.extract(out);
+        }
+
+        // Then
+        assertThat(Files.isSymbolicLink(out.resolve("link"))).isTrue();
     }
 }

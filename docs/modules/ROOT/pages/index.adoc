@@ -96,10 +96,11 @@ IMPORTANT: Some compression formats may require additional support libraries to 
 Path traversal is always rejected: entry paths are resolved canonically against the output directory, so both `../`
 entries and writes that would follow a symlink out of the output directory fail with an `IOException`.
 
-Two things are **not** restricted by default, because they are legitimate in archives you produced yourself:
+Escaping symlinks are rejected by default with `UnsafeEntryException`. Use `escapingSymlinkPolicy(ALLOW)` for
+archives you produced yourself, or `RELATIVIZE_ABSOLUTE` to rewrite absolute targets inside the output directory.
 
-* **Escaping symlinks.** Use `escapingSymlinkPolicy(DISALLOW)` to reject them, or `RELATIVIZE_ABSOLUTE` to rewrite
-  absolute targets so they stay inside the output directory.
+One thing is **not** restricted by default, because it is legitimate in archives you produced yourself:
+
 * **How far an archive may expand.** Use `maxEntries`, `maxEntrySize` and `maxTotalSize` to bound it. Breaching a limit
   throws `ArchiveLimitExceededException`, which an error handler cannot suppress.
 

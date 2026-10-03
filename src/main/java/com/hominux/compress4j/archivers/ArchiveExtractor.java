@@ -76,7 +76,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
     /** Archive input stream to be used for extraction. */
     protected A archiveInputStream;
     /** Escaping symlink policy for the extractor. */
-    protected ArchiveExtractor.EscapingSymlinkPolicy escapingSymlinkPolicy = EscapingSymlinkPolicy.ALLOW;
+    protected ArchiveExtractor.EscapingSymlinkPolicy escapingSymlinkPolicy = EscapingSymlinkPolicy.DISALLOW;
     /** Filter for the extractor. */
     private Predicate<Entry> entryFilter = ACCEPT_ALL;
     /** Error handler for the extractor. */
@@ -507,6 +507,8 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * <p>Example: {@code foo -> /opt/foo}
      *
      * <p>or {@code foo -> ../foo}
+     *
+     * <p>Extractors default to {@link #DISALLOW}.
      */
     public enum EscapingSymlinkPolicy {
         /**
@@ -562,7 +564,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
             B extends ArchiveExtractorBuilder<A, B, C>,
             C extends ArchiveExtractor<A>> {
         /** Input stream to read from for extraction. */
-        protected ArchiveExtractor.EscapingSymlinkPolicy escapingSymlinkPolicy = EscapingSymlinkPolicy.ALLOW;
+        protected ArchiveExtractor.EscapingSymlinkPolicy escapingSymlinkPolicy = EscapingSymlinkPolicy.DISALLOW;
 
         Predicate<Entry> entryFilter = ACCEPT_ALL;
 
@@ -622,7 +624,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         }
 
         /**
-         * Sets the escaping symlink policy for the extractor.
+         * Sets the escaping symlink policy for the extractor. Defaults to {@link EscapingSymlinkPolicy#DISALLOW}.
          *
          * @param policy the escaping symlink policy to set
          * @return the instance of the {@link ArchiveExtractor.ArchiveExtractorBuilder}
