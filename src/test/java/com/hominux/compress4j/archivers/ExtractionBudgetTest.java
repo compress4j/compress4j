@@ -21,7 +21,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.hominux.compress4j.exceptions.ArchiveLimitExceededException;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import org.junit.jupiter.api.Test;
 
@@ -51,48 +50,47 @@ class ExtractionBudgetTest {
     }
 
     @Test
-    void transfer_copiesEverythingWhenUnlimited() throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExtractionBudget(ExtractionLimits.NONE).transfer("a", bytes(50_000), out);
-        assertThat(out.size()).isEqualTo(50_000);
-    }
+    void meterThrowsOnTheReadThatCrossesTheEntryLimit() throws IOException {
+        // Given
+        var budget = new ExtractionBudget(new ExtractionLimits(-1, 4, -1));
+        var in = budget.meter("e", new ByteArrayInputStream(new byte[10]));
 
-    @Test
-    void transfer_allowsAnEntryAtTheEntryLimit() throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        new ExtractionBudget(ExtractionLimits.NONE.withMaxEntrySize(4)).transfer("a", bytes(4), out);
-        assertThat(out.size()).isEqualTo(4);
-    }
+        // When
+        int first = in.read(new byte[4]);
 
-    @Test
-    void transfer_throwsWhenAnEntryExceedsTheEntryLimit() {
-        ExtractionBudget budget = new ExtractionBudget(ExtractionLimits.NONE.withMaxEntrySize(4));
-        assertThatThrownBy(() -> budget.transfer("big.bin", bytes(5), new ByteArrayOutputStream()))
+        // Then
+        assertThat(first).isEqualTo(4);
+        assertThatThrownBy(() -> in.read())
                 .isInstanceOf(ArchiveLimitExceededException.class)
-                .hasMessage("Entry 'big.bin' expands beyond the maximum entry size of 4 bytes");
+                .hasMessageContaining("'e'");
     }
 
     @Test
-    void transfer_throwsWhenTheArchiveExceedsTheTotalLimit() throws IOException {
-        ExtractionBudget budget = new ExtractionBudget(ExtractionLimits.NONE.withMaxTotalSize(6));
-        budget.transfer("a", bytes(4), new ByteArrayOutputStream());
-        assertThatThrownBy(() -> budget.transfer("b", bytes(4), new ByteArrayOutputStream()))
-                .isInstanceOf(ArchiveLimitExceededException.class)
-                .hasMessage("Archive expands beyond the maximum total size of 6 bytes at entry 'b'");
+    void meterCountsTotalAcrossEntries() throws IOException {
+        // Given
+        var budget = new ExtractionBudget(new ExtractionLimits(-1, -1, 6));
+
+        // When
+        budget.meter("a", new ByteArrayInputStream(new byte[4])).readAllBytes();
+        var second = budget.meter("b", new ByteArrayInputStream(new byte[4]));
+
+        // Then
+        assertThatThrownBy(second::readAllBytes).isInstanceOf(ArchiveLimitExceededException.class);
     }
 
     @Test
-    void newBudget_startsFromZero() throws IOException {
-        ExtractionLimits limits = ExtractionLimits.NONE.withMaxTotalSize(4).withMaxEntries(1);
-        ExtractionBudget first = new ExtractionBudget(limits);
-        first.countEntry();
-        first.transfer("a", bytes(4), new ByteArrayOutputStream());
+    void meterCountsSkippedBytes() throws IOException {
+        // Given
+        var budget = new ExtractionBudget(new ExtractionLimits(-1, 4, -1));
+        var in = budget.meter("s", new ByteArrayInputStream(new byte[10]));
 
-        ExtractionBudget second = new ExtractionBudget(limits);
-        assertThatCode(() -> {
-                    second.countEntry();
-                    second.transfer("a", bytes(4), new ByteArrayOutputStream());
-                })
-                .doesNotThrowAnyException();
+        // Then
+        assertThatThrownBy(() -> in.skip(10)).isInstanceOf(ArchiveLimitExceededException.class);
+    }
+
+    @Test
+    void unlimitedBudgetReturnsTheSameStream() {
+        var raw = new ByteArrayInputStream(new byte[1]);
+        assertThat(new ExtractionBudget(ExtractionLimits.NONE).meter("x", raw)).isSameAs(raw);
     }
 }

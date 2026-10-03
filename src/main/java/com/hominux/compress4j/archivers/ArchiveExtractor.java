@@ -438,7 +438,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
             try (Closeable release = () -> closeEntryStream(inputStream)) {
                 EntryPaths.makeDirectory(outputFile.getParent());
                 try (OutputStream outputStream = Files.newOutputStream(outputFile)) {
-                    budget.transfer(entry.name(), inputStream, outputStream);
+                    budget.meter(entry.name(), inputStream).transferTo(outputStream);
                 }
                 if (entry.mode != 0) {
                     setAttributes(entry.mode, outputFile);
