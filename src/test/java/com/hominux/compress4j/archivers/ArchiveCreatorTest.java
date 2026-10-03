@@ -68,6 +68,8 @@ import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.OptionalLong;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -159,38 +161,12 @@ class ArchiveCreatorTest {
 
             InOrder inOrder = inOrder(archive);
             inOrder.verify(archive).addFile(path);
-            inOrder.verify(archive).addFile(eq(fileName), eq(path), any(BasicFileAttributes.class), eq(modTime));
+            inOrder.verify(archive).addFile(fileName, path);
+            inOrder.verify(archive).add(named(fileName));
             mockArchive.verify(() -> sanitiseName(fileName));
-            inOrder.verify(archive).accept(fileName, path);
             inOrder.verify(archive)
                     .writeFile(
                             eq(fileName), any(InputStream.class), eq(OptionalLong.of(3L)), eq(fileMode), eq(modTime));
-        }
-    }
-
-    @Test
-    void shouldAddFileWithPathAppliesFilter() throws IOException {
-        // given
-        String fileName = "file_name.txt";
-        var path = createFile(tempDir, fileName, "789");
-
-        //noinspection rawtypes
-        try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
-                InMemoryArchiveCreator archive =
-                        spy(new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out)))) {
-            archive.withFilter((name, p) -> false);
-
-            // when
-            archive.addFile(path);
-
-            // then
-            InOrder inOrder = inOrder(archive);
-            inOrder.verify(archive).addFile(path);
-            inOrder.verify(archive)
-                    .addFile(eq(fileName), eq(path), any(BasicFileAttributes.class), any(FileTime.class));
-            mockArchive.verify(() -> sanitiseName(fileName));
-            inOrder.verify(archive).accept(fileName, path);
-            inOrder.verifyNoMoreInteractions();
         }
     }
 
@@ -202,43 +178,17 @@ class ArchiveCreatorTest {
 
         //noinspection rawtypes
         try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
-                InMemoryArchiveCreator archive = spy(new InMemoryArchiveCreator(
-                        new InMemoryArchiveCreatorBuilder(out).filter((name, p) -> false)))) {
+                InMemoryArchiveCreator archive = rejectingAll()) {
             // when
             archive.addFile(path);
 
             // then
             InOrder inOrder = inOrder(archive);
             inOrder.verify(archive).addFile(path);
-            inOrder.verify(archive)
-                    .addFile(eq(fileName), eq(path), any(BasicFileAttributes.class), any(FileTime.class));
+            inOrder.verify(archive).addFile(fileName, path);
+            inOrder.verify(archive).add(named(fileName));
             mockArchive.verify(() -> sanitiseName(fileName));
-            inOrder.verify(archive).accept(fileName, path);
             inOrder.verifyNoMoreInteractions();
-        }
-    }
-
-    @Test
-    void shouldAcceptEverythingAfterFilterIsResetToNull() throws IOException {
-        // given
-        String fileName = "file_name.txt";
-        var path = createFile(tempDir, fileName, "789");
-
-        try (InMemoryArchiveCreator archive = spy(new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out)))) {
-            archive.withFilter((name, p) -> false);
-            archive.withFilter(null);
-
-            // when
-            archive.addFile(path);
-
-            // then
-            verify(archive)
-                    .writeFile(
-                            eq(fileName),
-                            any(InputStream.class),
-                            eq(OptionalLong.of(3L)),
-                            anyInt(),
-                            any(FileTime.class));
         }
     }
 
@@ -265,8 +215,7 @@ class ArchiveCreatorTest {
             InOrder inOrder = inOrder(archive);
             inOrder.verify(archive).addFile(entryName, path);
             mockArchive.verify(() -> sanitiseName(entryName));
-            inOrder.verify(archive).addFile(eq(entryName), eq(path), any(BasicFileAttributes.class), eq(modTime));
-            inOrder.verify(archive).accept(entryName, path);
+            inOrder.verify(archive).add(named(entryName));
             inOrder.verify(archive)
                     .writeFile(
                             eq(entryName), any(InputStream.class), eq(OptionalLong.of(3L)), eq(fileMode), eq(modTime));
@@ -291,8 +240,7 @@ class ArchiveCreatorTest {
             archive.addFile(entryName, path, modTime);
 
             // then
-            verify(archive).accept(entryName, path);
-            verify(archive).addFile(eq(entryName), eq(path), any(BasicFileAttributes.class), eq(modTime));
+            verify(archive).add(named(entryName));
             mockArchive.verify(() -> sanitiseName(entryName));
             verify(archive)
                     .writeFile(
@@ -320,7 +268,7 @@ class ArchiveCreatorTest {
 
             // then
             mockArchive.verify(() -> sanitiseName(entryName));
-            verify(archive).accept(entryName, null);
+            verify(archive).add(named(entryName));
             FileTime modTime = FileTime.from(mockedInstant);
             verify(archive)
                     .writeFile(eq(entryName), any(InputStream.class), eq(OptionalLong.of(3L)), eq(0), eq(modTime));
@@ -334,12 +282,7 @@ class ArchiveCreatorTest {
 
         //noinspection rawtypes
         try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
-                MockedStatic<Instant> mockedStaticInstant = mockStatic(Instant.class, CALLS_REAL_METHODS);
-                InMemoryArchiveCreator archive =
-                        spy(new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out)))) {
-            archive.withFilter((name, p) -> false);
-            var mockedInstant = Instant.now();
-            mockedStaticInstant.when(Instant::now).thenReturn(mockedInstant);
+                InMemoryArchiveCreator archive = rejectingAll()) {
             byte[] content = "789".getBytes();
 
             // when
@@ -348,7 +291,7 @@ class ArchiveCreatorTest {
             // then
             mockArchive.verify(() -> sanitiseName(entryName));
             InOrder inOrder = inOrder(archive);
-            inOrder.verify(archive).accept(entryName, null);
+            inOrder.verify(archive).add(named(entryName));
             inOrder.verifyNoMoreInteractions();
         }
     }
@@ -371,14 +314,14 @@ class ArchiveCreatorTest {
 
             // then
             mockArchive.verify(() -> sanitiseName(entryName));
-            verify(archive).accept(entryName, null);
+            verify(archive).add(named(entryName));
             verify(archive)
                     .writeFile(eq(entryName), any(InputStream.class), eq(OptionalLong.of(3L)), eq(0), eq(modTime));
         }
     }
 
     @Test
-    void shouldAddFileWithNameAndInputStream() throws IOException {
+    void shouldAddFileWithNameInputStreamAndSize() throws IOException {
         // given
         String entryName = "additional_name.txt";
 
@@ -394,45 +337,39 @@ class ArchiveCreatorTest {
             var content = new ByteArrayInputStream("789".getBytes());
 
             // when
-            archive.addFile(entryName, content);
+            archive.addFile(entryName, content, 3);
 
             // then
             mockArchive.verify(() -> sanitiseName(entryName));
-            verify(archive).accept(entryName, null);
+            verify(archive).add(named(entryName));
             verify(archive)
-                    .writeFile(eq(entryName), any(InputStream.class), eq(OptionalLong.empty()), eq(0), eq(modTime));
+                    .writeFile(eq(entryName), any(InputStream.class), eq(OptionalLong.of(3L)), eq(0), eq(modTime));
         }
     }
 
     @Test
-    void shouldAddFileWithNameAndInputStreamAppliesFilter() throws IOException {
+    void shouldAddFileWithNameInputStreamAndSizeAppliesFilter() throws IOException {
         // given
         String entryName = "additional_name.txt";
 
         //noinspection rawtypes
         try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
-                MockedStatic<Instant> mockedStaticInstant = mockStatic(Instant.class, CALLS_REAL_METHODS);
-                InMemoryArchiveCreator archive =
-                        spy(new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out)))) {
-            archive.withFilter((name, p) -> false);
-
-            var mockedInstant = Instant.now();
-            mockedStaticInstant.when(Instant::now).thenReturn(mockedInstant);
+                InMemoryArchiveCreator archive = rejectingAll()) {
             var content = new ByteArrayInputStream("789".getBytes());
 
             // when
-            archive.addFile(entryName, content);
+            archive.addFile(entryName, content, 3);
 
             // then
             mockArchive.verify(() -> sanitiseName(entryName));
             InOrder inOrder = inOrder(archive);
-            inOrder.verify(archive).accept(entryName, null);
+            inOrder.verify(archive).add(named(entryName));
             inOrder.verifyNoMoreInteractions();
         }
     }
 
     @Test
-    void shouldAddFileWithNameInputStreamAndModTime() throws IOException {
+    void shouldAddFileWithNameInputStreamSizeAndModTime() throws IOException {
         // given
         String entryName = "additional_name.txt";
         FileTime modTime = FileTime.from(Instant.now());
@@ -445,14 +382,34 @@ class ArchiveCreatorTest {
             var content = new ByteArrayInputStream("789".getBytes());
 
             // when
-            archive.addFile(entryName, content, modTime);
+            archive.addFile(entryName, content, 3, modTime);
 
             // then
             mockArchive.verify(() -> sanitiseName(entryName));
-            verify(archive).accept(entryName, null);
+            verify(archive).add(named(entryName));
             verify(archive)
-                    .writeFile(eq(entryName), any(InputStream.class), eq(OptionalLong.empty()), eq(0), eq(modTime));
+                    .writeFile(eq(entryName), any(InputStream.class), eq(OptionalLong.of(3L)), eq(0), eq(modTime));
         }
+    }
+
+    @Test
+    void shouldNotCloseTheCallersInputStream() throws IOException {
+        // given
+        var closed = new boolean[] {false};
+        var content = new ByteArrayInputStream("789".getBytes()) {
+            @Override
+            public void close() {
+                closed[0] = true;
+            }
+        };
+
+        try (InMemoryArchiveCreator archive = new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out))) {
+            // when
+            archive.addFile("a.txt", content, 3);
+        }
+
+        // then
+        assertThat(closed[0]).isFalse();
     }
 
     @Test
@@ -473,7 +430,7 @@ class ArchiveCreatorTest {
             archive.addDirectory(entryName);
 
             // then
-            verify(archive).accept(entryName, null);
+            verify(archive).add(named(entryName));
             mockArchive.verify(() -> sanitiseName(entryName));
             verify(archive).writeDirectory(entryName, 0, modTime);
         }
@@ -486,16 +443,13 @@ class ArchiveCreatorTest {
 
         //noinspection rawtypes
         try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
-                InMemoryArchiveCreator archive =
-                        spy(new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out)))) {
-            archive.withFilter((name, p) -> false);
-
+                InMemoryArchiveCreator archive = rejectingAll()) {
             // when
             archive.addDirectory(entryName);
 
             // then
             InOrder inOrder = inOrder(archive);
-            inOrder.verify(archive).accept(entryName, null);
+            inOrder.verify(archive).add(named(entryName));
             mockArchive.verify(() -> sanitiseName(entryName));
             inOrder.verifyNoMoreInteractions();
         }
@@ -515,7 +469,7 @@ class ArchiveCreatorTest {
             archive.addDirectory(entryName, modTime);
 
             // then
-            verify(archive).accept(entryName, null);
+            verify(archive).add(named(entryName));
             mockArchive.verify(() -> sanitiseName(entryName));
             verify(archive).writeDirectory(entryName, 0, modTime);
         }
@@ -525,12 +479,13 @@ class ArchiveCreatorTest {
     void shouldAddDirectoryRecursivelyWithPath() throws IOException {
         // given
         var base = tempDir.resolve("base");
-        var file1 = createFile(base, "file1", "1");
+        createFile(base, "file1", "1");
         var subDir1 = base.resolve("subDir1");
         var file11 = createFile(subDir1, "file11", "11");
         String file11RelativeName = base.relativize(file11).toString();
         @SuppressWarnings("OctalInteger")
         int file11Mode = IS_OS_WINDOWS ? 0 : 0644;
+        int subDir1Mode = FileModes.of(subDir1, IS_OS_WINDOWS);
 
         //noinspection rawtypes
         try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
@@ -545,18 +500,13 @@ class ArchiveCreatorTest {
             mockArchive.verify(() -> sanitiseName("file1"), times(2));
             mockArchive.verify(() -> sanitiseName("subDir1"), times(2));
             mockArchive.verify(() -> sanitiseName(file11RelativeName), atLeastOnce());
-            verify(archive).accept("subDir1", subDir1);
+            verify(archive).add(named("subDir1"));
+            verify(archive, never()).addDirectory(anyString(), any(FileTime.class));
             FileTime subDir1ModTime = Files.getLastModifiedTime(subDir1);
-            verify(archive).addDirectory(eq("subDir1"), assertArg(time -> assertThat(
+            verify(archive).writeDirectory(eq("subDir1"), eq(subDir1Mode), assertArg(time -> assertThat(
                             time.toInstant().truncatedTo(ChronoUnit.SECONDS))
                     .isEqualTo(subDir1ModTime.toInstant().truncatedTo(ChronoUnit.SECONDS))));
-            verify(archive).accept("subDir1", null);
-            verify(archive).writeDirectory(eq("subDir1"), anyInt(), assertArg(time -> assertThat(
-                            time.toInstant().truncatedTo(ChronoUnit.SECONDS))
-                    .isEqualTo(subDir1ModTime.toInstant().truncatedTo(ChronoUnit.SECONDS))));
-            verify(archive, times(2)).accept("subDir1/file11", file11);
-            verify(archive)
-                    .addFile(eq("subDir1/file11"), eq(file11), any(BasicFileAttributes.class), any(FileTime.class));
+            verify(archive).add(named("subDir1/file11"));
             FileTime file11ModTime = Files.getLastModifiedTime(file11);
             verify(archive)
                     .writeFile(
@@ -565,9 +515,8 @@ class ArchiveCreatorTest {
                             eq(OptionalLong.of(2L)),
                             eq(file11Mode),
                             eq(file11ModTime));
-            verify(archive, times(2)).accept("file1", file1);
-            verify(archive).addFile(eq("file1"), eq(file1), any(BasicFileAttributes.class), any(FileTime.class));
-            FileTime file1ModTime = Files.getLastModifiedTime(file1);
+            verify(archive).add(named("file1"));
+            FileTime file1ModTime = Files.getLastModifiedTime(base.resolve("file1"));
             verify(archive)
                     .writeFile(
                             eq("file1"),
@@ -582,25 +531,28 @@ class ArchiveCreatorTest {
     void shouldAddDirectoryRecursivelyWithPathAppliesFilter() throws IOException {
         // given
         var base = tempDir.resolve("base");
-        var file1 = createFile(base, "file1", "1");
+        createFile(base, "file1", "1");
         var subDir1 = base.resolve("subDir1");
         createFile(subDir1, "file11", "11");
+        List<String> offered = new ArrayList<>();
 
         //noinspection rawtypes
         try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
-                InMemoryArchiveCreator archive =
-                        spy(new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out)))) {
-            archive.withFilter((name, p) -> false);
+                InMemoryArchiveCreator archive = spy(new InMemoryArchiveCreator(
+                        new InMemoryArchiveCreatorBuilder(out).filter(s -> offered.add(s.name()) && false)))) {
 
             // when
             archive.addDirectoryRecursively(base);
 
             // then
             verify(archive).addDirectoryRecursively("", base);
-            mockArchive.verify(() -> sanitiseName("file1"));
+            mockArchive.verify(() -> sanitiseName("file1"), times(2));
             mockArchive.verify(() -> sanitiseName("subDir1"));
-            verify(archive).accept("subDir1", subDir1);
-            verify(archive).accept("file1", file1);
+            verify(archive, never()).add(named("subDir1"));
+            verify(archive, never()).add(named("subDir1/file11"));
+            assertThat(offered).containsExactlyInAnyOrder("subDir1", "file1");
+            verify(archive).add(named("file1"));
+            verify(archive, never()).writeFile(anyString(), any(), any(OptionalLong.class), anyInt(), any());
         }
     }
 
@@ -615,6 +567,8 @@ class ArchiveCreatorTest {
         String file11RelativeName = base.relativize(file11).toString();
         @SuppressWarnings("OctalInteger")
         int file11Mode = IS_OS_WINDOWS ? 0 : 0644;
+        int baseMode = FileModes.of(base, IS_OS_WINDOWS);
+        int subDir1Mode = FileModes.of(subDir1, IS_OS_WINDOWS);
 
         //noinspection rawtypes
         try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
@@ -628,22 +582,15 @@ class ArchiveCreatorTest {
             mockArchive.verify(() -> sanitiseName("file1"));
             mockArchive.verify(() -> sanitiseName("subDir1"));
             mockArchive.verify(() -> sanitiseName(file11RelativeName));
-            verify(archive).accept(top, null);
+            verify(archive).add(named(top));
             FileTime baseModTime = Files.getLastModifiedTime(base);
-            verify(archive).writeDirectory("top", 0, baseModTime);
-            verify(archive).accept(top, base);
-            verify(archive).accept("top/subDir1", subDir1);
+            verify(archive).writeDirectory("top", baseMode, baseModTime);
+            verify(archive).add(named("top/subDir1"));
             FileTime subDir1ModTime = Files.getLastModifiedTime(subDir1);
-            verify(archive).addDirectory(eq("top/subDir1"), assertArg(time -> assertThat(
+            verify(archive).writeDirectory(eq("top/subDir1"), eq(subDir1Mode), assertArg(time -> assertThat(
                             time.toInstant().truncatedTo(ChronoUnit.SECONDS))
                     .isEqualTo(subDir1ModTime.toInstant().truncatedTo(ChronoUnit.SECONDS))));
-            verify(archive).accept("top/subDir1", null);
-            verify(archive).writeDirectory(eq("top/subDir1"), anyInt(), assertArg(time -> assertThat(
-                            time.toInstant().truncatedTo(ChronoUnit.SECONDS))
-                    .isEqualTo(subDir1ModTime.toInstant().truncatedTo(ChronoUnit.SECONDS))));
-            verify(archive, times(2)).accept("top/subDir1/file11", file11);
-            verify(archive)
-                    .addFile(eq("top/subDir1/file11"), eq(file11), any(BasicFileAttributes.class), any(FileTime.class));
+            verify(archive).add(named("top/subDir1/file11"));
             FileTime file11ModTime = Files.getLastModifiedTime(file11);
             verify(archive)
                     .writeFile(
@@ -652,8 +599,7 @@ class ArchiveCreatorTest {
                             eq(OptionalLong.of(2L)),
                             eq(file11Mode),
                             eq(file11ModTime));
-            verify(archive, times(2)).accept("top/file1", file1);
-            verify(archive).addFile(eq("top/file1"), eq(file1), any(BasicFileAttributes.class), any(FileTime.class));
+            verify(archive).add(named("top/file1"));
             FileTime file1ModTime = Files.getLastModifiedTime(file1);
             verify(archive)
                     .writeFile(
@@ -670,12 +616,13 @@ class ArchiveCreatorTest {
         // given
         FileTime modTime = FileTime.from(Instant.now());
         var base = tempDir.resolve("base");
-        var file1 = createFile(base, "file1", "1");
+        createFile(base, "file1", "1");
         var subDir1 = base.resolve("subDir1");
         var file11 = createFile(subDir1, "file11", "11");
         String file11RelativeName = base.relativize(file11).toString();
         @SuppressWarnings("OctalInteger")
         int file11Mode = IS_OS_WINDOWS ? 0 : 0644;
+        int subDir1Mode = FileModes.of(subDir1, IS_OS_WINDOWS);
 
         //noinspection rawtypes
         try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
@@ -690,12 +637,9 @@ class ArchiveCreatorTest {
             mockArchive.verify(() -> sanitiseName("file1"), times(2));
             mockArchive.verify(() -> sanitiseName("subDir1"), times(2));
             mockArchive.verify(() -> sanitiseName(file11RelativeName), atLeastOnce());
-            verify(archive).accept("subDir1", subDir1);
-            verify(archive).addDirectory("subDir1", modTime);
-            verify(archive).accept("subDir1", null);
-            verify(archive).writeDirectory("subDir1", 0, modTime);
-            verify(archive, times(2)).accept("subDir1/file11", file11);
-            verify(archive).addFile(eq("subDir1/file11"), eq(file11), any(BasicFileAttributes.class), eq(modTime));
+            verify(archive).add(named("subDir1"));
+            verify(archive).writeDirectory("subDir1", subDir1Mode, modTime);
+            verify(archive).add(named("subDir1/file11"));
             verify(archive)
                     .writeFile(
                             eq("subDir1/file11"),
@@ -703,8 +647,7 @@ class ArchiveCreatorTest {
                             eq(OptionalLong.of(2L)),
                             eq(file11Mode),
                             eq(modTime));
-            verify(archive, times(2)).accept("file1", file1);
-            verify(archive).addFile(eq("file1"), eq(file1), any(BasicFileAttributes.class), eq(modTime));
+            verify(archive).add(named("file1"));
             verify(archive)
                     .writeFile(
                             eq("file1"), any(InputStream.class), eq(OptionalLong.of(1L)), eq(file11Mode), eq(modTime));
@@ -717,12 +660,14 @@ class ArchiveCreatorTest {
         FileTime modTime = FileTime.from(Instant.now());
         String top = "top";
         var base = tempDir.resolve("base");
-        var file1 = createFile(base, "file1", "1");
+        createFile(base, "file1", "1");
         var subDir1 = base.resolve("subDir1");
         var file11 = createFile(subDir1, "file11", "11");
         String file11RelativeName = base.relativize(file11).toString();
         @SuppressWarnings("OctalInteger")
         int file11Mode = IS_OS_WINDOWS ? 0 : 0644;
+        int baseMode = FileModes.of(base, IS_OS_WINDOWS);
+        int subDir1Mode = FileModes.of(subDir1, IS_OS_WINDOWS);
 
         //noinspection rawtypes
         try (MockedStatic<ArchiveCreator> mockArchive = mockStatic(ArchiveCreator.class, CALLS_REAL_METHODS);
@@ -737,16 +682,11 @@ class ArchiveCreatorTest {
             mockArchive.verify(() -> sanitiseName("subDir1"));
             mockArchive.verify(() -> sanitiseName(file11RelativeName));
             verify(archive).addDirectoryRecursively(top, base, modTime);
-            verify(archive).accept(top, base);
-            verify(archive).addDirectory(top, modTime);
-            verify(archive).accept(top, null);
-            verify(archive).writeDirectory("top", 0, modTime);
-            verify(archive).accept("top/subDir1", subDir1);
-            verify(archive).addDirectory("top/subDir1", modTime);
-            verify(archive).accept("top/subDir1", null);
-            verify(archive).writeDirectory("top/subDir1", 0, modTime);
-            verify(archive, times(2)).accept("top/subDir1/file11", file11);
-            verify(archive).addFile(eq("top/subDir1/file11"), eq(file11), any(BasicFileAttributes.class), eq(modTime));
+            verify(archive).add(named(top));
+            verify(archive).writeDirectory("top", baseMode, modTime);
+            verify(archive).add(named("top/subDir1"));
+            verify(archive).writeDirectory("top/subDir1", subDir1Mode, modTime);
+            verify(archive).add(named("top/subDir1/file11"));
             verify(archive)
                     .writeFile(
                             eq("top/subDir1/file11"),
@@ -754,8 +694,7 @@ class ArchiveCreatorTest {
                             eq(OptionalLong.of(2L)),
                             eq(file11Mode),
                             eq(modTime));
-            verify(archive, times(2)).accept("top/file1", file1);
-            verify(archive).addFile(eq("top/file1"), eq(file1), any(BasicFileAttributes.class), eq(modTime));
+            verify(archive).add(named("top/file1"));
             verify(archive)
                     .writeFile(
                             eq("top/file1"),
@@ -1017,18 +956,12 @@ class ArchiveCreatorTest {
     }
 
     @Test
-    void addFile_whenSourcePathIsNotReadable_shouldThrowIOException(@Mock Path unreadablePath) throws IOException {
+    void addFile_whenSourcePathIsNotReadable_shouldThrowIOException() throws IOException {
         // Given
-        given(unreadablePath.getFileName()).willReturn(Paths.get("unreadable.txt"));
-        BasicFileAttributes mockAttrs = mock(BasicFileAttributes.class);
+        Path unreadablePath = createFile(tempDir, "unreadable.txt", "content");
 
         try (MockedStatic<Files> mockedFiles = mockStatic(Files.class, CALLS_REAL_METHODS);
                 InMemoryArchiveCreator archive = new InMemoryArchiveCreatorBuilder(out).build()) {
-
-            mockedFiles
-                    .when(() -> Files.readAttributes(
-                            eq(unreadablePath), eq(BasicFileAttributes.class), any(LinkOption.class)))
-                    .thenReturn(mockAttrs);
             //noinspection resource
             mockedFiles
                     .when(() -> Files.newInputStream(eq(unreadablePath)))
@@ -1157,14 +1090,14 @@ class ArchiveCreatorTest {
 
             // Then
             verify(archive).addFile(symlinkPath);
+            verify(archive).addFile("symlink_to_file.txt", symlinkPath);
+            verify(archive).add(named("symlink_to_file.txt"));
             verify(archive)
-                    .addFile(
+                    .writeSymlink(
                             eq("symlink_to_file.txt"),
-                            eq(symlinkPath),
-                            any(BasicFileAttributes.class),
+                            eq(actualFile.getFileName().toString()),
+                            anyInt(),
                             any(FileTime.class));
-            verify(archive).accept("symlink_to_file.txt", symlinkPath);
-            verify(archive).writeSymlink(eq("symlink_to_file.txt"), anyString(), anyInt(), any(FileTime.class));
         }
     }
 
@@ -1174,7 +1107,7 @@ class ArchiveCreatorTest {
         // Given
         Path base = tempDir.resolve("base_dir_with_symlink");
         Files.createDirectories(base);
-        Path targetFile = createFile(base, "target.txt", "data");
+        createFile(base, "target.txt", "data");
         Path symlinkInDir = base.resolve("my_link.txt");
         Path target = Paths.get("target.txt");
         Files.createSymbolicLink(symlinkInDir, target);
@@ -1184,12 +1117,13 @@ class ArchiveCreatorTest {
             archive.addDirectoryRecursively(base);
 
             // Then
-            verify(archive).addFile(eq("target.txt"), eq(targetFile), any(BasicFileAttributes.class), any());
+            verify(archive).add(named("target.txt"));
 
             BasicFileAttributes linkAttrs =
                     Files.readAttributes(symlinkInDir, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
-            verify(archive).addFile(eq("my_link.txt"), eq(symlinkInDir), any(BasicFileAttributes.class), any());
-            verify(archive).writeSymlink(eq("my_link.txt"), anyString(), anyInt(), eq(linkAttrs.lastModifiedTime()));
+            verify(archive).add(named("my_link.txt"));
+            verify(archive)
+                    .writeSymlink(eq("my_link.txt"), eq(target.toString()), anyInt(), eq(linkAttrs.lastModifiedTime()));
         }
     }
 
@@ -1212,19 +1146,19 @@ class ArchiveCreatorTest {
             archive.addDirectoryRecursively(base);
 
             // Then
-            verify(archive).addDirectory(eq("actual_dir"), any(FileTime.class));
-            verify(archive)
-                    .addFile(
-                            eq("actual_dir/file_in_actual_dir.txt"),
-                            eq(targetDir.resolve("file_in_actual_dir.txt")),
-                            any(BasicFileAttributes.class),
-                            any());
+            verify(archive).add(named("actual_dir"));
+            verify(archive).add(named("actual_dir/file_in_actual_dir.txt"));
 
             BasicFileAttributes linkAttrs =
                     Files.readAttributes(symlinkToDir, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
-            verify(archive).addFile(eq("link_to_actual_dir"), eq(symlinkToDir), any(BasicFileAttributes.class), any());
+            verify(archive).add(named("link_to_actual_dir"));
             verify(archive)
-                    .writeSymlink(eq("link_to_actual_dir"), anyString(), anyInt(), eq(linkAttrs.lastModifiedTime()));
+                    .writeSymlink(
+                            eq("link_to_actual_dir"),
+                            eq(actualDir.toString()),
+                            anyInt(),
+                            eq(linkAttrs.lastModifiedTime()));
+            verify(archive, never()).add(named("link_to_actual_dir/file_in_actual_dir.txt"));
         }
     }
 
@@ -1260,9 +1194,7 @@ class ArchiveCreatorTest {
 
             // Then
             FileTime expectedModTime = Files.getLastModifiedTime(emptyBaseDir);
-            verify(archive).addDirectory(eq(topLevelDirName), argThat(ft -> ft.toInstant()
-                    .truncatedTo(ChronoUnit.SECONDS)
-                    .equals(expectedModTime.toInstant().truncatedTo(ChronoUnit.SECONDS))));
+            verify(archive).add(named(topLevelDirName));
             verify(archive).writeDirectory(eq(topLevelDirName), anyInt(), argThat(ft -> ft.toInstant()
                     .truncatedTo(ChronoUnit.SECONDS)
                     .equals(expectedModTime.toInstant().truncatedTo(ChronoUnit.SECONDS))));
@@ -1280,26 +1212,18 @@ class ArchiveCreatorTest {
         Path dirToSkip = Files.createDirectory(base.resolve("skip_this_dir"));
         createFile(dirToSkip, "file_in_skipped_dir.txt", "secret");
 
-        try (InMemoryArchiveCreator archive = spy(new InMemoryArchiveCreatorBuilder(out).build())) {
-            archive.withFilter((entryName, path) -> !entryName.equals("skip_this_dir"));
-
+        List<String> offered = new ArrayList<>();
+        try (InMemoryArchiveCreator archive = spy(new InMemoryArchiveCreatorBuilder(out)
+                .filter(s -> offered.add(s.name()) && !s.name().equals("skip_this_dir"))
+                .build())) {
             // When
             archive.addDirectoryRecursively(base);
 
             // Then
-            verify(archive)
-                    .addFile(
-                            eq("keep_this_file.txt"),
-                            eq(base.resolve("keep_this_file.txt")),
-                            any(BasicFileAttributes.class),
-                            any());
-            verify(archive, never()).addDirectory(eq("skip_this_dir"), any(FileTime.class));
-            verify(archive, never())
-                    .addFile(
-                            eq("skip_this_dir/file_in_skipped_dir.txt"),
-                            any(Path.class),
-                            any(BasicFileAttributes.class),
-                            any());
+            verify(archive).add(named("keep_this_file.txt"));
+            verify(archive, never()).add(named("skip_this_dir"));
+            verify(archive, never()).add(named("skip_this_dir/file_in_skipped_dir.txt"));
+            assertThat(offered).containsExactlyInAnyOrder("keep_this_file.txt", "skip_this_dir");
         }
     }
 
@@ -1311,20 +1235,16 @@ class ArchiveCreatorTest {
         createFile(subDir, "allowed_file.txt", "content1");
         createFile(subDir, "denied_file.txt", "content2");
 
-        try (InMemoryArchiveCreator archive = spy(new InMemoryArchiveCreatorBuilder(out).build())) {
-            archive.withFilter((entryName, path) -> !entryName.endsWith("denied_file.txt"));
+        try (InMemoryArchiveCreator archive = spy(new InMemoryArchiveCreatorBuilder(out)
+                .filter(s -> !s.name().endsWith("denied_file.txt"))
+                .build())) {
             // When
             archive.addDirectoryRecursively(base);
             // Then
-            verify(archive).addDirectory(eq("sub"), any(FileTime.class));
-            verify(archive)
-                    .addFile(
-                            eq("sub/allowed_file.txt"),
-                            eq(subDir.resolve("allowed_file.txt")),
-                            any(BasicFileAttributes.class),
-                            any());
+            verify(archive).writeDirectory(eq("sub"), anyInt(), any(FileTime.class));
+            verify(archive).writeFile(eq("sub/allowed_file.txt"), any(InputStream.class), any(), anyInt(), any());
             verify(archive, never())
-                    .addFile(eq("sub/denied_file.txt"), any(Path.class), any(BasicFileAttributes.class), any());
+                    .writeFile(eq("sub/denied_file.txt"), any(InputStream.class), any(), anyInt(), any());
         }
     }
 
@@ -1332,7 +1252,7 @@ class ArchiveCreatorTest {
     void addDirectoryRecursively_withOverridingModTime() throws IOException {
         // Given
         Path base = tempDir.resolve("base_override_modtime");
-        Path fileInBase = createFile(base, "file.txt", "content");
+        createFile(base, "file.txt", "content");
         Path subDir = Files.createDirectory(base.resolve("subdir"));
         createFile(subDir, "file_in_sub.txt", "content2");
 
@@ -1343,15 +1263,9 @@ class ArchiveCreatorTest {
             archive.addDirectoryRecursively(base, overrideModTime);
 
             // Then
-            verify(archive).addDirectory("subdir", overrideModTime);
-            verify(archive)
-                    .addFile(eq("file.txt"), eq(fileInBase), any(BasicFileAttributes.class), eq(overrideModTime));
-            verify(archive)
-                    .addFile(
-                            eq("subdir/file_in_sub.txt"),
-                            eq(subDir.resolve("file_in_sub.txt")),
-                            any(BasicFileAttributes.class),
-                            eq(overrideModTime));
+            verify(archive).add(named("subdir"));
+            verify(archive).add(named("file.txt"));
+            verify(archive).add(named("subdir/file_in_sub.txt"));
 
             verify(archive, times(2))
                     .writeFile(
@@ -1360,7 +1274,7 @@ class ArchiveCreatorTest {
                             any(OptionalLong.class),
                             anyInt(),
                             eq(overrideModTime));
-            verify(archive, times(1)).writeDirectory("subdir", 0, overrideModTime);
+            verify(archive, times(1)).writeDirectory("subdir", FileModes.of(subDir, IS_OS_WINDOWS), overrideModTime);
         }
     }
 
@@ -1372,9 +1286,8 @@ class ArchiveCreatorTest {
         try (InMemoryArchiveCreator archive = spy(new InMemoryArchiveCreatorBuilder(out).build())) {
             archive.addDirectoryRecursively(base);
 
-            verify(archive, never()).addDirectory(eq(""), any(FileTime.class));
-            verify(archive)
-                    .addFile(eq("file.txt"), eq(base.resolve("file.txt")), any(BasicFileAttributes.class), any());
+            verify(archive, never()).add(named(""));
+            verify(archive).add(named("file.txt"));
         }
     }
 
@@ -1421,27 +1334,19 @@ class ArchiveCreatorTest {
     }
 
     @Test
-    void builder_filterNull_shouldResultInNoFiltering() throws IOException {
-        // Given
+    void builder_filterNull_isRejected() {
         InMemoryArchiveCreatorBuilder builder = new InMemoryArchiveCreatorBuilder(out);
-        builder.filter(null);
 
-        String fileName = "file.txt";
-        Path path = createFile(tempDir, fileName, "content");
+        assertThatThrownBy(() -> builder.filter(null))
+                .isInstanceOf(NullPointerException.class)
+                .hasMessage("predicate");
+    }
 
-        try (InMemoryArchiveCreator archive = spy(builder.build())) {
-            // When
-            archive.addFile(path);
+    private InMemoryArchiveCreator rejectingAll() throws IOException {
+        return spy(new InMemoryArchiveCreator(new InMemoryArchiveCreatorBuilder(out).filter(s -> false)));
+    }
 
-            // Then
-            verify(archive).accept(fileName, path);
-            verify(archive)
-                    .writeFile(
-                            eq(fileName),
-                            any(InputStream.class),
-                            any(OptionalLong.class),
-                            anyInt(),
-                            any(FileTime.class));
-        }
+    private static EntrySource named(String name) {
+        return argThat(source -> source != null && source.name().equals(name));
     }
 }
