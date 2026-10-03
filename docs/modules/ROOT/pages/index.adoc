@@ -97,7 +97,7 @@ Path traversal is always rejected: entry paths are resolved canonically against 
 entries and writes that would follow a symlink out of the output directory fail with `UnsafeEntryException`, which no error handler can suppress.
 
 Escaping symlinks are rejected by default with `UnsafeEntryException`. Use `escapingSymlinkPolicy(ALLOW)` for
-archives you produced yourself, or `RELATIVIZE_ABSOLUTE` to rewrite absolute targets inside the output directory.
+archives you produced yourself, or `RELATIVIZE_ABSOLUTE` to rewrite absolute targets under the output directory (targets that escape it are still rejected).
 
 One thing is **not** restricted by default, because it is legitimate in archives you produced yourself:
 

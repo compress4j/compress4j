@@ -175,20 +175,33 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      */
     public final void extract(Path outputDir) throws IOException {
         pipeline.start();
+        SymlinkGuard guard = new SymlinkGuard(outputDir);
         try {
-            drain(outputDir);
+            drain(outputDir, guard);
+            guard.verify();
         } catch (IOException | RuntimeException failure) {
+            verifyAfterFailure(guard, failure);
             pipeline.release(failure);
             throw failure;
         }
         pipeline.release(null);
     }
 
-    private void drain(Path outputDir) throws IOException {
+    private static void verifyAfterFailure(SymlinkGuard guard, Exception failure) {
+        try {
+            guard.verify();
+        } catch (UnsafeEntryException escape) {
+            if (escape != failure) {
+                failure.addSuppressed(escape);
+            }
+        }
+    }
+
+    private void drain(Path outputDir, SymlinkGuard guard) throws IOException {
         boolean ignoreErrors = false;
         Optional<ArchiveItem> next;
         while ((next = pipeline.advance()).isPresent()) {
-            switch (extractItem(outputDir, next.orElseThrow(), ignoreErrors)) {
+            switch (extractItem(outputDir, next.orElseThrow(), ignoreErrors, guard)) {
                 case EntryOutcome.Abort() -> {
                     return;
                 }
@@ -200,10 +213,11 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         }
     }
 
-    private EntryOutcome extractItem(Path outputDir, ArchiveItem item, boolean ignoreErrors) throws IOException {
+    private EntryOutcome extractItem(Path outputDir, ArchiveItem item, boolean ignoreErrors, SymlinkGuard guard)
+            throws IOException {
         while (true) {
             try {
-                processItem(outputDir, item);
+                processItem(outputDir, item, guard);
                 return new EntryOutcome.Continue();
             } catch (ArchiveSecurityException unsuppressible) {
                 throw unsuppressible;
@@ -334,7 +348,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         return IOUtils.toByteArray(in, declaredSize);
     }
 
-    private void processItem(Path outputDir, ArchiveItem item) throws IOException {
+    private void processItem(Path outputDir, ArchiveItem item, SymlinkGuard guard) throws IOException {
         Entry entry = item.entry();
         Path outputFile = EntryPaths.entryFile(outputDir, entry.name);
         switch (entry.type) {
@@ -346,7 +360,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
             }
             case FILE -> writeFile(item, outputFile);
             case SYMLINK ->
-                new SymlinkExtractor(escapingSymlinkPolicy, overwrite).extract(outputDir, entry, outputFile);
+                new SymlinkExtractor(escapingSymlinkPolicy, overwrite).extract(outputDir, entry, outputFile, guard);
         }
         if (postProcessor != null) {
             postProcessor.accept(entry, outputFile);
@@ -374,13 +388,16 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
          */
         ALLOW,
 
-        /** Check during extraction and throw exception. */
+        /**
+         * Rejects targets that are absolute or resolve outside the output directory, including through links created
+         * later in the same archive.
+         */
         DISALLOW,
 
         /**
-         * Make absolute symbolic links relative from the extraction directory. For example, when archive contains link
-         * to {@code /opt/foo} and archive is extracted to {@code /foo/bar} then the resulting link will be
-         * {@code /foo/bar/opt/foo}
+         * Rewrites absolute targets under the output directory, then applies the same checks as {@link #DISALLOW}. For
+         * example, when archive contains link to {@code /opt/foo} and archive is extracted to {@code /foo/bar} then the
+         * resulting link will be {@code /foo/bar/opt/foo}.
          */
         RELATIVIZE_ABSOLUTE
     }

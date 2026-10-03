@@ -559,7 +559,7 @@ class ArchiveExtractorTest {
 
     @DisabledOnOs(OS.WINDOWS)
     @Test
-    void shouldNotExtractSymlinksInRelativizeAbsoluteModeWhenTargetPathRelative() throws IOException {
+    void shouldRejectEscapingRelativeSymlinkInRelativizeAbsoluteMode() throws IOException {
         // given
         var subdir = InMemoryArchiveEntry.builder().name("subdir").type(DIR).build();
         var entry1 = InMemoryArchiveEntry.builder()
@@ -576,14 +576,9 @@ class ArchiveExtractorTest {
                 .escapingSymlinkPolicy(RELATIVIZE_ABSOLUTE)
                 .build()) {
 
-            // when
-            inMemoryDecompressor.extract(tempDir);
-
             // then
-            assertThat(tempDir).isDirectory();
-            assertThat(tempDir.resolve("subdir/some")).doesNotExist();
-            assertThat(tempDir.resolve("subdir/test1")).hasContent("content1");
-            assertThat(tempDir.resolve("test1a")).isSymbolicLink();
+            assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir)).isInstanceOf(UnsafeEntryException.class);
+            assertThat(tempDir.resolve("test1a")).doesNotExist();
         }
     }
 

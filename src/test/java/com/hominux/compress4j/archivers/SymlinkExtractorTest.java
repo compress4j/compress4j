@@ -42,7 +42,7 @@ class SymlinkExtractorTest {
     }
 
     private void extract(SymlinkExtractor extractor, Entry entry) throws IOException {
-        extractor.extract(outputDir, entry, outputDir.resolve(entry.name()));
+        extractor.extract(outputDir, entry, outputDir.resolve(entry.name()), new SymlinkGuard(outputDir));
     }
 
     @Test
@@ -101,7 +101,7 @@ class SymlinkExtractorTest {
         var extractor = new SymlinkExtractor(DISALLOW, false);
 
         // Then
-        assertThatThrownBy(() -> extractor.extract(out, entry, out.resolve("link")))
+        assertThatThrownBy(() -> extractor.extract(out, entry, out.resolve("link"), new SymlinkGuard(out)))
                 .isInstanceOf(UnsafeEntryException.class);
     }
 
@@ -112,7 +112,7 @@ class SymlinkExtractorTest {
         var extractor = new SymlinkExtractor(DISALLOW, false);
 
         // Then
-        assertThatThrownBy(() -> extractor.extract(out, entry, out.resolve("link")))
+        assertThatThrownBy(() -> extractor.extract(out, entry, out.resolve("link"), new SymlinkGuard(out)))
                 .isInstanceOf(UnsafeEntryException.class)
                 .hasCauseInstanceOf(UnsafeEntryException.class);
     }
@@ -125,9 +125,29 @@ class SymlinkExtractorTest {
         var extractor = new SymlinkExtractor(DISALLOW, false);
 
         // When
-        extractor.extract(out, entry, out.resolve("a/link"));
+        extractor.extract(out, entry, out.resolve("a/link"), new SymlinkGuard(out));
 
         // Then
         assertThat(Files.readSymbolicLink(out.resolve("a/link"))).isEqualTo(Path.of("../b.txt"));
+    }
+
+    @Test
+    void relativizeAbsoluteRewritesAbsoluteTargetsInside(@TempDir Path out) throws IOException {
+        var entry = new Entry("link", Entry.Type.SYMLINK, 0777).withLinkTarget("/etc/passwd");
+        new SymlinkExtractor(RELATIVIZE_ABSOLUTE, false)
+                .extract(out, entry, out.resolve("link"), new SymlinkGuard(out));
+        assertThat(Files.readSymbolicLink(out.resolve("link"))).isEqualTo(out.resolve("etc/passwd"));
+    }
+
+    @Test
+    void relativizeAbsoluteRejectsTargetsThatStillEscape(@TempDir Path out) {
+        var absolute = new Entry("a", Entry.Type.SYMLINK, 0777).withLinkTarget("/../../etc");
+        var relative = new Entry("r", Entry.Type.SYMLINK, 0777).withLinkTarget("../../x");
+        var extractor = new SymlinkExtractor(RELATIVIZE_ABSOLUTE, false);
+
+        assertThatThrownBy(() -> extractor.extract(out, absolute, out.resolve("a"), new SymlinkGuard(out)))
+                .isInstanceOf(UnsafeEntryException.class);
+        assertThatThrownBy(() -> extractor.extract(out, relative, out.resolve("r"), new SymlinkGuard(out)))
+                .isInstanceOf(UnsafeEntryException.class);
     }
 }

@@ -33,7 +33,7 @@ Compress4J extracts what an archive tells it to. When the archive comes from an 
   and writes through a symlink that points outside the output directory both fail with `UnsafeEntryException`.
 - **Escaping symlinks** are rejected by default with `UnsafeEntryException`. Set
   `escapingSymlinkPolicy(EscapingSymlinkPolicy.ALLOW)` to extract them as-is, or `RELATIVIZE_ABSOLUTE` to rewrite
-  absolute targets so they stay inside the output directory.
+  absolute targets under the output directory and still reject targets that escape it.
 - **Decompression bombs** are not bounded by default. Set `maxEntries`, `maxEntrySize` and `maxTotalSize` on the
   extractor to cap what an archive may expand to; breaching a limit throws `ArchiveLimitExceededException`.
 - **Security failures cannot be suppressed.** `UnsafeEntryException` (traversal, escaping symlinks) and

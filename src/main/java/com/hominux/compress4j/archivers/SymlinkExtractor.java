@@ -44,15 +44,22 @@ record SymlinkExtractor(EscapingSymlinkPolicy policy, boolean overwrite) {
      * @param outputDir the directory to extract the archive to
      * @param entry the entry to extract
      * @param outputFile the file to extract the entry to
+     * @param guard records created links so they can be re-checked after extraction
      * @throws IOException if an I/O error occurs
      */
-    void extract(Path outputDir, Entry entry, Path outputFile) throws IOException {
+    void extract(Path outputDir, Entry entry, Path outputFile, SymlinkGuard guard) throws IOException {
         String target = entry.linkTarget()
                 .orElseThrow(() -> new IOException("Invalid symlink entry: " + entry.name() + " (empty target)"));
 
         switch (policy) {
-            case DISALLOW -> verifySymlinkTarget(entry.name(), target, outputDir, outputFile);
-            case RELATIVIZE_ABSOLUTE -> target = relativizeIfAbsolute(target, outputDir);
+            case DISALLOW -> {
+                rejectAbsolute(entry.name(), target);
+                verifySymlinkTarget(entry.name(), target, outputDir, outputFile);
+            }
+            case RELATIVIZE_ABSOLUTE -> {
+                target = relativizeIfAbsolute(target, outputDir);
+                verifySymlinkTarget(entry.name(), target, outputDir, outputFile);
+            }
             case ALLOW -> LOGGER.debug("Extracting symlink entry as is: {} -> {}", entry.name(), target);
         }
 
@@ -61,8 +68,17 @@ record SymlinkExtractor(EscapingSymlinkPolicy policy, boolean overwrite) {
             EntryPaths.makeDirectory(outputFile.getParent());
             Files.deleteIfExists(outputFile);
             Files.createSymbolicLink(outputFile, outputTarget);
+            if (policy != EscapingSymlinkPolicy.ALLOW) {
+                guard.record(outputFile);
+            }
         } else {
             LOGGER.debug("Skipping symlink entry: {} -> {} (already exists)", entry.name(), target);
+        }
+    }
+
+    private static void rejectAbsolute(String entryName, String linkTarget) throws UnsafeEntryException {
+        if (Paths.get(linkTarget).isAbsolute()) {
+            throw new UnsafeEntryException("Invalid symlink (absolute path): " + entryName + " -> " + linkTarget);
         }
     }
 
@@ -83,12 +99,7 @@ record SymlinkExtractor(EscapingSymlinkPolicy policy, boolean overwrite) {
      */
     private static void verifySymlinkTarget(String entryName, String linkTarget, Path outputDir, Path outputFile)
             throws UnsafeEntryException {
-        Path outputTarget = Paths.get(linkTarget);
-        if (outputTarget.isAbsolute()) {
-            throw new UnsafeEntryException("Invalid symlink (absolute path): " + entryName + " -> " + linkTarget);
-        }
-
-        Path linkTargetPath = outputFile.getParent().resolve(outputTarget);
+        Path linkTargetPath = outputFile.getParent().resolve(Paths.get(linkTarget));
         try {
             checkValidPath(linkTargetPath, outputDir);
         } catch (UnsafeEntryException e) {
