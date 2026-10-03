@@ -15,7 +15,9 @@
  */
 package com.hominux.compress4j.archivers;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 
@@ -74,8 +76,16 @@ public final class ArchiveItem {
         return switch (entry.type()) {
             case DIR -> new EntrySource.Directory(entry.name(), mode, modified);
             case SYMLINK -> new EntrySource.Symlink(entry.name(), linkTarget(), mode, modified);
-            case FILE -> new EntrySource.File(entry.name(), mode, modified, entry.size(), this::content);
+            case FILE -> new EntrySource.File(entry.name(), mode, modified, entry.size(), this::openContent);
         };
+    }
+
+    private InputStream openContent() throws IOException {
+        try {
+            return content();
+        } catch (UncheckedIOException e) {
+            throw e.getCause();
+        }
     }
 
     private String linkTarget() {
