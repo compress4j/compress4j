@@ -34,6 +34,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import org.apache.commons.compress.archivers.ArchiveEntry;
@@ -81,38 +82,43 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
      * Write a directory entry to the archive.
      *
      * @param name name of the entry
-     * @param modTime last modification time of the directory
+     * @param mode Unix permission bits, or {@code 0} when unknown
+     * @param lastModified last modification time of the directory
      * @throws IOException if an I/O error occurred
      */
-    protected abstract void writeDirectoryEntry(String name, FileTime modTime) throws IOException;
+    protected abstract void writeDirectory(String name, int mode, FileTime lastModified) throws IOException;
 
     /**
      * Write a file entry to the archive.
      *
      * @param name name of the entry
-     * @param source input stream to read the file from
-     * @param length length of the file
-     * @param modTime last modification time of the file
-     * @param mode file mode
+     * @param content content of the file
+     * @param size content length in bytes, or empty when unknown
+     * @param mode Unix permission bits, or {@code 0} when unknown
+     * @param lastModified last modification time of the file
      * @throws IOException if an I/O error occurred
      */
-    protected abstract void writeFileEntry(String name, InputStream source, long length, FileTime modTime, int mode)
-            throws IOException;
+    protected abstract void writeFile(
+            String name, InputStream content, OptionalLong size, int mode, FileTime lastModified) throws IOException;
 
     /**
      * Write a symbolic link entry to the archive.
      *
      * @param name name of the entry
-     * @param source ignored; a symbolic link has no content besides its target
-     * @param length ignored; the size of the entry derives from the target
-     * @param modTime last modification time of the file
-     * @param mode file mode
-     * @param symlinkTarget target of the symbolic link
+     * @param target target of the symbolic link
+     * @param mode Unix permission bits, or {@code 0} when unknown
+     * @param lastModified last modification time of the link
      * @throws IOException if an I/O error occurred
      */
-    protected abstract void writeFileEntry(
-            String name, InputStream source, long length, FileTime modTime, int mode, Path symlinkTarget)
+    protected abstract void writeSymlink(String name, String target, int mode, FileTime lastModified)
             throws IOException;
+
+    /**
+     * Whether the format needs a file's size before its content.
+     *
+     * @return {@code true} if {@link #writeFile} requires a known size
+     */
+    protected abstract boolean requiresSize();
 
     /**
      * Add a directory to the archive. The last modification time of the directory will be used as the last modification
@@ -139,7 +145,7 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
     public final void addDirectory(String entryName, FileTime modTime) throws IOException {
         entryName = sanitiseName(entryName);
         if (accept(entryName, null)) {
-            writeDirectoryEntry(entryName, modTime);
+            writeDirectory(entryName, NO_MODE, modTime);
         }
     }
 
@@ -289,7 +295,7 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
     public final void addFile(String entryName, byte[] content, FileTime modTime) throws IOException {
         entryName = sanitiseName(entryName);
         if (accept(entryName, null)) {
-            writeFileEntry(entryName, new ByteArrayInputStream(content), content.length, modTime, NO_MODE);
+            writeFile(entryName, new ByteArrayInputStream(content), OptionalLong.of(content.length), NO_MODE, modTime);
         }
     }
 
@@ -320,7 +326,7 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
     public final void addFile(String entryName, InputStream content, FileTime modTime) throws IOException {
         entryName = sanitiseName(entryName);
         if (accept(entryName, null)) {
-            writeFileEntry(entryName, content, -1, modTime, NO_MODE);
+            writeFile(entryName, content, OptionalLong.empty(), NO_MODE, modTime);
         }
     }
 
@@ -338,16 +344,10 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
         entryName = sanitiseName(entryName);
         if (accept(entryName, path)) {
             if (attrs.isSymbolicLink()) {
-                writeFileEntry(
-                        entryName,
-                        InputStream.nullInputStream(),
-                        attrs.size(),
-                        modTime,
-                        mode(path),
-                        Files.readSymbolicLink(path));
+                writeSymlink(entryName, Files.readSymbolicLink(path).toString(), mode(path), modTime);
             } else {
                 try (InputStream source = Files.newInputStream(path)) {
-                    writeFileEntry(entryName, source, attrs.size(), modTime, mode(path));
+                    writeFile(entryName, source, OptionalLong.of(attrs.size()), mode(path), modTime);
                 }
             }
         }

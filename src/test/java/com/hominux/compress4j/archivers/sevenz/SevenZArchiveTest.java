@@ -274,8 +274,8 @@ class SevenZArchiveTest {
     void creatorSymlinkEntry() throws IOException {
         Path archive = tmp.resolve("links.7z");
         try (var creator = SevenZArchiveCreator.builder(archive).build()) {
-            creator.writeFileEntry("a", InputStream.nullInputStream(), 0, FileTime.fromMillis(0), 0, Path.of("t1"));
-            creator.writeFileEntry("b", InputStream.nullInputStream(), 0, FileTime.fromMillis(0), 0644, Path.of("t2"));
+            creator.writeSymlink("a", "t1", 0, FileTime.fromMillis(0));
+            creator.writeSymlink("b", "t2", 0644, FileTime.fromMillis(0));
         }
 
         try (var extractor = SevenZArchiveExtractor.builder(archive).build()) {

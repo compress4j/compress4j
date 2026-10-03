@@ -31,7 +31,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.argThat;
 import static org.mockito.Mockito.assertArg;
@@ -69,6 +68,7 @@ import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.commons.compress.archivers.ArchiveEntry;
@@ -163,7 +163,8 @@ class ArchiveCreatorTest {
             mockArchive.verify(() -> sanitiseName(fileName));
             inOrder.verify(archive).accept(fileName, path);
             inOrder.verify(archive)
-                    .writeFileEntry(eq(fileName), any(InputStream.class), eq(3L), eq(modTime), eq(fileMode));
+                    .writeFile(
+                            eq(fileName), any(InputStream.class), eq(OptionalLong.of(3L)), eq(fileMode), eq(modTime));
         }
     }
 
@@ -231,7 +232,13 @@ class ArchiveCreatorTest {
             archive.addFile(path);
 
             // then
-            verify(archive).writeFileEntry(eq(fileName), any(InputStream.class), eq(3L), any(FileTime.class), anyInt());
+            verify(archive)
+                    .writeFile(
+                            eq(fileName),
+                            any(InputStream.class),
+                            eq(OptionalLong.of(3L)),
+                            anyInt(),
+                            any(FileTime.class));
         }
     }
 
@@ -261,7 +268,8 @@ class ArchiveCreatorTest {
             inOrder.verify(archive).addFile(eq(entryName), eq(path), any(BasicFileAttributes.class), eq(modTime));
             inOrder.verify(archive).accept(entryName, path);
             inOrder.verify(archive)
-                    .writeFileEntry(eq(entryName), any(InputStream.class), eq(3L), eq(modTime), eq(fileMode));
+                    .writeFile(
+                            eq(entryName), any(InputStream.class), eq(OptionalLong.of(3L)), eq(fileMode), eq(modTime));
         }
     }
 
@@ -286,7 +294,9 @@ class ArchiveCreatorTest {
             verify(archive).accept(entryName, path);
             verify(archive).addFile(eq(entryName), eq(path), any(BasicFileAttributes.class), eq(modTime));
             mockArchive.verify(() -> sanitiseName(entryName));
-            verify(archive).writeFileEntry(eq(entryName), any(InputStream.class), eq(3L), eq(modTime), eq(fileMode));
+            verify(archive)
+                    .writeFile(
+                            eq(entryName), any(InputStream.class), eq(OptionalLong.of(3L)), eq(fileMode), eq(modTime));
         }
     }
 
@@ -312,7 +322,8 @@ class ArchiveCreatorTest {
             mockArchive.verify(() -> sanitiseName(entryName));
             verify(archive).accept(entryName, null);
             FileTime modTime = FileTime.from(mockedInstant);
-            verify(archive).writeFileEntry(eq(entryName), any(InputStream.class), eq(3L), eq(modTime), eq(0));
+            verify(archive)
+                    .writeFile(eq(entryName), any(InputStream.class), eq(OptionalLong.of(3L)), eq(0), eq(modTime));
         }
     }
 
@@ -361,7 +372,8 @@ class ArchiveCreatorTest {
             // then
             mockArchive.verify(() -> sanitiseName(entryName));
             verify(archive).accept(entryName, null);
-            verify(archive).writeFileEntry(eq(entryName), any(InputStream.class), eq(3L), eq(modTime), eq(0));
+            verify(archive)
+                    .writeFile(eq(entryName), any(InputStream.class), eq(OptionalLong.of(3L)), eq(0), eq(modTime));
         }
     }
 
@@ -387,7 +399,8 @@ class ArchiveCreatorTest {
             // then
             mockArchive.verify(() -> sanitiseName(entryName));
             verify(archive).accept(entryName, null);
-            verify(archive).writeFileEntry(eq(entryName), any(InputStream.class), eq(-1L), eq(modTime), eq(0));
+            verify(archive)
+                    .writeFile(eq(entryName), any(InputStream.class), eq(OptionalLong.empty()), eq(0), eq(modTime));
         }
     }
 
@@ -437,7 +450,8 @@ class ArchiveCreatorTest {
             // then
             mockArchive.verify(() -> sanitiseName(entryName));
             verify(archive).accept(entryName, null);
-            verify(archive).writeFileEntry(eq(entryName), any(InputStream.class), eq(-1L), eq(modTime), eq(0));
+            verify(archive)
+                    .writeFile(eq(entryName), any(InputStream.class), eq(OptionalLong.empty()), eq(0), eq(modTime));
         }
     }
 
@@ -461,7 +475,7 @@ class ArchiveCreatorTest {
             // then
             verify(archive).accept(entryName, null);
             mockArchive.verify(() -> sanitiseName(entryName));
-            verify(archive).writeDirectoryEntry(entryName, modTime);
+            verify(archive).writeDirectory(entryName, 0, modTime);
         }
     }
 
@@ -503,7 +517,7 @@ class ArchiveCreatorTest {
             // then
             verify(archive).accept(entryName, null);
             mockArchive.verify(() -> sanitiseName(entryName));
-            verify(archive).writeDirectoryEntry(entryName, modTime);
+            verify(archive).writeDirectory(entryName, 0, modTime);
         }
     }
 
@@ -537,7 +551,7 @@ class ArchiveCreatorTest {
                             time.toInstant().truncatedTo(ChronoUnit.SECONDS))
                     .isEqualTo(subDir1ModTime.toInstant().truncatedTo(ChronoUnit.SECONDS))));
             verify(archive).accept("subDir1", null);
-            verify(archive).writeDirectoryEntry(eq("subDir1"), assertArg(time -> assertThat(
+            verify(archive).writeDirectory(eq("subDir1"), anyInt(), assertArg(time -> assertThat(
                             time.toInstant().truncatedTo(ChronoUnit.SECONDS))
                     .isEqualTo(subDir1ModTime.toInstant().truncatedTo(ChronoUnit.SECONDS))));
             verify(archive, times(2)).accept("subDir1/file11", file11);
@@ -545,13 +559,22 @@ class ArchiveCreatorTest {
                     .addFile(eq("subDir1/file11"), eq(file11), any(BasicFileAttributes.class), any(FileTime.class));
             FileTime file11ModTime = Files.getLastModifiedTime(file11);
             verify(archive)
-                    .writeFileEntry(
-                            eq("subDir1/file11"), any(InputStream.class), eq(2L), eq(file11ModTime), eq(file11Mode));
+                    .writeFile(
+                            eq("subDir1/file11"),
+                            any(InputStream.class),
+                            eq(OptionalLong.of(2L)),
+                            eq(file11Mode),
+                            eq(file11ModTime));
             verify(archive, times(2)).accept("file1", file1);
             verify(archive).addFile(eq("file1"), eq(file1), any(BasicFileAttributes.class), any(FileTime.class));
             FileTime file1ModTime = Files.getLastModifiedTime(file1);
             verify(archive)
-                    .writeFileEntry(eq("file1"), any(InputStream.class), eq(1L), eq(file1ModTime), eq(file11Mode));
+                    .writeFile(
+                            eq("file1"),
+                            any(InputStream.class),
+                            eq(OptionalLong.of(1L)),
+                            eq(file11Mode),
+                            eq(file1ModTime));
         }
     }
 
@@ -607,7 +630,7 @@ class ArchiveCreatorTest {
             mockArchive.verify(() -> sanitiseName(file11RelativeName));
             verify(archive).accept(top, null);
             FileTime baseModTime = Files.getLastModifiedTime(base);
-            verify(archive).writeDirectoryEntry("top", baseModTime);
+            verify(archive).writeDirectory("top", 0, baseModTime);
             verify(archive).accept(top, base);
             verify(archive).accept("top/subDir1", subDir1);
             FileTime subDir1ModTime = Files.getLastModifiedTime(subDir1);
@@ -615,7 +638,7 @@ class ArchiveCreatorTest {
                             time.toInstant().truncatedTo(ChronoUnit.SECONDS))
                     .isEqualTo(subDir1ModTime.toInstant().truncatedTo(ChronoUnit.SECONDS))));
             verify(archive).accept("top/subDir1", null);
-            verify(archive).writeDirectoryEntry(eq("top/subDir1"), assertArg(time -> assertThat(
+            verify(archive).writeDirectory(eq("top/subDir1"), anyInt(), assertArg(time -> assertThat(
                             time.toInstant().truncatedTo(ChronoUnit.SECONDS))
                     .isEqualTo(subDir1ModTime.toInstant().truncatedTo(ChronoUnit.SECONDS))));
             verify(archive, times(2)).accept("top/subDir1/file11", file11);
@@ -623,17 +646,22 @@ class ArchiveCreatorTest {
                     .addFile(eq("top/subDir1/file11"), eq(file11), any(BasicFileAttributes.class), any(FileTime.class));
             FileTime file11ModTime = Files.getLastModifiedTime(file11);
             verify(archive)
-                    .writeFileEntry(
+                    .writeFile(
                             eq("top/subDir1/file11"),
                             any(InputStream.class),
-                            eq(2L),
-                            eq(file11ModTime),
-                            eq(file11Mode));
+                            eq(OptionalLong.of(2L)),
+                            eq(file11Mode),
+                            eq(file11ModTime));
             verify(archive, times(2)).accept("top/file1", file1);
             verify(archive).addFile(eq("top/file1"), eq(file1), any(BasicFileAttributes.class), any(FileTime.class));
             FileTime file1ModTime = Files.getLastModifiedTime(file1);
             verify(archive)
-                    .writeFileEntry(eq("top/file1"), any(InputStream.class), eq(1L), eq(file1ModTime), eq(file11Mode));
+                    .writeFile(
+                            eq("top/file1"),
+                            any(InputStream.class),
+                            eq(OptionalLong.of(1L)),
+                            eq(file11Mode),
+                            eq(file1ModTime));
         }
     }
 
@@ -665,14 +693,21 @@ class ArchiveCreatorTest {
             verify(archive).accept("subDir1", subDir1);
             verify(archive).addDirectory("subDir1", modTime);
             verify(archive).accept("subDir1", null);
-            verify(archive).writeDirectoryEntry("subDir1", modTime);
+            verify(archive).writeDirectory("subDir1", 0, modTime);
             verify(archive, times(2)).accept("subDir1/file11", file11);
             verify(archive).addFile(eq("subDir1/file11"), eq(file11), any(BasicFileAttributes.class), eq(modTime));
             verify(archive)
-                    .writeFileEntry(eq("subDir1/file11"), any(InputStream.class), eq(2L), eq(modTime), eq(file11Mode));
+                    .writeFile(
+                            eq("subDir1/file11"),
+                            any(InputStream.class),
+                            eq(OptionalLong.of(2L)),
+                            eq(file11Mode),
+                            eq(modTime));
             verify(archive, times(2)).accept("file1", file1);
             verify(archive).addFile(eq("file1"), eq(file1), any(BasicFileAttributes.class), eq(modTime));
-            verify(archive).writeFileEntry(eq("file1"), any(InputStream.class), eq(1L), eq(modTime), eq(file11Mode));
+            verify(archive)
+                    .writeFile(
+                            eq("file1"), any(InputStream.class), eq(OptionalLong.of(1L)), eq(file11Mode), eq(modTime));
         }
     }
 
@@ -705,20 +740,29 @@ class ArchiveCreatorTest {
             verify(archive).accept(top, base);
             verify(archive).addDirectory(top, modTime);
             verify(archive).accept(top, null);
-            verify(archive).writeDirectoryEntry("top", modTime);
+            verify(archive).writeDirectory("top", 0, modTime);
             verify(archive).accept("top/subDir1", subDir1);
             verify(archive).addDirectory("top/subDir1", modTime);
             verify(archive).accept("top/subDir1", null);
-            verify(archive).writeDirectoryEntry("top/subDir1", modTime);
+            verify(archive).writeDirectory("top/subDir1", 0, modTime);
             verify(archive, times(2)).accept("top/subDir1/file11", file11);
             verify(archive).addFile(eq("top/subDir1/file11"), eq(file11), any(BasicFileAttributes.class), eq(modTime));
             verify(archive)
-                    .writeFileEntry(
-                            eq("top/subDir1/file11"), any(InputStream.class), eq(2L), eq(modTime), eq(file11Mode));
+                    .writeFile(
+                            eq("top/subDir1/file11"),
+                            any(InputStream.class),
+                            eq(OptionalLong.of(2L)),
+                            eq(file11Mode),
+                            eq(modTime));
             verify(archive, times(2)).accept("top/file1", file1);
             verify(archive).addFile(eq("top/file1"), eq(file1), any(BasicFileAttributes.class), eq(modTime));
             verify(archive)
-                    .writeFileEntry(eq("top/file1"), any(InputStream.class), eq(1L), eq(modTime), eq(file11Mode));
+                    .writeFile(
+                            eq("top/file1"),
+                            any(InputStream.class),
+                            eq(OptionalLong.of(1L)),
+                            eq(file11Mode),
+                            eq(modTime));
         }
     }
 
@@ -1034,25 +1078,24 @@ class ArchiveCreatorTest {
         ArchiveCreator<ArchiveOutputStream<org.apache.commons.compress.archivers.ArchiveEntry>> creator =
                 new ArchiveCreator<>(mockAos) {
                     @Override
-                    protected void writeDirectoryEntry(String name, FileTime modTime) {
+                    protected void writeDirectory(String name, int mode, FileTime lastModified) {
                         /* no-op */
                     }
 
                     @Override
-                    protected void writeFileEntry(
-                            String name, InputStream source, long length, FileTime modTime, int mode) {
+                    protected void writeFile(
+                            String name, InputStream content, OptionalLong size, int mode, FileTime lastModified) {
                         /* no-op */
                     }
 
                     @Override
-                    protected void writeFileEntry(
-                            String name,
-                            InputStream source,
-                            long length,
-                            FileTime modTime,
-                            int mode,
-                            Path symlinkTarget) {
+                    protected void writeSymlink(String name, String target, int mode, FileTime lastModified) {
                         /* no-op */
+                    }
+
+                    @Override
+                    protected boolean requiresSize() {
+                        return false;
                     }
                 };
 
@@ -1071,25 +1114,24 @@ class ArchiveCreatorTest {
         ArchiveCreator<ArchiveOutputStream<org.apache.commons.compress.archivers.ArchiveEntry>> creator =
                 new ArchiveCreator<>(mockAos) {
                     @Override
-                    protected void writeDirectoryEntry(String name, FileTime modTime) {
+                    protected void writeDirectory(String name, int mode, FileTime lastModified) {
                         /* no-op */
                     }
 
                     @Override
-                    protected void writeFileEntry(
-                            String name, InputStream source, long length, FileTime modTime, int mode) {
+                    protected void writeFile(
+                            String name, InputStream content, OptionalLong size, int mode, FileTime lastModified) {
                         /* no-op */
                     }
 
                     @Override
-                    protected void writeFileEntry(
-                            String name,
-                            InputStream source,
-                            long length,
-                            FileTime modTime,
-                            int mode,
-                            Path symlinkTarget) {
+                    protected void writeSymlink(String name, String target, int mode, FileTime lastModified) {
                         /* no-op */
+                    }
+
+                    @Override
+                    protected boolean requiresSize() {
+                        return false;
                     }
                 };
 
@@ -1122,14 +1164,7 @@ class ArchiveCreatorTest {
                             any(BasicFileAttributes.class),
                             any(FileTime.class));
             verify(archive).accept("symlink_to_file.txt", symlinkPath);
-            verify(archive)
-                    .writeFileEntry(
-                            eq("symlink_to_file.txt"),
-                            any(InputStream.class),
-                            anyLong(),
-                            any(FileTime.class),
-                            anyInt(),
-                            eq(actualFile.getFileName()));
+            verify(archive).writeSymlink(eq("symlink_to_file.txt"), anyString(), anyInt(), any(FileTime.class));
         }
     }
 
@@ -1154,14 +1189,7 @@ class ArchiveCreatorTest {
             BasicFileAttributes linkAttrs =
                     Files.readAttributes(symlinkInDir, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
             verify(archive).addFile(eq("my_link.txt"), eq(symlinkInDir), any(BasicFileAttributes.class), any());
-            verify(archive)
-                    .writeFileEntry(
-                            eq("my_link.txt"),
-                            any(InputStream.class),
-                            eq(linkAttrs.size()),
-                            eq(linkAttrs.lastModifiedTime()),
-                            anyInt(),
-                            eq(target));
+            verify(archive).writeSymlink(eq("my_link.txt"), anyString(), anyInt(), eq(linkAttrs.lastModifiedTime()));
         }
     }
 
@@ -1196,13 +1224,7 @@ class ArchiveCreatorTest {
                     Files.readAttributes(symlinkToDir, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
             verify(archive).addFile(eq("link_to_actual_dir"), eq(symlinkToDir), any(BasicFileAttributes.class), any());
             verify(archive)
-                    .writeFileEntry(
-                            eq("link_to_actual_dir"),
-                            any(InputStream.class),
-                            eq(linkAttrs.size()),
-                            eq(linkAttrs.lastModifiedTime()),
-                            anyInt(),
-                            eq(actualDir));
+                    .writeSymlink(eq("link_to_actual_dir"), anyString(), anyInt(), eq(linkAttrs.lastModifiedTime()));
         }
     }
 
@@ -1217,9 +1239,9 @@ class ArchiveCreatorTest {
             archive.addDirectoryRecursively(emptyBaseDir);
 
             // Then
-            verify(archive, never()).writeDirectoryEntry(anyString(), any(FileTime.class));
-            verify(archive, never()).writeFileEntry(anyString(), any(), anyLong(), any(), anyInt(), any(Path.class));
-            verify(archive, never()).writeFileEntry(anyString(), any(), anyLong(), any(), anyInt());
+            verify(archive, never()).writeDirectory(anyString(), anyInt(), any(FileTime.class));
+            verify(archive, never()).writeSymlink(anyString(), anyString(), anyInt(), any());
+            verify(archive, never()).writeFile(anyString(), any(), any(OptionalLong.class), anyInt(), any());
             Compress4JAssertions.assertThat(inMemoryLogAppender)
                     .contains("dir=" + emptyBaseDir + " topLevelDir=", TRACE);
         }
@@ -1241,12 +1263,12 @@ class ArchiveCreatorTest {
             verify(archive).addDirectory(eq(topLevelDirName), argThat(ft -> ft.toInstant()
                     .truncatedTo(ChronoUnit.SECONDS)
                     .equals(expectedModTime.toInstant().truncatedTo(ChronoUnit.SECONDS))));
-            verify(archive).writeDirectoryEntry(eq(topLevelDirName), argThat(ft -> ft.toInstant()
+            verify(archive).writeDirectory(eq(topLevelDirName), anyInt(), argThat(ft -> ft.toInstant()
                     .truncatedTo(ChronoUnit.SECONDS)
                     .equals(expectedModTime.toInstant().truncatedTo(ChronoUnit.SECONDS))));
-            verify(archive, times(1)).writeDirectoryEntry(anyString(), any(FileTime.class));
-            verify(archive, never()).writeFileEntry(anyString(), any(), anyLong(), any(), anyInt(), any(Path.class));
-            verify(archive, never()).writeFileEntry(anyString(), any(), anyLong(), any(), anyInt());
+            verify(archive, times(1)).writeDirectory(anyString(), anyInt(), any(FileTime.class));
+            verify(archive, never()).writeSymlink(anyString(), anyString(), anyInt(), any());
+            verify(archive, never()).writeFile(anyString(), any(), any(OptionalLong.class), anyInt(), any());
         }
     }
 
@@ -1332,8 +1354,13 @@ class ArchiveCreatorTest {
                             eq(overrideModTime));
 
             verify(archive, times(2))
-                    .writeFileEntry(anyString(), any(InputStream.class), anyLong(), eq(overrideModTime), anyInt());
-            verify(archive, times(1)).writeDirectoryEntry("subdir", overrideModTime);
+                    .writeFile(
+                            anyString(),
+                            any(InputStream.class),
+                            any(OptionalLong.class),
+                            anyInt(),
+                            eq(overrideModTime));
+            verify(archive, times(1)).writeDirectory("subdir", 0, overrideModTime);
         }
     }
 
@@ -1384,7 +1411,12 @@ class ArchiveCreatorTest {
 
             // Then
             verify(archive)
-                    .writeFileEntry(eq(entryName), any(ByteArrayInputStream.class), eq(0L), eq(modTime), eq(NO_MODE));
+                    .writeFile(
+                            eq(entryName),
+                            any(ByteArrayInputStream.class),
+                            eq(OptionalLong.of(0L)),
+                            eq(NO_MODE),
+                            eq(modTime));
         }
     }
 
@@ -1404,7 +1436,12 @@ class ArchiveCreatorTest {
             // Then
             verify(archive).accept(fileName, path);
             verify(archive)
-                    .writeFileEntry(eq(fileName), any(InputStream.class), anyLong(), any(FileTime.class), anyInt());
+                    .writeFile(
+                            eq(fileName),
+                            any(InputStream.class),
+                            any(OptionalLong.class),
+                            anyInt(),
+                            any(FileTime.class));
         }
     }
 }
