@@ -78,10 +78,9 @@ public class SevenZArchiveCreator extends ArchiveCreator<SevenZFileArchiveOutput
      *
      * @param channel the channel to write the archive to
      * @return the builder
-     * @throws IOException not thrown; {@code build()} positions the channel
      * @since 5.0
      */
-    public static SevenZArchiveCreatorBuilder builder(SeekableByteChannel channel) throws IOException {
+    public static SevenZArchiveCreatorBuilder builder(SeekableByteChannel channel) {
         return new SevenZArchiveCreatorBuilder(() -> new SevenZOutputFile(channel));
     }
 
@@ -153,10 +152,10 @@ public class SevenZArchiveCreator extends ArchiveCreator<SevenZFileArchiveOutput
         /**
          * Create a new builder that writes to the given path. {@code build()} creates the file.
          *
-         * <p>7z needs a seekable target to patch its header, so only a path is accepted.
+         * <p>7z needs a seekable target to patch its header; for a channel, use {@code builder(SeekableByteChannel)}.
          *
          * @param path the path to write the archive to
-         * @throws IOException not thrown; {@code build()} opens the file
+         * @throws IOException never thrown; declared for compatibility with 4.x
          */
         public SevenZArchiveCreatorBuilder(Path path) throws IOException {
             this(() -> new SevenZOutputFile(path.toFile()));
