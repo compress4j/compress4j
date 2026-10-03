@@ -22,16 +22,15 @@ import java.util.regex.Pattern;
 /** Normalises archive entry names and rejects names that would resolve outside an extraction directory. */
 final class EntryNames {
 
-    private static final Pattern DRIVE = Pattern.compile("^[A-Za-z]:(/|$)");
+    private static final Pattern DRIVE = Pattern.compile("^[A-Za-z]:");
 
     private EntryNames() {}
 
     static String checked(String rawName) throws UnsafeEntryException {
         String name = ArchiveCreator.sanitiseName(rawName);
-        if (name.isEmpty()) {
-            throw new IllegalArgumentException("Entry name is empty: '" + rawName + "'");
-        }
-        if (DRIVE.matcher(name).find() || Arrays.asList(name.split("/")).contains("..")) {
+        if (name.indexOf('\0') >= 0
+                || DRIVE.matcher(name).find()
+                || Arrays.asList(name.split("/")).contains("..")) {
             throw new UnsafeEntryException("Unsafe entry name: " + rawName);
         }
         return name;

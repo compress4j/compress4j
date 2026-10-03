@@ -134,7 +134,8 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
      * Writes one entry. The name is sanitised (leading and trailing slashes, backslashes) before the filter sees it.
      *
      * @param source the entry to write
-     * @throws UnsafeEntryException if the name is absolute or contains a {@code ..} segment
+     * @throws UnsafeEntryException if the name starts with a drive letter, contains a NUL character or has a {@code ..}
+     *     segment
      * @throws IllegalArgumentException if a file's size is unknown and this format records sizes before content
      * @throws IllegalStateException if an earlier write failed
      * @throws IOException if writing fails; the archive is then incomplete

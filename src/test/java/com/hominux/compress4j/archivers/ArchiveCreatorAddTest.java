@@ -52,7 +52,7 @@ class ArchiveCreatorAddTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"../evil", "a/../../evil", "a/..", "C:/evil"})
+    @ValueSource(strings = {"../evil", "a/../../evil", "a/..", "C:/evil", "..\u0000", "sub/..\u0000x", "C:evil.txt"})
     void rejectsUnsafeNames(String name) throws IOException {
         try (var creator =
                 TarArchiveCreator.builder(new ByteArrayOutputStream()).build()) {
