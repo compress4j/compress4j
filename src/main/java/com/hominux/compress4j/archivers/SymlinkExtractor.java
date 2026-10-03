@@ -66,10 +66,11 @@ record SymlinkExtractor(EscapingSymlinkPolicy policy, boolean overwrite) {
         if (overwrite || !Files.exists(outputFile, LinkOption.NOFOLLOW_LINKS)) {
             Path outputTarget = Paths.get(target);
             EntryPaths.makeDirectory(outputFile.getParent());
+            Path realLocation = outputFile.getParent().toRealPath().resolve(outputFile.getFileName());
             Files.deleteIfExists(outputFile);
             Files.createSymbolicLink(outputFile, outputTarget);
             if (policy != EscapingSymlinkPolicy.ALLOW) {
-                guard.record(outputFile.getParent().toRealPath().resolve(outputFile.getFileName()));
+                guard.record(realLocation);
             }
         } else {
             LOGGER.debug("Skipping symlink entry: {} -> {} (already exists)", entry.name(), target);

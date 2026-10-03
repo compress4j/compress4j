@@ -53,13 +53,15 @@ final class SymlinkGuard {
      */
     void verify() throws UnsafeEntryException {
         if (outcome == null) {
-            List<Path> escaping = links.stream().filter(this::escapes).toList();
+            Path realOut = realOutputDir();
+            List<Path> escaping =
+                    links.stream().filter(l -> escapes(l, realOut)).toList();
             escaping.forEach(SymlinkGuard::deleteQuietly);
             links.clear();
             outcome = escaping.stream()
                     .findFirst()
                     .map(first -> new UnsafeEntryException(
-                            "Invalid symlink (points outside of output directory): " + outputDir.relativize(first)));
+                            "Invalid symlink (points outside of output directory): " + realOut.relativize(first)));
         }
         if (outcome.isPresent()) {
             throw outcome.orElseThrow();
@@ -80,13 +82,21 @@ final class SymlinkGuard {
         return current;
     }
 
-    private boolean escapes(Path link) {
+    private Path realOutputDir() {
+        try {
+            return outputDir.toRealPath();
+        } catch (IOException e) {
+            return outputDir.toAbsolutePath().normalize();
+        }
+    }
+
+    private static boolean escapes(Path link, Path realOut) {
         if (!Files.isSymbolicLink(link)) {
             return false;
         }
         try {
             Path target = link.getParent().resolve(Files.readSymbolicLink(link));
-            return !realLocation(target).startsWith(outputDir.toRealPath());
+            return !realLocation(target).startsWith(realOut);
         } catch (IOException e) {
             return true;
         }

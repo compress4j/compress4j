@@ -144,4 +144,137 @@ class SymlinkGuardTest {
             }
         }
     }
+
+    private static byte[] chainThen(java.util.function.Consumer<TarArchiveOutputStream> extra) throws IOException {
+        var bytes = new ByteArrayOutputStream();
+        try (var tar = new TarArchiveOutputStream(bytes)) {
+            symlink(tar, "A", "s/n/n/n/k/../../../..");
+            dir(tar, "s/");
+            dir(tar, "s/k/");
+            symlink(tar, "s/n", ".");
+            extra.accept(tar);
+        }
+        return bytes.toByteArray();
+    }
+
+    private static void file(TarArchiveOutputStream tar, String name) {
+        try {
+            var e = new TarArchiveEntry(name);
+            e.setSize(1);
+            tar.putArchiveEntry(e);
+            tar.write('x');
+            tar.closeArchiveEntry();
+        } catch (IOException e) {
+            throw new java.io.UncheckedIOException(e);
+        }
+    }
+
+    @Test
+    void relativeOutputDirStillReportsUnsafeEntryAndRemovesLink() throws IOException {
+        // Given
+        Path out = Path.of("build/tmp/rel-guard-" + System.nanoTime() + "/out");
+        Files.createDirectories(out);
+        try (var extractor = TarArchiveExtractor.builder(new ByteArrayInputStream(chainArchive()))
+                .build()) {
+            // Then
+            assertThatThrownBy(() -> extractor.extract(out))
+                    .isInstanceOf(UnsafeEntryException.class)
+                    .hasMessageContaining("A");
+            assertThat(Files.exists(out.resolve("A"), LinkOption.NOFOLLOW_LINKS))
+                    .isFalse();
+        } finally {
+            Files.deleteIfExists(out.resolve("s/n"));
+        }
+    }
+
+    @Test
+    void messageNamesEntryRelativeToOutputDirReachedThroughAlias() throws IOException {
+        // Given
+        Path real = Files.createDirectories(tmp.resolve("a/b/out"));
+        Path alias = Files.createSymbolicLink(tmp.resolve("alias"), real);
+
+        try (var extractor = TarArchiveExtractor.builder(new ByteArrayInputStream(chainArchive()))
+                .build()) {
+            // Then
+            assertThatThrownBy(() -> extractor.extract(alias))
+                    .isInstanceOf(UnsafeEntryException.class)
+                    .hasMessageEndingWith(": A");
+        }
+    }
+
+    @Test
+    void verifyRethrowsTheSameExceptionWithoutDuplicates() throws IOException {
+        // Given
+        Path out = Files.createDirectories(tmp.resolve("out"));
+        Path link = Files.createSymbolicLink(out.resolve("l"), Path.of("../.."));
+        var guard = new SymlinkGuard(out);
+        guard.record(link);
+
+        // When
+        UnsafeEntryException first = null;
+        try {
+            guard.verify();
+        } catch (UnsafeEntryException e) {
+            first = e;
+        }
+
+        // Then
+        var firstFailure = first;
+        assertThat(firstFailure).isNotNull();
+        assertThatThrownBy(guard::verify).isSameAs(firstFailure);
+        assertThat(firstFailure.getSuppressed()).isEmpty();
+    }
+
+    @Test
+    void guardRejectionAfterNonSecurityFailureIsPrimary() throws IOException {
+        // Given
+        Path out = Files.createDirectories(tmp.resolve("a/b/out"));
+        byte[] archive = chainThen(tar -> file(tar, "s"));
+
+        try (var extractor = TarArchiveExtractor.builder(new ByteArrayInputStream(archive))
+                .overwrite(true)
+                .build()) {
+            // Then
+            assertThatThrownBy(() -> extractor.extract(out))
+                    .isInstanceOf(UnsafeEntryException.class)
+                    .hasMessageContaining("A")
+                    .satisfies(e ->
+                            assertThat(e.getSuppressed()).hasSize(1).noneMatch(UnsafeEntryException.class::isInstance));
+        }
+    }
+
+    @Test
+    void securityPrimaryStaysPrimaryWithGuardSuppressedOnce() throws IOException {
+        // Given
+        Path out = Files.createDirectories(tmp.resolve("a/b/out"));
+        byte[] archive = chainThen(tar -> file(tar, "../evil"));
+
+        try (var extractor =
+                TarArchiveExtractor.builder(new ByteArrayInputStream(archive)).build()) {
+            // Then
+            assertThatThrownBy(() -> extractor.extract(out))
+                    .isInstanceOf(UnsafeEntryException.class)
+                    .hasMessageNotContaining("points outside")
+                    .satisfies(e -> assertThat(e.getSuppressed()).hasSize(1).allMatch(x -> x.getMessage()
+                            .contains("points outside")));
+        }
+    }
+
+    @Test
+    void verifyNeverDeletesRecordedRegularFileOrDirectory() throws IOException {
+        // Given
+        Path out = Files.createDirectories(tmp.resolve("out"));
+        Path file = Files.writeString(out.resolve("f"), "x");
+        Path dir = Files.createDirectories(out.resolve("d"));
+        var guard = new SymlinkGuard(out);
+        guard.record(file);
+        guard.record(dir);
+
+        // When
+        guard.verify();
+
+        // Then
+        assertThat(file).isRegularFile();
+        assertThat(dir).isDirectory();
+    }
 }
