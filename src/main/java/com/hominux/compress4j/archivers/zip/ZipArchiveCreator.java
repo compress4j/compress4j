@@ -63,7 +63,7 @@ public class ZipArchiveCreator extends ArchiveCreator<ZipArchiveOutputStream> {
      * @throws IOException if an I/O error occurred
      */
     public ZipArchiveCreator(ZipArchiveCreatorBuilder builder) throws IOException {
-        super(builder.buildArchiveOutputStream());
+        super(builder);
     }
 
     /**
