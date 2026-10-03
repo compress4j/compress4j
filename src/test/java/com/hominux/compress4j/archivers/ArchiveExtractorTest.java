@@ -295,10 +295,10 @@ class ArchiveExtractorTest {
             inMemoryDecompressor.setErrorHandler(errorHandler);
 
             // when
-            inMemoryDecompressor.extract(tempDir);
+            assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir))
+                    .isInstanceOf(com.hominux.compress4j.exceptions.UnsafeEntryException.class);
 
             // then
-            Compress4JAssertions.assertThat(inMemoryLogAppender).contains("Retying because of exception", DEBUG);
             assertThat(tempDir).isEmptyDirectory();
         }
     }
@@ -319,7 +319,8 @@ class ArchiveExtractorTest {
             inMemoryDecompressor.setErrorHandler((entry, exception) -> ABORT);
 
             // when
-            inMemoryDecompressor.extract(tempDir);
+            assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir))
+                    .isInstanceOf(com.hominux.compress4j.exceptions.UnsafeEntryException.class);
 
             // then
             assertThat(tempDir).isEmptyDirectory();
@@ -342,7 +343,8 @@ class ArchiveExtractorTest {
             inMemoryDecompressor.setErrorHandler((entry, exception) -> ABORT);
 
             // when
-            inMemoryDecompressor.extract(tempDir);
+            assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir))
+                    .isInstanceOf(com.hominux.compress4j.exceptions.UnsafeEntryException.class);
 
             // then
             assertThat(tempDir).isDirectory();
@@ -1965,6 +1967,42 @@ class ArchiveExtractorTest {
                 assertThat(secondDir.resolve("a")).hasContent("a");
                 assertThat(secondDir.resolve("b")).hasContent("b");
             }
+        }
+    }
+
+    @Test
+    void errorHandlerCannotSkipTraversalEntry(@TempDir Path out) throws IOException {
+        // Given
+        var entries = List.of(
+                InMemoryArchiveEntry.builder().name("../evil.txt").content("x").build());
+
+        try (var extractor = InMemoryArchiveExtractor.builder(entries)
+                .errorHandler((entry, e) -> ArchiveExtractor.ErrorHandlerChoice.SKIP)
+                .build()) {
+            // Then
+            assertThatThrownBy(() -> extractor.extract(out))
+                    .isInstanceOf(com.hominux.compress4j.exceptions.UnsafeEntryException.class);
+        }
+        assertThat(out.resolveSibling("evil.txt")).doesNotExist();
+    }
+
+    @Test
+    void ioExceptionCatchStillCatchesUnsafeEntry(@TempDir Path out) throws IOException {
+        // Given
+        var entries = List.of(
+                InMemoryArchiveEntry.builder().name("../evil.txt").content("x").build());
+
+        try (var extractor = InMemoryArchiveExtractor.builder(entries).build()) {
+            // When
+            IOException caught = null;
+            try {
+                extractor.extract(out);
+            } catch (IOException e) {
+                caught = e;
+            }
+
+            // Then
+            assertThat(caught).isInstanceOf(com.hominux.compress4j.exceptions.UnsafeEntryException.class);
         }
     }
 }

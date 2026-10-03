@@ -23,6 +23,7 @@ import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 
 import com.hominux.compress4j.archivers.ExtractionErrorPolicy.EntryOutcome;
 import com.hominux.compress4j.exceptions.ArchiveLimitExceededException;
+import com.hominux.compress4j.exceptions.ArchiveSecurityException;
 import com.hominux.compress4j.utils.BuildFailureCleanup;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -206,8 +207,8 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
             try {
                 processEntry(outputDir, entry, budget);
                 return new EntryOutcome.Continue();
-            } catch (ArchiveLimitExceededException unrecoverableLimitBreach) {
-                throw unrecoverableLimitBreach;
+            } catch (ArchiveSecurityException unsuppressible) {
+                throw unsuppressible;
             } catch (IOException ioException) {
                 ErrorHandlerChoice choice =
                         new ExtractionErrorPolicy(errorHandler).handle(ioException, ignoreErrors, entry);
@@ -609,6 +610,8 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
 
         /**
          * Sets the error handler for the extractor.
+         *
+         * <p>An {@link ArchiveSecurityException} always propagates; the handler is not consulted for it.
          *
          * @param errorHandlerFunction the error handler to set
          * @return the instance of the {@link ArchiveExtractor.ArchiveExtractorBuilder}
