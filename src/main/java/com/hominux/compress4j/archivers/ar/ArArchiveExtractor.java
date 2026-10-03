@@ -74,7 +74,7 @@ public class ArArchiveExtractor extends ArchiveExtractor<ArArchiveInputStream> {
 
     /** {@inheritDoc} */
     @Override
-    public Optional<Entry> nextEntry() throws IOException {
+    protected Optional<Entry> nextEntry() throws IOException {
         ArArchiveEntry ae = archiveInputStream.getNextEntry();
         if (ae == null) return Optional.empty();
 
@@ -93,7 +93,7 @@ public class ArArchiveExtractor extends ArchiveExtractor<ArArchiveInputStream> {
 
     /** {@inheritDoc} */
     @Override
-    public InputStream openEntryStream(Entry entry) {
+    protected InputStream openEntryStream(Entry entry) {
         return archiveInputStream;
     }
 

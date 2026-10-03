@@ -42,7 +42,6 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.apache.commons.compress.archivers.ArchiveEntry;
@@ -73,26 +72,22 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
     /** Archive input stream to be used for extraction. */
     protected A archiveInputStream;
     /** Escaping symlink policy for the extractor. */
-    protected ArchiveExtractor.EscapingSymlinkPolicy escapingSymlinkPolicy = EscapingSymlinkPolicy.DISALLOW;
+    private final ArchiveExtractor.EscapingSymlinkPolicy escapingSymlinkPolicy;
     /** Filter for the extractor. */
-    private Predicate<Entry> entryFilter = ACCEPT_ALL;
+    private final Predicate<Entry> entryFilter;
     /** Error handler for the extractor. */
-    private BiFunction<Entry, ? super IOException, ErrorHandlerChoice> errorHandler =
-            (x, y) -> ErrorHandlerChoice.BAIL_OUT;
+    private final BiFunction<Entry, ? super IOException, ErrorHandlerChoice> errorHandler;
     /** Post processor for the extractor. */
-    private BiConsumer<Entry, ? super Path> postProcessor;
+    private final BiConsumer<Entry, ? super Path> postProcessor;
 
     /** Number of leading path components to strip from the extracted entries. */
-    private int stripComponents = 0;
+    private final int stripComponents;
 
     /** Whether to overwrite existing files. */
-    private boolean overwrite = false;
+    private final boolean overwrite;
 
-    /**
-     * Extraction limits, see {@link #setMaxEntries(long)}, {@link #setMaxEntrySize(long)} and
-     * {@link #setMaxTotalSize(long)}.
-     */
-    private ExtractionLimits limits = ExtractionLimits.NONE;
+    /** Extraction limits configured through the builder's max-entries, max-entry-size and max-total-size options. */
+    private final ExtractionLimits limits;
 
     private final EntryPipeline pipeline;
 
@@ -124,6 +119,13 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      */
     protected ArchiveExtractor(A archiveInputStream) {
         this.archiveInputStream = archiveInputStream;
+        this.entryFilter = ACCEPT_ALL;
+        this.errorHandler = (x, y) -> ErrorHandlerChoice.BAIL_OUT;
+        this.postProcessor = null;
+        this.stripComponents = 0;
+        this.overwrite = false;
+        this.escapingSymlinkPolicy = EscapingSymlinkPolicy.DISALLOW;
+        this.limits = ExtractionLimits.NONE;
         this.pipeline = new EntryPipeline(reader(), 0, ACCEPT_ALL, ExtractionLimits.NONE);
     }
 
@@ -221,99 +223,6 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
     }
 
     /**
-     * Sets the error handler for the extractor.
-     *
-     * @param errorHandler the error handler to set
-     */
-    public void setErrorHandler(BiFunction<Entry, ? super IOException, ErrorHandlerChoice> errorHandler) {
-        this.errorHandler = errorHandler;
-    }
-
-    /**
-     * Sets the escaping symlink policy for the extractor.
-     *
-     * @param escapingSymlinkPolicy the escaping symlink policy to set
-     */
-    public void setEscapingSymlinkPolicy(ArchiveExtractor.EscapingSymlinkPolicy escapingSymlinkPolicy) {
-        this.escapingSymlinkPolicy = escapingSymlinkPolicy;
-    }
-
-    /**
-     * Sets the filter for the extractor.
-     *
-     * @param filter Predicate to be used when entries are being extracted
-     */
-    public void setEntryFilter(@Nullable Predicate<Entry> filter) {
-        this.entryFilter = filter != null ? filter : ACCEPT_ALL;
-    }
-
-    /**
-     * Sets the post processor for the extractor.
-     *
-     * @param consumer the post processor to set
-     */
-    public void setPostProcessor(@Nullable Consumer<? super Path> consumer) {
-        this.postProcessor = consumer != null ? (entry, path) -> consumer.accept(path) : null;
-    }
-
-    /**
-     * Sets the post processor for the extractor.
-     *
-     * @param postProcessor the post processor to set
-     */
-    public void setPostProcessor(BiConsumer<Entry, ? super Path> postProcessor) {
-        this.postProcessor = postProcessor;
-    }
-
-    /**
-     * Sets the number of leading path components to strip from the extracted entries.
-     *
-     * @param stripComponents the number of leading path components to strip
-     */
-    public void setStripComponents(int stripComponents) {
-        this.stripComponents = stripComponents;
-    }
-
-    /**
-     * Sets whether to overwrite existing files.
-     *
-     * @param overwrite whether to overwrite existing files
-     */
-    public void setOverwrite(boolean overwrite) {
-        this.overwrite = overwrite;
-    }
-
-    /**
-     * Sets the maximum number of entries {@link #extract(Path)} will process before aborting.
-     *
-     * @param maxEntries the maximum number of entries, or {@link #UNLIMITED} to disable the limit
-     * @since 3.1
-     */
-    public void setMaxEntries(long maxEntries) {
-        this.limits = limits.withMaxEntries(maxEntries);
-    }
-
-    /**
-     * Sets the maximum number of bytes a single entry may expand to before {@link #extract(Path)} aborts.
-     *
-     * @param maxEntrySize the maximum size of a single entry in bytes, or {@link #UNLIMITED} to disable the limit
-     * @since 3.1
-     */
-    public void setMaxEntrySize(long maxEntrySize) {
-        this.limits = limits.withMaxEntrySize(maxEntrySize);
-    }
-
-    /**
-     * Sets the maximum number of bytes the whole archive may expand to before {@link #extract(Path)} aborts.
-     *
-     * @param maxTotalSize the maximum total extracted size in bytes, or {@link #UNLIMITED} to disable the limit
-     * @since 3.1
-     */
-    public void setMaxTotalSize(long maxTotalSize) {
-        this.limits = limits.withMaxTotalSize(maxTotalSize);
-    }
-
-    /**
      * Close the stream for the current entry. This method is called after the entry has been processed and should close
      * stream opened by {@link #openEntryStream(Entry)}.
      *
@@ -332,7 +241,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * @throws IOException if an I/O error occurs
      * @since 3.0
      */
-    public abstract Optional<Entry> nextEntry() throws IOException;
+    protected abstract Optional<Entry> nextEntry() throws IOException;
 
     /**
      * Open the stream for the current entry. This method is called before the entry is processed and should open the
@@ -343,7 +252,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * @throws IOException if an I/O error occurs
      * @since 3.0
      */
-    public abstract InputStream openEntryStream(Entry entry) throws IOException;
+    protected abstract InputStream openEntryStream(Entry entry) throws IOException;
 
     private EntryReader reader() {
         return new EntryReader() {
@@ -405,8 +314,8 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
     }
 
     /**
-     * Reads exactly {@code declaredSize} bytes from {@code in}, enforcing {@link #setMaxEntrySize(long)} first. Lets a
-     * subclass safely read an entry's content into memory (e.g. a symlink target that has no dedicated header field)
+     * Reads exactly {@code declaredSize} bytes from {@code in}, enforcing the configured maximum entry size first. Lets
+     * a subclass safely read an entry's content into memory (e.g. a symlink target that has no dedicated header field)
      * without letting a crafted archive force an oversized allocation via its own declared size.
      *
      * @param entryName the name of the entry being read, used in the exception message
@@ -472,7 +381,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         RELATIVIZE_ABSOLUTE
     }
 
-    /** Specifies the action to be taken by the {@link ArchiveExtractor#setErrorHandler error handler}. */
+    /** Specifies the action to be taken by the error handler. */
     public enum ErrorHandlerChoice {
         /**
          * Stop the extraction and return normally. Entries extracted before the failure are left in place; the

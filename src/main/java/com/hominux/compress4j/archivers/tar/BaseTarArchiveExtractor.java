@@ -52,7 +52,7 @@ public abstract class BaseTarArchiveExtractor extends ArchiveExtractor<TarArchiv
 
     /** {@inheritDoc} */
     @Override
-    public Optional<Entry> nextEntry() throws IOException {
+    protected Optional<Entry> nextEntry() throws IOException {
         return getNextTarArchiveEntry().map(BaseTarArchiveExtractor::toEntry);
     }
 
@@ -70,7 +70,7 @@ public abstract class BaseTarArchiveExtractor extends ArchiveExtractor<TarArchiv
 
     /** {@inheritDoc} */
     @Override
-    public InputStream openEntryStream(Entry entry) {
+    protected InputStream openEntryStream(Entry entry) {
         return archiveInputStream;
     }
 

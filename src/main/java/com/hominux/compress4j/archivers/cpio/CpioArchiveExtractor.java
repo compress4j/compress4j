@@ -58,12 +58,12 @@ public class CpioArchiveExtractor extends ArchiveExtractor<CpioArchiveInputStrea
     }
 
     @Override
-    public InputStream openEntryStream(Entry entry) {
+    protected InputStream openEntryStream(Entry entry) {
         return archiveInputStream;
     }
 
     @Override
-    public Optional<Entry> nextEntry() throws IOException {
+    protected Optional<Entry> nextEntry() throws IOException {
         CpioArchiveEntry cpioEntry = archiveInputStream.getNextEntry();
         if (cpioEntry == null || "TRAILER!!!".equals(cpioEntry.getName())) {
             return Optional.empty();

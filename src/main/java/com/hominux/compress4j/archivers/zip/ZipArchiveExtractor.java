@@ -65,7 +65,7 @@ public class ZipArchiveExtractor extends ArchiveExtractor<ZipFileArchiveInputStr
 
     /** {@inheritDoc} */
     @Override
-    public Optional<Entry> nextEntry() throws IOException {
+    protected Optional<Entry> nextEntry() throws IOException {
         ZipArchiveEntry ze = archiveInputStream.getNextEntry();
         if (ze == null) {
             return Optional.empty();
@@ -88,7 +88,7 @@ public class ZipArchiveExtractor extends ArchiveExtractor<ZipFileArchiveInputStr
 
     /** {@inheritDoc} */
     @Override
-    public InputStream openEntryStream(Entry entry) {
+    protected InputStream openEntryStream(Entry entry) {
         return archiveInputStream;
     }
 

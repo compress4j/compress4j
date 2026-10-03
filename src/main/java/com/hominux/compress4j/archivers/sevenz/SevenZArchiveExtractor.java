@@ -70,7 +70,7 @@ public class SevenZArchiveExtractor extends ArchiveExtractor<SevenZFileArchiveIn
 
     /** {@inheritDoc} */
     @Override
-    public Optional<Entry> nextEntry() throws IOException {
+    protected Optional<Entry> nextEntry() throws IOException {
         SevenZArchiveEntry entry = archiveInputStream.getNextEntry();
         if (entry == null) {
             return Optional.empty();
@@ -107,7 +107,7 @@ public class SevenZArchiveExtractor extends ArchiveExtractor<SevenZFileArchiveIn
 
     /** {@inheritDoc} */
     @Override
-    public InputStream openEntryStream(Entry entry) {
+    protected InputStream openEntryStream(Entry entry) {
         return archiveInputStream;
     }
 
