@@ -29,6 +29,10 @@ import com.hominux.compress4j.archivers.catalog.FormatCatalog;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.reflect.Modifier;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,6 +40,7 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -54,8 +59,8 @@ class FormatContractTest {
     @TempDir
     Path tmp;
 
-    static Stream<ArchiveFormat> writable() {
-        return FormatCatalog.writable();
+    static Stream<ArchiveFormat> readable() {
+        return FormatCatalog.readable();
     }
 
     private Path source() throws IOException {
@@ -71,7 +76,8 @@ class FormatContractTest {
     private Path roundTrip(ArchiveFormat format) throws IOException {
         Path src = source();
         Path archive = tmp.resolve("archive." + format.name());
-        try (var creator = format.createAt().orElseThrow().apply(archive)) {
+        try (var creator =
+                FormatCatalog.writerOf(format).createAt().orElseThrow().apply(archive)) {
             creator.addDirectoryRecursively(src);
         }
         return archive;
@@ -86,7 +92,7 @@ class FormatContractTest {
     }
 
     @ParameterizedTest
-    @MethodSource("writable")
+    @MethodSource("readable")
     void fileContentSurvivesRoundTrip(ArchiveFormat format) throws IOException {
         Path archive = roundTrip(format);
         Path out = tmp.resolve("out");
@@ -97,7 +103,7 @@ class FormatContractTest {
     }
 
     @ParameterizedTest
-    @MethodSource("writable")
+    @MethodSource("readable")
     void modesMatchDeclaration(ArchiveFormat format) throws IOException {
         var file = entries(format, roundTrip(format)).get("d/run.sh");
         if (format.has(MODES)) {
@@ -108,7 +114,7 @@ class FormatContractTest {
     }
 
     @ParameterizedTest
-    @MethodSource("writable")
+    @MethodSource("readable")
     void symlinksMatchDeclaration(ArchiveFormat format) throws IOException {
         var link = entries(format, roundTrip(format)).get("link");
         if (format.has(SYMLINKS)) {
@@ -120,7 +126,7 @@ class FormatContractTest {
     }
 
     @ParameterizedTest
-    @MethodSource("writable")
+    @MethodSource("readable")
     void directoriesMatchDeclaration(ArchiveFormat format) throws IOException {
         var names = entries(format, roundTrip(format));
         assertThat(names.containsKey("d") && names.get("d").type() == ArchiveExtractor.Entry.Type.DIR)
@@ -128,7 +134,7 @@ class FormatContractTest {
     }
 
     @ParameterizedTest
-    @MethodSource("writable")
+    @MethodSource("readable")
     void lastModifiedMatchesDeclaration(ArchiveFormat format) throws IOException {
         assumeThat(format.has(LAST_MODIFIED)).isTrue();
         var file = entries(format, roundTrip(format)).get("d/run.sh");
@@ -157,42 +163,51 @@ class FormatContractTest {
         }
     }
 
+    private static boolean declaresFactory(Class<?> owner, String name, Class<?> parameter) {
+        return Arrays.stream(owner.getDeclaredMethods())
+                .anyMatch(m -> m.getName().equals(name)
+                        && Modifier.isPublic(m.getModifiers())
+                        && Modifier.isStatic(m.getModifiers())
+                        && Arrays.equals(m.getParameterTypes(), new Class<?>[] {parameter}));
+    }
+
     @Test
     void everyWritableFormatHasChannelBuilders() {
         assertThat(FormatCatalog.writable()).allSatisfy(f -> {
-            assertThat(f.createOnChannel()).as(f.name() + " create").isPresent();
-            assertThat(f.readFromChannel()).as(f.name() + " read").isPresent();
+            assertThat(declaresFactory(f.creator().orElseThrow(), "builder", SeekableByteChannel.class))
+                    .as(f.name() + " create")
+                    .isTrue();
+            assertThat(declaresFactory(f.extractor(), "builder", SeekableByteChannel.class))
+                    .as(f.name() + " read")
+                    .isTrue();
+            assertThat(f.createOnChannel()).as(f.name() + " create row").isPresent();
+            assertThat(f.readFromChannel()).as(f.name() + " read row").isPresent();
         });
     }
 
-    @Test
-    void zipStreamingLosesModesAndSymlinksAsDeclared() throws IOException {
-        var zip = FormatCatalog.all()
-                .filter(f -> f.name().equals("zip"))
-                .findFirst()
-                .orElseThrow();
-        var streaming = FormatCatalog.all()
-                .filter(f -> f.name().equals("zip-streaming"))
-                .findFirst()
-                .orElseThrow();
-        var entries = entries(streaming, roundTrip(zip));
-        assertThat(entries.get("d/run.sh").mode()).isZero();
-        assertThat(entries.get("link").type()).isEqualTo(ArchiveExtractor.Entry.Type.FILE);
+    static Stream<ArchiveFormat> streamWriters() {
+        return FormatCatalog.writable().filter(f -> f.has(STREAM_OUTPUT));
     }
 
-    static Stream<ArchiveFormat> streamCapable() {
-        return FormatCatalog.writable().filter(f -> f.has(STREAM_INPUT) && f.has(STREAM_OUTPUT));
+    private static ArchiveFormat streamReaderOf(ArchiveFormat writer) {
+        return FormatCatalog.all()
+                .filter(f -> f.has(STREAM_INPUT))
+                .filter(f -> FormatCatalog.writerOf(f).name().equals(writer.name()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError(writer.name() + " writes streams but no row reads them"));
     }
 
     @ParameterizedTest
-    @MethodSource("streamCapable")
+    @MethodSource("streamWriters")
     void streamRoundTrip(ArchiveFormat format) throws IOException {
         var bytes = new ByteArrayOutputStream();
         try (var creator = format.createOnStream().orElseThrow().apply(bytes)) {
             creator.addFile("a.txt", "alpha".getBytes(StandardCharsets.UTF_8));
         }
-        try (var extractor =
-                format.readFromStream().orElseThrow().apply(new ByteArrayInputStream(bytes.toByteArray()))) {
+        try (var extractor = streamReaderOf(format)
+                .readFromStream()
+                .orElseThrow()
+                .apply(new ByteArrayInputStream(bytes.toByteArray()))) {
             var item = extractor.stream().findFirst().orElseThrow();
             assertThat(new String(item.content().readAllBytes(), StandardCharsets.UTF_8))
                     .isEqualTo("alpha");
@@ -202,11 +217,17 @@ class FormatContractTest {
     @Test
     void streamBuildersExistExactlyWhereDeclared() {
         assertThat(FormatCatalog.all()).allSatisfy(f -> {
-            assertThat(f.readFromStream().isPresent())
+            assertThat(declaresFactory(f.extractor(), f.streamFactory(), InputStream.class))
                     .as(f.name() + " stream input")
                     .isEqualTo(f.has(STREAM_INPUT));
-            assertThat(f.createOnStream().isPresent())
+            assertThat(f.creator().filter(c -> declaresFactory(c, "builder", OutputStream.class)))
                     .as(f.name() + " stream output")
+                    .matches(c -> c.isPresent() == f.has(STREAM_OUTPUT));
+            assertThat(f.readFromStream().isPresent())
+                    .as(f.name() + " stream input row")
+                    .isEqualTo(f.has(STREAM_INPUT));
+            assertThat(f.createOnStream().isPresent())
+                    .as(f.name() + " stream output row")
                     .isEqualTo(f.has(STREAM_OUTPUT));
         });
     }

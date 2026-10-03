@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.hominux.compress4j.archivers.zip.ZipArchiveCreator.ZipArchiveCreatorBuilder;
+import com.hominux.compress4j.utils.FileUtils;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -198,6 +199,35 @@ class ZipArchiveCreatorTest {
             assertThat(entry.isUnixSymlink()).isTrue();
             assertThat(entry.getUnixMode()).isEqualTo(UnixStat.LINK_FLAG | mode);
             assertThat(bytesCaptor.getValue()).isEqualTo(targetBytes);
+        }
+
+        @Test
+        @DisplayName("writeFileEntry should give a symlink without a mode full permissions")
+        void testWriteFileEntry_SymlinkNoMode() throws IOException {
+            // When
+            creator.writeFileEntry(
+                    "link", new ByteArrayInputStream(new byte[0]), 0, testTime, FileUtils.NO_MODE, Paths.get("target"));
+
+            // Then
+            verify(mockZipStream).putArchiveEntry(entryCaptor.capture());
+            assertThat(entryCaptor.getValue().getUnixMode()).isEqualTo(UnixStat.LINK_FLAG | 0777);
+        }
+
+        @Test
+        @DisplayName("writeFileEntry should drop symlink mode bits above the permission bits")
+        void testWriteFileEntry_SymlinkMasksStrayBits() throws IOException {
+            // When
+            creator.writeFileEntry(
+                    "link",
+                    new ByteArrayInputStream(new byte[0]),
+                    0,
+                    testTime,
+                    UnixStat.FILE_FLAG | 0755,
+                    Paths.get("target"));
+
+            // Then
+            verify(mockZipStream).putArchiveEntry(entryCaptor.capture());
+            assertThat(entryCaptor.getValue().getUnixMode()).isEqualTo(UnixStat.LINK_FLAG | 0755);
         }
     }
 }
