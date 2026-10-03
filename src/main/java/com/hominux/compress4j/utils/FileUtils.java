@@ -15,6 +15,7 @@
  */
 package com.hominux.compress4j.utils;
 
+import com.hominux.compress4j.exceptions.UnsafeEntryException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -103,11 +104,11 @@ public class FileUtils {
      *
      * @param unsafePath The unsafe path that needs to be checked canonically
      * @param safePath The safe directory that the unsafe path needs to reside in
-     * @throws IOException if the unsafePath is violating access restriction.
+     * @throws UnsafeEntryException when the unsafePath is violating access restriction.
      */
-    public static void checkValidPath(Path unsafePath, Path safePath) throws IOException {
+    public static void checkValidPath(Path unsafePath, Path safePath) throws UnsafeEntryException {
         if (!isInsideSafeDir(unsafePath, safePath)) {
-            throw new IOException("Path traversal vulnerability detected! Entry: " + unsafePath
+            throw new UnsafeEntryException("Path traversal vulnerability detected! Entry: " + unsafePath
                     + " is outside of target directory: " + safePath);
         }
     }
@@ -118,11 +119,11 @@ public class FileUtils {
      *
      * @param unsafeFile The unsafe file that needs to be checked canonically
      * @param safeDirectory The safe directory that the unsafe file needs to reside in
-     * @throws IOException when the unsafeFile is violating access restriction.
+     * @throws UnsafeEntryException when the unsafeFile is violating access restriction.
      */
-    public static void checkValidPath(File unsafeFile, File safeDirectory) throws IOException {
+    public static void checkValidPath(File unsafeFile, File safeDirectory) throws UnsafeEntryException {
         if (!isInsideSafeDir(unsafeFile, safeDirectory)) {
-            throw new IOException("Path traversal vulnerability detected! Entry: " + unsafeFile
+            throw new UnsafeEntryException("Path traversal vulnerability detected! Entry: " + unsafeFile
                     + " is outside of target directory: " + safeDirectory);
         }
     }

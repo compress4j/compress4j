@@ -22,6 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.hominux.compress4j.archivers.ArchiveExtractor.Entry;
+import com.hominux.compress4j.exceptions.UnsafeEntryException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -91,5 +92,42 @@ class SymlinkExtractorTest {
 
         extract(new SymlinkExtractor(ALLOW, true), link("new"));
         assertThat(Files.readSymbolicLink(outputDir.resolve("link"))).isEqualTo(Path.of("new"));
+    }
+
+    @Test
+    void disallowRejectsAbsoluteTargetWithUnsafeEntryException(@TempDir Path out) {
+        // Given
+        var entry = new Entry("link", Entry.Type.SYMLINK, 0777, "/etc/passwd");
+        var extractor = new SymlinkExtractor(DISALLOW, false);
+
+        // Then
+        assertThatThrownBy(() -> extractor.extract(out, entry, out.resolve("link")))
+                .isInstanceOf(UnsafeEntryException.class);
+    }
+
+    @Test
+    void disallowRejectsEscapingRelativeTargetWithUnsafeEntryException(@TempDir Path out) {
+        // Given
+        var entry = new Entry("link", Entry.Type.SYMLINK, 0777, "../../outside");
+        var extractor = new SymlinkExtractor(DISALLOW, false);
+
+        // Then
+        assertThatThrownBy(() -> extractor.extract(out, entry, out.resolve("link")))
+                .isInstanceOf(UnsafeEntryException.class)
+                .hasCauseInstanceOf(UnsafeEntryException.class);
+    }
+
+    @Test
+    void disallowAcceptsRelativeTargetThatStaysInside(@TempDir Path out) throws IOException {
+        // Given
+        Files.writeString(out.resolve("b.txt"), "b");
+        var entry = new Entry("a/link", Entry.Type.SYMLINK, 0777, "../b.txt");
+        var extractor = new SymlinkExtractor(DISALLOW, false);
+
+        // When
+        extractor.extract(out, entry, out.resolve("a/link"));
+
+        // Then
+        assertThat(Files.readSymbolicLink(out.resolve("a/link"))).isEqualTo(Path.of("../b.txt"));
     }
 }
