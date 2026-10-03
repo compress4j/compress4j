@@ -47,7 +47,7 @@ public class ArjArchiveExtractor extends ArchiveExtractor<ArjArchiveInputStream>
      *
      * @param archiveInputStream the ARJ archive input stream
      */
-    public ArjArchiveExtractor(ArjArchiveInputStream archiveInputStream) {
+    protected ArjArchiveExtractor(ArjArchiveInputStream archiveInputStream) {
         super(archiveInputStream);
     }
 

@@ -44,7 +44,7 @@ public class DumpArchiveExtractor extends ArchiveExtractor<DumpArchiveInputStrea
      *
      * @param archiveInputStream the dump archive input stream
      */
-    public DumpArchiveExtractor(DumpArchiveInputStream archiveInputStream) {
+    protected DumpArchiveExtractor(DumpArchiveInputStream archiveInputStream) {
         super(archiveInputStream);
     }
 
