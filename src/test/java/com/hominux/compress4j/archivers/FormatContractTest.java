@@ -162,4 +162,19 @@ class FormatContractTest {
             assertThat(f.readFromChannel()).as(f.name() + " read").isPresent();
         });
     }
+
+    @Test
+    void zipStreamingLosesModesAndSymlinksAsDeclared() throws IOException {
+        var zip = FormatCatalog.all()
+                .filter(f -> f.name().equals("zip"))
+                .findFirst()
+                .orElseThrow();
+        var streaming = FormatCatalog.all()
+                .filter(f -> f.name().equals("zip-streaming"))
+                .findFirst()
+                .orElseThrow();
+        var entries = entries(streaming, roundTrip(zip));
+        assertThat(entries.get("d/run.sh").mode()).isZero();
+        assertThat(entries.get("link").type()).isEqualTo(ArchiveExtractor.Entry.Type.FILE);
+    }
 }

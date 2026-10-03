@@ -50,6 +50,7 @@ import com.hominux.compress4j.archivers.zip.ZipArchiveExtractor;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.SeekableByteChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.Optional;
@@ -159,11 +160,21 @@ public final class FormatCatalog {
                         "zip",
                         EnumSet.of(DIRECTORIES, MODES, SYMLINKS, LAST_MODIFIED, STREAM_OUTPUT),
                         Optional.of(c(p -> ZipArchiveCreator.builder(p).build())),
-                        Optional.empty(),
+                        Optional.of(ch -> ZipArchiveCreator.builder(ch).build()),
                         Optional.of(co(o -> ZipArchiveCreator.builder(o).build())),
                         x(p -> ZipArchiveExtractor.builder(p).build()),
-                        Optional.empty(),
+                        Optional.of(ch -> ZipArchiveExtractor.builder(ch).build()),
                         Optional.empty()),
+                new ArchiveFormat(
+                        "zip-streaming",
+                        EnumSet.of(DIRECTORIES, LAST_MODIFIED, STREAM_INPUT),
+                        Optional.empty(),
+                        Optional.empty(),
+                        Optional.empty(),
+                        x(p -> ZipArchiveExtractor.streaming(Files.newInputStream(p))
+                                .build()),
+                        Optional.empty(),
+                        Optional.of(i -> ZipArchiveExtractor.streaming(i).build())),
                 new ArchiveFormat(
                         "7z",
                         EnumSet.of(DIRECTORIES, MODES, SYMLINKS, LAST_MODIFIED),
