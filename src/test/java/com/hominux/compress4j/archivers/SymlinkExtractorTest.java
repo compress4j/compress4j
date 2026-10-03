@@ -38,7 +38,7 @@ class SymlinkExtractorTest {
     Path outputDir;
 
     private static Entry link(String target) {
-        return new Entry("link", Entry.Type.SYMLINK, 0, target);
+        return new Entry("link", Entry.Type.SYMLINK, 0).withLinkTarget(target);
     }
 
     private void extract(SymlinkExtractor extractor, Entry entry) throws IOException {
@@ -97,7 +97,7 @@ class SymlinkExtractorTest {
     @Test
     void disallowRejectsAbsoluteTargetWithUnsafeEntryException(@TempDir Path out) {
         // Given
-        var entry = new Entry("link", Entry.Type.SYMLINK, 0777, "/etc/passwd");
+        var entry = new Entry("link", Entry.Type.SYMLINK, 0777).withLinkTarget("/etc/passwd");
         var extractor = new SymlinkExtractor(DISALLOW, false);
 
         // Then
@@ -108,7 +108,7 @@ class SymlinkExtractorTest {
     @Test
     void disallowRejectsEscapingRelativeTargetWithUnsafeEntryException(@TempDir Path out) {
         // Given
-        var entry = new Entry("link", Entry.Type.SYMLINK, 0777, "../../outside");
+        var entry = new Entry("link", Entry.Type.SYMLINK, 0777).withLinkTarget("../../outside");
         var extractor = new SymlinkExtractor(DISALLOW, false);
 
         // Then
@@ -121,7 +121,7 @@ class SymlinkExtractorTest {
     void disallowAcceptsRelativeTargetThatStaysInside(@TempDir Path out) throws IOException {
         // Given
         Files.writeString(out.resolve("b.txt"), "b");
-        var entry = new Entry("a/link", Entry.Type.SYMLINK, 0777, "../b.txt");
+        var entry = new Entry("a/link", Entry.Type.SYMLINK, 0777).withLinkTarget("../b.txt");
         var extractor = new SymlinkExtractor(DISALLOW, false);
 
         // When

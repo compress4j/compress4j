@@ -25,7 +25,6 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,14 +47,11 @@ record SymlinkExtractor(EscapingSymlinkPolicy policy, boolean overwrite) {
      * @throws IOException if an I/O error occurs
      */
     void extract(Path outputDir, Entry entry, Path outputFile) throws IOException {
-        if (entry.linkTarget() == null || StringUtils.isBlank(entry.linkTarget())) {
-            throw new IOException("Invalid symlink entry: " + entry.name() + " (empty target)");
-        }
-
-        String target = entry.linkTarget();
+        String target = entry.linkTarget()
+                .orElseThrow(() -> new IOException("Invalid symlink entry: " + entry.name() + " (empty target)"));
 
         switch (policy) {
-            case DISALLOW -> verifySymlinkTarget(entry.name(), entry.linkTarget(), outputDir, outputFile);
+            case DISALLOW -> verifySymlinkTarget(entry.name(), target, outputDir, outputFile);
             case RELATIVIZE_ABSOLUTE -> target = relativizeIfAbsolute(target, outputDir);
             case ALLOW -> LOGGER.debug("Extracting symlink entry as is: {} -> {}", entry.name(), target);
         }

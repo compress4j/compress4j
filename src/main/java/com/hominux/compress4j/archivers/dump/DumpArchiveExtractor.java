@@ -85,7 +85,8 @@ public class DumpArchiveExtractor extends ArchiveExtractor<DumpArchiveInputStrea
 
     private static Entry toEntry(DumpArchiveEntry entry) {
         var type = entry.getType() == DumpArchiveEntry.TYPE.DIRECTORY ? Entry.Type.DIR : Entry.Type.FILE;
-        return new Entry(entry.getName(), type, entry.getMode(), null);
+        return new Entry(entry.getName(), type, entry.getMode())
+                .withMetadata(entry.getLastModifiedDate(), type == Entry.Type.FILE ? entry.getSize() : 0);
     }
 
     /**

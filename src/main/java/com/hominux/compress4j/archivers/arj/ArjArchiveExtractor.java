@@ -85,7 +85,8 @@ public class ArjArchiveExtractor extends ArchiveExtractor<ArjArchiveInputStream>
     private static Entry toEntry(ArjArchiveEntry entry) {
         var type = entry.isDirectory() ? Entry.Type.DIR : Entry.Type.FILE;
         var mode = entry.isHostOsUnix() ? entry.getUnixMode() : 0;
-        return new Entry(entry.getName(), type, mode, null);
+        return new Entry(entry.getName(), type, mode)
+                .withMetadata(entry.getLastModifiedDate(), type == Entry.Type.FILE ? entry.getSize() : 0);
     }
 
     private static boolean isSymlink(ArjArchiveEntry entry) {

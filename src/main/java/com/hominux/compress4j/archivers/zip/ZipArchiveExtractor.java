@@ -70,7 +70,10 @@ public class ZipArchiveExtractor extends ArchiveExtractor<ZipFileArchiveInputStr
         if (ze == null) {
             return Optional.empty();
         }
-        return Optional.of(new Entry(ze.getName(), type(ze), ze.getUnixMode(), archiveInputStream.getUnixSymlink(ze)));
+        Entry entry = new Entry(ze.getName(), type(ze), ze.getUnixMode())
+                .withLinkTarget(archiveInputStream.getUnixSymlink(ze))
+                .withMetadata(ze.getLastModifiedDate(), ze.isDirectory() ? 0 : ze.getSize());
+        return Optional.of(entry);
     }
 
     private static Entry.Type type(ZipArchiveEntry ze) {

@@ -57,13 +57,15 @@ public abstract class BaseTarArchiveExtractor extends ArchiveExtractor<TarArchiv
     }
 
     private static Entry toEntry(TarArchiveEntry te) {
+        Entry base;
         if (!isIsOsWindows()) {
-            return new Entry(te.getName(), type(te), te.getMode(), te.getLinkName());
+            base = new Entry(te.getName(), type(te), te.getMode()).withLinkTarget(te.getLinkName());
         } else if (te.isSymbolicLink()) {
-            return new Entry(te.getName(), Entry.Type.SYMLINK, 0, te.getLinkName());
+            base = new Entry(te.getName(), Entry.Type.SYMLINK, 0).withLinkTarget(te.getLinkName());
         } else {
-            return new Entry(te.getName(), te.isDirectory());
+            base = new Entry(te.getName(), te.isDirectory());
         }
+        return base.withMetadata(te.getLastModifiedDate(), te.isDirectory() ? 0 : te.getSize());
     }
 
     /** {@inheritDoc} */

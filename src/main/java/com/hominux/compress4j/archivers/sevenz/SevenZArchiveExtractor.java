@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.Date;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.commons.compress.archivers.sevenz.SevenZArchiveEntry;
@@ -76,13 +77,16 @@ public class SevenZArchiveExtractor extends ArchiveExtractor<SevenZFileArchiveIn
         }
         String name = Objects.requireNonNull(entry.getName(), "7z entry has no name");
         int mode = unixMode(entry);
+        Date modified = entry.getHasLastModifiedDate() ? entry.getLastModifiedDate() : null;
+        Entry result;
         if (entry.isDirectory()) {
-            return Optional.of(new Entry(name, Entry.Type.DIR, mode));
+            result = new Entry(name, Entry.Type.DIR, mode);
+        } else if ((mode & S_IFMT) == S_IFLNK) {
+            result = new Entry(name, Entry.Type.SYMLINK, mode).withLinkTarget(readSymlinkTarget(entry));
+        } else {
+            result = new Entry(name, Entry.Type.FILE, mode);
         }
-        if ((mode & S_IFMT) == S_IFLNK) {
-            return Optional.of(new Entry(name, Entry.Type.SYMLINK, mode, readSymlinkTarget(entry)));
-        }
-        return Optional.of(new Entry(name, Entry.Type.FILE, mode));
+        return Optional.of(result.withMetadata(modified, result.type() == Entry.Type.FILE ? entry.getSize() : 0));
     }
 
     private String readSymlinkTarget(SevenZArchiveEntry entry) throws IOException {

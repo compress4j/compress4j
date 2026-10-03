@@ -70,7 +70,7 @@ class ZipArchiveExtractorTest {
             assertThat(entry.name()).isEqualTo("file.txt");
             assertThat(entry.type()).isEqualTo(ArchiveExtractor.Entry.Type.FILE);
             assertThat(entry.mode()).isEqualTo(0644);
-            assertThat(entry.linkTarget()).isNull();
+            assertThat(entry.linkTarget()).isEmpty();
             verify(mockInputStream, times(1)).getUnixSymlink(mockZipEntry);
         }
 
@@ -114,7 +114,7 @@ class ZipArchiveExtractorTest {
             // Then
             assertThat(entry.name()).isEqualTo("link");
             assertThat(entry.type()).isEqualTo(ArchiveExtractor.Entry.Type.SYMLINK);
-            assertThat(entry.linkTarget()).isEqualTo("target/file");
+            assertThat(entry.linkTarget()).contains("target/file");
             assertThat(entry.mode()).isEqualTo(0777);
             verify(mockInputStream, times(1)).getUnixSymlink(mockZipEntry);
         }
@@ -149,6 +149,7 @@ class ZipArchiveExtractorTest {
         void testNextEntry_SymlinkThrowsIOException() throws IOException {
             // Given
             var mockZipEntry = mock(ZipArchiveEntry.class);
+            when(mockZipEntry.getName()).thenReturn("link");
             when(mockZipEntry.isUnixSymlink()).thenReturn(true);
             when(mockInputStream.getNextEntry()).thenReturn(mockZipEntry);
             when(mockInputStream.getUnixSymlink(mockZipEntry)).thenThrow(new IOException("Test symlink error"));

@@ -244,7 +244,7 @@ class SevenZArchiveTest {
 
             assertThat(entries).extracting(Entry::type).containsExactly(DIR, SYMLINK, FILE);
             assertThat(entries.get(0).mode()).isEqualTo(0755);
-            assertThat(entries.get(1).linkTarget()).isEqualTo("target");
+            assertThat(entries.get(1).linkTarget()).contains("target");
             assertThat(entries.get(2).mode()).isZero();
         }
     }
@@ -277,7 +277,7 @@ class SevenZArchiveTest {
             var entries = extractor.stream().toList();
 
             assertThat(entries).extracting(Entry::type).containsOnly(SYMLINK);
-            assertThat(entries).extracting(Entry::linkTarget).containsExactly("t1", "t2");
+            assertThat(entries).extracting(e -> e.linkTarget().orElseThrow()).containsExactly("t1", "t2");
         }
     }
 
