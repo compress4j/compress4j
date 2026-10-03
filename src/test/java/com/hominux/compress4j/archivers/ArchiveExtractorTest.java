@@ -271,7 +271,7 @@ class ArchiveExtractorTest {
     }
 
     @Test
-    void shouldFailExtractFilesWithInvalidPathsRetries() throws IOException {
+    void retryHandlerIsNotConsultedForTraversal() throws IOException {
         // given
         var entry1 = InMemoryArchiveEntry.builder()
                 .name("../test1")
@@ -281,13 +281,10 @@ class ArchiveExtractorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        var retries = new AtomicInteger(3);
+        var handlerCalls = new AtomicInteger();
         BiFunction<ArchiveExtractor.Entry, IOException, ArchiveExtractor.ErrorHandlerChoice> errorHandler =
                 (entry, exception) -> {
-                    if (retries.get() == 0) {
-                        return ABORT;
-                    }
-                    retries.getAndDecrement();
+                    handlerCalls.incrementAndGet();
                     return RETRY;
                 };
 
@@ -296,10 +293,10 @@ class ArchiveExtractorTest {
             inMemoryDecompressor.setErrorHandler(errorHandler);
 
             // when
-            assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir))
-                    .isInstanceOf(com.hominux.compress4j.exceptions.UnsafeEntryException.class);
+            assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir)).isInstanceOf(UnsafeEntryException.class);
 
             // then
+            assertThat(handlerCalls).hasValue(0);
             assertThat(tempDir).isEmptyDirectory();
         }
     }
@@ -320,8 +317,7 @@ class ArchiveExtractorTest {
             inMemoryDecompressor.setErrorHandler((entry, exception) -> ABORT);
 
             // when
-            assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir))
-                    .isInstanceOf(com.hominux.compress4j.exceptions.UnsafeEntryException.class);
+            assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir)).isInstanceOf(UnsafeEntryException.class);
 
             // then
             assertThat(tempDir).isEmptyDirectory();
@@ -344,8 +340,7 @@ class ArchiveExtractorTest {
             inMemoryDecompressor.setErrorHandler((entry, exception) -> ABORT);
 
             // when
-            assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir))
-                    .isInstanceOf(com.hominux.compress4j.exceptions.UnsafeEntryException.class);
+            assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir)).isInstanceOf(UnsafeEntryException.class);
 
             // then
             assertThat(tempDir).isDirectory();
@@ -1981,8 +1976,7 @@ class ArchiveExtractorTest {
                 .errorHandler((entry, e) -> ArchiveExtractor.ErrorHandlerChoice.SKIP)
                 .build()) {
             // Then
-            assertThatThrownBy(() -> extractor.extract(out))
-                    .isInstanceOf(com.hominux.compress4j.exceptions.UnsafeEntryException.class);
+            assertThatThrownBy(() -> extractor.extract(out)).isInstanceOf(UnsafeEntryException.class);
         }
         assertThat(out.resolveSibling("evil.txt")).doesNotExist();
     }
@@ -2003,7 +1997,7 @@ class ArchiveExtractorTest {
             }
 
             // Then
-            assertThat(caught).isInstanceOf(com.hominux.compress4j.exceptions.UnsafeEntryException.class);
+            assertThat(caught).isInstanceOf(UnsafeEntryException.class);
         }
     }
 

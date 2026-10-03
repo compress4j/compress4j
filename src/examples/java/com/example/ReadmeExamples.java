@@ -15,8 +15,6 @@
  */
 package com.example;
 
-import static com.hominux.compress4j.archivers.ArchiveExtractor.EscapingSymlinkPolicy.DISALLOW;
-
 import com.hominux.compress4j.archivers.tar.TarGzArchiveCreator;
 import com.hominux.compress4j.archivers.tar.TarGzArchiveExtractor;
 import java.io.IOException;
@@ -51,7 +49,6 @@ public class ReadmeExamples {
     public static void extractUntrusted() throws IOException {
         // tag::readme-extract-untrusted[]
         try (TarGzArchiveExtractor extractor = TarGzArchiveExtractor.builder(Path.of("untrusted.tar.gz"))
-                .escapingSymlinkPolicy(DISALLOW)
                 .maxEntries(10_000)
                 .maxEntrySize(100L * 1024 * 1024)
                 .maxTotalSize(1024L * 1024 * 1024)

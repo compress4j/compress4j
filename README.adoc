@@ -106,7 +106,7 @@ try (TarGzArchiveExtractor extractor = TarGzArchiveExtractor.builder(Path.of("un
 }
 ----
 
-Breaching a limit throws `ArchiveLimitExceededException`, which an error handler cannot suppress.
+Breaching a limit throws `ArchiveLimitExceededException`. It and `UnsafeEntryException` (traversal, escaping symlinks) both extend `ArchiveSecurityException`, which an error handler cannot suppress.
 
 == Supported formats
 

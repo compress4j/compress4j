@@ -94,7 +94,7 @@ IMPORTANT: Some compression formats may require additional support libraries to 
 === Extracting Untrusted Archives
 
 Path traversal is always rejected: entry paths are resolved canonically against the output directory, so both `../`
-entries and writes that would follow a symlink out of the output directory fail with an `IOException`.
+entries and writes that would follow a symlink out of the output directory fail with `UnsafeEntryException`, which no error handler can suppress.
 
 Escaping symlinks are rejected by default with `UnsafeEntryException`. Use `escapingSymlinkPolicy(ALLOW)` for
 archives you produced yourself, or `RELATIVIZE_ABSOLUTE` to rewrite absolute targets inside the output directory.

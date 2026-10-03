@@ -30,13 +30,14 @@ confirming it. You will be credited in the advisory unless you prefer otherwise.
 Compress4J extracts what an archive tells it to. When the archive comes from an untrusted source:
 
 - **Path traversal** is rejected: entry paths are resolved canonically against the output directory, so `../` entries
-  and writes through a symlink that points outside the output directory both fail.
+  and writes through a symlink that points outside the output directory both fail with `UnsafeEntryException`.
 - **Escaping symlinks** are rejected by default with `UnsafeEntryException`. Set
   `escapingSymlinkPolicy(EscapingSymlinkPolicy.ALLOW)` to extract them as-is, or `RELATIVIZE_ABSOLUTE` to rewrite
   absolute targets so they stay inside the output directory.
 - **Decompression bombs** are not bounded by default. Set `maxEntries`, `maxEntrySize` and `maxTotalSize` on the
-  extractor to cap what an archive may expand to; breaching a limit throws `ArchiveLimitExceededException` and cannot
-  be suppressed by an error handler.
+  extractor to cap what an archive may expand to; breaching a limit throws `ArchiveLimitExceededException`.
+- **Security failures cannot be suppressed.** `UnsafeEntryException` (traversal, escaping symlinks) and
+  `ArchiveLimitExceededException` both extend `ArchiveSecurityException`, which no error handler can suppress.
 
 ```java
 try (var extractor = TarGzArchiveExtractor.builder(in)

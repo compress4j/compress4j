@@ -24,6 +24,7 @@ import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 import com.hominux.compress4j.archivers.ExtractionErrorPolicy.EntryOutcome;
 import com.hominux.compress4j.exceptions.ArchiveLimitExceededException;
 import com.hominux.compress4j.exceptions.ArchiveSecurityException;
+import com.hominux.compress4j.exceptions.UnsafeEntryException;
 import com.hominux.compress4j.utils.BuildFailureCleanup;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -167,6 +168,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * @param outputDir the directory to extract the archive to
      * @throws IOException if an I/O error occurs
      * @throws ArchiveLimitExceededException if the archive breaches one of the configured extraction limits
+     * @throws UnsafeEntryException if an entry would be written, or a symlink would point, outside outputDir
      */
     public final void extract(Path outputDir) throws IOException {
         ExtractionBudget budget = new ExtractionBudget(limits);
