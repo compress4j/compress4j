@@ -101,11 +101,25 @@ record SymlinkExtractor(EscapingSymlinkPolicy policy, boolean overwrite) {
     private static void verifySymlinkTarget(String entryName, String linkTarget, Path outputDir, Path outputFile)
             throws UnsafeEntryException {
         Path linkTargetPath = outputFile.getParent().resolve(Paths.get(linkTarget));
+        if (pointsAtOutputDir(linkTargetPath, outputDir)) {
+            return;
+        }
         try {
             checkValidPath(linkTargetPath, outputDir);
         } catch (UnsafeEntryException e) {
             throw new UnsafeEntryException(
                     "Invalid symlink (points outside of output directory): " + entryName + " -> " + linkTarget, e);
+        }
+    }
+
+    private static boolean pointsAtOutputDir(Path linkTargetPath, Path outputDir) throws UnsafeEntryException {
+        try {
+            return linkTargetPath
+                    .toFile()
+                    .getCanonicalPath()
+                    .equals(outputDir.toFile().getCanonicalPath());
+        } catch (IOException e) {
+            throw new UnsafeEntryException("Cannot resolve symlink target: " + linkTargetPath, e);
         }
     }
 }
