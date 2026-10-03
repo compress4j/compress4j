@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Instant;
+import java.util.List;
 import java.util.OptionalLong;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
@@ -102,11 +103,31 @@ class EntrySourceTest {
 
         // Then
         assertThat(buffered.size()).hasValue(5);
-        assertThat(Files.list(tmp)).hasSize(1);
+        assertThat(listing(tmp)).hasSize(1);
         try (var in = buffered.content().get()) {
             assertThat(in.readAllBytes()).asString(StandardCharsets.UTF_8).isEqualTo("hello");
         }
-        assertThat(Files.list(tmp)).isEmpty();
+        assertThat(listing(tmp)).isEmpty();
+    }
+
+    @Test
+    void bufferedRemovesSpoolWhenCopyFails() throws IOException {
+        // Given
+        var failing = new EntrySource.File("a.txt", 0, FileTime.from(Instant.EPOCH), OptionalLong.empty(), () -> {
+            throw new IOException("boom");
+        });
+
+        // Then
+        assertThatThrownBy(() -> EntrySource.buffered(failing, tmp))
+                .isInstanceOf(IOException.class)
+                .hasMessage("boom");
+        assertThat(listing(tmp)).isEmpty();
+    }
+
+    private static List<Path> listing(Path dir) throws IOException {
+        try (var stream = Files.list(dir)) {
+            return stream.toList();
+        }
     }
 
     @Test

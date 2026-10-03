@@ -38,35 +38,69 @@ import org.apache.commons.io.function.IOSupplier;
  */
 public sealed interface EntrySource permits EntrySource.File, EntrySource.Directory, EntrySource.Symlink {
 
-    /** Returns the entry name, relative and slash-separated. */
+    /**
+     * Returns the entry name.
+     *
+     * @return the relative, slash-separated name
+     */
     String name();
 
-    /** Returns the Unix permission bits, or {@code 0} when unknown. */
+    /**
+     * Returns the permission bits.
+     *
+     * @return the Unix permission bits, or {@code 0} when unknown
+     */
     int mode();
 
-    /** Returns the last-modified time. */
+    /**
+     * Returns the modification time.
+     *
+     * @return the last-modified time
+     */
     FileTime lastModified();
 
     /**
      * A regular file. {@code content} is opened once, by the creator, which closes it after writing. {@code size} must
      * be present for formats that record sizes before content (tar, ar, cpio); see {@link #buffered}.
+     *
+     * @param name the entry name
+     * @param mode the permission bits, masked to {@code 07777}
+     * @param lastModified the last-modified time
+     * @param size the content size, if known
+     * @param content opens the content
      */
     record File(String name, int mode, FileTime lastModified, OptionalLong size, IOSupplier<InputStream> content)
             implements EntrySource {
+        /** Masks {@code mode} to permission bits. */
         public File {
             mode &= 07777;
         }
     }
 
-    /** A directory. */
+    /**
+     * A directory.
+     *
+     * @param name the entry name
+     * @param mode the permission bits, masked to {@code 07777}
+     * @param lastModified the last-modified time
+     */
     record Directory(String name, int mode, FileTime lastModified) implements EntrySource {
+        /** Masks {@code mode} to permission bits. */
         public Directory {
             mode &= 07777;
         }
     }
 
-    /** A symbolic link to {@code target}, stored verbatim. */
+    /**
+     * A symbolic link to {@code target}, stored verbatim.
+     *
+     * @param name the entry name
+     * @param target the link target
+     * @param mode the permission bits, masked to {@code 07777}
+     * @param lastModified the last-modified time
+     */
     record Symlink(String name, String target, int mode, FileTime lastModified) implements EntrySource {
+        /** Masks {@code mode} to permission bits. */
         public Symlink {
             mode &= 07777;
         }
@@ -89,8 +123,9 @@ public sealed interface EntrySource permits EntrySource.File, EntrySource.Direct
             throw new IllegalArgumentException(path + " is not strictly inside " + base);
         }
         String name = normalisedBase.relativize(normalisedPath).toString().replace('\\', '/');
-        BasicFileAttributes attrs = Files.readAttributes(path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
-        return PathSources.of(name, path, attrs, attrs.lastModifiedTime());
+        BasicFileAttributes attrs =
+                Files.readAttributes(normalisedPath, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+        return PathSources.of(name, normalisedPath, attrs, attrs.lastModifiedTime());
     }
 
     /**
@@ -118,12 +153,15 @@ public sealed interface EntrySource permits EntrySource.File, EntrySource.Direct
      * @param source a file whose size may be unknown
      * @param tempDir the directory for the temp file
      * @return a file source with a known size
-     * @throws IOException if the content cannot be copied
+     * @throws IOException if the content cannot be copied; the temp file is removed
      */
     static File buffered(File source, Path tempDir) throws IOException {
         Path spool = Files.createTempFile(tempDir, "compress4j-", ".tmp");
         try (InputStream in = source.content().get()) {
             Files.copy(in, spool, REPLACE_EXISTING);
+        } catch (IOException | RuntimeException e) {
+            Files.deleteIfExists(spool);
+            throw e;
         }
         return new File(
                 source.name(),
