@@ -130,4 +130,20 @@ class SymlinkExtractorTest {
         // Then
         assertThat(Files.readSymbolicLink(out.resolve("a/link"))).isEqualTo(Path.of("../b.txt"));
     }
+
+    @Test
+    void disallowAcceptsTargetsThatResolveToTheOutputDirectory(@TempDir Path out) throws IOException {
+        // Given
+        var extractor = new SymlinkExtractor(ArchiveExtractor.EscapingSymlinkPolicy.DISALLOW, false);
+        var self = new ArchiveExtractor.Entry("link", ArchiveExtractor.Entry.Type.SYMLINK, 0777, ".");
+        var up = new ArchiveExtractor.Entry("a/link", ArchiveExtractor.Entry.Type.SYMLINK, 0777, "..");
+
+        // When
+        extractor.extract(out, self, out.resolve("link"));
+        extractor.extract(out, up, out.resolve("a/link"));
+
+        // Then
+        assertThat(Files.readSymbolicLink(out.resolve("link"))).isEqualTo(Path.of("."));
+        assertThat(Files.readSymbolicLink(out.resolve("a/link"))).isEqualTo(Path.of(".."));
+    }
 }
