@@ -96,7 +96,8 @@ public class SevenZArchiveCreator extends ArchiveCreator<SevenZFileArchiveOutput
     protected void writeDirectory(String name, int mode, FileTime lastModified) throws IOException {
         SevenZArchiveEntry entry = newEntry(name, lastModified);
         entry.setDirectory(true);
-        withWindowsAttributes(entry, DOS_DIRECTORY);
+        withWindowsAttributes(
+                entry, DOS_DIRECTORY | (mode != NO_MODE ? SevenZArchiveExtractor.UNIX_EXTENSION | (mode << 16) : 0));
         archiveOutputStream.putArchiveEntry(entry);
         archiveOutputStream.closeArchiveEntry();
     }
