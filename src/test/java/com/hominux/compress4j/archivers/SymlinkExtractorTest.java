@@ -150,4 +150,20 @@ class SymlinkExtractorTest {
         assertThatThrownBy(() -> extractor.extract(out, relative, out.resolve("r"), new SymlinkGuard(out)))
                 .isInstanceOf(UnsafeEntryException.class);
     }
+
+    @Test
+    void disallowAcceptsTargetsThatResolveToTheOutputDirectory(@TempDir Path out) throws IOException {
+        // Given
+        var extractor = new SymlinkExtractor(ArchiveExtractor.EscapingSymlinkPolicy.DISALLOW, false);
+        var self = new Entry("link", Entry.Type.SYMLINK, 0777).withLinkTarget(".");
+        var up = new Entry("a/link", Entry.Type.SYMLINK, 0777).withLinkTarget("..");
+
+        // When
+        extractor.extract(out, self, out.resolve("link"), new SymlinkGuard(out));
+        extractor.extract(out, up, out.resolve("a/link"), new SymlinkGuard(out));
+
+        // Then
+        assertThat(Files.readSymbolicLink(out.resolve("link"))).isEqualTo(Path.of("."));
+        assertThat(Files.readSymbolicLink(out.resolve("a/link"))).isEqualTo(Path.of(".."));
+    }
 }
