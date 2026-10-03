@@ -1,0 +1,52 @@
+= Streaming entries
+:description: Read and write archive entries as Java streams, repack between formats, and know which formats accept streams or channels.
+:keywords: compress4j, stream, ArchiveItem, EntrySource, repack, channel
+
+== Reading
+
+`ArchiveExtractor.stream()` returns the archive's entries in order as `ArchiveItem`s, after `stripComponents`, `filter` and the entry limit apply. `item.content()` reads the entry's bytes, metered against `maxEntrySize` and `maxTotalSize`.
+
+[,java]
+----
+include::example$java/com/example/StreamingExamples.java[tag=read-one-file,indent=0]
+----
+
+An item's content is readable only while it is current. Collecting items first and reading later fails:
+
+[,java]
+----
+include::example$java/com/example/StreamingExamples.java[tag=stale-item,indent=0]
+----
+
+The stream is sequential and single-use: `parallel()` and a second `stream()` or `extract()` call throw `IllegalStateException`. Errors while advancing arrive as `UncheckedIOException`.
+
+== Writing
+
+`ArchiveCreator.addAll` writes a stream of `EntrySource`s: files, directories and symlinks from disk (`EntrySource.of`), memory (`EntrySource.file`) or another archive (`ArchiveItem.toSource`).
+
+[,java]
+----
+include::example$java/com/example/StreamingExamples.java[tag=write-from-walk,indent=0]
+----
+
+tar, ar and cpio write each file's size before its content. A source without a size fails with `IllegalArgumentException`; spool it explicitly:
+
+[,java]
+----
+include::example$java/com/example/StreamingExamples.java[tag=unknown-size,indent=0]
+----
+
+== Repacking
+
+[,java]
+----
+include::example$java/com/example/StreamingExamples.java[tag=repack,indent=0]
+----
+
+Entry names are checked on write, so repacking an archive with `../` names fails with `UnsafeEntryException`.
+
+== Format capabilities
+
+Verified by the contract suite on every build:
+
+include::partial$capabilities.adoc[]
