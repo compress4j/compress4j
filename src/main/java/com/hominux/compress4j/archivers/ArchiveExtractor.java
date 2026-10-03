@@ -23,6 +23,8 @@ import static org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS;
 
 import com.hominux.compress4j.archivers.ExtractionErrorPolicy.EntryOutcome;
 import com.hominux.compress4j.exceptions.ArchiveLimitExceededException;
+import com.hominux.compress4j.exceptions.ArchiveSecurityException;
+import com.hominux.compress4j.exceptions.UnsafeEntryException;
 import com.hominux.compress4j.utils.BuildFailureCleanup;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
@@ -75,7 +77,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
     /** Archive input stream to be used for extraction. */
     protected A archiveInputStream;
     /** Escaping symlink policy for the extractor. */
-    protected ArchiveExtractor.EscapingSymlinkPolicy escapingSymlinkPolicy = EscapingSymlinkPolicy.ALLOW;
+    protected ArchiveExtractor.EscapingSymlinkPolicy escapingSymlinkPolicy = EscapingSymlinkPolicy.DISALLOW;
     /** Filter for the extractor. */
     private Predicate<Entry> entryFilter = ACCEPT_ALL;
     /** Error handler for the extractor. */
@@ -166,6 +168,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * @param outputDir the directory to extract the archive to
      * @throws IOException if an I/O error occurs
      * @throws ArchiveLimitExceededException if the archive breaches one of the configured extraction limits
+     * @throws UnsafeEntryException if an entry would be written, or a symlink would point, outside outputDir
      */
     public final void extract(Path outputDir) throws IOException {
         ExtractionBudget budget = new ExtractionBudget(limits);
@@ -206,8 +209,8 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
             try {
                 processEntry(outputDir, entry, budget);
                 return new EntryOutcome.Continue();
-            } catch (ArchiveLimitExceededException unrecoverableLimitBreach) {
-                throw unrecoverableLimitBreach;
+            } catch (ArchiveSecurityException unsuppressible) {
+                throw unsuppressible;
             } catch (IOException ioException) {
                 ErrorHandlerChoice choice =
                         new ExtractionErrorPolicy(errorHandler).handle(ioException, ignoreErrors, entry);
@@ -506,6 +509,8 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * <p>Example: {@code foo -> /opt/foo}
      *
      * <p>or {@code foo -> ../foo}
+     *
+     * <p>Extractors default to {@link #DISALLOW}.
      */
     public enum EscapingSymlinkPolicy {
         /**
@@ -561,7 +566,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
             B extends ArchiveExtractorBuilder<A, B, C>,
             C extends ArchiveExtractor<A>> {
         /** Input stream to read from for extraction. */
-        protected ArchiveExtractor.EscapingSymlinkPolicy escapingSymlinkPolicy = EscapingSymlinkPolicy.ALLOW;
+        protected ArchiveExtractor.EscapingSymlinkPolicy escapingSymlinkPolicy = EscapingSymlinkPolicy.DISALLOW;
 
         Predicate<Entry> entryFilter = ACCEPT_ALL;
 
@@ -610,6 +615,8 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         /**
          * Sets the error handler for the extractor.
          *
+         * <p>An {@link ArchiveSecurityException} always propagates; the handler is not consulted for it.
+         *
          * @param errorHandlerFunction the error handler to set
          * @return the instance of the {@link ArchiveExtractor.ArchiveExtractorBuilder}
          */
@@ -619,7 +626,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         }
 
         /**
-         * Sets the escaping symlink policy for the extractor.
+         * Sets the escaping symlink policy for the extractor. Defaults to {@link EscapingSymlinkPolicy#DISALLOW}.
          *
          * @param policy the escaping symlink policy to set
          * @return the instance of the {@link ArchiveExtractor.ArchiveExtractorBuilder}

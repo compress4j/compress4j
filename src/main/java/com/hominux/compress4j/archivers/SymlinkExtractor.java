@@ -19,6 +19,7 @@ import static com.hominux.compress4j.utils.FileUtils.checkValidPath;
 
 import com.hominux.compress4j.archivers.ArchiveExtractor.Entry;
 import com.hominux.compress4j.archivers.ArchiveExtractor.EscapingSymlinkPolicy;
+import com.hominux.compress4j.exceptions.UnsafeEntryException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -82,22 +83,35 @@ record SymlinkExtractor(EscapingSymlinkPolicy policy, boolean overwrite) {
      * @param linkTarget the target of the symlink
      * @param outputDir the directory to extract the archive to
      * @param outputFile the file to extract the entry to
-     * @throws IOException if the symlink target is invalid
+     * @throws UnsafeEntryException if the symlink target is invalid
      */
     private static void verifySymlinkTarget(String entryName, String linkTarget, Path outputDir, Path outputFile)
-            throws IOException {
+            throws UnsafeEntryException {
         Path outputTarget = Paths.get(linkTarget);
         if (outputTarget.isAbsolute()) {
-            throw new IOException("Invalid symlink (absolute path): " + entryName + " -> " + linkTarget);
+            throw new UnsafeEntryException("Invalid symlink (absolute path): " + entryName + " -> " + linkTarget);
         }
 
         Path linkTargetPath = outputFile.getParent().resolve(outputTarget);
-
+        if (pointsAtOutputDir(linkTargetPath, outputDir)) {
+            return;
+        }
         try {
             checkValidPath(linkTargetPath, outputDir);
-        } catch (IOException e) {
-            throw new IOException(
+        } catch (UnsafeEntryException e) {
+            throw new UnsafeEntryException(
                     "Invalid symlink (points outside of output directory): " + entryName + " -> " + linkTarget, e);
+        }
+    }
+
+    private static boolean pointsAtOutputDir(Path linkTargetPath, Path outputDir) throws UnsafeEntryException {
+        try {
+            return linkTargetPath
+                    .toFile()
+                    .getCanonicalPath()
+                    .equals(outputDir.toFile().getCanonicalPath());
+        } catch (IOException e) {
+            throw new UnsafeEntryException("Cannot resolve symlink target: " + linkTargetPath, e);
         }
     }
 }

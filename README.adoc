@@ -10,7 +10,7 @@ builder-style API on top of
 https://commons.apache.org/proper/commons-compress/[Apache Commons Compress], and a maintained successor to
 https://github.com/thrau/jarchivelib[JArchiveLib].
 
-* *Safe extraction.* Path traversal (Zip Slip) is rejected, escaping symlinks can be disallowed, and entry-count and
+* *Safe extraction.* Path traversal (Zip Slip) is rejected, escaping symlinks are rejected by default, and entry-count and
   size limits stop decompression bombs. See <<_safe_extraction_of_untrusted_archives>>.
 * *One API for every format.* Tar, `.tar.gz`, `.tar.bz2`, `.tar.xz`, `.tar.lzma`, `.tar.lz4`, `.tar.zst`, Zip, 7z, AR, CPIO and more share the same builders.
 * *Java 21+, JPMS-ready,* published to Maven Central.
@@ -92,13 +92,12 @@ try (TarGzArchiveExtractor extractor = TarGzArchiveExtractor.builder(Path.of("ex
 
 == Safe extraction of untrusted archives
 
-Extracting an archive you do not trust? Path traversal is rejected by default. Turn on the remaining guards for symlinks
-and decompression bombs, as described in link:.github/SECURITY.md[SECURITY.md]:
+Extracting an archive you do not trust? Path traversal and escaping symlinks are rejected by default. Turn on the remaining guards
+for decompression bombs, as described in link:.github/SECURITY.md[SECURITY.md]:
 
 [source,java]
 ----
 try (TarGzArchiveExtractor extractor = TarGzArchiveExtractor.builder(Path.of("untrusted.tar.gz"))
-        .escapingSymlinkPolicy(EscapingSymlinkPolicy.DISALLOW)
         .maxEntries(10_000)
         .maxEntrySize(100L * 1024 * 1024)
         .maxTotalSize(1024L * 1024 * 1024)
@@ -107,7 +106,7 @@ try (TarGzArchiveExtractor extractor = TarGzArchiveExtractor.builder(Path.of("un
 }
 ----
 
-Breaching a limit throws `ArchiveLimitExceededException`, which an error handler cannot suppress.
+Breaching a limit throws `ArchiveLimitExceededException`. It and `UnsafeEntryException` (traversal, escaping symlinks) both extend `ArchiveSecurityException`, which an error handler cannot suppress.
 
 == Supported formats
 

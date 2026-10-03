@@ -15,23 +15,33 @@
  */
 package com.hominux.compress4j.exceptions;
 
+import java.io.IOException;
+
 /**
- * Exception thrown when an archive exceeds one of the extraction limits configured on the extractor.
+ * Signals that an archive was rejected for safety reasons rather than because it is corrupt or unreadable. Extraction
+ * error handlers cannot suppress it.
  *
- * <p>This exception bypasses the error handler: a breached limit aborts the extraction regardless of the
- * {@code com.hominux.compress4j.archivers.ArchiveExtractor.ErrorHandlerChoice} the handler would return, so that a
- * handler which skips or ignores errors cannot be used to keep feeding a decompression bomb.
- *
- * @since 3.1
+ * @since 5.0
  */
-public final class ArchiveLimitExceededException extends ArchiveSecurityException {
+public abstract sealed class ArchiveSecurityException extends IOException
+        permits ArchiveLimitExceededException, UnsafeEntryException {
 
     /**
-     * Constructs a new exception with the specified detail message.
+     * Creates an exception with the given message.
      *
      * @param message the detail message
      */
-    public ArchiveLimitExceededException(String message) {
+    protected ArchiveSecurityException(String message) {
         super(message);
+    }
+
+    /**
+     * Creates an exception with the given message and cause.
+     *
+     * @param message the detail message
+     * @param cause the underlying failure
+     */
+    protected ArchiveSecurityException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

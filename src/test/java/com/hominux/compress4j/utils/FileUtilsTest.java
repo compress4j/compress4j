@@ -15,12 +15,14 @@
  */
 package com.hominux.compress4j.utils;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.hominux.compress4j.exceptions.UnsafeEntryException;
 import com.hominux.compress4j.test.util.io.TestFileUtils;
 import java.io.File;
 import java.io.IOException;
@@ -128,5 +130,16 @@ class FileUtilsTest {
         } finally {
             outside.delete();
         }
+    }
+
+    @Test
+    void checkValidPathRejectsTraversalWithUnsafeEntryException(@TempDir Path safe) {
+        // Given
+        Path outside = safe.resolve("../escape.txt");
+
+        // Then
+        assertThatThrownBy(() -> FileUtils.checkValidPath(outside, safe))
+                .isInstanceOf(UnsafeEntryException.class)
+                .hasMessageContaining("outside of target directory");
     }
 }

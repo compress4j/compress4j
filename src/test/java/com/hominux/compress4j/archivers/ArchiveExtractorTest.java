@@ -54,6 +54,7 @@ import com.hominux.compress4j.archivers.memory.InMemoryArchiveExtractor.InMemory
 import com.hominux.compress4j.archivers.memory.InMemoryArchiveInputStream;
 import com.hominux.compress4j.assertion.Compress4JAssertions;
 import com.hominux.compress4j.exceptions.ArchiveLimitExceededException;
+import com.hominux.compress4j.exceptions.UnsafeEntryException;
 import com.hominux.compress4j.test.util.log.InMemoryLogAppender;
 import java.io.IOException;
 import java.io.InputStream;
@@ -270,7 +271,7 @@ class ArchiveExtractorTest {
     }
 
     @Test
-    void shouldFailExtractFilesWithInvalidPathsRetries() throws IOException {
+    void retryHandlerIsNotConsultedForTraversal() throws IOException {
         // given
         var entry1 = InMemoryArchiveEntry.builder()
                 .name("../test1")
@@ -280,13 +281,10 @@ class ArchiveExtractorTest {
                 .name("subdir/test2")
                 .content("content2")
                 .build();
-        var retries = new AtomicInteger(3);
+        var handlerCalls = new AtomicInteger();
         BiFunction<ArchiveExtractor.Entry, IOException, ArchiveExtractor.ErrorHandlerChoice> errorHandler =
                 (entry, exception) -> {
-                    if (retries.get() == 0) {
-                        return ABORT;
-                    }
-                    retries.getAndDecrement();
+                    handlerCalls.incrementAndGet();
                     return RETRY;
                 };
 
@@ -295,10 +293,10 @@ class ArchiveExtractorTest {
             inMemoryDecompressor.setErrorHandler(errorHandler);
 
             // when
-            inMemoryDecompressor.extract(tempDir);
+            assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir)).isInstanceOf(UnsafeEntryException.class);
 
             // then
-            Compress4JAssertions.assertThat(inMemoryLogAppender).contains("Retying because of exception", DEBUG);
+            assertThat(handlerCalls).hasValue(0);
             assertThat(tempDir).isEmptyDirectory();
         }
     }
@@ -319,7 +317,7 @@ class ArchiveExtractorTest {
             inMemoryDecompressor.setErrorHandler((entry, exception) -> ABORT);
 
             // when
-            inMemoryDecompressor.extract(tempDir);
+            assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir)).isInstanceOf(UnsafeEntryException.class);
 
             // then
             assertThat(tempDir).isEmptyDirectory();
@@ -342,7 +340,7 @@ class ArchiveExtractorTest {
             inMemoryDecompressor.setErrorHandler((entry, exception) -> ABORT);
 
             // when
-            inMemoryDecompressor.extract(tempDir);
+            assertThatThrownBy(() -> inMemoryDecompressor.extract(tempDir)).isInstanceOf(UnsafeEntryException.class);
 
             // then
             assertThat(tempDir).isDirectory();
@@ -1966,5 +1964,75 @@ class ArchiveExtractorTest {
                 assertThat(secondDir.resolve("b")).hasContent("b");
             }
         }
+    }
+
+    @Test
+    void errorHandlerCannotSkipTraversalEntry(@TempDir Path out) throws IOException {
+        // Given
+        var entries = List.of(
+                InMemoryArchiveEntry.builder().name("../evil.txt").content("x").build());
+
+        try (var extractor = InMemoryArchiveExtractor.builder(entries)
+                .errorHandler((entry, e) -> ArchiveExtractor.ErrorHandlerChoice.SKIP)
+                .build()) {
+            // Then
+            assertThatThrownBy(() -> extractor.extract(out)).isInstanceOf(UnsafeEntryException.class);
+        }
+        assertThat(out.resolveSibling("evil.txt")).doesNotExist();
+    }
+
+    @Test
+    void ioExceptionCatchStillCatchesUnsafeEntry(@TempDir Path out) throws IOException {
+        // Given
+        var entries = List.of(
+                InMemoryArchiveEntry.builder().name("../evil.txt").content("x").build());
+
+        try (var extractor = InMemoryArchiveExtractor.builder(entries).build()) {
+            // When
+            IOException caught = null;
+            try {
+                extractor.extract(out);
+            } catch (IOException e) {
+                caught = e;
+            }
+
+            // Then
+            assertThat(caught).isInstanceOf(UnsafeEntryException.class);
+        }
+    }
+
+    @Test
+    void escapingSymlinkIsRejectedByDefault(@TempDir Path out) throws IOException {
+        // Given
+        var entries = List.of(InMemoryArchiveEntry.builder()
+                .name("link")
+                .type(ArchiveExtractor.Entry.Type.SYMLINK)
+                .linkName("../../outside")
+                .build());
+
+        try (var extractor = InMemoryArchiveExtractor.builder(entries).build()) {
+            // Then
+            assertThatThrownBy(() -> extractor.extract(out)).isInstanceOf(UnsafeEntryException.class);
+        }
+    }
+
+    @Test
+    void escapingSymlinkIsExtractedWhenAllowed(@TempDir Path out) throws IOException {
+        // Given
+        var entries = List.of(InMemoryArchiveEntry.builder()
+                .name("link")
+                .type(ArchiveExtractor.Entry.Type.SYMLINK)
+                .linkName("../../outside")
+                .build());
+
+        try (var extractor = InMemoryArchiveExtractor.builder(entries)
+                .escapingSymlinkPolicy(ArchiveExtractor.EscapingSymlinkPolicy.ALLOW)
+                .build()) {
+            // When
+            extractor.extract(out);
+        }
+
+        // Then
+        assertThat(Files.isSymbolicLink(out.resolve("link"))).isTrue();
     }
 }
