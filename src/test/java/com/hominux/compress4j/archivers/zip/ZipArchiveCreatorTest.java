@@ -25,6 +25,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
+import org.apache.commons.compress.archivers.zip.UnixStat;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.junit.jupiter.api.BeforeEach;
@@ -194,7 +195,8 @@ class ZipArchiveCreatorTest {
             assertThat(entry.isDirectory()).isFalse();
             assertThat(entry.getSize()).isEqualTo(size);
             assertThat(entry.getTime()).isEqualTo(testTime.toMillis());
-            assertThat(entry.getUnixMode()).isEqualTo(mode);
+            assertThat(entry.isUnixSymlink()).isTrue();
+            assertThat(entry.getUnixMode()).isEqualTo(UnixStat.LINK_FLAG | mode);
             assertThat(bytesCaptor.getValue()).isEqualTo(targetBytes);
         }
     }
