@@ -26,31 +26,24 @@ import com.hominux.compress4j.exceptions.ArchiveLimitExceededException;
 import com.hominux.compress4j.exceptions.ArchiveSecurityException;
 import com.hominux.compress4j.exceptions.UnsafeEntryException;
 import com.hominux.compress4j.utils.BuildFailureCleanup;
-import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.DosFileAttributeView;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.util.Date;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.OptionalLong;
-import java.util.Spliterator;
-import java.util.Spliterators;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.io.IOUtils;
@@ -64,8 +57,7 @@ import org.slf4j.LoggerFactory;
  * @param <A> The type of {@link ArchiveInputStream} to read entries from.
  * @since 2.2
  */
-public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends ArchiveEntry>>
-        implements Closeable, Iterable<ArchiveExtractor.Entry> {
+public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends ArchiveEntry>> implements Closeable {
     private static final Logger LOGGER = LoggerFactory.getLogger(ArchiveExtractor.class);
 
     /**
@@ -101,6 +93,8 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      */
     private ExtractionLimits limits = ExtractionLimits.NONE;
 
+    private final EntryPipeline pipeline;
+
     /**
      * Creates a new {@code ArchiveExtractor}.
      *
@@ -119,6 +113,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         this.overwrite = builder.overwrite;
         this.escapingSymlinkPolicy = builder.escapingSymlinkPolicy;
         this.limits = new ExtractionLimits(builder.maxEntries, builder.maxEntrySize, builder.maxTotalSize);
+        this.pipeline = new EntryPipeline(reader(), stripComponents, entryFilter, limits);
     }
 
     /**
@@ -128,6 +123,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      */
     protected ArchiveExtractor(A archiveInputStream) {
         this.archiveInputStream = archiveInputStream;
+        this.pipeline = new EntryPipeline(reader(), 0, ACCEPT_ALL, ExtractionLimits.NONE);
     }
 
     /**
@@ -355,64 +351,39 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      */
     public abstract InputStream openEntryStream(Entry entry) throws IOException;
 
-    /**
-     * Creates a stream of entries from the archive. This allows functional-style operations on archive entries.
-     *
-     * <p>Example:
-     *
-     * <pre>{@code
-     * extractor.stream()
-     *         .filter(e -> e.name().endsWith(".txt"))
-     *         .forEach(e -> System.out.println(e.name()));
-     * }</pre>
-     *
-     * @return a stream of entries
-     * @since 3.0
-     */
-    public Stream<Entry> stream() {
-        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator(), Spliterator.ORDERED), false);
+    private EntryReader reader() {
+        return new EntryReader() {
+            @Override
+            public Optional<Entry> next() throws IOException {
+                return nextEntry();
+            }
+
+            @Override
+            public InputStream open(Entry entry) throws IOException {
+                return openEntryStream(entry);
+            }
+
+            @Override
+            public void release(InputStream content) throws IOException {
+                closeEntryStream(content);
+            }
+        };
     }
 
     /**
-     * Returns an iterator over the entries in the archive. This allows traditional iteration patterns.
+     * Streams the archive's entries in archive order, after strip-components, the entry filter and the entry limit have
+     * been applied. Each item's content is readable only while it is current (see {@link ArchiveItem}).
      *
-     * <p>Example:
+     * <p>The stream is sequential; a parallel stream fails with {@link IllegalStateException}. An extractor can be read
+     * once: a second call, or a call after {@link #extract(Path)}, throws {@link IllegalStateException}. Failures while
+     * advancing surface as {@link java.io.UncheckedIOException} wrapping the {@link IOException}. Closing the stream
+     * does not close this extractor.
      *
-     * <pre>{@code
-     * for (Entry entry : extractor) {
-     *     System.out.println(entry.name());
-     * }
-     * }</pre>
-     *
-     * @return an iterator over archive entries
-     * @since 3.0
+     * @return the entries of the archive
+     * @since 5.0
      */
-    @Override
-    public @Nonnull Iterator<Entry> iterator() {
-        return new Iterator<>() {
-            Optional<Entry> next = Optional.empty();
-            boolean nextFetched = false;
-
-            @Override
-            public boolean hasNext() {
-                if (!nextFetched) {
-                    try {
-                        next = nextEntry();
-                        nextFetched = true;
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                }
-                return next.isPresent();
-            }
-
-            @Override
-            public Entry next() {
-                if (!hasNext()) throw new NoSuchElementException();
-                nextFetched = false;
-                return next.orElseThrow();
-            }
-        };
+    public Stream<ArchiveItem> stream() {
+        return pipeline.stream();
     }
 
     private Optional<Entry> stripComponents(Entry e) {

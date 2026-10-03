@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 
 import com.hominux.compress4j.archivers.ArchiveExtractor.Entry;
 import com.hominux.compress4j.archivers.ArchiveExtractor.EscapingSymlinkPolicy;
+import com.hominux.compress4j.archivers.ArchiveItem;
 import com.hominux.compress4j.exceptions.ArchiveLimitExceededException;
 import java.io.File;
 import java.io.IOException;
@@ -240,7 +241,7 @@ class SevenZArchiveTest {
         }
 
         try (var extractor = SevenZArchiveExtractor.builder(archive).build()) {
-            var entries = extractor.stream().toList();
+            var entries = extractor.stream().map(ArchiveItem::entry).toList();
 
             assertThat(entries).extracting(Entry::type).containsExactly(DIR, SYMLINK, FILE);
             assertThat(entries.get(0).mode()).isEqualTo(0755);
@@ -274,7 +275,7 @@ class SevenZArchiveTest {
         }
 
         try (var extractor = SevenZArchiveExtractor.builder(archive).build()) {
-            var entries = extractor.stream().toList();
+            var entries = extractor.stream().map(ArchiveItem::entry).toList();
 
             assertThat(entries).extracting(Entry::type).containsOnly(SYMLINK);
             assertThat(entries).extracting(e -> e.linkTarget().orElseThrow()).containsExactly("t1", "t2");
