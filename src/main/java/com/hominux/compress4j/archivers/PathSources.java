@@ -37,6 +37,9 @@ final class PathSources {
     /** DOS attributes are not permission bits, so on Windows the mode stays unknown and the format default applies. */
     static EntrySource of(String name, Path path, BasicFileAttributes attrs, FileTime lastModified, boolean windows)
             throws IOException {
+        if (attrs.isOther()) {
+            throw new IllegalArgumentException(path + " is not a regular file, directory or symlink");
+        }
         int mode = windows ? NO_MODE : FileModes.of(path, false);
         if (attrs.isSymbolicLink()) {
             return new EntrySource.Symlink(name, Files.readSymbolicLink(path).toString(), mode, lastModified);

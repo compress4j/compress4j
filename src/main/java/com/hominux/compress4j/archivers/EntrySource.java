@@ -131,7 +131,8 @@ public sealed interface EntrySource permits EntrySource.File, EntrySource.Direct
      * @param base the directory entry names are relative to
      * @param path a file, directory or symlink under {@code base}
      * @return the source
-     * @throws IllegalArgumentException if {@code path} is {@code base} or lies outside it
+     * @throws IllegalArgumentException if {@code path} is {@code base}, lies outside it, or is not a regular file,
+     *     directory or symlink
      * @throws IOException if the attributes cannot be read
      */
     static EntrySource of(Path base, Path path) throws IOException {

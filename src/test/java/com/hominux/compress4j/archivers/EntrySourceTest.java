@@ -21,8 +21,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.hominux.compress4j.archivers.ArchiveExtractor.Entry.Type;
 import com.hominux.compress4j.archivers.memory.InMemoryArchiveEntry;
 import com.hominux.compress4j.archivers.memory.InMemoryArchiveExtractor;
+import com.hominux.compress4j.archivers.tar.TarArchiveCreator;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.StandardProtocolFamily;
+import java.net.UnixDomainSocketAddress;
+import java.nio.channels.ServerSocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -174,6 +179,32 @@ class EntrySourceTest {
             assertThatThrownBy(item::toSource)
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("link");
+        }
+    }
+
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    void ofRejectsASpecialFile() throws IOException {
+        Path socket = tmp.resolve("s.sock");
+        try (var server = ServerSocketChannel.open(StandardProtocolFamily.UNIX)) {
+            server.bind(UnixDomainSocketAddress.of(socket));
+            assertThatThrownBy(() -> EntrySource.of(tmp, socket))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("s.sock");
+        }
+    }
+
+    @Test
+    @DisabledOnOs(OS.WINDOWS)
+    void walkingATreeWithASpecialFileFails() throws IOException {
+        Path socket = tmp.resolve("s.sock");
+        try (var server = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
+                var creator =
+                        TarArchiveCreator.builder(new ByteArrayOutputStream()).build()) {
+            server.bind(UnixDomainSocketAddress.of(socket));
+            assertThatThrownBy(() -> creator.addDirectoryRecursively(tmp))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("s.sock");
         }
     }
 }

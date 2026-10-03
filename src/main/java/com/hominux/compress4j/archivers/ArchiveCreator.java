@@ -250,7 +250,8 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
      * Add a directory recursively to the archive. The last modification time of the directory will be used as the last
      * modification time of the entry.
      *
-     * <p>The builder's filter applies; a rejected directory skips its whole subtree.
+     * <p>The builder's filter applies; a rejected directory skips its whole subtree. A socket, FIFO or device in the
+     * tree fails the walk with {@link IllegalArgumentException}.
      *
      * @param directory directory to add
      * @throws IOException if an I/O error occurred
@@ -263,7 +264,8 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
      * Add a directory recursively to the archive. The last modification time of the directory will be used as the last
      * modification time of the entry.
      *
-     * <p>The builder's filter applies; a rejected directory skips its whole subtree.
+     * <p>The builder's filter applies; a rejected directory skips its whole subtree. A socket, FIFO or device in the
+     * tree fails the walk with {@link IllegalArgumentException}.
      *
      * @param topLevelDir topLevelDir to add to the directory name
      * @param directory directory to add
@@ -276,7 +278,8 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
     /**
      * Add a directory recursively to the archive.
      *
-     * <p>The builder's filter applies; a rejected directory skips its whole subtree.
+     * <p>The builder's filter applies; a rejected directory skips its whole subtree. A socket, FIFO or device in the
+     * tree fails the walk with {@link IllegalArgumentException}.
      *
      * @param directory directory to add
      * @param modTime last modification time of the directory
@@ -289,7 +292,8 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
     /**
      * Add a directory recursively to the archive.
      *
-     * <p>The builder's filter applies; a rejected directory skips its whole subtree.
+     * <p>The builder's filter applies; a rejected directory skips its whole subtree. A socket, FIFO or device in the
+     * tree fails the walk with {@link IllegalArgumentException}.
      *
      * @param topLevelDir topLevelDir to add to the directory name
      * @param directory directory to add
