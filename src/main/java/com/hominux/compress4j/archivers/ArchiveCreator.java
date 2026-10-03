@@ -49,6 +49,8 @@ import org.apache.commons.lang3.StringUtils;
  * This abstract class is the superclass of all classes providing archiving. This class provides functionality to add
  * files and directories to an archive.
  *
+ * <p>A creator is not thread-safe.
+ *
  * @param <A> The type of {@link ArchiveOutputStream} to write entries to.
  * @since 2.2
  */
@@ -131,12 +133,15 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
     protected abstract boolean requiresSize();
 
     /**
-     * Writes one entry. The name is sanitised (leading and trailing slashes, backslashes) before the filter sees it.
+     * Writes one entry. The name is sanitised (backslashes become slashes, leading and trailing slashes are removed)
+     * and checked for safety before the filter sees it; an entry the filter rejects is skipped. Once a write fails,
+     * every later call throws {@link IllegalStateException}.
      *
      * @param source the entry to write
      * @throws UnsafeEntryException if the name starts with a drive letter, contains a NUL character or has a {@code ..}
      *     segment
-     * @throws IllegalArgumentException if a file's size is unknown and this format records sizes before content
+     * @throws IllegalArgumentException if the sanitised name is blank, or a kept file's size is unknown and this format
+     *     records sizes before content
      * @throws IllegalStateException if an earlier write failed
      * @throws IOException if writing fails or a file's content does not match its declared size; the archive is then
      *     incomplete
@@ -159,10 +164,15 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
     }
 
     /**
-     * Writes every entry in order. The stream is consumed but not closed.
+     * Writes every entry in order through {@link #add}, stopping at the first failure. The stream is consumed but not
+     * closed.
      *
      * @param sources the entries to write
-     * @throws IOException if reading a source or writing fails
+     * @throws UnsafeEntryException if an entry name is unsafe, as for {@link #add}
+     * @throws IllegalArgumentException if an entry is rejected, as for {@link #add}
+     * @throws IllegalStateException if an earlier write failed
+     * @throws IOException if the stream fails with an {@link UncheckedIOException}, whose cause is thrown, or writing
+     *     fails
      */
     public final void addAll(Stream<? extends EntrySource> sources) throws IOException {
         Iterator<? extends EntrySource> it = sources.iterator();
@@ -475,7 +485,8 @@ public abstract class ArchiveCreator<A extends ArchiveOutputStream<? extends Arc
 
         /**
          * Sets which entries are written; the predicate sees each entry after its name is sanitised. A rejected
-         * directory added by {@code addDirectoryRecursively} skips its whole subtree.
+         * directory added by {@code addDirectoryRecursively} skips its whole subtree. The predicate may run more than
+         * once for the same entry, so it should have no side effects.
          *
          * @param predicate the entries to keep
          * @return this builder
