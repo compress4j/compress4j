@@ -69,7 +69,7 @@ record SymlinkExtractor(EscapingSymlinkPolicy policy, boolean overwrite) {
             Files.deleteIfExists(outputFile);
             Files.createSymbolicLink(outputFile, outputTarget);
             if (policy != EscapingSymlinkPolicy.ALLOW) {
-                guard.record(outputFile);
+                guard.record(outputFile.getParent().toRealPath().resolve(outputFile.getFileName()));
             }
         } else {
             LOGGER.debug("Skipping symlink entry: {} -> {} (already exists)", entry.name(), target);

@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.util.stream.Stream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarConstants;
@@ -33,6 +34,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 @DisabledOnOs(OS.WINDOWS)
 class SymlinkGuardTest {
@@ -101,5 +104,44 @@ class SymlinkGuardTest {
                 .isEqualTo(tmp.toRealPath().resolve("x"));
         assertThat(SymlinkGuard.realLocation(base.resolve("missing/../d")))
                 .isEqualTo(base.toRealPath().resolve("d"));
+    }
+
+    private static byte[] swappedParentArchive() throws IOException {
+        var bytes = new ByteArrayOutputStream();
+        try (var tar = new TarArchiveOutputStream(bytes)) {
+            dir(tar, "s1/");
+            dir(tar, "s1/k/");
+            dir(tar, "s2/");
+            symlink(tar, "L", "s1");
+            symlink(tar, "L/A", "n/n/n/k/../../../..");
+            symlink(tar, "s1/n", ".");
+            symlink(tar, "L", "s2");
+            symlink(tar, "s2/A", ".");
+        }
+        return bytes.toByteArray();
+    }
+
+    @ParameterizedTest
+    @EnumSource(
+            value = ArchiveExtractor.EscapingSymlinkPolicy.class,
+            names = {"DISALLOW", "RELATIVIZE_ABSOLUTE"})
+    void linkCreatedThroughSwappedParentSymlinkIsStillChecked(ArchiveExtractor.EscapingSymlinkPolicy policy)
+            throws IOException {
+        // Given
+        Path out = Files.createDirectories(tmp.resolve("a/b/out"));
+
+        try (var extractor = TarArchiveExtractor.builder(new ByteArrayInputStream(swappedParentArchive()))
+                .escapingSymlinkPolicy(policy)
+                .overwrite(true)
+                .build()) {
+            // Then
+            assertThatThrownBy(() -> extractor.extract(out)).isInstanceOf(UnsafeEntryException.class);
+        }
+        Path realOut = out.toRealPath();
+        try (Stream<Path> paths = Files.walk(out)) {
+            for (Path p : paths.filter(Files::isSymbolicLink).toList()) {
+                assertThat(SymlinkGuard.realLocation(p)).startsWith(realOut);
+            }
+        }
     }
 }

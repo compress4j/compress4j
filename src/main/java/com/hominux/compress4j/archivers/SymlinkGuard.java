@@ -31,26 +31,38 @@ final class SymlinkGuard {
 
     private final Path outputDir;
     private final List<Path> links = new ArrayList<>();
+    private Optional<UnsafeEntryException> outcome;
 
     SymlinkGuard(Path outputDir) {
         this.outputDir = outputDir;
     }
 
+    /**
+     * Records a created link.
+     *
+     * @param link the link's location with all parent symlinks already resolved
+     */
     void record(Path link) {
         links.add(link);
     }
 
+    /**
+     * Checks all recorded links once, deleting escaping ones. Later calls rethrow the first outcome.
+     *
+     * @throws UnsafeEntryException naming the first escaping link
+     */
     void verify() throws UnsafeEntryException {
-        Optional<Path> firstEscape = Optional.empty();
-        for (Path link : links) {
-            if (escapes(link)) {
-                firstEscape = firstEscape.or(() -> Optional.of(link));
-                deleteQuietly(link);
-            }
+        if (outcome == null) {
+            List<Path> escaping = links.stream().filter(this::escapes).toList();
+            escaping.forEach(SymlinkGuard::deleteQuietly);
+            links.clear();
+            outcome = escaping.stream()
+                    .findFirst()
+                    .map(first -> new UnsafeEntryException(
+                            "Invalid symlink (points outside of output directory): " + outputDir.relativize(first)));
         }
-        if (firstEscape.isPresent()) {
-            throw new UnsafeEntryException("Invalid symlink (points outside of output directory): "
-                    + outputDir.relativize(firstEscape.orElseThrow()));
+        if (outcome.isPresent()) {
+            throw outcome.orElseThrow();
         }
     }
 
@@ -69,6 +81,9 @@ final class SymlinkGuard {
     }
 
     private boolean escapes(Path link) {
+        if (!Files.isSymbolicLink(link)) {
+            return false;
+        }
         try {
             Path target = link.getParent().resolve(Files.readSymbolicLink(link));
             return !realLocation(target).startsWith(outputDir.toRealPath());
@@ -84,7 +99,9 @@ final class SymlinkGuard {
 
     private static void deleteQuietly(Path link) {
         try {
-            Files.deleteIfExists(link);
+            if (Files.isSymbolicLink(link)) {
+                Files.delete(link);
+            }
         } catch (IOException ignored) {
             // The extraction fails with UnsafeEntryException regardless.
         }

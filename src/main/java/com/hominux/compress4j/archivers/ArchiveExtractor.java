@@ -180,20 +180,29 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
             drain(outputDir, guard);
             guard.verify();
         } catch (IOException | RuntimeException failure) {
-            verifyAfterFailure(guard, failure);
+            Optional<UnsafeEntryException> escape = escapeOf(guard);
+            if (escape.isPresent() && escape.orElseThrow() != failure) {
+                UnsafeEntryException unsafe = escape.orElseThrow();
+                if (failure instanceof ArchiveSecurityException) {
+                    failure.addSuppressed(unsafe);
+                } else {
+                    unsafe.addSuppressed(failure);
+                    pipeline.release(unsafe);
+                    throw unsafe;
+                }
+            }
             pipeline.release(failure);
             throw failure;
         }
         pipeline.release(null);
     }
 
-    private static void verifyAfterFailure(SymlinkGuard guard, Exception failure) {
+    private static Optional<UnsafeEntryException> escapeOf(SymlinkGuard guard) {
         try {
             guard.verify();
+            return Optional.empty();
         } catch (UnsafeEntryException escape) {
-            if (escape != failure) {
-                failure.addSuppressed(escape);
-            }
+            return Optional.of(escape);
         }
     }
 
