@@ -49,6 +49,7 @@ import com.hominux.compress4j.archivers.zip.ZipArchiveCreator;
 import com.hominux.compress4j.archivers.zip.ZipArchiveExtractor;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.Optional;
@@ -71,56 +72,72 @@ public final class FormatCatalog {
                         TAR,
                         p -> TarArchiveCreator.builder(p).build(),
                         o -> TarArchiveCreator.builder(o).build(),
+                        ch -> TarArchiveCreator.builder(ch).build(),
                         p -> TarArchiveExtractor.builder(p).build(),
+                        ch -> TarArchiveExtractor.builder(ch).build(),
                         i -> TarArchiveExtractor.builder(i).build()),
                 streamNative(
                         "tar.gz",
                         TAR,
                         p -> TarGzArchiveCreator.builder(p).build(),
                         o -> TarGzArchiveCreator.builder(o).build(),
+                        ch -> TarGzArchiveCreator.builder(ch).build(),
                         p -> TarGzArchiveExtractor.builder(p).build(),
+                        ch -> TarGzArchiveExtractor.builder(ch).build(),
                         i -> TarGzArchiveExtractor.builder(i).build()),
                 streamNative(
                         "tar.bz2",
                         TAR,
                         p -> TarBZip2ArchiveCreator.builder(p).build(),
                         o -> TarBZip2ArchiveCreator.builder(o).build(),
+                        ch -> TarBZip2ArchiveCreator.builder(ch).build(),
                         p -> TarBZip2ArchiveExtractor.builder(p).build(),
+                        ch -> TarBZip2ArchiveExtractor.builder(ch).build(),
                         i -> TarBZip2ArchiveExtractor.builder(i).build()),
                 streamNative(
                         "tar.xz",
                         TAR,
                         p -> TarXzArchiveCreator.builder(p).build(),
                         o -> TarXzArchiveCreator.builder(o).build(),
+                        ch -> TarXzArchiveCreator.builder(ch).build(),
                         p -> TarXzArchiveExtractor.builder(p).build(),
+                        ch -> TarXzArchiveExtractor.builder(ch).build(),
                         i -> TarXzArchiveExtractor.builder(i).build()),
                 streamNative(
                         "tar.lzma",
                         TAR,
                         p -> TarLzmaArchiveCreator.builder(p).build(),
                         o -> TarLzmaArchiveCreator.builder(o).build(),
+                        ch -> TarLzmaArchiveCreator.builder(ch).build(),
                         p -> TarLzmaArchiveExtractor.builder(p).build(),
+                        ch -> TarLzmaArchiveExtractor.builder(ch).build(),
                         i -> TarLzmaArchiveExtractor.builder(i).build()),
                 streamNative(
                         "tar.lz4",
                         TAR,
                         p -> TarLz4ArchiveCreator.builder(p).build(),
                         o -> TarLz4ArchiveCreator.builder(o).build(),
+                        ch -> TarLz4ArchiveCreator.builder(ch).build(),
                         p -> TarLz4ArchiveExtractor.builder(p).build(),
+                        ch -> TarLz4ArchiveExtractor.builder(ch).build(),
                         i -> TarLz4ArchiveExtractor.builder(i).build()),
                 streamNative(
                         "tar.zst",
                         TAR,
                         p -> TarZstdArchiveCreator.builder(p).build(),
                         o -> TarZstdArchiveCreator.builder(o).build(),
+                        ch -> TarZstdArchiveCreator.builder(ch).build(),
                         p -> TarZstdArchiveExtractor.builder(p).build(),
+                        ch -> TarZstdArchiveExtractor.builder(ch).build(),
                         i -> TarZstdArchiveExtractor.builder(i).build()),
                 streamNative(
                         "ar",
                         EnumSet.of(MODES, SYMLINKS, LAST_MODIFIED, REQUIRES_SIZE, STREAM_INPUT, STREAM_OUTPUT),
                         p -> ArArchiveCreator.builder(p).build(),
                         o -> ArArchiveCreator.builder(o).build(),
+                        ch -> ArArchiveCreator.builder(ch).build(),
                         p -> ArArchiveExtractor.builder(p).build(),
+                        ch -> ArArchiveExtractor.builder(ch).build(),
                         i -> ArArchiveExtractor.builder(i).build()),
                 streamNative(
                         "cpio",
@@ -134,7 +151,9 @@ public final class FormatCatalog {
                                 STREAM_OUTPUT),
                         p -> CpioArchiveCreator.builder(p).build(),
                         o -> CpioArchiveCreator.builder(o).build(),
+                        ch -> CpioArchiveCreator.builder(ch).build(),
                         p -> CpioArchiveExtractor.builder(p).build(),
+                        ch -> CpioArchiveExtractor.builder(ch).build(),
                         i -> CpioArchiveExtractor.builder(i).build()),
                 new ArchiveFormat(
                         "zip",
@@ -164,17 +183,19 @@ public final class FormatCatalog {
             String name,
             Set<Capability> capabilities,
             IOFunction<Path, ArchiveCreator<?>> createAt,
+            IOFunction<SeekableByteChannel, ArchiveCreator<?>> createOnChannel,
             IOFunction<OutputStream, ArchiveCreator<?>> createOnStream,
             IOFunction<Path, ArchiveExtractor<?>> readAt,
+            IOFunction<SeekableByteChannel, ArchiveExtractor<?>> readFromChannel,
             IOFunction<InputStream, ArchiveExtractor<?>> readFromStream) {
         return new ArchiveFormat(
                 name,
                 capabilities,
                 Optional.of(createAt),
-                Optional.empty(),
+                Optional.of(createOnChannel),
                 Optional.of(createOnStream),
                 readAt,
-                Optional.empty(),
+                Optional.of(readFromChannel),
                 Optional.of(readFromStream));
     }
 

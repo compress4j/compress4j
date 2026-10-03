@@ -28,12 +28,15 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.time.Instant;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
@@ -129,5 +132,34 @@ class FormatContractTest {
         assertThat(file.lastModified()).isPresent();
         long deltaMillis = Math.abs(file.lastModified().orElseThrow().toMillis() - MODIFIED.toMillis());
         assertThat(deltaMillis).isLessThanOrEqualTo(2000);
+    }
+
+    static Stream<ArchiveFormat> channelCapable() {
+        return FormatCatalog.writable().filter(f -> f.createOnChannel().isPresent());
+    }
+
+    @ParameterizedTest
+    @MethodSource("channelCapable")
+    void channelRoundTrip(ArchiveFormat format) throws IOException {
+        Path archive = tmp.resolve("channel." + format.name());
+        try (var channel = Files.newByteChannel(archive, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
+                var creator = format.createOnChannel().orElseThrow().apply(channel)) {
+            creator.addFile("a.txt", "alpha".getBytes(StandardCharsets.UTF_8));
+        }
+        try (var channel = Files.newByteChannel(archive);
+                var extractor = format.readFromChannel().orElseThrow().apply(channel)) {
+            var item = extractor.stream().findFirst().orElseThrow();
+            assertThat(new String(item.content().readAllBytes(), StandardCharsets.UTF_8))
+                    .isEqualTo("alpha");
+        }
+    }
+
+    @Test
+    @Disabled("enabled in P3 Task 4")
+    void everyWritableFormatHasChannelBuilders() {
+        assertThat(FormatCatalog.writable()).allSatisfy(f -> {
+            assertThat(f.createOnChannel()).as(f.name() + " create").isPresent();
+            assertThat(f.readFromChannel()).as(f.name() + " read").isPresent();
+        });
     }
 }
