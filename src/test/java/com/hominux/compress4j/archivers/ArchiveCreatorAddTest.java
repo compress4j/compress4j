@@ -19,6 +19,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.hominux.compress4j.archivers.ar.ArArchiveCreator;
+import com.hominux.compress4j.archivers.catalog.ArchiveFormat;
+import com.hominux.compress4j.archivers.catalog.FormatCatalog;
 import com.hominux.compress4j.archivers.cpio.CpioArchiveCreator;
 import com.hominux.compress4j.archivers.memory.InMemoryArchiveCreator;
 import com.hominux.compress4j.archivers.tar.TarArchiveCreator;
@@ -26,6 +28,7 @@ import com.hominux.compress4j.exceptions.UnsafeEntryException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -34,6 +37,7 @@ import java.time.Instant;
 import java.util.OptionalLong;
 import java.util.stream.Stream;
 import org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.function.IOFunction;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -149,6 +153,63 @@ class ArchiveCreatorAddTest {
                 .isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(creator::close).isInstanceOf(IOException.class).hasMessageContaining("unclosed entries");
         assertThat(sinkClosed[0]).as("sink closed").isTrue();
+    }
+
+    static Stream<ArchiveFormat> writable() {
+        return FormatCatalog.writable();
+    }
+
+    private static EntrySource.File declaring(String name, long size, InputStream content) {
+        return new EntrySource.File(name, 0, T, OptionalLong.of(size), () -> content);
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("writable")
+    void contentShorterThanItsDeclaredSizeFails(ArchiveFormat format, @TempDir Path tempDir) throws IOException {
+        var creator = format.createAt().orElseThrow().apply(tempDir.resolve("short." + format.name()));
+        try {
+            assertThatThrownBy(() -> creator.add(declaring("short.txt", 10, new ByteArrayInputStream(new byte[2]))))
+                    .isInstanceOf(IOException.class)
+                    .hasMessageContaining("short.txt")
+                    .hasMessageContaining("declared");
+            assertThatThrownBy(() -> creator.add(EntrySource.file("next", new byte[0])))
+                    .isInstanceOf(IllegalStateException.class);
+        } finally {
+            IOUtils.closeQuietly(creator);
+        }
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("writable")
+    void contentLongerThanItsDeclaredSizeFailsWithoutReadingOn(ArchiveFormat format, @TempDir Path tempDir)
+            throws IOException {
+        var content = new ByteArrayInputStream(new byte[8]);
+        var creator = format.createAt().orElseThrow().apply(tempDir.resolve("long." + format.name()));
+        try {
+            assertThatThrownBy(() -> creator.add(declaring("long.txt", 2, content)))
+                    .isInstanceOf(IOException.class)
+                    .hasMessageContaining("long.txt")
+                    .hasMessageContaining("declared");
+            assertThat(content.available()).isGreaterThanOrEqualTo(8 - 3);
+            assertThatThrownBy(() -> creator.add(EntrySource.file("next", new byte[0])))
+                    .isInstanceOf(IllegalStateException.class);
+        } finally {
+            IOUtils.closeQuietly(creator);
+        }
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("writable")
+    void emptyDeclaredContentWithExtraBytesFails(ArchiveFormat format, @TempDir Path tempDir) throws IOException {
+        var creator = format.createAt().orElseThrow().apply(tempDir.resolve("empty." + format.name()));
+        try {
+            assertThatThrownBy(() -> creator.add(declaring("empty.txt", 0, new ByteArrayInputStream(new byte[1]))))
+                    .isInstanceOf(IOException.class)
+                    .hasMessageContaining("empty.txt")
+                    .hasMessageContaining("declared");
+        } finally {
+            IOUtils.closeQuietly(creator);
+        }
     }
 
     @Test
