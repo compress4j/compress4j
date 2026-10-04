@@ -55,13 +55,15 @@ public class InMemoryArchiveExtractor extends ArchiveExtractor<InMemoryArchiveIn
     }
 
     @Override
-    public Optional<Entry> nextEntry() {
+    protected Optional<Entry> nextEntry() {
         return Optional.ofNullable(archiveInputStream.getNextEntry())
-                .map(next -> new Entry(next.getName(), next.getType(), next.getMode(), next.getLinkName()));
+                .map(next -> new Entry(next.getName(), next.getType(), next.getMode())
+                        .withLinkTarget(next.getLinkName())
+                        .withMetadata(next.getLastModifiedDate(), next.getSize()));
     }
 
     @Override
-    public InputStream openEntryStream(Entry entry) {
+    protected InputStream openEntryStream(Entry entry) {
         return new ByteArrayInputStream(archiveInputStream.readString().getBytes(StandardCharsets.UTF_8));
     }
 

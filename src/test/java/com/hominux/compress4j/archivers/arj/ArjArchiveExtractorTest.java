@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 
 import com.hominux.compress4j.archivers.ArchiveExtractor;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -148,11 +149,17 @@ class ArjArchiveExtractorTest {
         when(in.read(any(byte[].class), anyInt(), anyInt())).thenReturn(-1);
         var seen = new ArrayList<String>();
 
-        try (var extractor = new ArjArchiveExtractor(in)) {
-            extractor.setErrorHandler((e, failure) -> {
-                seen.add(e.name());
-                return ArchiveExtractor.ErrorHandlerChoice.SKIP;
-            });
+        var builder = new ArjArchiveExtractor.ArjArchiveExtractorBuilder(InputStream.nullInputStream()) {
+            @Override
+            public ArjArchiveInputStream buildArchiveInputStream() {
+                return in;
+            }
+        };
+        try (var extractor = builder.errorHandler((e, failure) -> {
+                    seen.add(e.name());
+                    return ArchiveExtractor.ErrorHandlerChoice.SKIP;
+                })
+                .build()) {
             extractor.extract(tempDir);
         }
 

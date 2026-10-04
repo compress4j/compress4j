@@ -37,7 +37,7 @@ public class DecompressorEntryAssert extends AbstractAssert<DecompressorEntryAss
     }
 
     public DecompressorEntryAssert hasLinkName(String linkName) {
-        Assertions.assertThat(actual.linkTarget()).isEqualTo(linkName);
+        Assertions.assertThat(actual.linkTarget()).isEqualTo(java.util.Optional.ofNullable(linkName));
         return this;
     }
 

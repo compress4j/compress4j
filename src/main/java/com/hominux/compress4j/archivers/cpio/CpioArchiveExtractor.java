@@ -58,26 +58,29 @@ public class CpioArchiveExtractor extends ArchiveExtractor<CpioArchiveInputStrea
     }
 
     @Override
-    public InputStream openEntryStream(Entry entry) {
+    protected InputStream openEntryStream(Entry entry) {
         return archiveInputStream;
     }
 
     @Override
-    public Optional<Entry> nextEntry() throws IOException {
+    protected Optional<Entry> nextEntry() throws IOException {
         CpioArchiveEntry cpioEntry = archiveInputStream.getNextEntry();
         if (cpioEntry == null || "TRAILER!!!".equals(cpioEntry.getName())) {
             return Optional.empty();
         }
 
         int mode = (int) cpioEntry.getMode();
+        Entry entry;
         if (cpioEntry.isSymbolicLink()) {
             String target = readSymlinkTargetStoredAsContent(cpioEntry);
-            return Optional.of(new Entry(cpioEntry.getName(), Entry.Type.SYMLINK, mode, target));
+            entry = new Entry(cpioEntry.getName(), Entry.Type.SYMLINK, mode).withLinkTarget(target);
         } else if (cpioEntry.isDirectory()) {
-            return Optional.of(new Entry(cpioEntry.getName(), Entry.Type.DIR, mode, null));
+            entry = new Entry(cpioEntry.getName(), Entry.Type.DIR, mode);
         } else {
-            return Optional.of(new Entry(cpioEntry.getName(), Entry.Type.FILE, mode, null));
+            entry = new Entry(cpioEntry.getName(), Entry.Type.FILE, mode);
         }
+        return Optional.of(entry.withMetadata(
+                cpioEntry.getLastModifiedDate(), entry.type() == Entry.Type.FILE ? cpioEntry.getSize() : 0));
     }
 
     /**

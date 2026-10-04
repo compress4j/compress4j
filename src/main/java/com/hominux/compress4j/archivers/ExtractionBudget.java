@@ -16,22 +16,19 @@
 package com.hominux.compress4j.archivers;
 
 import com.hominux.compress4j.exceptions.ArchiveLimitExceededException;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 
-/** Tracks what one {@link ArchiveExtractor#extract} run has consumed against its {@link ExtractionLimits}. */
+/**
+ * Tracks what one {@link ArchiveExtractor#stream()} or {@link ArchiveExtractor#extract} run has consumed against its
+ * {@link ExtractionLimits}.
+ */
 final class ExtractionBudget {
-
-    /**
-     * Matches {@code InputStream.DEFAULT_BUFFER_SIZE}, so the counted copy reads in the same granularity as
-     * {@link InputStream#transferTo(OutputStream)} does on the unlimited path.
-     */
-    private static final int TRANSFER_BUFFER_SIZE = 16384;
 
     private final ExtractionLimits limits;
     private long entries = 0;
-    private long extractedBytes = 0;
+    long extractedBytes = 0;
 
     ExtractionBudget(ExtractionLimits limits) {
         this.limits = limits;
@@ -44,27 +41,50 @@ final class ExtractionBudget {
         }
     }
 
-    /**
-     * Copies the content of an entry, enforcing the entry and total size limits as the bytes go by rather than trusting
-     * the size the archive declares.
-     *
-     * @param entryName the name of the entry being written
-     * @param inputStream the stream to read the entry content from
-     * @param outputStream the stream to write the entry content to
-     * @throws IOException if an I/O error occurs
-     * @throws ArchiveLimitExceededException if the entry, or the archive as a whole, expands beyond its limit
-     */
-    void transfer(String entryName, InputStream inputStream, OutputStream outputStream) throws IOException {
+    InputStream meter(String entryName, InputStream in) {
         if (limits.maxEntrySize() < 0 && limits.maxTotalSize() < 0) {
-            extractedBytes += inputStream.transferTo(outputStream);
-            return;
+            return in;
         }
-        byte[] buffer = new byte[TRANSFER_BUFFER_SIZE];
-        long entryBytes = 0;
-        int read;
-        while ((read = inputStream.read(buffer)) >= 0) {
-            entryBytes += read;
-            extractedBytes += read;
+        return new MeteredInputStream(entryName, in);
+    }
+
+    private final class MeteredInputStream extends FilterInputStream {
+        private final String entryName;
+        private long entryBytes;
+
+        private MeteredInputStream(String entryName, InputStream in) {
+            super(in);
+            this.entryName = entryName;
+        }
+
+        @Override
+        public int read() throws IOException {
+            int b = super.read();
+            if (b >= 0) {
+                count(1);
+            }
+            return b;
+        }
+
+        @Override
+        public int read(byte[] buffer, int offset, int length) throws IOException {
+            int n = super.read(buffer, offset, length);
+            if (n > 0) {
+                count(n);
+            }
+            return n;
+        }
+
+        @Override
+        public long skip(long n) throws IOException {
+            long skipped = super.skip(n);
+            count(skipped);
+            return skipped;
+        }
+
+        private void count(long n) throws ArchiveLimitExceededException {
+            entryBytes += n;
+            extractedBytes += n;
             if (limits.maxEntrySize() >= 0 && entryBytes > limits.maxEntrySize()) {
                 throw new ArchiveLimitExceededException("Entry '" + entryName + "' expands beyond the maximum entry "
                         + "size of " + limits.maxEntrySize() + " bytes");
@@ -73,7 +93,6 @@ final class ExtractionBudget {
                 throw new ArchiveLimitExceededException("Archive expands beyond the maximum total size of "
                         + limits.maxTotalSize() + " bytes at entry '" + entryName + "'");
             }
-            outputStream.write(buffer, 0, read);
         }
     }
 }

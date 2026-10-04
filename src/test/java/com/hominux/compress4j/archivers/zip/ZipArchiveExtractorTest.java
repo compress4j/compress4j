@@ -17,6 +17,7 @@ package com.hominux.compress4j.archivers.zip;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -70,7 +71,7 @@ class ZipArchiveExtractorTest {
             assertThat(entry.name()).isEqualTo("file.txt");
             assertThat(entry.type()).isEqualTo(ArchiveExtractor.Entry.Type.FILE);
             assertThat(entry.mode()).isEqualTo(0644);
-            assertThat(entry.linkTarget()).isNull();
+            assertThat(entry.linkTarget()).isEmpty();
             verify(mockInputStream, times(1)).getUnixSymlink(mockZipEntry);
         }
 
@@ -104,6 +105,7 @@ class ZipArchiveExtractorTest {
             when(mockZipEntry.getName()).thenReturn("link");
             when(mockZipEntry.isUnixSymlink()).thenReturn(true);
             when(mockZipEntry.getUnixMode()).thenReturn(0777);
+            lenient().when(mockZipEntry.getSize()).thenReturn(11L);
             when(mockInputStream.getUnixSymlink(mockZipEntry)).thenReturn("target/file");
 
             when(mockInputStream.getNextEntry()).thenReturn(mockZipEntry);
@@ -114,8 +116,9 @@ class ZipArchiveExtractorTest {
             // Then
             assertThat(entry.name()).isEqualTo("link");
             assertThat(entry.type()).isEqualTo(ArchiveExtractor.Entry.Type.SYMLINK);
-            assertThat(entry.linkTarget()).isEqualTo("target/file");
+            assertThat(entry.linkTarget()).contains("target/file");
             assertThat(entry.mode()).isEqualTo(0777);
+            assertThat(entry.size()).hasValue(0);
             verify(mockInputStream, times(1)).getUnixSymlink(mockZipEntry);
         }
 
@@ -149,6 +152,7 @@ class ZipArchiveExtractorTest {
         void testNextEntry_SymlinkThrowsIOException() throws IOException {
             // Given
             var mockZipEntry = mock(ZipArchiveEntry.class);
+            when(mockZipEntry.getName()).thenReturn("link");
             when(mockZipEntry.isUnixSymlink()).thenReturn(true);
             when(mockInputStream.getNextEntry()).thenReturn(mockZipEntry);
             when(mockInputStream.getUnixSymlink(mockZipEntry)).thenThrow(new IOException("Test symlink error"));

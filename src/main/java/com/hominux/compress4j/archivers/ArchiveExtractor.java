@@ -26,7 +26,6 @@ import com.hominux.compress4j.exceptions.ArchiveLimitExceededException;
 import com.hominux.compress4j.exceptions.ArchiveSecurityException;
 import com.hominux.compress4j.exceptions.UnsafeEntryException;
 import com.hominux.compress4j.utils.BuildFailureCleanup;
-import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.io.Closeable;
 import java.io.IOException;
@@ -36,18 +35,16 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.DosFileAttributeView;
+import java.nio.file.attribute.FileTime;
 import java.nio.file.attribute.PosixFileAttributeView;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.Date;
+import java.util.Objects;
 import java.util.Optional;
-import java.util.Spliterator;
-import java.util.Spliterators;
+import java.util.OptionalLong;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.io.IOUtils;
@@ -61,8 +58,7 @@ import org.slf4j.LoggerFactory;
  * @param <A> The type of {@link ArchiveInputStream} to read entries from.
  * @since 2.2
  */
-public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends ArchiveEntry>>
-        implements Closeable, Iterable<ArchiveExtractor.Entry> {
+public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends ArchiveEntry>> implements Closeable {
     private static final Logger LOGGER = LoggerFactory.getLogger(ArchiveExtractor.class);
 
     /**
@@ -77,26 +73,24 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
     /** Archive input stream to be used for extraction. */
     protected A archiveInputStream;
     /** Escaping symlink policy for the extractor. */
-    protected ArchiveExtractor.EscapingSymlinkPolicy escapingSymlinkPolicy = EscapingSymlinkPolicy.DISALLOW;
+    private final ArchiveExtractor.EscapingSymlinkPolicy escapingSymlinkPolicy;
     /** Filter for the extractor. */
-    private Predicate<Entry> entryFilter = ACCEPT_ALL;
+    private final Predicate<Entry> entryFilter;
     /** Error handler for the extractor. */
-    private BiFunction<Entry, ? super IOException, ErrorHandlerChoice> errorHandler =
-            (x, y) -> ErrorHandlerChoice.BAIL_OUT;
+    private final BiFunction<Entry, ? super IOException, ErrorHandlerChoice> errorHandler;
     /** Post processor for the extractor. */
-    private BiConsumer<Entry, ? super Path> postProcessor;
+    private final BiConsumer<Entry, ? super Path> postProcessor;
 
     /** Number of leading path components to strip from the extracted entries. */
-    private int stripComponents = 0;
+    private final int stripComponents;
 
     /** Whether to overwrite existing files. */
-    private boolean overwrite = false;
+    private final boolean overwrite;
 
-    /**
-     * Extraction limits, see {@link #setMaxEntries(long)}, {@link #setMaxEntrySize(long)} and
-     * {@link #setMaxTotalSize(long)}.
-     */
-    private ExtractionLimits limits = ExtractionLimits.NONE;
+    /** Extraction limits configured through the builder's max-entries, max-entry-size and max-total-size options. */
+    private final ExtractionLimits limits;
+
+    private final EntryPipeline pipeline;
 
     /**
      * Creates a new {@code ArchiveExtractor}.
@@ -116,6 +110,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         this.overwrite = builder.overwrite;
         this.escapingSymlinkPolicy = builder.escapingSymlinkPolicy;
         this.limits = new ExtractionLimits(builder.maxEntries, builder.maxEntrySize, builder.maxTotalSize);
+        this.pipeline = new EntryPipeline(reader(), stripComponents, entryFilter, limits);
     }
 
     /**
@@ -125,6 +120,14 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      */
     protected ArchiveExtractor(A archiveInputStream) {
         this.archiveInputStream = archiveInputStream;
+        this.entryFilter = ACCEPT_ALL;
+        this.errorHandler = (x, y) -> ErrorHandlerChoice.BAIL_OUT;
+        this.postProcessor = null;
+        this.stripComponents = 0;
+        this.overwrite = false;
+        this.escapingSymlinkPolicy = EscapingSymlinkPolicy.DISALLOW;
+        this.limits = ExtractionLimits.NONE;
+        this.pipeline = new EntryPipeline(reader(), stripComponents, entryFilter, limits);
     }
 
     /**
@@ -167,20 +170,48 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      *
      * @param outputDir the directory to extract the archive to
      * @throws IOException if an I/O error occurs
+     * @throws IllegalStateException if this extractor was already streamed or extracted
      * @throws ArchiveLimitExceededException if the archive breaches one of the configured extraction limits
      * @throws UnsafeEntryException if an entry would be written, or a symlink would point, outside outputDir
      */
     public final void extract(Path outputDir) throws IOException {
-        ExtractionBudget budget = new ExtractionBudget(limits);
-        boolean ignoreErrors = false;
-        Optional<Entry> next;
-        while ((next = nextEntry()).isPresent()) {
-            Entry entry = next.orElseThrow();
-            if (!entryFilter.test(entry)) {
-                continue;
+        pipeline.start();
+        SymlinkGuard guard = new SymlinkGuard(outputDir);
+        try {
+            drain(outputDir, guard);
+            guard.verify();
+        } catch (IOException | RuntimeException failure) {
+            Optional<UnsafeEntryException> escape = escapeOf(guard);
+            if (escape.isPresent() && escape.orElseThrow() != failure) {
+                UnsafeEntryException unsafe = escape.orElseThrow();
+                if (failure instanceof ArchiveSecurityException) {
+                    failure.addSuppressed(unsafe);
+                } else {
+                    unsafe.addSuppressed(failure);
+                    pipeline.release(unsafe);
+                    throw unsafe;
+                }
             }
-            budget.countEntry();
-            switch (extractEntry(outputDir, entry, ignoreErrors, budget)) {
+            pipeline.release(failure);
+            throw failure;
+        }
+        pipeline.release(null);
+    }
+
+    private static Optional<UnsafeEntryException> escapeOf(SymlinkGuard guard) {
+        try {
+            guard.verify();
+            return Optional.empty();
+        } catch (UnsafeEntryException escape) {
+            return Optional.of(escape);
+        }
+    }
+
+    private void drain(Path outputDir, SymlinkGuard guard) throws IOException {
+        boolean ignoreErrors = false;
+        Optional<ArchiveItem> next;
+        while ((next = pipeline.advance()).isPresent()) {
+            switch (extractItem(outputDir, next.orElseThrow(), ignoreErrors, guard)) {
                 case EntryOutcome.Abort() -> {
                     return;
                 }
@@ -192,28 +223,17 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         }
     }
 
-    /**
-     * Extracts a single entry, retrying for as long as the error handler asks for it.
-     *
-     * @param outputDir the directory to extract the archive to
-     * @param entry the entry to extract
-     * @param ignoreErrors whether {@link ErrorHandlerChoice#SKIP_ALL} was selected for an earlier entry
-     * @param budget the budget of the current extraction
-     * @return what the extraction loop does next
-     * @throws IOException if an I/O error occurs and the error handler rethrows it
-     * @throws ArchiveLimitExceededException if the entry breaches one of the configured extraction limits
-     */
-    private EntryOutcome extractEntry(Path outputDir, Entry entry, boolean ignoreErrors, ExtractionBudget budget)
+    private EntryOutcome extractItem(Path outputDir, ArchiveItem item, boolean ignoreErrors, SymlinkGuard guard)
             throws IOException {
         while (true) {
             try {
-                processEntry(outputDir, entry, budget);
+                processItem(outputDir, item, guard);
                 return new EntryOutcome.Continue();
             } catch (ArchiveSecurityException unsuppressible) {
                 throw unsuppressible;
             } catch (IOException ioException) {
                 ErrorHandlerChoice choice =
-                        new ExtractionErrorPolicy(errorHandler).handle(ioException, ignoreErrors, entry);
+                        new ExtractionErrorPolicy(errorHandler).handle(ioException, ignoreErrors, item.entry());
                 if (choice != RETRY) {
                     return ExtractionErrorPolicy.outcomeOf(choice);
                 }
@@ -225,99 +245,6 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
     @Override
     public void close() throws IOException {
         archiveInputStream.close();
-    }
-
-    /**
-     * Sets the error handler for the extractor.
-     *
-     * @param errorHandler the error handler to set
-     */
-    public void setErrorHandler(BiFunction<Entry, ? super IOException, ErrorHandlerChoice> errorHandler) {
-        this.errorHandler = errorHandler;
-    }
-
-    /**
-     * Sets the escaping symlink policy for the extractor.
-     *
-     * @param escapingSymlinkPolicy the escaping symlink policy to set
-     */
-    public void setEscapingSymlinkPolicy(ArchiveExtractor.EscapingSymlinkPolicy escapingSymlinkPolicy) {
-        this.escapingSymlinkPolicy = escapingSymlinkPolicy;
-    }
-
-    /**
-     * Sets the filter for the extractor.
-     *
-     * @param filter Predicate to be used when entries are being extracted
-     */
-    public void setEntryFilter(@Nullable Predicate<Entry> filter) {
-        this.entryFilter = filter != null ? filter : ACCEPT_ALL;
-    }
-
-    /**
-     * Sets the post processor for the extractor.
-     *
-     * @param consumer the post processor to set
-     */
-    public void setPostProcessor(@Nullable Consumer<? super Path> consumer) {
-        this.postProcessor = consumer != null ? (entry, path) -> consumer.accept(path) : null;
-    }
-
-    /**
-     * Sets the post processor for the extractor.
-     *
-     * @param postProcessor the post processor to set
-     */
-    public void setPostProcessor(BiConsumer<Entry, ? super Path> postProcessor) {
-        this.postProcessor = postProcessor;
-    }
-
-    /**
-     * Sets the number of leading path components to strip from the extracted entries.
-     *
-     * @param stripComponents the number of leading path components to strip
-     */
-    public void setStripComponents(int stripComponents) {
-        this.stripComponents = stripComponents;
-    }
-
-    /**
-     * Sets whether to overwrite existing files.
-     *
-     * @param overwrite whether to overwrite existing files
-     */
-    public void setOverwrite(boolean overwrite) {
-        this.overwrite = overwrite;
-    }
-
-    /**
-     * Sets the maximum number of entries {@link #extract(Path)} will process before aborting.
-     *
-     * @param maxEntries the maximum number of entries, or {@link #UNLIMITED} to disable the limit
-     * @since 3.1
-     */
-    public void setMaxEntries(long maxEntries) {
-        this.limits = limits.withMaxEntries(maxEntries);
-    }
-
-    /**
-     * Sets the maximum number of bytes a single entry may expand to before {@link #extract(Path)} aborts.
-     *
-     * @param maxEntrySize the maximum size of a single entry in bytes, or {@link #UNLIMITED} to disable the limit
-     * @since 3.1
-     */
-    public void setMaxEntrySize(long maxEntrySize) {
-        this.limits = limits.withMaxEntrySize(maxEntrySize);
-    }
-
-    /**
-     * Sets the maximum number of bytes the whole archive may expand to before {@link #extract(Path)} aborts.
-     *
-     * @param maxTotalSize the maximum total extracted size in bytes, or {@link #UNLIMITED} to disable the limit
-     * @since 3.1
-     */
-    public void setMaxTotalSize(long maxTotalSize) {
-        this.limits = limits.withMaxTotalSize(maxTotalSize);
     }
 
     /**
@@ -339,7 +266,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * @throws IOException if an I/O error occurs
      * @since 3.0
      */
-    public abstract Optional<Entry> nextEntry() throws IOException;
+    protected abstract Optional<Entry> nextEntry() throws IOException;
 
     /**
      * Open the stream for the current entry. This method is called before the entry is processed and should open the
@@ -350,106 +277,73 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
      * @throws IOException if an I/O error occurs
      * @since 3.0
      */
-    public abstract InputStream openEntryStream(Entry entry) throws IOException;
+    protected abstract InputStream openEntryStream(Entry entry) throws IOException;
 
-    /**
-     * Creates a stream of entries from the archive. This allows functional-style operations on archive entries.
-     *
-     * <p>Example:
-     *
-     * <pre>{@code
-     * extractor.stream()
-     *         .filter(e -> e.name().endsWith(".txt"))
-     *         .forEach(e -> System.out.println(e.name()));
-     * }</pre>
-     *
-     * @return a stream of entries
-     * @since 3.0
-     */
-    public Stream<Entry> stream() {
-        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator(), Spliterator.ORDERED), false);
-    }
-
-    /**
-     * Returns an iterator over the entries in the archive. This allows traditional iteration patterns.
-     *
-     * <p>Example:
-     *
-     * <pre>{@code
-     * for (Entry entry : extractor) {
-     *     System.out.println(entry.name());
-     * }
-     * }</pre>
-     *
-     * @return an iterator over archive entries
-     * @since 3.0
-     */
-    @Override
-    public @Nonnull Iterator<Entry> iterator() {
-        return new Iterator<>() {
-            Optional<Entry> next = Optional.empty();
-            boolean nextFetched = false;
-
+    private EntryReader reader() {
+        return new EntryReader() {
             @Override
-            public boolean hasNext() {
-                if (!nextFetched) {
-                    try {
-                        next = nextEntry();
-                        nextFetched = true;
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                }
-                return next.isPresent();
+            public Optional<Entry> next() throws IOException {
+                return nextEntry();
             }
 
             @Override
-            public Entry next() {
-                if (!hasNext()) throw new NoSuchElementException();
-                nextFetched = false;
-                return next.orElseThrow();
+            public InputStream open(Entry entry) throws IOException {
+                return openEntryStream(entry);
+            }
+
+            @Override
+            public void release(InputStream content) throws IOException {
+                closeEntryStream(content);
             }
         };
     }
 
-    private Optional<Entry> stripComponents(Entry e) {
-        return EntryPaths.stripComponents(e.name(), stripComponents)
-                .map(newName -> new Entry(newName, e.type(), e.mode(), e.linkTarget()));
+    /**
+     * Streams the archive's entries in archive order, after strip-components, the entry filter and the entry limit have
+     * been applied. Each item's content is readable only while it is current (see {@link ArchiveItem}).
+     *
+     * <p>The stream is sequential; a parallel stream fails with {@link IllegalStateException}. An extractor can be read
+     * once: a second call, or a call after {@link #extract(Path)}, throws {@link IllegalStateException}. Failures while
+     * advancing surface as {@link java.io.UncheckedIOException} wrapping the {@link IOException}. Closing the stream
+     * does not close this extractor.
+     *
+     * <p>Entry names and link targets are passed through unchecked; only {@link #extract(Path)} resolves paths safely
+     * against the output directory.
+     *
+     * @return the entries of the archive
+     * @since 5.0
+     */
+    public Stream<ArchiveItem> stream() {
+        return pipeline.stream();
     }
 
-    /**
-     * Writes the entry to the output file.
-     *
-     * @param entry the entry to write
-     * @param outputFile the file to write the entry to
-     * @param budget the budget of the current extraction
-     * @throws IOException if an I/O error occurs
-     */
-    @SuppressWarnings("try")
-    private void writeFile(Entry entry, Path outputFile, ExtractionBudget budget) throws IOException {
-        if (outputFile == null) {
-            LOGGER.warn("Output file is null for entry: {}. Skipping.", entry.name);
-            return;
-        }
+    private void writeFile(ArchiveItem item, Path outputFile) throws IOException {
+        Entry entry = item.entry();
         if (overwrite || !Files.exists(outputFile)) {
-            InputStream inputStream = openEntryStream(entry);
-            try (Closeable release = () -> closeEntryStream(inputStream)) {
-                EntryPaths.makeDirectory(outputFile.getParent());
-                try (OutputStream outputStream = Files.newOutputStream(outputFile)) {
-                    budget.transfer(entry.name(), inputStream, outputStream);
-                }
-                if (entry.mode != 0) {
-                    setAttributes(entry.mode, outputFile);
-                }
+            InputStream content = contentOf(item);
+            EntryPaths.makeDirectory(outputFile.getParent());
+            try (OutputStream outputStream = Files.newOutputStream(outputFile)) {
+                content.transferTo(outputStream);
+            }
+            if (entry.mode != 0) {
+                setAttributes(entry.mode, outputFile);
             }
         } else {
             LOGGER.debug("Skipping file entry: {} (already exists)", entry.name);
         }
     }
 
+    private static InputStream contentOf(ArchiveItem item) throws IOException {
+        try {
+            return item.content();
+        } catch (UncheckedIOException e) {
+            throw e.getCause();
+        }
+    }
+
     /**
-     * Reads exactly {@code declaredSize} bytes from {@code in}, enforcing {@link #setMaxEntrySize(long)} first. Lets a
-     * subclass safely read an entry's content into memory (e.g. a symlink target that has no dedicated header field)
+     * Reads exactly {@code declaredSize} bytes from {@code in}, enforcing the configured maximum entry size first. Lets
+     * a subclass safely read an entry's content into memory (e.g. a symlink target that has no dedicated header field)
      * without letting a crafted archive force an oversized allocation via its own declared size.
      *
      * @param entryName the name of the entry being read, used in the exception message
@@ -464,22 +358,8 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         return IOUtils.toByteArray(in, declaredSize);
     }
 
-    /**
-     * Processes the entry by creating the output file and setting the attributes.
-     *
-     * @param outputDir the directory to extract the archive to
-     * @param entry the entry to process
-     * @param budget the budget of the current extraction
-     * @throws IOException if an I/O error occurs
-     * @throws ArchiveLimitExceededException if the archive breaches one of the configured extraction limits
-     */
-    private void processEntry(Path outputDir, Entry entry, ExtractionBudget budget) throws IOException {
-        if (stripComponents > 0) {
-            Optional<Entry> stripped = stripComponents(entry);
-            if (stripped.isEmpty()) return;
-            entry = stripped.orElseThrow();
-        }
-
+    private void processItem(Path outputDir, ArchiveItem item, SymlinkGuard guard) throws IOException {
+        Entry entry = item.entry();
         Path outputFile = EntryPaths.entryFile(outputDir, entry.name);
         switch (entry.type) {
             case DIR -> {
@@ -488,11 +368,10 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
                     setAttributes(entry.mode, outputFile);
                 }
             }
-            case FILE -> writeFile(entry, outputFile, budget);
+            case FILE -> writeFile(item, outputFile);
             case SYMLINK ->
-                new SymlinkExtractor(escapingSymlinkPolicy, overwrite).extract(outputDir, entry, outputFile);
+                new SymlinkExtractor(escapingSymlinkPolicy, overwrite).extract(outputDir, entry, outputFile, guard);
         }
-
         if (postProcessor != null) {
             postProcessor.accept(entry, outputFile);
         }
@@ -519,18 +398,21 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
          */
         ALLOW,
 
-        /** Check during extraction and throw exception. */
+        /**
+         * Rejects targets that are absolute or resolve outside the output directory, including through links created
+         * later in the same archive.
+         */
         DISALLOW,
 
         /**
-         * Make absolute symbolic links relative from the extraction directory. For example, when archive contains link
-         * to {@code /opt/foo} and archive is extracted to {@code /foo/bar} then the resulting link will be
-         * {@code /foo/bar/opt/foo}
+         * Rewrites absolute targets under the output directory, then applies the same checks as {@link #DISALLOW}. For
+         * example, when archive contains link to {@code /opt/foo} and archive is extracted to {@code /foo/bar} then the
+         * resulting link will be {@code /foo/bar/opt/foo}.
          */
         RELATIVIZE_ABSOLUTE
     }
 
-    /** Specifies the action to be taken by the {@link ArchiveExtractor#setErrorHandler error handler}. */
+    /** Specifies the action to be taken by the error handler. */
     public enum ErrorHandlerChoice {
         /**
          * Stop the extraction and return normally. Entries extracted before the failure are left in place; the
@@ -565,7 +447,7 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
             A extends ArchiveInputStream<? extends ArchiveEntry>,
             B extends ArchiveExtractorBuilder<A, B, C>,
             C extends ArchiveExtractor<A>> {
-        /** Input stream to read from for extraction. */
+        /** How symbolic links whose target escapes the output directory are handled during extraction. */
         protected ArchiveExtractor.EscapingSymlinkPolicy escapingSymlinkPolicy = EscapingSymlinkPolicy.DISALLOW;
 
         Predicate<Entry> entryFilter = ACCEPT_ALL;
@@ -602,7 +484,9 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         }
 
         /**
-         * Sets predicate to be used when entries are being extracted
+         * Sets predicate to be used when entries are being extracted. The predicate applies to both {@link #stream()}
+         * and {@link #extract(Path)} and sees each entry after strip-components: with {@code stripComponents(1)}, match
+         * {@code a.txt}, not {@code root/a.txt}.
          *
          * @param entryPredicate the Predicate to filter entries to be extract from the archive.
          * @return the instance of the {@link ArchiveExtractor.ArchiveExtractorBuilder}
@@ -648,7 +532,8 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         }
 
         /**
-         * Sets the number of leading path components to strip from the extracted entries.
+         * Sets the number of leading path components to strip from the entries. Applies to both {@link #stream()} and
+         * {@link #extract(Path)}, before the filter runs.
          *
          * @param level the number of leading path components to strip
          * @return the instance of the {@link ArchiveExtractor.ArchiveExtractorBuilder}
@@ -670,7 +555,9 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         }
 
         /**
-         * Sets the maximum number of entries the extractor will process before aborting.
+         * Sets the maximum number of entries the extractor will process before aborting. Counts entries that pass
+         * strip-components and the filter. In {@link #stream()} a breach surfaces as
+         * {@link java.io.UncheckedIOException} wrapping {@link ArchiveLimitExceededException}.
          *
          * @param maxEntries the maximum number of entries, or {@link ArchiveExtractor#UNLIMITED} to disable the limit
          * @return the instance of the {@link ArchiveExtractor.ArchiveExtractorBuilder}
@@ -682,7 +569,8 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         }
 
         /**
-         * Sets the maximum number of bytes a single entry may expand to before the extractor aborts.
+         * Sets the maximum number of bytes a single entry may expand to before the extractor aborts. Counts bytes
+         * actually read from the entry's {@code content()}.
          *
          * @param maxEntrySize the maximum size of a single entry in bytes, or {@link ArchiveExtractor#UNLIMITED} to
          *     disable the limit
@@ -695,7 +583,8 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
         }
 
         /**
-         * Sets the maximum number of bytes the whole archive may expand to before the extractor aborts.
+         * Sets the maximum number of bytes the whole archive may expand to before the extractor aborts. Counts bytes
+         * actually read from entries' {@code content()}.
          *
          * @param maxTotalSize the maximum total extracted size in bytes, or {@link ArchiveExtractor#UNLIMITED} to
          *     disable the limit
@@ -739,46 +628,104 @@ public abstract class ArchiveExtractor<A extends ArchiveInputStream<? extends Ar
     }
 
     /**
-     * Represents an entry in the archive.
+     * An archive entry as callers see it: name after normalisation, type, Unix mode (0 when the format has none),
+     * symlink target, last-modified time and uncompressed size when the format records them.
      *
      * <p>It is recommended to use {@link #name} as a key for the entry, as it is normalized and trimmed.
      *
-     * @param name the name of the entry
-     * @param type the type of the entry
-     * @param mode the mode of the entry
-     * @param linkTarget the target of the symbolic link
+     * @param name the normalised entry name
+     * @param type the entry type
+     * @param mode the Unix mode, or 0 when unknown
+     * @param linkTarget the symlink target, present only for {@link Type#SYMLINK}
+     * @param lastModified the last-modified time, when the archive records one
+     * @param size the uncompressed size, when known before reading the content
      */
     public record Entry(
-            String name, Type type, int mode, @Nullable String linkTarget) {
+            String name,
+            Type type,
+            int mode,
+            Optional<String> linkTarget,
+            Optional<FileTime> lastModified,
+            OptionalLong size) {
+
         /**
-         * Creates a new entry with the specified name, type, mode, link target, and size.
+         * Normalizes the name by trimming whitespace, replacing backslashes with forward slashes and removing leading
+         * and trailing slashes; a blank link target and a negative size become empty.
          *
-         * @param name the name of the entry
-         * @param isDirectory whether the entry is a directory
+         * @throws NullPointerException if any component is null
          */
-        public Entry(String name, boolean isDirectory) {
-            this(name, isDirectory ? Type.DIR : Type.FILE, 0, null);
+        public Entry {
+            Objects.requireNonNull(type, "type");
+            linkTarget = Objects.requireNonNull(linkTarget, "linkTarget").filter(t -> !t.isBlank());
+            Objects.requireNonNull(lastModified, "lastModified");
+            size = Objects.requireNonNull(size, "size").isPresent() && size.getAsLong() < 0
+                    ? OptionalLong.empty()
+                    : size;
+            name = Objects.requireNonNull(name, "name").trim().replace('\\', '/');
+            int s = 0;
+            int e = name.length() - 1;
+            while (s < e && name.charAt(s) == '/') s++;
+            while (e >= s && name.charAt(e) == '/') e--;
+            name = name.substring(s, e + 1);
         }
 
         /**
-         * Creates a new entry with the specified name, type, mode, link target, and size.
+         * Creates an entry without link target, last-modified time or size.
          *
          * @param name the name of the entry
          * @param type the type of the entry
          * @param mode the mode of the entry
          */
         public Entry(String name, Type type, int mode) {
-            this(name, type, mode, null);
+            this(name, type, mode, Optional.empty(), Optional.empty(), OptionalLong.empty());
         }
 
-        /** Normalizes the name of the entry by trimming whitespace and replacing backslashes with forward slashes. */
-        public Entry {
-            name = name.trim().replace('\\', '/');
-            int s = 0;
-            int e = name.length() - 1;
-            while (s < e && name.charAt(s) == '/') s++;
-            while (e >= s && name.charAt(e) == '/') e--;
-            name = name.substring(s, e + 1);
+        /**
+         * Creates a FILE or DIR entry with mode 0.
+         *
+         * @param name the name of the entry
+         * @param isDirectory whether the entry is a directory
+         */
+        public Entry(String name, boolean isDirectory) {
+            this(name, isDirectory ? Type.DIR : Type.FILE, 0);
+        }
+
+        /**
+         * Returns a copy with the given link target; a null or blank target yields an empty one.
+         *
+         * @param target the symlink target
+         * @return the copy
+         */
+        public Entry withLinkTarget(@Nullable String target) {
+            Optional<String> t = Optional.ofNullable(target).filter(s -> !s.isBlank());
+            return new Entry(name, type, mode, t, lastModified, size);
+        }
+
+        /**
+         * Returns a copy with the given metadata; a null date or negative size yields an empty value.
+         *
+         * @param modified the last-modified date
+         * @param bytes the uncompressed size
+         * @return the copy
+         */
+        public Entry withMetadata(@Nullable Date modified, long bytes) {
+            return new Entry(
+                    name,
+                    type,
+                    mode,
+                    linkTarget,
+                    Optional.ofNullable(modified).map(d -> FileTime.fromMillis(d.getTime())),
+                    bytes < 0 ? OptionalLong.empty() : OptionalLong.of(bytes));
+        }
+
+        /**
+         * Returns a copy with the given name, normalised.
+         *
+         * @param newName the new name
+         * @return the copy
+         */
+        public Entry withName(String newName) {
+            return new Entry(newName, type, mode, linkTarget, lastModified, size);
         }
 
         /** Type of the entry. */

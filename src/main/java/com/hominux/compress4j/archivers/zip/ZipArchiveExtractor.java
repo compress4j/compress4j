@@ -65,12 +65,16 @@ public class ZipArchiveExtractor extends ArchiveExtractor<ZipFileArchiveInputStr
 
     /** {@inheritDoc} */
     @Override
-    public Optional<Entry> nextEntry() throws IOException {
+    protected Optional<Entry> nextEntry() throws IOException {
         ZipArchiveEntry ze = archiveInputStream.getNextEntry();
         if (ze == null) {
             return Optional.empty();
         }
-        return Optional.of(new Entry(ze.getName(), type(ze), ze.getUnixMode(), archiveInputStream.getUnixSymlink(ze)));
+        Entry.Type type = type(ze);
+        Entry entry = new Entry(ze.getName(), type, ze.getUnixMode())
+                .withLinkTarget(archiveInputStream.getUnixSymlink(ze))
+                .withMetadata(ze.getLastModifiedDate(), type == Entry.Type.FILE ? ze.getSize() : 0);
+        return Optional.of(entry);
     }
 
     private static Entry.Type type(ZipArchiveEntry ze) {
@@ -85,7 +89,7 @@ public class ZipArchiveExtractor extends ArchiveExtractor<ZipFileArchiveInputStr
 
     /** {@inheritDoc} */
     @Override
-    public InputStream openEntryStream(Entry entry) {
+    protected InputStream openEntryStream(Entry entry) {
         return archiveInputStream;
     }
 
