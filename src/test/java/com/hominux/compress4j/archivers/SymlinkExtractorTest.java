@@ -38,11 +38,11 @@ class SymlinkExtractorTest {
     Path outputDir;
 
     private static Entry link(String target) {
-        return new Entry("link", Entry.Type.SYMLINK, 0, target);
+        return new Entry("link", Entry.Type.SYMLINK, 0).withLinkTarget(target);
     }
 
     private void extract(SymlinkExtractor extractor, Entry entry) throws IOException {
-        extractor.extract(outputDir, entry, outputDir.resolve(entry.name()));
+        extractor.extract(outputDir, entry, outputDir.resolve(entry.name()), new SymlinkGuard(outputDir));
     }
 
     @Test
@@ -97,22 +97,22 @@ class SymlinkExtractorTest {
     @Test
     void disallowRejectsAbsoluteTargetWithUnsafeEntryException(@TempDir Path out) {
         // Given
-        var entry = new Entry("link", Entry.Type.SYMLINK, 0777, "/etc/passwd");
+        var entry = new Entry("link", Entry.Type.SYMLINK, 0777).withLinkTarget("/etc/passwd");
         var extractor = new SymlinkExtractor(DISALLOW, false);
 
         // Then
-        assertThatThrownBy(() -> extractor.extract(out, entry, out.resolve("link")))
+        assertThatThrownBy(() -> extractor.extract(out, entry, out.resolve("link"), new SymlinkGuard(out)))
                 .isInstanceOf(UnsafeEntryException.class);
     }
 
     @Test
     void disallowRejectsEscapingRelativeTargetWithUnsafeEntryException(@TempDir Path out) {
         // Given
-        var entry = new Entry("link", Entry.Type.SYMLINK, 0777, "../../outside");
+        var entry = new Entry("link", Entry.Type.SYMLINK, 0777).withLinkTarget("../../outside");
         var extractor = new SymlinkExtractor(DISALLOW, false);
 
         // Then
-        assertThatThrownBy(() -> extractor.extract(out, entry, out.resolve("link")))
+        assertThatThrownBy(() -> extractor.extract(out, entry, out.resolve("link"), new SymlinkGuard(out)))
                 .isInstanceOf(UnsafeEntryException.class)
                 .hasCauseInstanceOf(UnsafeEntryException.class);
     }
@@ -121,26 +121,46 @@ class SymlinkExtractorTest {
     void disallowAcceptsRelativeTargetThatStaysInside(@TempDir Path out) throws IOException {
         // Given
         Files.writeString(out.resolve("b.txt"), "b");
-        var entry = new Entry("a/link", Entry.Type.SYMLINK, 0777, "../b.txt");
+        var entry = new Entry("a/link", Entry.Type.SYMLINK, 0777).withLinkTarget("../b.txt");
         var extractor = new SymlinkExtractor(DISALLOW, false);
 
         // When
-        extractor.extract(out, entry, out.resolve("a/link"));
+        extractor.extract(out, entry, out.resolve("a/link"), new SymlinkGuard(out));
 
         // Then
         assertThat(Files.readSymbolicLink(out.resolve("a/link"))).isEqualTo(Path.of("../b.txt"));
     }
 
     @Test
+    void relativizeAbsoluteRewritesAbsoluteTargetsInside(@TempDir Path out) throws IOException {
+        var entry = new Entry("link", Entry.Type.SYMLINK, 0777).withLinkTarget("/etc/passwd");
+        new SymlinkExtractor(RELATIVIZE_ABSOLUTE, false)
+                .extract(out, entry, out.resolve("link"), new SymlinkGuard(out));
+        assertThat(Files.readSymbolicLink(out.resolve("link"))).isEqualTo(out.resolve("etc/passwd"));
+    }
+
+    @Test
+    void relativizeAbsoluteRejectsTargetsThatStillEscape(@TempDir Path out) {
+        var absolute = new Entry("a", Entry.Type.SYMLINK, 0777).withLinkTarget("/../../etc");
+        var relative = new Entry("r", Entry.Type.SYMLINK, 0777).withLinkTarget("../../x");
+        var extractor = new SymlinkExtractor(RELATIVIZE_ABSOLUTE, false);
+
+        assertThatThrownBy(() -> extractor.extract(out, absolute, out.resolve("a"), new SymlinkGuard(out)))
+                .isInstanceOf(UnsafeEntryException.class);
+        assertThatThrownBy(() -> extractor.extract(out, relative, out.resolve("r"), new SymlinkGuard(out)))
+                .isInstanceOf(UnsafeEntryException.class);
+    }
+
+    @Test
     void disallowAcceptsTargetsThatResolveToTheOutputDirectory(@TempDir Path out) throws IOException {
         // Given
         var extractor = new SymlinkExtractor(ArchiveExtractor.EscapingSymlinkPolicy.DISALLOW, false);
-        var self = new ArchiveExtractor.Entry("link", ArchiveExtractor.Entry.Type.SYMLINK, 0777, ".");
-        var up = new ArchiveExtractor.Entry("a/link", ArchiveExtractor.Entry.Type.SYMLINK, 0777, "..");
+        var self = new Entry("link", Entry.Type.SYMLINK, 0777).withLinkTarget(".");
+        var up = new Entry("a/link", Entry.Type.SYMLINK, 0777).withLinkTarget("..");
 
         // When
-        extractor.extract(out, self, out.resolve("link"));
-        extractor.extract(out, up, out.resolve("a/link"));
+        extractor.extract(out, self, out.resolve("link"), new SymlinkGuard(out));
+        extractor.extract(out, up, out.resolve("a/link"), new SymlinkGuard(out));
 
         // Then
         assertThat(Files.readSymbolicLink(out.resolve("link"))).isEqualTo(Path.of("."));

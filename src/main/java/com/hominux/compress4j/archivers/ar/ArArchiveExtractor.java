@@ -74,15 +74,16 @@ public class ArArchiveExtractor extends ArchiveExtractor<ArArchiveInputStream> {
 
     /** {@inheritDoc} */
     @Override
-    public Optional<Entry> nextEntry() throws IOException {
+    protected Optional<Entry> nextEntry() throws IOException {
         ArArchiveEntry ae = archiveInputStream.getNextEntry();
         if (ae == null) return Optional.empty();
 
         int mode = ae.getMode();
-        if ((mode & ArArchiveCreator.S_IFMT) == ArArchiveCreator.S_IFLNK) {
-            return Optional.of(new Entry(ae.getName(), Entry.Type.SYMLINK, mode, readSymlinkTargetStoredAsContent(ae)));
-        }
-        return Optional.of(new Entry(ae.getName(), Entry.Type.FILE, mode));
+        Entry entry = (mode & ArArchiveCreator.S_IFMT) == ArArchiveCreator.S_IFLNK
+                ? new Entry(ae.getName(), Entry.Type.SYMLINK, mode).withLinkTarget(readSymlinkTargetStoredAsContent(ae))
+                : new Entry(ae.getName(), Entry.Type.FILE, mode);
+        return Optional.of(
+                entry.withMetadata(ae.getLastModifiedDate(), entry.type() == Entry.Type.FILE ? ae.getSize() : 0));
     }
 
     private String readSymlinkTargetStoredAsContent(ArArchiveEntry entry) throws IOException {
@@ -92,7 +93,7 @@ public class ArArchiveExtractor extends ArchiveExtractor<ArArchiveInputStream> {
 
     /** {@inheritDoc} */
     @Override
-    public InputStream openEntryStream(Entry entry) {
+    protected InputStream openEntryStream(Entry entry) {
         return archiveInputStream;
     }
 

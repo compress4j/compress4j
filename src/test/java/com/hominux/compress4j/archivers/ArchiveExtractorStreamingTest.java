@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2026 The Compress4J Project
+ * Copyright 2026 The Compress4J Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,155 +15,319 @@
  */
 package com.hominux.compress4j.archivers;
 
-import static com.hominux.compress4j.archivers.ArchiveExtractor.Entry.Type.FILE;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.hominux.compress4j.archivers.memory.InMemoryArchiveEntry;
 import com.hominux.compress4j.archivers.memory.InMemoryArchiveExtractor;
+import com.hominux.compress4j.archivers.tar.TarArchiveExtractor;
+import com.hominux.compress4j.exceptions.ArchiveLimitExceededException;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Iterator;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.junit.jupiter.api.Test;
 
-/**
- * Tests for the streaming API added to {@link ArchiveExtractor}.
- *
- * @since 3.0
- */
 class ArchiveExtractorStreamingTest {
 
+    private static List<InMemoryArchiveEntry> files(String... namesAndContents) {
+        var list = new ArrayList<InMemoryArchiveEntry>();
+        for (int i = 0; i < namesAndContents.length; i += 2) {
+            list.add(InMemoryArchiveEntry.builder()
+                    .name(namesAndContents[i])
+                    .content(namesAndContents[i + 1])
+                    .build());
+        }
+        return list;
+    }
+
+    private static String read(ArchiveItem item) {
+        try {
+            return new String(item.content().readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
     @Test
-    void testStreamReturnsAllEntries() throws IOException {
-        // Given
+    void streamYieldsEntriesWithTheirContentInOrder() throws IOException {
+        try (var extractor =
+                InMemoryArchiveExtractor.builder(files("a", "1", "b", "2")).build()) {
+            // When
+            Map<String, String> seen = extractor.stream()
+                    .collect(Collectors.toMap(i -> i.entry().name(), ArchiveExtractorStreamingTest::read));
+
+            // Then
+            assertThat(seen).containsExactlyInAnyOrderEntriesOf(Map.of("a", "1", "b", "2"));
+        }
+    }
+
+    @Test
+    void contentOfAStaleItemThrows() throws IOException {
+        try (var extractor =
+                InMemoryArchiveExtractor.builder(files("a", "1", "b", "2")).build()) {
+            // When
+            List<ArchiveItem> items = extractor.stream().toList();
+
+            // Then
+            ArchiveItem first = items.get(0);
+            assertThatThrownBy(first::content)
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("a")
+                    .hasMessageContaining("no longer current");
+        }
+    }
+
+    @Test
+    void contentStreamOpenedEarlierFailsAfterAdvance() throws IOException {
+        try (var extractor =
+                InMemoryArchiveExtractor.builder(files("a", "1", "b", "2")).build()) {
+            // When
+            List<InputStream> opened =
+                    extractor.stream().map(ArchiveItem::content).toList();
+
+            // Then
+            assertThatThrownBy(() -> opened.get(0).read())
+                    .isInstanceOf(IOException.class)
+                    .hasMessageContaining("no longer current");
+        }
+    }
+
+    @Test
+    void contentCalledTwiceReturnsTheSameStream() throws IOException {
+        try (var extractor = InMemoryArchiveExtractor.builder(files("a", "12")).build()) {
+            // When
+            var item = extractor.stream().findFirst().orElseThrow();
+            int first = item.content().read();
+            int second = item.content().read();
+
+            // Then
+            assertThat((char) first).isEqualTo('1');
+            assertThat((char) second).isEqualTo('2');
+        }
+    }
+
+    @Test
+    void findFirstItemStaysReadable() throws IOException {
+        try (var extractor =
+                InMemoryArchiveExtractor.builder(files("a", "1", "b", "2")).build()) {
+            // When
+            var b = extractor.stream()
+                    .filter(i -> i.entry().name().equals("b"))
+                    .findFirst()
+                    .orElseThrow();
+
+            // Then
+            assertThat(read(b)).isEqualTo("2");
+        }
+    }
+
+    @Test
+    void directoryContentIsEmpty() throws IOException {
+        var dir = InMemoryArchiveEntry.builder()
+                .name("d/")
+                .type(ArchiveExtractor.Entry.Type.DIR)
+                .build();
+        try (var extractor = InMemoryArchiveExtractor.builder(List.of(dir)).build()) {
+            // Then
+            assertThat(read(extractor.stream().findFirst().orElseThrow())).isEmpty();
+        }
+    }
+
+    @Test
+    void stripThenFilterOnTheStrippedName() throws IOException {
+        try (var extractor = InMemoryArchiveExtractor.builder(files("root/keep", "k", "root/skip", "s", "root", ""))
+                .stripComponents(1)
+                .filter(e -> !e.name().equals("skip"))
+                .build()) {
+            // Then
+            assertThat(extractor.stream().map(i -> i.entry().name())).containsExactly("keep");
+        }
+    }
+
+    @Test
+    void maxEntriesCountsEmittedItems() throws IOException {
+        try (var extractor = InMemoryArchiveExtractor.builder(files("a", "1", "skip", "2", "b", "3"))
+                .filter(e -> !e.name().equals("skip"))
+                .maxEntries(2)
+                .build()) {
+            // Then
+            assertThat(extractor.stream().map(i -> i.entry().name())).containsExactly("a", "b");
+        }
+    }
+
+    @Test
+    void advancingPastMaxEntriesThrowsUnchecked() throws IOException {
+        try (var extractor = InMemoryArchiveExtractor.builder(files("a", "1", "b", "2"))
+                .maxEntries(1)
+                .build()) {
+            // Then
+            Stream<ArchiveItem> items = extractor.stream();
+            assertThatThrownBy(items::toList)
+                    .isInstanceOf(UncheckedIOException.class)
+                    .hasCauseInstanceOf(ArchiveLimitExceededException.class);
+        }
+    }
+
+    @Test
+    void contentIsMetered() throws IOException {
+        try (var extractor = InMemoryArchiveExtractor.builder(files("a", "12345"))
+                .maxEntrySize(2)
+                .build()) {
+            // When
+            var item = extractor.stream().findFirst().orElseThrow();
+
+            // Then
+            assertThatThrownBy(() -> item.content().readAllBytes()).isInstanceOf(ArchiveLimitExceededException.class);
+        }
+    }
+
+    @Test
+    void parallelStreamIsRejected() throws IOException {
+        try (var extractor =
+                InMemoryArchiveExtractor.builder(files("a", "1", "b", "2")).build()) {
+            // Then
+            Stream<ArchiveItem> parallel = extractor.stream().parallel();
+            assertThatThrownBy(parallel::toList)
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("parallel");
+        }
+    }
+
+    @Test
+    void streamIsSingleUse() throws IOException {
+        try (var extractor = InMemoryArchiveExtractor.builder(files("a", "1")).build()) {
+            // When
+            extractor.stream().toList();
+
+            // Then
+            assertThatThrownBy(extractor::stream)
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("once");
+        }
+    }
+
+    @Test
+    void closingContentDoesNotCloseTheArchive() throws IOException {
+        try (var extractor =
+                TarArchiveExtractor.builder(tar("a", "1", "b", "2")).build()) {
+            // When
+            List<String> names = new ArrayList<>();
+            extractor.stream().forEach(i -> {
+                try {
+                    i.content().close();
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+                names.add(i.entry().name());
+            });
+
+            // Then
+            assertThat(names).containsExactly("a", "b");
+        }
+    }
+
+    @Test
+    void closingContentThenReadingTheNextFileStillYieldsItsContent() throws IOException {
+        try (var extractor =
+                TarArchiveExtractor.builder(tar("a", "1", "b", "2")).build()) {
+            // When
+            List<String> contents = new ArrayList<>();
+            extractor.stream().forEach(i -> {
+                try (var content = i.content()) {
+                    contents.add(new String(content.readAllBytes(), StandardCharsets.UTF_8));
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+
+            // Then
+            assertThat(contents).containsExactly("1", "2");
+        }
+    }
+
+    @Test
+    void dirAndSymlinkItemsHaveEmptyContentWithoutOpeningTheEntryStream() throws IOException {
         var entries = List.of(
                 InMemoryArchiveEntry.builder()
-                        .name("file1.txt")
-                        .content("content1")
+                        .name("d")
+                        .type(ArchiveExtractor.Entry.Type.DIR)
                         .build(),
                 InMemoryArchiveEntry.builder()
-                        .name("file2.txt")
-                        .content("content2")
-                        .build(),
-                InMemoryArchiveEntry.builder()
-                        .name("file3.txt")
-                        .content("content3")
+                        .name("l")
+                        .type(ArchiveExtractor.Entry.Type.SYMLINK)
+                        .linkName("t")
                         .build());
-
-        try (var extractor = InMemoryArchiveExtractor.builder(entries).build()) {
+        try (var extractor = new NoOpenExtractor(InMemoryArchiveExtractor.builder(entries))) {
             // When
-            List<String> names =
-                    extractor.stream().map(ArchiveExtractor.Entry::name).toList();
+            List<byte[]> contents = extractor.stream().map(this::bytes).toList();
 
             // Then
-            assertThat(names).containsExactly("file1.txt", "file2.txt", "file3.txt");
+            assertThat(contents).hasSize(2).allSatisfy(b -> assertThat(b).isEmpty());
         }
     }
 
-    @Test
-    void testStreamWithFilter() throws IOException {
-        // Given
-        var entries = List.of(
-                InMemoryArchiveEntry.builder().name("doc.txt").content("text").build(),
-                InMemoryArchiveEntry.builder()
-                        .name("image.png")
-                        .content("binary")
-                        .build(),
-                InMemoryArchiveEntry.builder()
-                        .name("readme.txt")
-                        .content("readme")
-                        .build());
-
-        try (var extractor = InMemoryArchiveExtractor.builder(entries).build()) {
-            // When
-            List<String> txtFiles = extractor.stream()
-                    .map(ArchiveExtractor.Entry::name)
-                    .filter(name -> name.endsWith(".txt"))
-                    .toList();
-
-            // Then
-            assertThat(txtFiles).containsExactly("doc.txt", "readme.txt");
+    private byte[] bytes(ArchiveItem item) {
+        try {
+            return item.content().readAllBytes();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
-    @Test
-    void testStreamCount() throws IOException {
-        // Given
-        var entries = List.of(
-                InMemoryArchiveEntry.builder().name("file1.txt").type(FILE).build(),
-                InMemoryArchiveEntry.builder().name("file2.txt").type(FILE).build());
-
-        try (var extractor = InMemoryArchiveExtractor.builder(entries).build()) {
-            // When
-            long count = extractor.stream().count();
-
-            // Then
-            assertThat(count).isEqualTo(2);
-        }
-    }
-
-    @Test
-    void testIteratorWithForEachLoop() throws IOException {
-        // Given
-        var entries = List.of(
-                InMemoryArchiveEntry.builder().name("a.txt").build(),
-                InMemoryArchiveEntry.builder().name("b.txt").build(),
-                InMemoryArchiveEntry.builder().name("c.txt").build());
-
-        try (var extractor = InMemoryArchiveExtractor.builder(entries).build()) {
-            // When
-            List<String> names = new java.util.ArrayList<>();
-            for (ArchiveExtractor.Entry entry : extractor) {
-                names.add(entry.name());
+    private static InputStream tar(String... namesAndContents) throws IOException {
+        var out = new ByteArrayOutputStream();
+        try (var tar = new TarArchiveOutputStream(out)) {
+            for (int i = 0; i < namesAndContents.length; i += 2) {
+                byte[] data = namesAndContents[i + 1].getBytes(StandardCharsets.UTF_8);
+                var entry = new TarArchiveEntry(namesAndContents[i]);
+                entry.setSize(data.length);
+                tar.putArchiveEntry(entry);
+                tar.write(data);
+                tar.closeArchiveEntry();
             }
+        }
+        return new ClosableOnce(out.toByteArray());
+    }
 
-            // Then
-            assertThat(names).containsExactly("a.txt", "b.txt", "c.txt");
+    private static final class ClosableOnce extends ByteArrayInputStream {
+        private boolean closed;
+
+        ClosableOnce(byte[] data) {
+            super(data);
+        }
+
+        @Override
+        public synchronized int read(byte[] b, int off, int len) {
+            if (closed) {
+                throw new IllegalStateException("archive stream was closed");
+            }
+            return super.read(b, off, len);
+        }
+
+        @Override
+        public void close() {
+            closed = true;
         }
     }
 
-    @Test
-    void testIteratorHasNextAndNext() throws IOException {
-        // Given
-        var entries = List.of(
-                InMemoryArchiveEntry.builder().name("first.txt").build(),
-                InMemoryArchiveEntry.builder().name("second.txt").build());
-
-        try (var extractor = InMemoryArchiveExtractor.builder(entries).build()) {
-            // When
-            Iterator<ArchiveExtractor.Entry> iterator = extractor.iterator();
-
-            // Then
-            assertThat(iterator.hasNext()).isTrue();
-            assertThat(iterator.next().name()).isEqualTo("first.txt");
-
-            assertThat(iterator.hasNext()).isTrue();
-            assertThat(iterator.next().name()).isEqualTo("second.txt");
-
-            assertThat(iterator.hasNext()).isFalse();
+    private static final class NoOpenExtractor extends InMemoryArchiveExtractor {
+        NoOpenExtractor(InMemoryArchiveExtractorBuilder builder) throws IOException {
+            super(builder);
         }
-    }
 
-    @Test
-    void testIteratorOnEmptyArchive() throws IOException {
-        // Given
-        try (var extractor = InMemoryArchiveExtractor.builder(List.of()).build()) {
-            // When
-            Iterator<ArchiveExtractor.Entry> iterator = extractor.iterator();
-
-            // Then
-            assertThat(iterator.hasNext()).isFalse();
-        }
-    }
-
-    @Test
-    void testStreamOnEmptyArchive() throws IOException {
-        // Given
-        try (var extractor = InMemoryArchiveExtractor.builder(List.of()).build()) {
-            // When
-            long count = extractor.stream().count();
-
-            // Then
-            assertThat(count).isZero();
+        @Override
+        protected InputStream openEntryStream(Entry entry) {
+            throw new AssertionError("openEntryStream must not be called for " + entry.type());
         }
     }
 }

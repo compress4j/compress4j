@@ -60,7 +60,7 @@ public class DumpArchiveExtractor extends ArchiveExtractor<DumpArchiveInputStrea
 
     /** {@inheritDoc} */
     @Override
-    public Optional<Entry> nextEntry() throws IOException {
+    protected Optional<Entry> nextEntry() throws IOException {
         do {
             current = Optional.ofNullable(archiveInputStream.getNextEntry());
         } while (current.filter(DumpArchiveExtractor::isUnnamedDirectory).isPresent());
@@ -69,7 +69,7 @@ public class DumpArchiveExtractor extends ArchiveExtractor<DumpArchiveInputStrea
 
     /** {@inheritDoc} */
     @Override
-    public InputStream openEntryStream(Entry entry) throws IOException {
+    protected InputStream openEntryStream(Entry entry) throws IOException {
         var dumpEntry = current.orElseThrow(() -> new IOException("No current dump entry"));
         return switch (dumpEntry.getType()) {
             case FILE -> archiveInputStream;
@@ -85,7 +85,8 @@ public class DumpArchiveExtractor extends ArchiveExtractor<DumpArchiveInputStrea
 
     private static Entry toEntry(DumpArchiveEntry entry) {
         var type = entry.getType() == DumpArchiveEntry.TYPE.DIRECTORY ? Entry.Type.DIR : Entry.Type.FILE;
-        return new Entry(entry.getName(), type, entry.getMode(), null);
+        return new Entry(entry.getName(), type, entry.getMode())
+                .withMetadata(entry.getLastModifiedDate(), type == Entry.Type.FILE ? entry.getSize() : 0);
     }
 
     /**

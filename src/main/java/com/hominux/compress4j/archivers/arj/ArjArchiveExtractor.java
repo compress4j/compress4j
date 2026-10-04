@@ -63,14 +63,14 @@ public class ArjArchiveExtractor extends ArchiveExtractor<ArjArchiveInputStream>
 
     /** {@inheritDoc} */
     @Override
-    public Optional<Entry> nextEntry() throws IOException {
+    protected Optional<Entry> nextEntry() throws IOException {
         current = Optional.ofNullable(archiveInputStream.getNextEntry());
         return current.map(ArjArchiveExtractor::toEntry);
     }
 
     /** {@inheritDoc} */
     @Override
-    public InputStream openEntryStream(Entry entry) throws IOException {
+    protected InputStream openEntryStream(Entry entry) throws IOException {
         var arjEntry = current.orElseThrow(() -> new IOException("No current ARJ entry"));
         if (isSymlink(arjEntry)) {
             throw new IOException("Unsupported ARJ entry type: symlink: " + arjEntry.getName());
@@ -85,7 +85,8 @@ public class ArjArchiveExtractor extends ArchiveExtractor<ArjArchiveInputStream>
     private static Entry toEntry(ArjArchiveEntry entry) {
         var type = entry.isDirectory() ? Entry.Type.DIR : Entry.Type.FILE;
         var mode = entry.isHostOsUnix() ? entry.getUnixMode() : 0;
-        return new Entry(entry.getName(), type, mode, null);
+        return new Entry(entry.getName(), type, mode)
+                .withMetadata(entry.getLastModifiedDate(), type == Entry.Type.FILE ? entry.getSize() : 0);
     }
 
     private static boolean isSymlink(ArjArchiveEntry entry) {

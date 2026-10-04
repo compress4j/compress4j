@@ -52,23 +52,25 @@ public abstract class BaseTarArchiveExtractor extends ArchiveExtractor<TarArchiv
 
     /** {@inheritDoc} */
     @Override
-    public Optional<Entry> nextEntry() throws IOException {
+    protected Optional<Entry> nextEntry() throws IOException {
         return getNextTarArchiveEntry().map(BaseTarArchiveExtractor::toEntry);
     }
 
     private static Entry toEntry(TarArchiveEntry te) {
+        Entry base;
         if (!isIsOsWindows()) {
-            return new Entry(te.getName(), type(te), te.getMode(), te.getLinkName());
+            base = new Entry(te.getName(), type(te), te.getMode()).withLinkTarget(te.getLinkName());
         } else if (te.isSymbolicLink()) {
-            return new Entry(te.getName(), Entry.Type.SYMLINK, 0, te.getLinkName());
+            base = new Entry(te.getName(), Entry.Type.SYMLINK, 0).withLinkTarget(te.getLinkName());
         } else {
-            return new Entry(te.getName(), te.isDirectory());
+            base = new Entry(te.getName(), te.isDirectory());
         }
+        return base.withMetadata(te.getLastModifiedDate(), base.type() == Entry.Type.FILE ? te.getSize() : 0);
     }
 
     /** {@inheritDoc} */
     @Override
-    public InputStream openEntryStream(Entry entry) {
+    protected InputStream openEntryStream(Entry entry) {
         return archiveInputStream;
     }
 
